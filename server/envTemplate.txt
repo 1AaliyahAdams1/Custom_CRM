@@ -1,0 +1,13 @@
+Create a ".env" file in the server folder and copy the fields below and add the credidentials next to it
+
+DB_USER=
+DB_PASS=
+DB_HOST=
+DB_NAME=
+
+HOST_ALT = 
+
+SERVER_URL = 
+ALT_SERVER_URL = 
+
+
