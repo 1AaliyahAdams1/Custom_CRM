@@ -14,18 +14,27 @@ click Code Button and copy repo "https://github.com/1AaliyahAdams1/Custom_CRM.gi
 To make a new branch visual Studio Code:
 MAKE ONLY ONE BRANCH AND THAT WILL BE YOUR BRANCH. AVOID MAKING MULTIPLE BRANCHES
   = Paste these commands in the terminal = 
-> git checkout -b "your-branch-name-here" = CREATES YOUR BRANCH LOCALLY ON YOUR COMPUTER
-> git push --set-upstream origin your-branch-name-here = PUSHES YOUR BRANCH ONLINE
+> git checkout -b "your-branch-name-here"
+CREATES YOUR BRANCH LOCALLY ON YOUR COMPUTER
+
+> git push --set-upstream origin your-branch-name-here
+PUSHES YOUR BRANCH ONLINE
 
 To save changes in your branch and push it to GitHub:
   = Paste these commands in the terminal =
-> git add .  = THIS STAGES ALL CHANGES MADE ON BRANCH
-> git commit -m "your-message-here" = THIS SAVES ALL THE STAGED CHANGES UNDER A MESSAGE LIKE "FIXED BUTTON"
-> git push  = THIS PUSHES ALL CHANGES TO GITHUB
+> git add .
+THIS STAGES ALL CHANGES MADE ON BRANCH
+
+> git commit -m "your-message-here"
+THIS SAVES ALL THE STAGED CHANGES UNDER A MESSAGE LIKE "FIXED BUTTON"
+
+> git push
+THIS PUSHES ALL CHANGES TO GITHUB
 
 To pull changes from GitHub into your branch:
  = Paste these commands in the terminal =
-> git pull origin main = PULLS ALL CHANGES MADE TO MAIN BRANCH TO YOUR BRANCH ON YOUR COMPUTER
+> git pull origin main
+PULLS ALL CHANGES MADE TO MAIN BRANCH TO YOUR BRANCH ON YOUR COMPUTER
 
 
 =====================================================================================================
@@ -37,22 +46,22 @@ Add all COMMANDS inbetween the " " for the below command
 powershell -ExecutionPolicy Bypass -command ""
 
 COMMANDS for Root folder [Custom_CRM]
-npm install react@18.2.0 react-dom@18.2.0
-npm install
-npm install concurrently --save-dev
-npm install mssql cors dotenv bcrypt
-npm install express@4.18.2
+> npm install react@18.2.0 react-dom@18.2.0
+> npm install
+> npm install concurrently --save-dev
+> npm install mssql cors dotenv bcrypt
+> npm install express@4.18.2
 
 
 COMMANDS for Client folder [client]
-npm install react@18.2.0 react-dom@18.2.0
-npm install
-npm install react-scripts@5.0.1 --save
-npm install react-router-dom@6
-npm install npm  @mui/material@^7.2.0 @mui/icons-material@^7.2.0 @mui/x-data-grid@^8.6.0 axios@^1.10.0
-npm install @emotion/react @emotion/styled
+> npm install react@18.2.0 react-dom@18.2.0
+> npm install
+> npm install react-scripts@5.0.1 --save
+> npm install react-router-dom@6
+> npm install npm  @mui/material@^7.2.0 @mui/icons-material@^7.2.0 @mui/x-data-grid@^8.6.0 axios@^1.10.0
+> npm install @emotion/react @emotion/styled
 
 
 COMMAND to run program:
-npm run dev    
+> npm run dev    
 
