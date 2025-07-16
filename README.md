@@ -52,10 +52,6 @@ To pull changes from GitHub into your branch:
 
 Install dependencies in the terminal:
 
-Add all COMMANDS inbetween the " " for the below command
-
-powershell -ExecutionPolicy Bypass -command ""
-
 COMMANDS for Root folder [Custom_CRM]
 > powershell -ExecutionPolicy Bypass -command "npm install react@18.2.0 react-dom@18.2.0"
 
