@@ -57,22 +57,33 @@ Add all COMMANDS inbetween the " " for the below command
 powershell -ExecutionPolicy Bypass -command ""
 
 COMMANDS for Root folder [Custom_CRM]
-> npm install react@18.2.0 react-dom@18.2.0
-> npm install
-> npm install concurrently --save-dev
-> npm install mssql cors dotenv bcrypt
-> npm install express@4.18.2
+> powershell -ExecutionPolicy Bypass -command "npm install react@18.2.0 react-dom@18.2.0"
+
+> powershell -ExecutionPolicy Bypass -command "npm install"
+
+> powershell -ExecutionPolicy Bypass -command "npm install concurrently --save-dev"
+
+> powershell -ExecutionPolicy Bypass -command "npm install mssql cors dotenv bcrypt"
+
+> powershell -ExecutionPolicy Bypass -command "npm install express@4.18.2"
 
 
 COMMANDS for Client folder [client]
-> npm install react@18.2.0 react-dom@18.2.0
-> npm install
-> npm install react-scripts@5.0.1 --save
-> npm install react-router-dom@6
-> npm install npm  @mui/material@^7.2.0 @mui/icons-material@^7.2.0 @mui/x-data-grid@^8.6.0 axios@^1.10.0
-> npm install @emotion/react @emotion/styled
+> cd\Cutom_CRM\client [CHANGE THIS COMMAND TO MATCH YOUR FILE DIRECTORY]
+
+> powershell -ExecutionPolicy Bypass -command "npm install react@18.2.0 react-dom@18.2.0"
+
+> powershell -ExecutionPolicy Bypass -command "npm install"
+
+> powershell -ExecutionPolicy Bypass -command "npm install react-scripts@5.0.1 --save"
+
+> powershell -ExecutionPolicy Bypass -command "npm install react-router-dom@6"
+
+> powershell -ExecutionPolicy Bypass -command "npm install npm  @mui/material@^7.2.0 @mui/icons-material@^7.2.0 @mui/x-data-grid@^8.6.0 axios@^1.10.0"
+
+> powershell -ExecutionPolicy Bypass -command "npm install @emotion/react @emotion/styled"
 
 
 COMMAND to run program:
-> npm run dev    
+> powershell -ExecutionPolicy Bypass -command "npm run dev"  
 
