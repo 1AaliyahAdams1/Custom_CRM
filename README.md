@@ -48,7 +48,15 @@ To pull changes from GitHub into your branch:
 [PULLS ALL CHANGES MADE TO MAIN BRANCH TO YOUR BRANCH ON YOUR COMPUTER]
 
 
-=====================================================================================================
+========================================================
+
+MAKE THE .ENV FILES IN THE SERVER FOLDER AND THE CLIENT FOLDER
+
+There is a .env template with missing credentials in each folder
+
+The credentials are in the MVP folder on the Onedrive
+
+========================================================
 
 Install dependencies in the terminal:
 
