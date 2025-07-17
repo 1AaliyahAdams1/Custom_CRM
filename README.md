@@ -73,7 +73,9 @@ COMMANDS for Root folder [Custom_CRM]
 
 
 COMMANDS for Client folder [client]
-> C:\Desktop\Custom_CRM\client [CHANGE THIS COMMAND TO MATCH YOUR FILE DIRECTORY]
+> cd C:\Desktop\Custom_CRM\client
+
+[CHANGE THIS COMMAND TO MATCH YOUR FILE DIRECTORY]
 
 > powershell -ExecutionPolicy Bypass -command "npm install react@18.2.0 react-dom@18.2.0"
 
@@ -89,6 +91,12 @@ COMMANDS for Client folder [client]
 
 
 COMMAND to run program:
+
 MAKE SURE YOU ARE ON THE ROOT FOLDER [Custom_CRM] WHEN YOU RUN THIS COMMAND
+
+> cd C:\Desktop\Custom_CRM\
+
+[CHANGE THIS COMMAND TO MATCH YOUR FILE DIRECTORY]
+
 > powershell -ExecutionPolicy Bypass -command "npm run dev"  
 
