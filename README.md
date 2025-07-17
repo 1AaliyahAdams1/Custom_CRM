@@ -15,7 +15,7 @@ click Code Button and copy repo "https://github.com/1AaliyahAdams1/Custom_CRM.gi
 > You should get a pop up afterwards asking if you want to open repo, click Open
 
 > Then you should select Yes when the next pop up appears
-
+============================
 To make a new branch visual Studio Code:
 MAKE ONLY ONE BRANCH AND THAT WILL BE YOUR BRANCH. AVOID MAKING MULTIPLE BRANCHES
   = Paste these commands in the terminal = 
@@ -56,6 +56,34 @@ There is a .env template with missing credentials in each folder
 
 The credentials are in the MVP folder on the Onedrive
 
+Intergrating Syncfusion with the project
+
+Add this to your client side .env file
+
+REACT_APP_LICENSE= PASTE YOUR LICENSE CODE HERE
+
+Here are the COMMANDS for synfusion components, run this in the terminal
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-grids"
+
+# For DataGrid
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-dropdowns"
+
+# For DropDownList, ComboBox
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-schedule"
+
+# For Scheduler
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-buttons"
+
+# For Buttons
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-inputs"
+
+# For TextBox, NumericTextBox, etc.
+ 
 ========================================================
 
 Install dependencies in the terminal:
