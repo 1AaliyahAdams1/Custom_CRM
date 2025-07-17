@@ -61,28 +61,6 @@ Intergrating Syncfusion with the project
 Add this to your client side .env file
 
 REACT_APP_LICENSE= PASTE YOUR LICENSE CODE HERE
-
-Here are the COMMANDS for synfusion components, run this in the terminal
-
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-grids"
-
-# For DataGrid
-
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-dropdowns"
-
-# For DropDownList, ComboBox
-
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-schedule"
-
-# For Scheduler
-
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-buttons"
-
-# For Buttons
-
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-inputs"
-
-# For TextBox, NumericTextBox, etc.
  
 ========================================================
 
@@ -116,6 +94,29 @@ COMMANDS for Client folder [client]
 > powershell -ExecutionPolicy Bypass -command "npm install npm  @mui/material@^7.2.0 @mui/icons-material@^7.2.0 @mui/x-data-grid@^8.6.0 axios@^1.10.0"
 
 > powershell -ExecutionPolicy Bypass -command "npm install @emotion/react @emotion/styled"
+
+= Here are the COMMANDS for synfusion components, run this in the terminal =
+DO THIS IN CLIENT FOLDER ALSO
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-grids"
+
+[For DataGrid]
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-dropdowns"
+
+[For DropDownList, ComboBox]
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-schedule"
+
+[For Scheduler]
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-buttons"
+
+[For Buttons]
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-inputs"
+
+[For TextBox, NumericTextBox, etc.]
 
 
 COMMAND to run program:
