@@ -7,7 +7,12 @@ import reportWebVitals from './reportWebVitals';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
+import { registerLicense } from '@syncfusion/ej2-base';
+
 const theme = createTheme();
+
+// Registering Syncfusion license key from .env
+registerLicense(process.env.REACT_APP_LICENSE);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
