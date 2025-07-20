@@ -17,7 +17,9 @@ click Code Button and copy repo "https://github.com/1AaliyahAdams1/Custom_CRM.gi
 > Then you should select Yes when the next pop up appears
 
 ============================
+
 To make a new branch visual Studio Code:
+
 MAKE ONLY ONE BRANCH AND THAT WILL BE YOUR BRANCH. AVOID MAKING MULTIPLE BRANCHES
 
   = Paste these commands in the terminal = 
@@ -30,8 +32,12 @@ MAKE ONLY ONE BRANCH AND THAT WILL BE YOUR BRANCH. AVOID MAKING MULTIPLE BRANCHE
 
 [PUSHES YOUR BRANCH ONLINE]
 
+============================
+
 To save changes in your branch and push it to GitHub:
+
   = Paste these commands in the terminal =
+  
 > git add .
 
 [THIS STAGES ALL CHANGES MADE ON BRANCH]
@@ -43,6 +49,8 @@ To save changes in your branch and push it to GitHub:
 > git push
 
 [THIS PUSHES ALL CHANGES TO GITHUB]
+
+============================
 
 To pull changes from GitHub into your branch:
 
