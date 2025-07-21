@@ -1,4 +1,7 @@
 const contactRepository = require("../data/contactRepository");
+const personRepository = require("../data/personRepository");
+const noteRepository = require("../data/noteRepository");
+const attachmentRepository = require("../data/attachmentRepository");
 
 // Helper to get changedBy, default to "System" if not passed
 function getChangedByOrDefault(changedBy) {
@@ -6,13 +9,13 @@ function getChangedByOrDefault(changedBy) {
 }
 
 async function getAllContacts() {
-  // Business logic like filtering, paging, or permission checks can go here
+  // Business logic: filtering, paging, user permissions
   return await contactRepository.getAllContacts();
 }
 
 async function getAllPersons() {
-  // Business logic related to persons can be added here
-  return await contactRepository.getAllPersons();
+  // Business logic: apply filters or permissions
+  return await personRepository.getAllPersons();
 }
 
 async function createContact(contactData, changedBy) {
@@ -20,21 +23,19 @@ async function createContact(contactData, changedBy) {
 
   let personId = contactData.PersonID;
 
-  // Business logic: decide whether to create new person or use existing
+  // Business logic: decide whether to create or use existing person
   if (contactData.isNewPerson) {
-    // Validation should be done in controller or middleware
-
-    // Create new person
-    personId = await contactRepository.createPerson({
+    const newPerson = {
       PersonName: contactData.PersonName,
-      CityID: contactData.PersonCityID
-    });
+      CityID: contactData.PersonCityID,
+    };
+
+    personId = await personRepository.createPerson(newPerson);
   } else {
-    // Business logic: use existing personId, validation should ensure it's present
-    personId = personId;
+    // Business logic: assume existing PersonID is valid
   }
 
-  // Business logic: prepare contact data before creation
+  // Business logic: enrich or validate contact data
   const contactToCreate = {
     AccountID: contactData.AccountID,
     PersonID: personId,
@@ -43,9 +44,7 @@ async function createContact(contactData, changedBy) {
     Position: contactData.Position,
   };
 
-  // Call repo to create contact
-  const newContact = await contactRepository.createContact(contactToCreate, user);
-  return newContact;
+  return await contactRepository.createContact(contactToCreate, user);
 }
 
 async function updateContact(id, contactData, changedBy) {
@@ -53,22 +52,23 @@ async function updateContact(id, contactData, changedBy) {
 
   let personId = contactData.PersonID;
 
-  // Business logic: decide to create or update person, validation should be outside
+  // Business logic: create or update person
   if (contactData.isNewPerson) {
-    // Create new person and assign id
-    personId = await contactRepository.createPerson({
+    const newPerson = {
       PersonName: contactData.PersonName,
-      CityID: contactData.PersonCityID
-    });
+      CityID: contactData.PersonCityID,
+    };
+
+    personId = await personRepository.createPerson(newPerson);
   } else if (contactData.PersonID && contactData.PersonName) {
-    // Update existing person data
-    await contactRepository.updatePerson(contactData.PersonID, {
+    const updatedPerson = {
       PersonName: contactData.PersonName,
-      CityID: contactData.PersonCityID
-    });
+      CityID: contactData.PersonCityID,
+    };
+
+    await personRepository.updatePerson(contactData.PersonID, updatedPerson);
   }
 
-  // Business logic: prepare updated contact data
   const contactToUpdate = {
     AccountID: contactData.AccountID,
     PersonID: personId,
@@ -77,18 +77,28 @@ async function updateContact(id, contactData, changedBy) {
     Position: contactData.Position,
   };
 
-  // Call repo to update contact
   return await contactRepository.updateContact(id, contactToUpdate, user);
 }
 
 async function deleteContact(id, changedBy) {
   const user = getChangedByOrDefault(changedBy);
-  // Business logic: add checks for deletion or archiving if needed
+  // Business logic: check for soft deletion, linked data, permissions
   return await contactRepository.deleteContact(id, user);
 }
 
 async function getContactDetails(contactId) {
-  return await contactRepository.getContactDetails(contactId);
+  // Business logic: permission check or enrichment
+  const contact = await contactRepository.getContactDetails(contactId);
+
+  // Business logic: optionally filter or mask notes/attachments based on user role
+  const notes = await noteRepository.getNotesByContactId(contactId);
+  const attachments = await attachmentRepository.getAttachmentsByContactId(contactId);
+
+  return {
+    ...contact,
+    notes,
+    attachments,
+  };
 }
 
 module.exports = {

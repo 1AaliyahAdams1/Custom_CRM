@@ -3,6 +3,7 @@ const activityService = require("../services/activityService");
 // Get all activities
 async function getActivities(req, res) {
   try {
+    // Validation can go here
 
     const activities = await activityService.getAllActivities();
     res.json(activities);
@@ -13,10 +14,9 @@ async function getActivities(req, res) {
 
 // Create a new activity
 async function createActivity(req, res) {
-
-  // Validation should be done here before proceeding
-
   try {
+    // Validation can go here
+
     const newActivity = await activityService.createActivity(req.body);
     res.status(201).json(newActivity);
   } catch (err) {
@@ -28,12 +28,9 @@ async function createActivity(req, res) {
 async function updateActivity(req, res) {
   const id = parseInt(req.params.id, 10);
 
-  // Validation for ID should be done here
-  // if (isNaN(id)) return res.status(400).json({ error: "Invalid activity ID" });
-
-  // Validation for request body should be done here
-
   try {
+    // Validation can go here
+
     const updatedActivity = await activityService.updateActivity(id, req.body);
     res.json(updatedActivity);
   } catch (err) {
@@ -45,9 +42,9 @@ async function updateActivity(req, res) {
 async function deleteActivity(req, res) {
   const id = parseInt(req.params.id, 10);
 
-  // Validation for ID should be done here
-
   try {
+    // Validation can go here
+
     const deleted = await activityService.deleteActivity(id);
     res.json(deleted);
   } catch (err) {
@@ -59,9 +56,9 @@ async function deleteActivity(req, res) {
 async function getActivityDetails(req, res) {
   const id = parseInt(req.params.id, 10);
 
-  // Validation for ID should be done here
-
   try {
+    // Validation can go here
+
     const details = await activityService.getActivityDetails(id);
     res.json(details);
   } catch (error) {

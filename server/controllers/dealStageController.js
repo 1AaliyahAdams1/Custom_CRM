@@ -1,15 +1,14 @@
 const dealStageService = require("../services/dealStageService");
 
+// Get all deal stages
 async function getAllDealStages(req, res) {
   try {
-    
-    // Validation could go here if this endpoint had any input to validate
+    // Validation or permission checks can go here
 
     const dealStages = await dealStageService.getAllDealStages();
     res.json(dealStages);
-  } catch (error) {
-    console.error("Failed to get deal stages:", error);
-    res.status(500).json({ message: "Failed to get deal stages" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 }
 
