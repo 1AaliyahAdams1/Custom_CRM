@@ -1,11 +1,27 @@
 const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
-// View Activities Query
+//======================================
+// Get all activities
+//======================================
 async function getAllActivities() {
   try {
     const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query("SELECT * FROM Activity");
+    const result = await pool.request().query(`
+      SELECT 
+        a.ActivityID,
+        at.TypeName AS ActivityType,
+        acc.AccountName,
+        a.Due_date,
+        a.PriorityLevelID,
+        a.CreatedAt,
+        a.UpdatedAt
+      FROM Activity a
+      LEFT JOIN ActivityType at ON a.TypeID = at.TypeID
+      LEFT JOIN Account acc ON a.AccountID = acc.AccountID
+      WHERE a.Active = 1
+    `);
+
     return result.recordset;
   } catch (error) {
     console.error("Error fetching activities:", error);
@@ -13,113 +29,98 @@ async function getAllActivities() {
   }
 }
 
-// Create Activity Query
-async function createActivity(activityData) {
+//======================================
+// Get activity details by ID
+//======================================
+const getActivityDetails = async (id) => {
   try {
     const pool = await sql.connect(dbConfig);
-    const { AccountID, TypeID, Due_date, Priority = null } = activityData;
 
     const result = await pool.request()
-      .input("AccountID", sql.Int, AccountID)
-      .input("TypeID", sql.Int, TypeID)
-      .input("Due_date", sql.SmallDateTime, Due_date)
-      .input("Priority", sql.TinyInt, Priority)
-      .query(`
-        INSERT INTO Activity (AccountID, TypeID, Due_date, Priority, CreatedAt, UpdatedAt)
-        VALUES (@AccountID, @TypeID, @Due_date, @Priority, GETDATE(), GETDATE());
-        SELECT SCOPE_IDENTITY() AS ActivityID;
-      `);
-
-    return result.recordset[0];
-  } catch (error) {
-    console.error("Error creating activity:", error);
-    throw error;
-  }
-}
-
-
-// Update Activity Query
-async function updateActivity(id, activityData) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const { AccountID, TypeID, Due_date, Priority = null } = activityData;
-
-    await pool.request()
-      .input("ActivityID", sql.Int, id)
-      .input("AccountID", sql.Int, AccountID)
-      .input("TypeID", sql.Int, TypeID)
-      .input("Due_date", sql.SmallDateTime, Due_date)
-      .input("Priority", sql.TinyInt, Priority)
-      .query(`
-        UPDATE Activity
-        SET AccountID = @AccountID,
-            TypeID = @TypeID,
-            Due_date = @Due_date,
-            Priority = @Priority,
-            UpdatedAt = GETDATE()
-        WHERE ActivityID = @ActivityID;
-      `);
-  } catch (error) {
-    console.error("Error updating activity:", error);
-    throw error;
-  }
-}
-
-// Delete Activity Query
-async function deleteActivity(id) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("ActivityID", sql.Int, id)
-      .query("DELETE FROM Activity WHERE ActivityID = @ActivityID");
-    return { rowsAffected: result.rowsAffected[0] };
-  } catch (error) {
-    console.error("Error deleting activity:", error);
-    throw error;
-  }
-}
-
-// Get Activity Details for Details Page
-async function getActivityDetails(id) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("ActivityID", sql.Int, id)
+      .input('ActivityID', sql.Int, id)
       .query(`
         SELECT 
           a.ActivityID,
-          at.TypeName,
-          at.Description AS TypeDescription,
+          at.TypeName AS ActivityType,
           acc.AccountName,
-          CONCAT(
-            COALESCE(p.first_name + ' ', ''),
-            COALESCE(p.middle_name + ' ', ''),
-            COALESCE(p.surname, '')
-          ) AS ContactFullName,
           a.Due_date,
-          a.Priority,
+          a.PriorityLevelID,
           a.CreatedAt,
           a.UpdatedAt
-        FROM CRM.dbo.Activity a
-        LEFT JOIN CRM.dbo.ActivityType at ON a.TypeID = at.TypeID
-        LEFT JOIN CRM.dbo.Account acc ON a.AccountID = acc.AccountID
-        LEFT JOIN CRM.dbo.ActivityContact ac ON ac.ActivityID = a.ActivityID
-        LEFT JOIN CRM.dbo.Contact c ON ac.ContactID = c.ContactID
-        LEFT JOIN CRM.dbo.Person p ON c.PersonID = p.PersonID
-        WHERE a.ActivityID = @ActivityID
+        FROM Activity a
+        LEFT JOIN ActivityType at ON a.TypeID = at.TypeID
+        LEFT JOIN Account acc ON a.AccountID = acc.AccountID
+        WHERE a.ActivityID = @ActivityID;
       `);
-    return result.recordset;
+
+    return result.recordset[0] || null;
   } catch (error) {
-    console.error("Error fetching activity details:", error);
+    console.error('Error fetching activity by ID:', error);
     throw error;
   }
-}
+};
+
+//======================================
+// Create new activity
+//======================================
+const createActivity = async (activityData) => {
+  const {
+    AccountID,
+    TypeID,
+    Due_date,
+    PriorityLevelID,
+    CreatedAt
+  } = activityData;
+
+  try {
+    const pool = await sql.connect(dbConfig);
+
+    const result = await pool.request()
+      .input('AccountID', sql.Int, AccountID)
+      .input('TypeID', sql.Int, TypeID)
+      .input('Due_date', sql.SmallDateTime, Due_date)
+      .input('PriorityLevelID', sql.Int, PriorityLevelID)
+      .input('CreatedAt', sql.SmallDateTime, CreatedAt)
+      .query(`
+        INSERT INTO Activity (AccountID, TypeID, Due_date, PriorityLevelID, CreatedAt)
+        OUTPUT INSERTED.ActivityID
+        VALUES (@AccountID, @TypeID, @Due_date, @PriorityLevelID, @CreatedAt)
+      `);
+
+    return result.recordset[0].ActivityID;
+  } catch (err) {
+    console.error('Error creating activity:', err);
+    throw err;
+  }
+};
+
+//======================================
+// Delete activity
+//======================================
+const deleteActivity = async (activityId) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+
+    await pool.request()
+      .input('ActivityID', sql.Int, activityId)
+      .query(`
+        DELETE FROM Activity WHERE ActivityID = @ActivityID
+      `);
+
+    return true;
+  } catch (err) {
+    console.error('Error deleting activity:', err);
+    throw err;
+  }
+};
 
 
+// =======================
+// Exports
+// =======================
 module.exports = {
   getAllActivities,
-  createActivity,
-  updateActivity,
-  deleteActivity,
   getActivityDetails,
+  createActivity,
+  deleteActivity
 };

@@ -1,4 +1,6 @@
 const accountRepository = require("../data/accountRepository");
+const notesRepo = require("../data/noteRepository");
+const attachmentsRepo = require("../data/attachmentRepository");
 
 // Helper to get changedBy, default to "System" if not passed
 function getChangedByOrDefault(changedBy) {
@@ -9,12 +11,24 @@ async function getAllAccounts() {
   // Business logic for filtering, pagination, or permissions
   // could be added here before or after fetching data
   return await accountRepository.getAllAccounts();
+
 }
 
 async function getAccountDetails(id) {
   // Business logic like access control, data transformation,
   // or enriching details could be added here
-  return await accountRepository.getAccountDetails(id);
+  const account = await accountRepository.getAccountDetails(id);
+
+  const [notes, attachments] = await Promise.all([
+    notesRepo.getNotes(id, "Account"),
+    attachmentsRepo.getAttachments(id, "Account"),
+  ]);
+
+  return {
+    ...account,
+    notes,
+    attachments,
+  };
 }
 
 async function createAccount(accountData, changedBy) {

@@ -1,24 +1,14 @@
 const contactService = require("../services/contactService");
 
-// Helper to get changedBy (only from authenticated user)
+// Helper to get changedBy from authenticated user or default
 function getChangedBy(req) {
-  return req.user?.username || "UnknownUser";
+  return req.user?.username || "System";
 }
 
-function validateContactInput(data, isEdit = false) {
-  const errors = [];
-
-  // Validation for required fields and formats goes here
-
-  return errors;
-}
-
-
-
-async function getContacts(req, res) {
+// Get all contacts
+async function getAllContacts(req, res) {
   try {
-    // Validation (if any) could go here
-
+    // Validation can go here (e.g., filters, pagination params)
     const contacts = await contactService.getAllContacts();
     res.json(contacts);
   } catch (err) {
@@ -26,12 +16,10 @@ async function getContacts(req, res) {
   }
 }
 
-
-
-async function getPersons(req, res) {
+// Get all persons
+async function getAllPersons(req, res) {
   try {
-    // Validation (if any) could go here
-
+    // Validation can go here
     const persons = await contactService.getAllPersons();
     res.json(persons);
   } catch (err) {
@@ -39,14 +27,9 @@ async function getPersons(req, res) {
   }
 }
 
-
-
+// Create a new contact (with optional new person)
 async function createContact(req, res) {
-  // Input validation goes here
-  const errors = validateContactInput(req.body, false);
-  if (errors.length > 0) {
-    return res.status(400).json({ errors });
-  }
+  // Validation for req.body should go here
 
   try {
     const changedBy = getChangedBy(req);
@@ -57,20 +40,10 @@ async function createContact(req, res) {
   }
 }
 
-
-
+// Update a contact by ID
 async function updateContact(req, res) {
   const id = parseInt(req.params.id, 10);
-  // Validation for id format goes here
-  if (isNaN(id)) {
-    return res.status(400).json({ error: "Invalid Contact ID" });
-  }
-
-  // Input validation goes here
-  const errors = validateContactInput(req.body, true);
-  if (errors.length > 0) {
-    return res.status(400).json({ errors });
-  }
+  // Validation for id and req.body goes here
 
   try {
     const changedBy = getChangedBy(req);
@@ -81,47 +54,39 @@ async function updateContact(req, res) {
   }
 }
 
-
-
+// Delete a contact by ID
 async function deleteContact(req, res) {
   const id = parseInt(req.params.id, 10);
-  // Validation for id format goes here
-  if (isNaN(id)) {
-    return res.status(400).json({ error: "Invalid Contact ID" });
-  }
+  // Validation for id goes here
 
   try {
     const changedBy = getChangedBy(req);
-    const result = await contactService.deleteContact(id, changedBy);
-    res.json(result);
+    const deleted = await contactService.deleteContact(id, changedBy);
+    res.json(deleted);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-
-
+// Get contact details including notes and attachments
 async function getContactDetails(req, res) {
   const contactId = parseInt(req.params.id, 10);
-  // Validation for id format goes here
-  if (isNaN(contactId)) {
-    return res.status(400).json({ error: "Invalid Contact ID" });
-  }
+  // Validation for contactId goes here
 
   try {
     const details = await contactService.getContactDetails(contactId);
-    if (!details || details.length === 0) {
+    if (!details) {
       return res.status(404).json({ error: "Contact not found" });
     }
-    res.json(details[0]);
+    res.json(details);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
 module.exports = {
-  getContacts,
-  getPersons,
+  getAllContacts,
+  getAllPersons,
   createContact,
   updateContact,
   deleteContact,

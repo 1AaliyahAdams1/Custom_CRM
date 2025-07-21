@@ -1,4 +1,7 @@
 const dealRepository = require("../data/dealRepository");
+const noteRepository = require("../data/noteRepository");
+const attachmentRepository = require("../data/attachmentRepository");
+const dealProductRepository = require("../data/dealProductRepository");
 
 // Helper to get changedBy, default to "System"
 function getChangedByOrDefault(changedBy) {
@@ -6,39 +9,51 @@ function getChangedByOrDefault(changedBy) {
 }
 
 async function getAllDeals() {
-  // Business logic like filtering, sorting, pagination, permissions can be added here
+  // Business logic: filtering, sorting, pagination, permission checks
   return await dealRepository.getAllDeals();
 }
 
 async function createDeal(dealData, changedBy) {
   const user = getChangedByOrDefault(changedBy);
 
-  // Business logic: validate dealData, apply defaults, enrich data etc.
-
+  // Business logic: validate required fields, apply default values, enrich or transform dealData
   return await dealRepository.createDeal(dealData, user);
 }
 
 async function updateDeal(id, dealData, changedBy) {
   const user = getChangedByOrDefault(changedBy);
 
-  // Business logic: check if deal exists, validate changes, permission checks
-
+  // Business logic: verify deal exists, validate fields, enforce permissions
   return await dealRepository.updateDeal(id, dealData, user);
 }
 
 async function deleteDeal(id, changedBy) {
   const user = getChangedByOrDefault(changedBy);
 
-  // Business logic: check if deal can be deleted, cascade deletes or archiving
-
+  // Business logic: prevent deletion if restricted, handle cascade deletes or archiving
   return await dealRepository.deleteDeal(id, user);
 }
 
 async function getDealDetails(dealId) {
-  // Business logic: enrich data, check permissions
+  // Business logic: enrich details with related data, enforce read permissions
 
-  const dealDetails = await dealRepository.getDealDetails(dealId);
-  return dealDetails; 
+  const deal = await dealRepository.getDealDetails(dealId);
+
+  // Fetch related products (many-to-many)
+  const products = await dealProductRepository.getProductsByDealId(dealId);
+
+  // Fetch related notes
+  const notes = await noteRepository.getNotesForEntity("Deal", dealId);
+
+  // Fetch related attachments
+  const attachments = await attachmentRepository.getAttachmentsForEntity("Deal", dealId);
+
+  return {
+    ...deal,
+    products,
+    notes,
+    attachments
+  };
 }
 
 module.exports = {
