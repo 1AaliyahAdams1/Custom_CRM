@@ -41,7 +41,7 @@ async function insertTempDealLog(pool, {
 }
 
 // =======================
-// Deal CRUD
+// Deal CRUD Operations
 // =======================
 async function getAllDeals() {
   try {
@@ -134,7 +134,7 @@ async function updateDeal(id, dealData, changedBy = "System") {
     await insertTempDealLog(pool, {
       DealID: id,
       ...fieldsChanged,
-      ChangedBy: changedBy,  
+      ChangedBy: changedBy,
       ActionType: "UPDATE"
     });
 
@@ -181,33 +181,33 @@ async function deleteDeal(id, changedBy = "System") {
   }
 }
 
+// =======================
+// Basic Deal Details View
+// =======================
 async function getDealDetails(dealId) {
   try {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
       .input("DealID", sql.Int, dealId)
       .query(`
-        SELECT
+        SELECT 
           d.DealID,
           d.DealName,
-          acc.AccountName AS Account,
           d.Value,
+          d.CloseDate,
+          acc.AccountID,
+          acc.AccountName,
+          ds.DealStageID,
           ds.StageName,
           ds.Progression,
-          p.ProductName,
-          dp.PriceAtTime,
-          d.CloseDate,
           d.CreatedAt,
           d.UpdatedAt
-        FROM CRM.dbo.Deal d
-        INNER JOIN CRM.dbo.DealStage ds ON d.DealStageID = ds.DealStageID
-        INNER JOIN CRM.dbo.Account acc ON d.AccountID = acc.AccountID
-        LEFT JOIN CRM.dbo.DealProduct dp ON d.DealID = dp.DealID
-        LEFT JOIN CRM.dbo.Product p ON dp.ProductID = p.ProductID
+        FROM Deal d
+        INNER JOIN Account acc ON d.AccountID = acc.AccountID
+        INNER JOIN DealStage ds ON d.DealStageID = ds.DealStageID
         WHERE d.DealID = @DealID
-        ORDER BY p.ProductName;
       `);
-    return result.recordset;
+    return result.recordset[0] || null;
   } catch (error) {
     console.error("Error fetching deal details:", error);
     throw error;
@@ -215,7 +215,7 @@ async function getDealDetails(dealId) {
 }
 
 // =======================
-// Module Exports
+// Exports
 // =======================
 module.exports = {
   getAllDeals,

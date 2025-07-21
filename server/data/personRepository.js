@@ -1,6 +1,9 @@
 const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
+// =======================
+// Creates a Person
+// =======================
 async function createPerson(personData) {
   const pool = await sql.connect(dbConfig);
   const {
@@ -37,6 +40,9 @@ async function createPerson(personData) {
   return result.recordset[0].PersonID;
 }
 
+// =======================
+// Get a Person details by ID
+// =======================
 async function getPersonById(personId) {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
@@ -45,6 +51,9 @@ async function getPersonById(personId) {
   return result.recordset[0];
 }
 
+// =======================
+// Update an existing Person
+// =======================
 async function updatePerson(personId, personData) {
   const pool = await sql.connect(dbConfig);
   const {
@@ -86,6 +95,9 @@ async function updatePerson(personId, personData) {
   return true;
 }
 
+// =======================
+// Exports
+// =======================
 module.exports = {
   createPerson,
   getPersonById,

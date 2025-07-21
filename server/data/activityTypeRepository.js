@@ -1,7 +1,9 @@
 const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
+// ==========================================
 // Get all activity types (ordered alphabetically)
+// ==========================================
 async function getAllActivityTypes() {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request().query(`
@@ -12,7 +14,9 @@ async function getAllActivityTypes() {
   return result.recordset;
 }
 
+// ==========================================
 // Get a single activity type by ID
+// ==========================================
 async function getActivityTypeById(id) {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
@@ -21,7 +25,9 @@ async function getActivityTypeById(id) {
   return result.recordset[0];
 }
 
+// ==========================================
 // Create a new activity type
+// ==========================================
 async function createActivityType(data) {
   const { TypeName, Description = null } = data;
   const pool = await sql.connect(dbConfig);
@@ -38,7 +44,9 @@ async function createActivityType(data) {
   return result.recordset[0];
 }
 
+// ==========================================
 // Update an existing activity type
+// ==========================================
 async function updateActivityType(id, data) {
   const { TypeName, Description = null } = data;
   const pool = await sql.connect(dbConfig);
@@ -56,7 +64,9 @@ async function updateActivityType(id, data) {
     `);
 }
 
+// ==========================================
 // Delete an activity type (hard delete)
+// ==========================================
 async function deleteActivityType(id) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
@@ -64,6 +74,10 @@ async function deleteActivityType(id) {
     .query("DELETE FROM ActivityType WHERE TypeID = @TypeID");
 }
 
+
+// =======================
+// Exports
+// =======================
 module.exports = {
   getAllActivityTypes,
   getActivityTypeById,

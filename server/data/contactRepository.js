@@ -266,7 +266,11 @@ async function deleteContact(id, changedBy = "System") {
     throw error;
   }
 }
-  
+ 
+
+// =======================
+// Exports
+// =======================
 module.exports = {
   getAllContacts,
   getContactDetails,
