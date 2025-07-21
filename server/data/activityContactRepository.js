@@ -1,7 +1,5 @@
-// activityContactRepo.js
-
 const sql = require("mssql");
-const dbConfig = require("../config/dbConfig");
+const { dbConfig } = require("../dbConfig");
 
 // ==========================================
 // Create an Activity-Contact association

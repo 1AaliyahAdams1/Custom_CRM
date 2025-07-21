@@ -1,8 +1,12 @@
 const activityRepository = require("../data/activityRepository");
-const activityContactRepo = require("../data/activityContactRepo");
+const activityContactRepo = require("../data/activityContactRepository");
 const notesRepo = require("../data/noteRepository");
 const attachmentsRepo = require("../data/attachmentRepository");
 
+async function getAllActivities() {
+  // Business logic like filtering, permissions, caching can be added here if needed
+  return await activityRepository.getAllActivities();
+}
 
 async function getActivityDetails(id) {
   try {

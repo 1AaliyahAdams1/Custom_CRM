@@ -1,4 +1,4 @@
-const stateService = require("../services/stateService");
+const stateService = require("../services/stateProvinceService");
 
 // Get all states/provinces
 async function getAllStates(req, res) {
