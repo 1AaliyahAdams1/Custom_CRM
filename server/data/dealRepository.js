@@ -134,7 +134,7 @@ async function updateDeal(id, dealData, changedBy = "System") {
     await insertTempDealLog(pool, {
       DealID: id,
       ...fieldsChanged,
-      ChangedBy: changedBy,
+      ChangedBy: changedBy,  
       ActionType: "UPDATE"
     });
 
