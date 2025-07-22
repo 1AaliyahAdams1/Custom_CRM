@@ -35,6 +35,8 @@ const industryRoutes = require("./routes/industryRoutes");
 const jobTitleRoutes = require("./routes/jobtitleRoutes");
 const priorityLevelRoutes = require("./routes/priorityLevelRoutes");
 const stateProvinceRoutes = require("./routes/stateProvinceRoutes");
+const productRoutes = require("./routes/productRoutes");
+
 
 // Test route
 app.get("/", (req, res) => {
@@ -53,6 +55,7 @@ app.use("/industries", industryRoutes);
 app.use("/jobtitles", jobTitleRoutes);
 app.use("/prioritylevels", priorityLevelRoutes);
 app.use("/states", stateProvinceRoutes);
+app.use("/products", productRoutes);
 
 
 const PORT = process.env.PORT || 5000;
