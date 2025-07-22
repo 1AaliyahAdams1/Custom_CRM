@@ -1,10 +1,34 @@
 const activityRepository = require("../data/activityRepository");
+const activityContactRepo = require("../data/activityContactRepository");
+const notesRepo = require("../data/noteRepository");
+const attachmentsRepo = require("../data/attachmentRepository");
 
 async function getAllActivities() {
+  // Business logic like filtering, permissions, caching can be added here if needed
+  return await activityRepository.getAllActivities();
+}
+
+async function getActivityDetails(id) {
   try {
-    // Business logic for filtering, pagination,
-    // permissions or transformations can be added here
-    return await activityRepository.getAllActivities();
+    // Business logic for validating input data,
+    // applying rules or modifying activityData before creation
+    const activity = await activityRepository.getActivityDetails(id);
+    if (!activity) {
+      throw new Error("Activity not found");
+    }
+
+    const [notes, attachments, activityContacts] = await Promise.all([
+      notesRepo.getNotes(id, "Activity"),
+      attachmentsRepo.getAttachments(id, "Activity"),
+      activityContactRepo.getContactsByActivityId(id),
+    ]);
+
+    return {
+      ...activity,
+      notes,
+      attachments,
+      activityContacts,
+    };
   } catch (error) {
     throw error;
   }

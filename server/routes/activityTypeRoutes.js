@@ -1,8 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const controller = require("../controllers/activityTypeController");
+const activityTypeController = require("../controllers/activityTypeController");
 
-// Define GET route to return all activity types for dropdown
-router.get("/", controller.getAll);
+router.get("/", activityTypeController.getAllActivityTypes);
+router.get("/:id", activityTypeController.getActivityTypeById);
+router.post("/", activityTypeController.createActivityType);
+router.put("/:id", activityTypeController.updateActivityType);
+router.delete("/:id", activityTypeController.deleteActivityType);
 
 module.exports = router;

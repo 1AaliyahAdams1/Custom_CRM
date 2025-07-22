@@ -5,9 +5,10 @@ function getChangedBy(req) {
   return req.user?.username || "UnknownUser";
 }
 
-// Get all accounts (View)
+// Get all accounts
 async function getAccounts(req, res) {
   try {
+    // Validation can go here
 
     const accounts = await accountService.getAllAccounts();
     res.json(accounts);
@@ -19,8 +20,7 @@ async function getAccounts(req, res) {
 // Create a new account
 async function createAccount(req, res) {
   try {
-    // Validation goes here
-
+    // Validation can go here
 
     const changedBy = getChangedBy(req);
     const newAccount = await accountService.createAccount(req.body, changedBy);
@@ -34,10 +34,8 @@ async function createAccount(req, res) {
 async function updateAccount(req, res) {
   const id = parseInt(req.params.id, 10);
 
-  // Validation goes here for ID
-
   try {
-    // Validation for account data should be done here before updating
+    // Validation can go here
 
     const changedBy = getChangedBy(req);
     const updatedAccount = await accountService.updateAccount(id, req.body, changedBy);
@@ -51,9 +49,9 @@ async function updateAccount(req, res) {
 async function deleteAccount(req, res) {
   const id = parseInt(req.params.id, 10);
 
-  // Validation goes here for ID
-
   try {
+    // Validation can go here
+
     const changedBy = getChangedBy(req);
     const deleted = await accountService.deleteAccount(id, changedBy);
     res.json(deleted);
@@ -66,13 +64,10 @@ async function deleteAccount(req, res) {
 async function getAccountDetails(req, res) {
   const id = parseInt(req.params.id, 10);
 
-  // Validation goes here for ID
-
   try {
+    // Validation can go here
+
     const accountDetails = await accountService.getAccountDetails(id);
-    if (!accountDetails.length) {
-      return res.status(404).json({ error: "Account not found" });
-    }
     res.json(accountDetails);
   } catch (err) {
     res.status(500).json({ error: err.message });

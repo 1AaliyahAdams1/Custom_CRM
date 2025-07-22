@@ -1,11 +1,13 @@
 const { poolPromise } = require("../dbConfig");
 
+// =======================
 //Get All Deal Stages Query
+// =======================
 async function getAllDealStages() {
   try {
     const pool = await poolPromise;
     const result = await pool.request().query(`
-      SELECT DealStageID, StageName, Progression
+      SELECT DealStageID, StageName, Progression, Display_order
       FROM DealStage
       ORDER BY Progression
     `);
@@ -16,6 +18,9 @@ async function getAllDealStages() {
   }
 }
 
+// =======================
+// Exports
+// =======================
 module.exports = {
   getAllDealStages,
 };
