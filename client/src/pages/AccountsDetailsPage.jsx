@@ -5,6 +5,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, Typography, Grid, CircularProgress, Button, Box } from "@mui/material";
+
+
+
+// fetches account details
 import { getAccountDetails } from "../services/accountService";
 
 // Component to display detailed information about a single Account
@@ -47,12 +51,14 @@ function AccountDetailsPage() {
   }, [id]);
 
   // While loading, show a spinner
-  if (loading) return <CircularProgress />;
+   if (loading) return <CircularProgress />;
+  
   // Show error message if fetch failed
-  if (error) return <Typography color="error">{error}</Typography>;
-  // Show fallback if no account found (should rarely happen due to error above)
-  if (!account) return <Typography>No account found.</Typography>;
+   if (error) return <Typography color="error">{error}</Typography>;
 
+  // Show fallback if no account found (should rarely happen due to error above)
+   if (!account) return <Typography>No account found.</Typography>;
+  
   return (
     <Box p={4}>
       {/* Button to navigate back to the accounts list */}
@@ -87,6 +93,8 @@ function AccountDetailsPage() {
       </Card>
     </Box>
   );
+  
+             
 }
 
 export default AccountDetailsPage;
