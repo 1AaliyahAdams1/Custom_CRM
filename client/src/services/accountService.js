@@ -1,62 +1,48 @@
-// SERVICE : Account Service
-// Service module for handling all API calls related to accounts
-
-//IMPORTS
 import axios from "axios";
 
-// Set base URLs from environment
-const baseApiUrl = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
+const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
+const RESOURCE = `${BASE_URL}/accounts`;
 
-// Base endpoint for account-related API calls
-const DB_URL = `${baseApiUrl}/account`;
+// ===========================
+// Get all accounts
+// ===========================
+export async function getAllAccounts() {
+  const response = await axios.get(RESOURCE);
+  return response.data;
+}
 
-// Fetch all accounts from the backend
-export const getAccounts = async () => {
-  try {
-    const response = await axios.get(DB_URL);  // GET request to /account
-    return response.data;                      // Return array of accounts
-  } catch (error) {
-    // Throw error with backend message if available, else default message
-    throw new Error(error.response?.data?.error || "Failed to fetch accounts");
-  }
-};
+// ===========================
+// Get details of a specific account (with notes & attachments)
+// ===========================
+export async function getAccountDetails(accountId) {
+  const response = await axios.get(`${RESOURCE}/${accountId}`);
+  return response.data;
+}
 
-// Fetch details of a single account by ID
-export const getAccountDetails = async (id) => {
-  try {
-    const response = await axios.get(`${DB_URL}/${id}`);  // GET /account/:id
-    return response.data;                                 // Return account object
-  } catch (error) {
-    throw new Error(error.response?.data?.error || "Failed to fetch account details");
-  }
-};
+// ===========================
+// Create a new account
+// ===========================
+export async function createAccount(accountData, changedBy = "System") {
+  const payload = { ...accountData, changedBy };
+  const response = await axios.post(RESOURCE, payload);
+  return response.data;
+}
 
-// Create a new account by sending POST with account data
-export const createAccount = async (account) => {
-  try {
-    const response = await axios.post(DB_URL, account);  // POST /account with payload
-    return response.data;                                // Return created account
-  } catch (error) {
-    throw new Error(error.response?.data?.error || "Failed to create account");
-  }
-};
+// ===========================
+// Update an existing account
+// ===========================
+export async function updateAccount(accountId, accountData, changedBy = "System") {
+  const payload = { ...accountData, changedBy };
+  const response = await axios.put(`${RESOURCE}/${accountId}`, payload);
+  return response.data;
+}
 
-// Update an existing account by ID with new data
-export const updateAccount = async (id, account) => {
-  try {
-    const response = await axios.put(`${DB_URL}/${id}`, account);  // PUT /account/:id
-    return response.data;                                         // Return updated account
-  } catch (error) {
-    throw new Error(error.response?.data?.error || "Failed to update account");
-  }
-};
-
-// Delete an account by ID
-export const deleteAccount = async (id) => {
-  try {
-    const response = await axios.delete(`${DB_URL}/${id}`);  // DELETE /account/:id
-    return response.data;                                    // Return any confirmation
-  } catch (error) {
-    throw new Error(error.response?.data?.error || "Failed to delete account");
-  }
-};
+// ===========================
+// Delete an account
+// ===========================
+export async function deleteAccount(accountId, changedBy = "System") {
+  const response = await axios.delete(`${RESOURCE}/${accountId}`, {
+    data: { changedBy },
+  });
+  return response.data;
+}

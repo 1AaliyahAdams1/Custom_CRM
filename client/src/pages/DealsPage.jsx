@@ -13,10 +13,10 @@ import DealsTable from "../components/DealsTable";          // Table component t
 import DealFormDialog from "../components/DealsFormDialog";  // Dialog component for add/edit form
 
 import {
-  getDeals,       // Fetch all deals API service
-  createDeal,     // Create new deal API service
-  updateDeal,     // Update existing deal API service
-  deleteDeal,     // Delete deal API service
+  getAllDeals,
+  createDeal,
+  updateDeal,
+  deleteDeal
 } from "../services/dealService";
 
 const DealsPage = () => {
@@ -38,7 +38,7 @@ const DealsPage = () => {
     setLoading(true);    // Show loading spinner
     setError(null);      // Clear previous errors
     try {
-      const data = await getDeals(); // Fetch all deals
+      const data = await getAllDeals(); // Fetch all deals
       setDeals(data);     // Save deals to state
     } catch (err) {
       setError("Failed to load deals. Please try again."); // Show error if fetch fails

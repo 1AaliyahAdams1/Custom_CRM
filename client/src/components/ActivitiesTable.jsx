@@ -14,11 +14,11 @@ const ActivitiesTable = ({ activities, onEdit, onDelete, loading }) => {
 
   // Define columns for the DataGrid
   const columns = [
-    { field: "ActivityID", headerName: "Activity ID", width: 100 },
-    { field: "AccountID", headerName: "Account ID", width: 150 },
-    { field: "TypeID", headerName: "Type ID", width: 150 },
+    { field: "ActivityID", headerName: "Activity ID", width: 100 }, 
+    { field: "ActivityType", headerName: "Activity Type", width: 150 },
+    { field: "AccountName", headerName: "Account Name", width: 150 },
     { field: "Due_date", headerName: "Due Date", width: 160 },
-    { field: "Priority", headerName: "Priority", width: 130 },
+    { field: "PriorityLevelID", headerName: "Priority", width: 130 },
     { field: "CreatedAt", headerName: "Created At", width: 180 },
     { field: "UpdatedAt", headerName: "Updated At", width: 180 },
     {
