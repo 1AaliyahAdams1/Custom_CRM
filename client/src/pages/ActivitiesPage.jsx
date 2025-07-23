@@ -3,7 +3,11 @@
 
 //IMPORTS
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
+
+// Syncfusion component imports
+import { ButtonComponent } from "@syncfusion/ej2-react-buttons";
+import { MessageComponent } from "@syncfusion/ej2-react-notifications";
+
 
 import ActivitiesTable from "../components/ActivitiesTable";
 import ActivityFormDialog from "../components/ActivitiesFormDialog";
@@ -114,59 +118,99 @@ const ActivitiesPage = () => {
     setSelectedActivity(null);
   };
 
-  return (
-    <Box p={4}>
-      {/* Page Title */}
-      <Typography variant="h4" gutterBottom>
-        Activities
-      </Typography>
+ 
 
-      {/* Show error alert if any */}
+return (
+    <div style={{ padding: '24px' }}>
+      {/* Page Title */}
+      <h1 style={{ 
+        fontSize: '2.125rem', 
+        fontWeight: 400, 
+        lineHeight: 1.235, 
+        marginBottom: '16px',
+        margin: '0 0 16px 0'
+      }}>
+        Activities
+      </h1>
+
+      {/* Display error alert if any error */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <div style={{ marginBottom: '16px' }}>
+          <MessageComponent 
+            severity="Error" 
+            showCloseIcon={true}
+            closed={() => setError(null)}
+          >
+            {error}
+          </MessageComponent>
+        </div>
       )}
 
-      {/* Show success alert if any */}
+      {/* Display success alert on successful operation */}
       {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
-          {successMessage}
-        </Alert>
+        <div style={{ marginBottom: '16px' }}>
+          <MessageComponent 
+            severity="Success" 
+            showCloseIcon={true}
+            closed={() => setSuccessMessage("")}
+          >
+            {successMessage}
+          </MessageComponent>
+        </div>
       )}
 
       {/* Button to add a new activity */}
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleOpenCreate}
-        sx={{ mb: 2 }}
-        disabled={loading}
-      >
-        Add Activity
-      </Button>
+      <div style={{ marginBottom: '16px' }}>
+        <ButtonComponent 
+          isPrimary={true}
+          onClick={handleOpenCreate}
+          disabled={loading}  // Disable button while loading
+        >
+          Add Activity
+        </ButtonComponent>
+      </div>
 
-      {/* Show loading spinner or the activities table */}
+      {/* Show loading spinner or accounts table depending on loading state */}
       {loading ? (
-        <Box display="flex" justifyContent="center" mt={4}>
-          <CircularProgress />
-        </Box>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          marginTop: '32px' 
+        }}>
+          {/* Simple CSS loading spinner since CircularProgress needs a different approach */}
+          <div className="loading-spinner" style={{
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3498db',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            animation: 'spin 2s linear infinite'
+          }}></div>
+          <style>
+            {`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}
+          </style>
+        </div>
       ) : (
         <ActivitiesTable
           activities={activities}
-          onEdit={handleOpenEdit}
-          onDelete={handleDelete}
+          onEdit={handleOpenEdit}   // Edit button callback
+          onDelete={handleDelete}    // Delete button callback
         />
       )}
 
-      {/* Dialog for creating/editing activity */}
+      {/* Dialog for adding/editing an activity */}
       <ActivityFormDialog
         open={dialogOpen}
         onClose={handleCloseDialog}
         activity={selectedActivity}
         onSubmit={handleSave}
       />
-    </Box>
+    </div>
   );
 };
 
