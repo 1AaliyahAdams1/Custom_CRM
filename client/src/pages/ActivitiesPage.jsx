@@ -119,60 +119,7 @@ const ActivitiesPage = () => {
   };
 
  
-// }; return (
-//     <Box p={4}>
-//       {/* Page Title */}
-//       <Typography variant="h4" gutterBottom>
-//         Activities
-//       </Typography>
 
-//       {/* Show error alert if any */}
-//       {error && (
-//         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-//           {error}
-//         </Alert>
-//       )}
-
-//       {/* Show success alert if any */}
-//       {successMessage && (
-//         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
-//           {successMessage}
-//         </Alert>
-//       )}
-
-//       {/* Button to add a new activity */}
-//       <Button
-//         variant="contained"
-//         color="primary"
-//         onClick={handleOpenCreate}
-//         sx={{ mb: 2 }}
-//         disabled={loading}
-//       >
-//         Add Activity
-//       </Button>
-
-//       {/* Show loading spinner or the activities table */}
-//       {loading ? (
-//         <Box display="flex" justifyContent="center" mt={4}>
-//           <CircularProgress />
-//         </Box>
-//       ) : (
-//         <ActivitiesTable
-//           activities={activities}
-//           onEdit={handleOpenEdit}
-//           onDelete={handleDelete}
-//         />
-//       )}
-
-//       {/* Dialog for creating/editing activity */}
-//       <ActivityFormDialog
-//         open={dialogOpen}
-//         onClose={handleCloseDialog}
-//         activity={selectedActivity}
-//         onSubmit={handleSave}
-//       />
-//     </Box>
-//   );
 return (
     <div style={{ padding: '24px' }}>
       {/* Page Title */}
