@@ -131,6 +131,7 @@ DO THIS IN CLIENT FOLDER ALSO
 
 [For TextBox, NumericTextBox, etc.]
 
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-notifications"
 
 COMMAND to run program:
 
