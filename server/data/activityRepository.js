@@ -19,7 +19,6 @@ async function getAllActivities() {
       FROM Activity a
       LEFT JOIN ActivityType at ON a.TypeID = at.TypeID
       LEFT JOIN Account acc ON a.AccountID = acc.AccountID
-      WHERE a.Active = 1
     `);
 
     return result.recordset;

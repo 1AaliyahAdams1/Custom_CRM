@@ -1,78 +1,53 @@
-// SERVICE : Contact Service
-// Service module for handling all API calls related to contacts
-
-//IMPORTS
 import axios from "axios";
 
-// Set base URLs from environment
-const baseApiUrl = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
+const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
+const CONTACTS_URL = `${BASE_URL}/contacts`;
+const PERSONS_URL = `${BASE_URL}/persons`;
 
-// Full endpoint for contact-related API requests
-const DB_URL = `${baseApiUrl}/contact`;
+// ===========================
+// Get all contacts
+// ===========================
+export async function getAllContacts() {
+  const response = await axios.get(CONTACTS_URL);
+  return response.data;
+}
 
-// Fetch all contacts from the server
-export const getContacts = async () => {
-  try {
-    const response = await axios.get(DB_URL);
-    // Return the list of contacts received from API
-    return response.data;
-  } catch (error) {
-    // Throw error with backend message or fallback message
-    throw new Error(
-      error.response?.data?.error || error.message || "Failed to fetch contacts"
-    );
-  }
-};
+// ===========================
+// Get all persons (used for selection/dropdowns)
+// ===========================
+export async function getAllPersons() {
+  const response = await axios.get(PERSONS_URL);
+  return response.data;
+}
 
-// Create a new contact by sending contact data to the backend
-export const createContact = async (contact) => {
-  try {
-    const response = await axios.post(DB_URL, contact);
-    // Return newly created contact data from API
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.error || error.message || "Failed to create contact"
-    );
-  }
-};
+// ===========================
+// Get detailed contact (with person, notes, attachments)
+// ===========================
+export async function getContactDetails(contactId) {
+  const response = await axios.get(`${CONTACTS_URL}/${contactId}`);
+  return response.data;
+}
 
-// Update an existing contact identified by ID with new data
-export const updateContact = async (id, contact) => {
-  try {
-    const response = await axios.put(`${DB_URL}/${id}`, contact);
-    // Return updated contact data from API
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.error || error.message || "Failed to update contact"
-    );
-  }
-};
+// ===========================
+// Create a contact (with optional new person)
+// ===========================
+export async function createContact(contactData) {
+  const response = await axios.post(CONTACTS_URL, contactData);
+  return response.data;
+}
 
-// Delete a contact from the backend by its ID
-export const deleteContact = async (id) => {
-  try {
-    const response = await axios.delete(`${DB_URL}/${id}`);
-    // Return response confirming deletion
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.error || error.message || "Failed to delete contact"
-    );
-  }
-};
+// ===========================
+// Update a contact
+// ===========================
+export async function updateContact(contactId, contactData) {
+  const response = await axios.put(`${CONTACTS_URL}/${contactId}`, contactData);
+  return response.data;
+}
 
-// Fetch details of a single contact by its ID
-export const getContactDetails = async (id) => {
-  if (!id) throw new Error("Contact ID is required");
-  try {
-    const response = await axios.get(`${DB_URL}/${id}`);
-    // Return detailed contact data
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.error || error.message || "Failed to fetch contact details"
-    );
-  }
-};
+// ===========================
+// Delete a contact
+// ===========================
+export async function deleteContact(contactId) {
+  const response = await axios.delete(`${CONTACTS_URL}/${contactId}`);
+  return response.data;
+}
