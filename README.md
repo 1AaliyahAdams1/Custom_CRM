@@ -79,6 +79,33 @@ COMMANDS for Client folder [client]
 
 > powershell -ExecutionPolicy Bypass -command "npm install @emotion/react @emotion/styled"
 
+<<<<<<< HEAD
+=======
+= Here are the COMMANDS for synfusion components, run this in the terminal =
+DO THIS IN CLIENT FOLDER ALSO
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-grids"
+
+[For DataGrid]
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-dropdowns"
+
+[For DropDownList, ComboBox]
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-schedule"
+
+[For Scheduler]
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-buttons"
+
+[For Buttons]
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-inputs"
+
+[For TextBox, NumericTextBox, etc.]
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-notifications"
+>>>>>>> e5231f2f88150dcd05d34da46f4b5c0c2330b26f
 
 COMMAND to run program:
 MAKE SURE YOU ARE ON THE ROOT FOLDER [Custom_CRM] WHEN YOU RUN THIS COMMAND
