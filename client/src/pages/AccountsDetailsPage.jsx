@@ -12,6 +12,7 @@ import {
   CircularProgress,
   Button,
   Box,
+  Link as MuiLink ,
 } from "@mui/material";
 //syncfusion component imports
 import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
@@ -61,13 +62,13 @@ function AccountDetailsPage() {
   }, [id]);
 
   // While loading, show a spinner
-   if (loading) return <CircularProgress />;
+  if (loading) return <CircularProgress />;
 
   // Show error message if fetch failed
-   if (error) return <Typography color="error">{error}</Typography>;
+  if (error) return <Typography color="error">{error}</Typography>;
 
   // Show fallback if no account found (should rarely happen due to error above)
-   if (!account) return <Typography>No account found.</Typography>;
+  if (!account) return <Typography>No account found.</Typography>;
 
   return (
     <Box p={4}>
@@ -87,7 +88,7 @@ function AccountDetailsPage() {
             {/* Left column with some basic info */}
             <Grid item xs={6}>
               <Typography><strong>ID:</strong> {account.AccountID}</Typography>
-              <Typography><strong>Industry:</strong> {account.Industry || "-"}</Typography>
+              <Typography><strong>Industry:</strong> {account.IndustryName || "-"}</Typography>
               <Typography><strong>City:</strong> {account.CityName || "-"}</Typography>
               <Typography><strong>Country:</strong> {account.CountryName || "-"}</Typography>
             </Grid>
@@ -95,10 +96,82 @@ function AccountDetailsPage() {
             <Grid item xs={6}>
               <Typography><strong>Phone:</strong> {account.PrimaryPhone || "-"}</Typography>
               <Typography><strong>Website:</strong> {account.Website || "-"}</Typography>
-              <Typography><strong>Address:</strong> {account.Address || "-"}</Typography>
-              <Typography><strong>Contact:</strong> {account.Contact || "-"}</Typography>
+              <Box mt={1}>
+                <Typography variant="body2" lineHeight={1.5}>
+                  <strong>Address:</strong>{" "}
+                  {[
+                    account.street_address1,
+                    account.street_address2,
+                    account.street_address3,
+                    account.postal_code,
+                  ]
+                    .filter(Boolean)
+                    .join(", ") || "-"}
+                </Typography>
+              </Box>
             </Grid>
           </Grid>
+
+          {/* ADDED MISSING FIELDS */}
+
+          {/* Contacts */}
+          <Box mt={3}>
+            <Typography variant="h6" gutterBottom>Contacts</Typography>
+            {account.contacts?.length > 0 ? (
+              account.contacts.map((contact) => (
+                <Box key={contact.ContactID} mb={2}>
+                  <Typography variant="body1" fontWeight="bold">
+                    {contact.Title} {contact.first_name} {contact.middle_name} {contact.surname}
+                  </Typography>
+                  {contact.JobTitleName && (
+                    <Typography variant="body2">{contact.JobTitleName}</Typography>
+                  )}
+                </Box>
+              ))
+            ) : (
+              <Typography variant="body2">No contacts found for this account.</Typography>
+            )}
+          </Box>
+
+          {/* Attachments */}
+          <Box mt={3}>
+            <Typography variant="h6" gutterBottom>Attachments</Typography>
+            {account.attachments?.length > 0 ? (
+              account.attachments.map((att) => (
+                <Box key={att.AttachmentID} mb={2}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>File:</strong>{" "}
+                    <MuiLink href={att.FilePath} target="_blank" rel="noopener noreferrer">
+                      {att.FileName}
+                    </MuiLink>
+                    <br />
+                    <small>Uploaded: {new Date(att.UploadedAt).toLocaleString()}</small>
+                  </Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography variant="body2">No attachments found for this account.</Typography>
+            )}
+          </Box>
+
+          {/* Notes */}
+          <Box mt={3}>
+            <Typography variant="h6" gutterBottom>Notes</Typography>
+            {account.notes?.length > 0 ? (
+              account.notes.map((note) => (
+                <Box key={note.NoteID} mb={2}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Note:</strong> {note.Content}
+                    <br />
+                    <small>Created: {new Date(note.CreatedAt).toLocaleString()}</small>
+                  </Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography variant="body2">No notes found for this account.</Typography>
+            )}
+          </Box>
+
         </CardContent>
       </Card>
     </Box>
