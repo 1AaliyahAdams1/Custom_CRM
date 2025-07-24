@@ -43,10 +43,10 @@ async function getDealDetails(dealId) {
   const products = await dealProductRepository.getProductsByDealId(dealId);
 
   // Fetch related notes
-  const notes = await noteRepository.getNotesForEntity("Deal", dealId);
+  const notes = await noteRepository.getNotes(dealId, "Deal");
 
   // Fetch related attachments
-  const attachments = await attachmentRepository.getAttachmentsForEntity("Deal", dealId);
+  const attachments = await attachmentRepository.getAttachments(dealId, "Deal");
 
   return {
     ...deal,

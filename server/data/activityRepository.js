@@ -40,15 +40,24 @@ const getActivityDetails = async (id) => {
       .query(`
         SELECT 
           a.ActivityID,
-          at.TypeName AS ActivityType,
+          at.TypeName,
           acc.AccountName,
+          at.Description,
           a.Due_date,
           a.PriorityLevelID,
+          ac.ContactID,
+          p.Title,
+          p.first_name,
+          p.middle_name,
+          p.surname,
           a.CreatedAt,
           a.UpdatedAt
         FROM Activity a
         LEFT JOIN ActivityType at ON a.TypeID = at.TypeID
         LEFT JOIN Account acc ON a.AccountID = acc.AccountID
+        LEFT JOIN ActivityContact ac ON a.ActivityID = ac.ActivityID
+        LEFT JOIN Contact c ON ac.ContactID = c.ContactID
+        LEFT JOIN Person p ON c.PersonID = p.PersonID
         WHERE a.ActivityID = @ActivityID;
       `);
 

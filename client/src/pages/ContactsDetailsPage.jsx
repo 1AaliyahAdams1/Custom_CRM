@@ -88,8 +88,8 @@ function ContactsDetailsPage() {
   return (
     <div style={{ padding: '32px' }}>
       {/* Back button navigates back to previous page */}
-      <ButtonComponent 
-        cssClass="e-outline" 
+      <ButtonComponent
+        cssClass="e-outline"
         content="← Back to Contacts"
         onClick={() => navigate(-1)}
         style={{ marginBottom: '24px' }}
@@ -99,9 +99,9 @@ function ContactsDetailsPage() {
       <div className="e-card" style={{ padding: '24px', backgroundColor: '#fff', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}>
         {/* Contact header with ID */}
         <div className="e-card-header">
-          <div className="e-card-header-title" style={{ 
-            fontSize: '1.5rem', 
-            fontWeight: '500', 
+          <div className="e-card-header-title" style={{
+            fontSize: '1.5rem',
+            fontWeight: '500',
             marginBottom: '24px',
             color: '#333'
           }}>
@@ -112,31 +112,37 @@ function ContactsDetailsPage() {
         {/* Card content */}
         <div className="e-card-content">
           {/* Grid layout with two columns */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(2, 1fr)', 
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
             gap: '24px'
           }}>
             {/* Left column with main contact info */}
             <div>
               <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Account:</strong> {contact.Account || "-"}
+                <strong>Account:</strong> {contact.AccountName || "-"}
+              </div>
+
+              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
+                <strong>Person Name:</strong>{" "}
+                {contact.persons
+                  ? `${contact.persons.Title || ""} ${contact.persons.first_name || ""} ${contact.persons.middle_name || ""} ${contact.persons.surname || ""}`.trim()
+                  : "-"}
+                <br />
+              </div>
+
+              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
+                <strong>Email:</strong> {contact.WorkEmail || "-"}
               </div>
               <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Person Name:</strong> {contact.ContactName || "-"}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Email:</strong> {contact.PrimaryEmail || "-"}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Phone:</strong> {contact.PrimaryPhone || "-"}
+                <strong>Phone:</strong> {contact.WorkPhone || "-"}
               </div>
             </div>
 
             {/* Right column with additional info */}
             <div>
               <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Position:</strong> {contact.Position || "-"}
+                <strong>Position:</strong> {contact.JobTitleName || "-"}
               </div>
               <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
                 <strong>City:</strong> {contact.CityName || "-"}
@@ -151,6 +157,41 @@ function ContactsDetailsPage() {
                 <strong>Updated At:</strong> {formatDate(contact.UpdatedAt)}
               </div>
             </div>
+
+            {/* FOR ATTACHMENTS */}
+            <div style={{ marginTop: "20px" }}>
+              <h3>Attachments</h3>
+              {contact.attachments?.length > 0 ? (
+                contact.attachments.map((att) => (
+                  <div key={att.AttachmentID} style={{ marginBottom: "12px", fontSize: "14px", lineHeight: "1.5" }}>
+                    <strong>File:</strong>{" "}
+                    <a href={att.FilePath} target="_blank" rel="noopener noreferrer">
+                      {att.FileName}
+                    </a><br />
+                    <small>Uploaded: {new Date(att.UploadedAt).toLocaleString()}</small>
+                  </div>
+                ))
+              ) : (
+                <div style={{ fontSize: "14px" }}>No attachments found for this contact.</div>
+              )}
+            </div>
+
+            {/* FOR NOTES*/}
+            <div style={{ marginTop: "20px" }}>
+              <h3>Notes</h3>
+              {contact.notes?.length > 0 ? (
+                contact.notes.map((note) => (
+                  <div key={note.NoteID} style={{ marginBottom: "12px", fontSize: "14px", lineHeight: "1.5" }}>
+                    <strong>Note:</strong> {note.Content}<br />
+                    <small>Created: {new Date(note.CreatedAt).toLocaleString()}</small>
+                  </div>
+                ))
+              ) : (
+                <div style={{ fontSize: "14px" }}>No notes found for this contact.</div>
+              )}
+            </div>
+
+
           </div>
         </div>
       </div>
