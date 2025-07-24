@@ -84,6 +84,7 @@ async function getContactDetails(req, res) {
   }
 }
 
+
 module.exports = {
   getAllContacts,
   getAllPersons,

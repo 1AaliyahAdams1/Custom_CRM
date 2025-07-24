@@ -107,7 +107,7 @@ function DealsDetailsPage() {
           }}>
             <div>
               <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Account:</strong> {deal.Account || "-"}
+                <strong>Account:</strong> {deal.AccountName || "-"}
               </div>
               <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
                 <strong>Deal Stage:</strong> {deal.StageName || "-"}
@@ -175,6 +175,42 @@ function DealsDetailsPage() {
                 No products found for this deal.
               </div>
             )}
+
+
+            {/* FOR ATTACHMENTS */}
+            <div style={{ marginTop: "20px" }}>
+              <h3>Attachments</h3>
+              {deal.attachments?.length > 0 ? (
+                deal.attachments.map((att) => (
+                  <div key={att.AttachmentID} style={{ marginBottom: "12px", fontSize: "14px", lineHeight: "1.5" }}>
+                    <strong>File:</strong>{" "}
+                    <a href={att.FilePath} target="_blank" rel="noopener noreferrer">
+                      {att.FileName}
+                    </a><br />
+                    <small>Uploaded: {new Date(att.UploadedAt).toLocaleString()}</small>
+                  </div>
+                ))
+              ) : (
+                <div style={{ fontSize: "14px" }}>No attachments found for this deal.</div>
+              )}
+            </div>
+
+            {/* FOR NOTES*/}
+            <div style={{ marginTop: "20px" }}>
+              <h3>Notes</h3>
+              {deal.notes?.length > 0 ? (
+                deal.notes.map((note) => (
+                  <div key={note.NoteID} style={{ marginBottom: "12px", fontSize: "14px", lineHeight: "1.5" }}>
+                    <strong>Note:</strong> {note.Content}<br />
+                    <small>Created: {new Date(note.CreatedAt).toLocaleString()}</small>
+                  </div>
+                ))
+              ) : (
+                <div style={{ fontSize: "14px" }}>No notes found for this deal.</div>
+              )}
+            </div>
+
+
           </div>
         </div>
       </div>

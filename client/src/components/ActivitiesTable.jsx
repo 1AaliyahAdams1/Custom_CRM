@@ -21,6 +21,8 @@ const ActivitiesTable = ({ activities, onEdit, onDelete, loading }) => {
     { field: "PriorityLevelID", headerName: "Priority", width: 130 },
     { field: "CreatedAt", headerName: "Created At", width: 180 },
     { field: "UpdatedAt", headerName: "Updated At", width: 180 },
+    { field: "note", headerName: "Notes", width: 180 }, 
+    { field: "attachment", headerName: "Attachments", width: 180 },
     {
       // Actions column: renders edit, delete, and info buttons
       field: "actions",

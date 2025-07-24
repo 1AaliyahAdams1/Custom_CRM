@@ -1,6 +1,7 @@
 const accountRepository = require("../data/accountRepository");
 const notesRepo = require("../data/noteRepository");
 const attachmentsRepo = require("../data/attachmentRepository");
+const contactsRepo = require("../data/contactRepository");
 
 // Helper to get changedBy, default to "System" if not passed
 function getChangedByOrDefault(changedBy) {
@@ -19,15 +20,17 @@ async function getAccountDetails(id) {
   // or enriching details could be added here
   const account = await accountRepository.getAccountDetails(id);
 
-  const [notes, attachments] = await Promise.all([
+  const [notes, attachments, contacts] = await Promise.all([
     notesRepo.getNotes(id, "Account"),
     attachmentsRepo.getAttachments(id, "Account"),
+    contactsRepo.getContactsByAccountId(id)
   ]);
 
   return {
     ...account,
     notes,
     attachments,
+    contacts,
   };
 }
 

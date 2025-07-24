@@ -86,12 +86,24 @@ async function getContactDetails(contactId) {
           c.JobTitleID,
           c.WorkEmail,
           c.WorkPhone,
+          p.CityID,
+          ci.CityName,
+          ci.StateProvinceID,
+          sp.StateProvince_Name,
+          sp.CountryID,
+          co.CountryName,
+          jt.JobTitleName,
           c.Active,
           c.CreatedAt,
           c.UpdatedAt,
           a.AccountName
         FROM Contact c
         INNER JOIN Account a ON c.AccountID = a.AccountID
+        INNER JOIN Person p ON c.PersonID = p.PersonID
+        LEFT JOIN City ci ON p.CityID = ci.CityID
+        LEFT JOIN StateProvince sp ON p.StateProvinceID = sp.StateProvinceID
+        LEFT JOIN Country co ON sp.CountryID = co.CountryID
+        LEFT JOIN JobTitle jt ON c.JobTitleID = jt.JobTitleID 
         WHERE c.ContactID = @ContactID
       `);
     return result.recordset[0];  // single contact record
@@ -266,7 +278,35 @@ async function deleteContact(id, changedBy = "System") {
     throw error;
   }
 }
- 
+
+
+//======================================
+// Gets Contact information using AccountId
+//======================================
+async function getContactsByAccountId(accountId) {
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .input("AccountID", sql.Int, accountId)
+    .query(`
+      SELECT 
+        c.ContactID,
+        p.Title,
+        p.first_name,
+        p.middle_name,
+        p.surname,
+        c.WorkEmail,
+        c.WorkPhone,
+        jt.JobTitleName,       
+        c.AccountID
+        FROM Contact c
+        JOIN Person p ON c.PersonID = p.PersonID
+        LEFT JOIN JobTitle jt ON c.JobTitleID = jt.JobTitleID  
+        WHERE c.AccountID = @AccountID;
+    `);
+
+  return result.recordset;
+}
+
 
 // =======================
 // Exports
@@ -277,4 +317,5 @@ module.exports = {
   createContact,
   updateContact,
   deleteContact,
+  getContactsByAccountId,
 };

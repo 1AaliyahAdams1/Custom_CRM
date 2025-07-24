@@ -212,9 +212,7 @@ async function createAccount(accountData, changedBy) {
   return { AccountID: newAccountID };
 }
 
-//======================================
-// Update account QUERY
-//======================================
+
 //======================================
 // Update account QUERY
 //======================================
