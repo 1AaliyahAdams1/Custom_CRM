@@ -91,15 +91,18 @@ async function getContactDetails(contactId) {
   const contact = await contactRepository.getContactDetails(contactId);
 
   // Business logic: optionally filter or mask notes/attachments based on user role
-  const notes = await noteRepository.getNotesByContactId(contactId);
-  const attachments = await attachmentRepository.getAttachmentsByContactId(contactId);
+  const notes = await noteRepository.getNotes(contactId, "Contact");
+  const attachments = await attachmentRepository.getAttachments(contactId, "Contact");
+  const persons = await personRepository.getPersonById(contactId);
 
   return {
     ...contact,
     notes,
     attachments,
+    persons
   };
 }
+
 
 module.exports = {
   getAllContacts,
@@ -107,5 +110,5 @@ module.exports = {
   createContact,
   updateContact,
   deleteContact,
-  getContactDetails,
+  getContactDetails
 };

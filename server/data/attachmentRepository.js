@@ -62,7 +62,7 @@ async function updateAttachment(attachmentId, fileName, fileUrl) {
         UPDATE Attachment
         SET FileName = @FileName,
             FileUrl = @FileUrl,
-            UpdatedAt = GETDATE()
+            UploadedAt = GETDATE()
         WHERE AttachmentID = @AttachmentID
       `);
 
@@ -103,7 +103,7 @@ async function getAttachments(entityId, entityTypeName) {
       .input("EntityID", sql.Int, entityId)
       .input("EntityTypeID", sql.Int, entityTypeId)
       .query(`
-        SELECT AttachmentID, FileName, FileUrl, UploadedAt, UpdatedAt
+        SELECT AttachmentID, FileName, FileUrl, UploadedAt
         FROM Attachment 
         WHERE EntityID = @EntityID AND EntityTypeID = @EntityTypeID
         ORDER BY UploadedAt DESC
