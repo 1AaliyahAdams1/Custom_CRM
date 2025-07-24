@@ -13,10 +13,10 @@ import ContactsTable from "../components/ContactsTable";
 import ContactFormDialog from "../components/ContactsFormDialog";
 
 import {
-  getContacts,
+  getAllContacts,
   createContact,
   updateContact,
-  deleteContact,
+  deleteContact
 } from "../services/contactService";
 
 const ContactsPage = () => {
@@ -38,7 +38,7 @@ const ContactsPage = () => {
     setLoading(true);
     setError(null); // Clear previous errors
     try {
-      const data = await getContacts(); // API call to fetch contacts
+      const data = await getAllContacts(); // API call to fetch contacts
       setContacts(data); // Save data to state
     } catch (err) {
       setError("Failed to load contacts. Please try again."); // Show error message

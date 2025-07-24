@@ -6,22 +6,22 @@ import { useNavigate } from "react-router-dom";
 
 const ContactsTable = ({ contacts, loading, onEdit, onDelete }) => {
   const navigate = useNavigate();
+ 
 
   const columns = [
     { field: "ContactID", headerName: "Contact ID", width: 100 },
     { field: "AccountID", headerName: "Account ID", width: 120 },
     { field: "PersonID", headerName: "Person ID", width: 120 },
-    { field: "personal_email", headerName: "Email", width: 200 },
-    { field: "personal_mobile", headerName: "Phone", width: 150 },
+    { field: "WorkEmail", headerName: "Email", width: 200 },
+    { field: "WorkPhone", headerName: "Phone", width: 150 },
     {
       field: "Still_employed",
       headerName: "Still Employed",
       width: 140,
-      valueGetter: (params) => {
-        // safe check to avoid undefined errors
-        if (!params.row || params.row.Still_employed == null) return "N/A";
-        return params.row.Still_employed ? "Yes" : "No";
-      },
+      valueGetter: (params) =>
+      params.row?.Still_employed === true ? "Yes" :
+      params.row?.Still_employed === false ? "No" : "N/A"
+
     },
     { field: "JobTitleID", headerName: "Job Title ID", width: 130 },
     { field: "CreatedAt", headerName: "Created At", width: 180 },

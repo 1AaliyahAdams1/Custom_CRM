@@ -35,7 +35,7 @@ const NotFoundPage = lazy(() => import("./pages/Error"));
 
 //Layout component: shows Header and Sidebar except on /login page
 const Layout = ({ children }) => {
-  const location = useLocation(); // ✅ Now this works because Layout is inside Router
+  const location = useLocation();
   const hideLayout = location.pathname === "/login";
 
   return (
