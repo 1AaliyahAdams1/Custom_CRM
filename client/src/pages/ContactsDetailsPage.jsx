@@ -4,18 +4,15 @@
 //IMPORTS
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-// import {
-//   Card,
-//   CardContent,
-//   Typography,
-//   Grid,
-//   CircularProgress,
-//   Button,
-//   Box,
-// } from "@mui/material";
-
-// Syncfusion component imports
-import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  CircularProgress,
+  Button,
+  Box,
+} from "@mui/material";
 import { getContactDetails } from "../services/contactService";
 
 function ContactsDetailsPage() {
@@ -54,148 +51,67 @@ function ContactsDetailsPage() {
     fetchContact();
   }, [id]);
 
-  /// Show loading spinner while fetching data
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-        <div className="e-spinner-pane">
-          <div className="e-spinner-inner">
-            <div className="e-spin-material"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // Show loading spinner while fetching data
+  if (loading) return <CircularProgress />;
   // Show error message if fetching failed
-  if (error) {
-    return (
-      <div style={{ padding: '20px' }}>
-        <span style={{ color: '#d32f2f', fontSize: '16px' }}>{error}</span>
-      </div>
-    );
-  }
-
+  if (error) return <Typography color="error">{error}</Typography>;
   // Show message if no contact found
-  if (!contact) {
-    return (
-      <div style={{ padding: '20px' }}>
-        <span style={{ fontSize: '16px' }}>No contact found.</span>
-      </div>
-    );
-  }
+  if (!contact) return <Typography>No contact found.</Typography>;
 
   return (
-    <div style={{ padding: '32px' }}>
+    <Box p={4}>
       {/* Back button navigates back to previous page */}
-      <ButtonComponent
-        cssClass="e-outline"
-        content="← Back to Contacts"
-        onClick={() => navigate(-1)}
-        style={{ marginBottom: '24px' }}
-      />
+      <Button variant="outlined" onClick={() => navigate(-1)} sx={{ mb: 3 }}>
+        &larr; Back to Contacts
+      </Button>
 
-      {/* Card-style container using Syncfusion's design patterns */}
-      <div className="e-card" style={{ padding: '24px', backgroundColor: '#fff', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}>
-        {/* Contact header with ID */}
-        <div className="e-card-header">
-          <div className="e-card-header-title" style={{
-            fontSize: '1.5rem',
-            fontWeight: '500',
-            marginBottom: '24px',
-            color: '#333'
-          }}>
+      <Card elevation={3}>
+        <CardContent>
+          {/* Contact header with ID */}
+          <Typography variant="h5" gutterBottom>
             Contact #{contact.ContactID}
-          </div>
-        </div>
+          </Typography>
 
-        {/* Card content */}
-        <div className="e-card-content">
           {/* Grid layout with two columns */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '24px'
-          }}>
+          <Grid container spacing={2}>
             {/* Left column with main contact info */}
-            <div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Account:</strong> {contact.AccountName || "-"}
-              </div>
-
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Person Name:</strong>{" "}
-                {contact.persons
-                  ? `${contact.persons.Title || ""} ${contact.persons.first_name || ""} ${contact.persons.middle_name || ""} ${contact.persons.surname || ""}`.trim()
-                  : "-"}
-                <br />
-              </div>
-
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Email:</strong> {contact.WorkEmail || "-"}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Phone:</strong> {contact.WorkPhone || "-"}
-              </div>
-            </div>
+            <Grid item xs={6}>
+              <Typography>
+                <strong>Account:</strong> {contact.Account || "-"}
+              </Typography>
+              <Typography>
+                <strong>Person Name:</strong> {contact.ContactName || "-"}
+              </Typography>
+              <Typography>
+                <strong>Email:</strong> {contact.PrimaryEmail || "-"}
+              </Typography>
+              <Typography>
+                <strong>Phone:</strong> {contact.PrimaryPhone || "-"}
+              </Typography>
+            </Grid>
 
             {/* Right column with additional info */}
-            <div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Position:</strong> {contact.JobTitleName || "-"}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
+            <Grid item xs={6}>
+              <Typography>
+                <strong>Position:</strong> {contact.Position || "-"}
+              </Typography>
+              <Typography>
                 <strong>City:</strong> {contact.CityName || "-"}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
+              </Typography>
+              <Typography>
                 <strong>Country:</strong> {contact.CountryName || "-"}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
+              </Typography>
+              <Typography>
                 <strong>Created At:</strong> {formatDate(contact.CreatedAt)}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
+              </Typography>
+              <Typography>
                 <strong>Updated At:</strong> {formatDate(contact.UpdatedAt)}
-              </div>
-            </div>
-
-            {/* FOR ATTACHMENTS */}
-            <div style={{ marginTop: "20px" }}>
-              <h3>Attachments</h3>
-              {contact.attachments?.length > 0 ? (
-                contact.attachments.map((att) => (
-                  <div key={att.AttachmentID} style={{ marginBottom: "12px", fontSize: "14px", lineHeight: "1.5" }}>
-                    <strong>File:</strong>{" "}
-                    <a href={att.FilePath} target="_blank" rel="noopener noreferrer">
-                      {att.FileName}
-                    </a><br />
-                    <small>Uploaded: {new Date(att.UploadedAt).toLocaleString()}</small>
-                  </div>
-                ))
-              ) : (
-                <div style={{ fontSize: "14px" }}>No attachments found for this contact.</div>
-              )}
-            </div>
-
-            {/* FOR NOTES*/}
-            <div style={{ marginTop: "20px" }}>
-              <h3>Notes</h3>
-              {contact.notes?.length > 0 ? (
-                contact.notes.map((note) => (
-                  <div key={note.NoteID} style={{ marginBottom: "12px", fontSize: "14px", lineHeight: "1.5" }}>
-                    <strong>Note:</strong> {note.Content}<br />
-                    <small>Created: {new Date(note.CreatedAt).toLocaleString()}</small>
-                  </div>
-                ))
-              ) : (
-                <div style={{ fontSize: "14px" }}>No notes found for this contact.</div>
-              )}
-            </div>
-
-
-          </div>
-        </div>
-      </div>
-    </div>
+              </Typography>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
 
