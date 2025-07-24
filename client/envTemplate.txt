@@ -1,6 +1,6 @@
 Create a ".env" file in the client folder and copy the field below and add the backend URL next to it
 
 REACT_APP_API_URL=
-REACT_APP_API_URL_ALT= 
+REACT_APP_API_URL_ALT=
 REACT_APP_LICENSE=
 

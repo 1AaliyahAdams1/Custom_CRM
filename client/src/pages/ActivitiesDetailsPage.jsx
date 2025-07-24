@@ -60,52 +60,128 @@ function ActivitiesDetailsPage() {
         &larr; Back to Activities
       </Button>
 
+      {/* Activity Details Card */}
       <Card elevation={3}>
         <CardContent>
+          {/* Title */}
           <Typography variant="h5" gutterBottom>
-            Activity #{activity.ActivityID}
+            {activity.TypeName || "Activity Details"}
           </Typography>
 
-          <Grid container spacing={2}>
-
-            {/* Left column with main activity info */}
-            <Grid item xs={6}>
-              <Tooltip title="Associated Account">
-                <Typography><strong>Account:</strong> {activity.AccountName || "-"}</Typography>
+          {/* Grid layout */}
+          <Grid container spacing={3}>
+            {/* Left Column */}
+            <Grid item xs={12} md={6}>
+              <Tooltip title="Associated Account" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Account:</strong> {activity.AccountName || "-"}
+                  </Typography>
+                </Box>
               </Tooltip>
 
-              <Tooltip title="Type of activity (e.g., Call, Meeting)">
-                <Typography><strong>Type:</strong> {activity.TypeName || "-"}</Typography>
+              <Tooltip title="Type of activity (e.g., Call, Meeting)" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Type:</strong> {activity.TypeName || "-"}
+                  </Typography>
+                </Box>
               </Tooltip>
 
-              <Tooltip title="Detailed description of the activity type">
-                <Typography><strong>Description:</strong> {activity.TypeDescription || "-"}</Typography>
-              </Tooltip>
-
-              <Tooltip title="Kind of interaction performed">
-                <Typography><strong>Interaction:</strong> {activity.InteractionType || "-"}</Typography>
-              </Tooltip>
-            </Grid>
-
-            {/* Right column with contact and timestamps */}
-            <Grid item xs={6}>
-              <Tooltip title="Contact person involved in this activity">
-                <Typography><strong>Contact:</strong> {activity.Contact || "-"}</Typography>
-              </Tooltip>
-
-              <Tooltip title="Date and time when the activity occurred">
-                <Typography><strong>Date & Time:</strong> {formatDate(activity.DateTime)}</Typography>
-              </Tooltip>
-
-              <Tooltip title="Record creation timestamp">
-                <Typography><strong>Created At:</strong> {formatDate(activity.CreatedAt)}</Typography>
-              </Tooltip>
-
-              <Tooltip title="Last update timestamp">
-                <Typography><strong>Updated At:</strong> {formatDate(activity.UpdatedAt)}</Typography>
+              <Tooltip title="Detailed description of the activity type" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Description:</strong> {activity.Description || "-"}
+                  </Typography>
+                </Box>
               </Tooltip>
             </Grid>
 
+            {/* Right Column */}
+            <Grid item xs={12} md={6}>
+              <Tooltip title="Contact person involved in this activity" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Contact:</strong>{" "}
+                    {activity.ContactID
+                      ? `${activity.Title || ""} ${activity.first_name || ""} ${activity.middle_name || ""} ${activity.surname || ""}`.trim()
+                      : "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              <Tooltip title="Date and time when the activity occurred" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Date & Time:</strong> {formatDate(activity.Due_date)}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              <Tooltip title="Record creation timestamp" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Created At:</strong> {formatDate(activity.CreatedAt)}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              <Tooltip title="Last update timestamp" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Updated At:</strong> {formatDate(activity.UpdatedAt)}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              {/* Attachments */}
+              <Tooltip title="Files uploaded for this activity" placement="top">
+                <Box mt={3}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Attachments
+                  </Typography>
+                  {activity.attachments?.length > 0 ? (
+                    activity.attachments.map((att) => (
+                      <Box key={att.AttachmentID} mb={1}>
+                        <Typography variant="body2">{att.FileName}</Typography>
+                        <Typography variant="caption">
+                          Uploaded: {new Date(att.CreatedAt).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography variant="body2">
+                      No attachments available for this activity.
+                    </Typography>
+                  )}
+                </Box>
+              </Tooltip>
+
+              {/* Notes */}
+              <Tooltip title="Internal notes for this activity" placement="top">
+                <Box mt={3}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Notes
+                  </Typography>
+                  {activity.notes?.length > 0 ? (
+                    activity.notes.map((note) => (
+                      <Box key={note.NoteID} mb={1}>
+                        <Typography variant="body2" fontWeight="bold">
+                          {note.Content}
+                        </Typography>
+                        <Typography variant="caption">
+                          Created: {new Date(note.CreatedAt).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography variant="body2">
+                      No notes available for this activity.
+                    </Typography>
+                  )}
+                </Box>
+              </Tooltip>
+            </Grid>
           </Grid>
         </CardContent>
       </Card>
