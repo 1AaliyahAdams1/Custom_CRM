@@ -56,58 +56,91 @@ function DealsDetailsPage() {
 
   return (
     <Box p={4}>
-      {/* Back button to navigate back to deals list */}
       <Button variant="outlined" onClick={() => navigate(-1)} sx={{ mb: 3 }}>
-        &larr; Back to Deals
+        ← Back to Deals
       </Button>
 
-      <Card elevation={3}>
+      <Card elevation={2}>
         <CardContent>
-          {/* Deal header */}
           <Typography variant="h5" gutterBottom>
             Deal #{deal.DealID}
           </Typography>
 
-          {/* Deal details in two-column grid */}
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <Typography><strong>Account:</strong> {deal.Account || "-"}</Typography>
+          <Grid container spacing={3} mb={3}>
+            <Grid item xs={12} sm={6}>
+              <Typography><strong>Account:</strong> {deal.AccountName || "-"}</Typography>
               <Typography><strong>Deal Stage:</strong> {deal.StageName || "-"}</Typography>
               <Typography><strong>Progression:</strong> {deal.Progression ?? "-"}</Typography>
               <Typography><strong>Deal Name:</strong> {deal.DealName || "-"}</Typography>
               <Typography><strong>Value:</strong> {deal.Value ?? "-"}</Typography>
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={12} sm={6}>
               <Typography><strong>Close Date:</strong> {formatDate(deal.CloseDate)}</Typography>
               <Typography><strong>Created At:</strong> {formatDate(deal.CreatedAt)}</Typography>
               <Typography><strong>Updated At:</strong> {formatDate(deal.UpdatedAt)}</Typography>
             </Grid>
           </Grid>
 
-          {/* Products section */}
-          <Typography variant="h6" mt={4}>
-            Products
-          </Typography>
-
-          {/* Conditional rendering of product(s) */}
-          {deal.ProductName ? (
-            <ul>
-              {/* If ProductName is an array, map each product with its price */}
-              {Array.isArray(deal.ProductName) ? (
-                deal.ProductName.map((product, index) => (
-                  <li key={index}>
-                    {product} - Price at time: {deal.PriceAtTime && deal.PriceAtTime[index] ? deal.PriceAtTime[index] : "-"}
+          {/* Products Section */}
+          <Box mb={3}>
+            <Typography variant="h6" gutterBottom>Products</Typography>
+            {deal.ProductName ? (
+              <ul style={{ paddingLeft: 20 }}>
+                {Array.isArray(deal.ProductName) ? (
+                  deal.ProductName.map((product, idx) => (
+                    <li key={idx}>
+                      {product} — Price at time: {deal.PriceAtTime?.[idx] ?? "-"}
+                    </li>
+                  ))
+                ) : (
+                  <li>
+                    {deal.ProductName} — Price at time: {deal.PriceAtTime ?? "-"}
                   </li>
-                ))
-              ) : (
-                // If single product, display directly
-                <li>{deal.ProductName} - Price at time: {deal.PriceAtTime || "-"}</li>
-              )}
-            </ul>
-          ) : (
-            // No products found message
-            <Typography>No products found for this deal.</Typography>
-          )}
+                )}
+              </ul>
+            ) : (
+              <Typography>No products found for this deal.</Typography>
+            )}
+          </Box>
+
+          {/* Attachments Section */}
+          <Box mb={3}>
+            <Typography variant="h6" gutterBottom>Attachments</Typography>
+            {deal.attachments?.length > 0 ? (
+              deal.attachments.map((att) => (
+                <Box key={att.AttachmentID} mb={1}>
+                  <Typography>
+                    <strong>File:</strong>{" "}
+                    <a href={att.FilePath} target="_blank" rel="noopener noreferrer">
+                      {att.FileName}
+                    </a>
+                  </Typography>
+                  <Typography variant="body2">
+                    Uploaded: {new Date(att.UploadedAt).toLocaleString()}
+                  </Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography>No attachments found for this deal.</Typography>
+            )}
+          </Box>
+
+          {/* Notes Section */}
+          <Box>
+            <Typography variant="h6" gutterBottom>Notes</Typography>
+            {deal.notes?.length > 0 ? (
+              deal.notes.map((note) => (
+                <Box key={note.NoteID} mb={1}>
+                  <Typography><strong>Note:</strong> {note.Content}</Typography>
+                  <Typography variant="body2">
+                    Created: {new Date(note.CreatedAt).toLocaleString()}
+                  </Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography>No notes found for this deal.</Typography>
+            )}
+          </Box>
         </CardContent>
       </Card>
     </Box>

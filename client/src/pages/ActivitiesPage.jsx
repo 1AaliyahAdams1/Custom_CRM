@@ -5,11 +5,13 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
 
+
+
 import ActivitiesTable from "../components/ActivitiesTable";
 import ActivityFormDialog from "../components/ActivitiesFormDialog";
 
 import {
-  getActivities,
+  getAllActivities,
   createActivity,
   updateActivity,
   deleteActivity,
@@ -34,7 +36,7 @@ const ActivitiesPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getActivities();
+      const data = await getAllActivities();
       setActivities(data);
     } catch (err) {
       setError("Failed to load activities. Please try again.");
@@ -168,6 +170,9 @@ const ActivitiesPage = () => {
       />
     </Box>
   );
+
+
+
 };
 
 export default ActivitiesPage;

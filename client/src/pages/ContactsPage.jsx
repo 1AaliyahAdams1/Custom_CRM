@@ -5,14 +5,15 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
 
+
 import ContactsTable from "../components/ContactsTable";
 import ContactFormDialog from "../components/ContactsFormDialog";
 
 import {
-  getContacts,
+  getAllContacts,
   createContact,
   updateContact,
-  deleteContact,
+  deleteContact
 } from "../services/contactService";
 
 const ContactsPage = () => {
@@ -34,7 +35,7 @@ const ContactsPage = () => {
     setLoading(true);
     setError(null); // Clear previous errors
     try {
-      const data = await getContacts(); // API call to fetch contacts
+      const data = await getAllContacts(); // API call to fetch contacts
       setContacts(data); // Save data to state
     } catch (err) {
       setError("Failed to load contacts. Please try again."); // Show error message
@@ -110,8 +111,7 @@ const ContactsPage = () => {
     setDialogOpen(false);
     setSelectedContact(null); // Clear selected contact when dialog closes
   };
-
-  return (
+ return (
     <Box p={4}>
       {/* Page title */}
       <Typography variant="h4" gutterBottom>
@@ -165,6 +165,9 @@ const ContactsPage = () => {
       />
     </Box>
   );
+
+  
 };
+
 
 export default ContactsPage;

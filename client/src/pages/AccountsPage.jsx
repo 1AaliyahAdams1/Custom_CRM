@@ -5,11 +5,12 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
 
+
 import AccountsTable from "../components/AccountsTable";
 import AccountFormDialog from "../components/AccountsFormDialog";
 
 import {
-  getAccounts,
+  getAllAccounts,
   createAccount,
   updateAccount,
   deleteAccount,
@@ -34,7 +35,7 @@ const AccountsPage = () => {
     setLoading(true);      // Start loading spinner
     setError(null);        // Clear any previous errors
     try {
-      const data = await getAccounts();  // API call to get accounts
+      const data = await getAllAccounts();  // API call to get accounts
       console.log("Fetched accounts:", data);
       setAccounts(data);    // Save fetched data to state
     } catch (error) {
@@ -122,6 +123,7 @@ const AccountsPage = () => {
     setSelectedAccount(null);
   };
 
+  
   return (
     <Box p={4}>
       {/* Page Title */}
@@ -176,6 +178,8 @@ const AccountsPage = () => {
       />
     </Box>
   );
+  
+
 };
 
 export default AccountsPage;

@@ -58,7 +58,7 @@ async function updateNote(noteId, content) {
       .query(`
         UPDATE Note
         SET Content = @Content,
-            UpdatedAt = GETDATE()
+            CreatedAt = GETDATE()
         WHERE NoteID = @NoteID
       `);
 
@@ -99,7 +99,7 @@ async function getNotes(entityId, entityTypeName) {
       .input("EntityID", sql.Int, entityId)
       .input("EntityTypeID", sql.Int, entityTypeId)
       .query(`
-        SELECT NoteID, Content, CreatedAt, UpdatedAt
+        SELECT NoteID, Content, CreatedAt
         FROM Note 
         WHERE EntityID = @EntityID AND EntityTypeID = @EntityTypeID
         ORDER BY CreatedAt DESC
