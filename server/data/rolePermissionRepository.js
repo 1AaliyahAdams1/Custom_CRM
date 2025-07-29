@@ -21,3 +21,11 @@ async function getPermissionsByRoleId(roleId) {
 module.exports = {
   getPermissionsByRoleId
 };
+
+//All Stored Procedures
+//getPermissionsByRoleId
+//createRolePermission
+//updateRolePermission
+//deactivateRolePermission
+//reactivateRolePermission
+//deleteRolePermission

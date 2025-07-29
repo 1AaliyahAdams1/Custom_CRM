@@ -240,3 +240,14 @@ module.exports = {
   updateProduct,
   deleteProduct,
 };
+
+//All stored procedures
+//insertTempProduct
+//getAllProducts
+//getProductByID
+//getIDByProduct
+//createProduct
+//updateProduct
+//deactivateProduct
+//reactivateProduct
+//deleteProduct

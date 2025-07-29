@@ -47,6 +47,16 @@ async function deleteEntityType(entityTypeId) {
     .query("DELETE FROM EntityType WHERE EntityTypeID = @EntityTypeID");
 }
 
+//All stored procedures
+//getAllEntityTypes
+//getIDByEntityType
+//getEntityTypeByID
+//createEntityType
+//updateEntityType
+//deactivateEntityType
+//reactivateEntityType
+//deleteEntityType
+
 // =======================
 // Exports
 // =======================

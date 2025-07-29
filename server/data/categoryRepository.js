@@ -62,6 +62,15 @@ async function deleteCategory(categoryId) {
     .query("DELETE FROM Category WHERE CategoryID = @CategoryID");
 }
 
+//All stored procedures
+//CreateCategory
+// GetAllCategories
+// GetCategoryByID
+// UpdateCategory
+// DeactivateCategory
+// ReactivateCategory
+// DeleteCategory
+
 // =======================
 // Exports
 // =======================

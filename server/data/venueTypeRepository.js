@@ -20,6 +20,16 @@ async function createVenueType(venueTypeName) {
     .query("INSERT INTO VenueType (VenueTypeName) VALUES (@VenueTypeName)");
 }
 
+//All Stored Procedures
+//getAllVenueTypes
+//getIdByVenueType
+//getVenueTypeById
+//createVenueType
+//deactivateVenueType
+//reactivateVenueType
+//deleteVenueType
+//updateVenueType
+
 // =======================
 // Exports
 // =======================

@@ -122,6 +122,14 @@ const deleteActivity = async (activityId) => {
   }
 };
 
+//All stored procedures
+//CreateActivity
+// GetActivity
+// GetActivityByID
+// UpdateActivity
+// DeactivateActivity
+// ReactivateActivity
+// DeleteActivity
 
 // =======================
 // Exports

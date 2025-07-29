@@ -28,6 +28,17 @@ async function getUserById(userId) {
 // Will add CRUD functionality later
 // Password hashing should be handled in a service or controller
 
+//All stored Procedures
+//getAllUsers
+//getUserById
+//getIdByUsername
+//createUser
+//updateUser
+//deactivateUser
+//reactivateUser
+//deleteUser
+
+
 module.exports = {
   getAllUsers,
   getUserById

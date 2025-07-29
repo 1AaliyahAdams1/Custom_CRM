@@ -53,6 +53,17 @@ async function deleteGroup(groupId) {
     .query("DELETE FROM Groups WHERE GroupID = @GroupID");
 }
 
+//All Stored Procedures
+//getAllGroups
+//getGroupByID
+//getIDByGroup
+//createGroup
+//updateGroup
+//deactivateGroup
+//reactivateGroup
+//deleteGroup
+
+
 // =======================
 // Exports
 // =======================

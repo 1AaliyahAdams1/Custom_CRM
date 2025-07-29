@@ -18,6 +18,15 @@ async function getRolesByUserId(userId) {
   return result.recordset;
 }
 
+//All Stored procedures
+//getRolesByUserId
+//getUsersByRole
+//assignRoletoUser
+//deactivateRolefromUser
+//reactivateRolefromUser
+//revokeRolefromUser
+//updateRoleofUser
+
 module.exports = {
   getRolesByUserId
 };

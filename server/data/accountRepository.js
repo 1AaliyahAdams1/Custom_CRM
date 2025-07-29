@@ -405,6 +405,16 @@ async function getAccountDetails(id) {
   return result.recordset[0];
 }
 
+//All Stored procedures
+//InsertTempAccount
+// CreateAccount
+// GetAllAccounts
+// GetAccountDetails
+// UpdateAccount
+// DeactivateAccount
+// ReactivateAccount
+// DeleteAccount
+
 
 // =======================
 // Exports

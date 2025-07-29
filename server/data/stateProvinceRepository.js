@@ -105,6 +105,17 @@ async function deleteState(id) {
   }
 }
 
+//All stored procedures
+//getAllStateProvinces
+//getStateProvinceByID
+//getIDByStateProvince
+//createStateProvince
+//updateStateProvince
+//deactivateStateProvince
+//reactivateStateProvince
+//deleteStateProvince
+
+
 // =======================
 // Exports
 // =======================

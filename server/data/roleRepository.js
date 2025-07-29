@@ -14,3 +14,13 @@ async function getAllRoles() {
 module.exports = {
   getAllRoles
 };
+
+//All Stored Procedures
+//getAllRoles
+//getIDByRoleName
+//getRoleNameByID
+//createRole
+//updateRole
+//deactivateRole
+//reactivateRole
+//deleteRole

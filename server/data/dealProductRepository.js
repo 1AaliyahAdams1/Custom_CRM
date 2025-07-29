@@ -62,6 +62,15 @@ async function getProductsByDealId(dealId) {
   }
 }
 
+//All stored procedures
+//CreateDealProduct
+// GetDealProduct
+// GetDealProductByID
+// UpdateDealProduct
+// DeactivateDealProduct
+// ReactivateDealProduct
+// DeleteDealProduct
+
 // =======================
 // Exports
 // =======================

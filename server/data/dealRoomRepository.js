@@ -42,6 +42,15 @@ async function deactivateDealRoom(dealRoomId) {
     .query("UPDATE DealRoom SET Active = 0 WHERE DealRoomID = @DealRoomID");
 }
 
+//All stored procedures
+//CreateDealRoom
+// GetDealRoom
+// GetDealRoomByID
+// UpdateDealRoom
+// DeactivateDealRoom
+// ReactivateDealRoom
+// DeleteDealRoom
+
 // =======================
 // Exports
 // =======================

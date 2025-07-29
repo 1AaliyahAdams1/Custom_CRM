@@ -62,6 +62,15 @@ async function getContactsByActivityId(activityId) {
   }
 }
 
+//All stored procedures
+//CreateActivityContact
+// GetActivityContact
+// GetActivityContactByID
+// UpdateActivityContact
+// DeactivateContact
+// ReactivateContact
+// DeleteActivityContact
+
 
 // =======================
 // Exports

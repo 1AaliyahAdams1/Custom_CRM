@@ -48,6 +48,16 @@ async function unassignUserFromAccount(accountId, userId) {
     `);
 }
 
+//All stored procedures
+//CreateAssignedUser
+// GetAssignedUser
+// GetAssignedUserByID
+// UpdateAssignedUser
+// DeactivateAssignedUser
+// ReactivateAssignedUser
+// DeleteAssignedUser
+
+
 // =======================
 // Exports
 // =======================

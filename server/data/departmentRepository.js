@@ -67,6 +67,16 @@ async function deactivateDepartment(departmentId) {
     `);
 }
 
+//all stored procedures
+//CreateDepartment
+// GetDepartment
+// GetDepartmentByID
+// UpdateDepartment
+// DeactivateDepartment
+// ReactivateDepartment
+// DeleteDepartment
+
+
 // =======================
 // Exports
 // =======================

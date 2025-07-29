@@ -52,6 +52,15 @@ async function createCurrency(data) {
     `);
 }
 
+//All stored procedures
+//CreateCurrency
+// GetCurrency
+// GetCurrencyByID
+// UpdateCurrency
+// DeactivateCurrency
+// ReactivateCurrency
+// DeleteCurrency
+
 // =======================
 // Exports
 // =======================

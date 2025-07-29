@@ -112,6 +112,14 @@ async function getNotes(entityId, entityTypeName) {
   }
 }
 
+//All stored procedures
+//getNotes
+//createNote
+//updateNote
+//deactivateNote
+//reactivateNote
+//deleteNote
+
 // =======================
 // Exports
 // =======================

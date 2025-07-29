@@ -307,6 +307,18 @@ async function getContactsByAccountId(accountId) {
   return result.recordset;
 }
 
+//All stored procedures
+//InsertTempContact
+// CreateContact
+// GetContactDetails
+// GetContactDetailsByID
+// GetContactDetailsByAccountName
+// UpdateContact
+// DeactiveContact
+// ReactiveContact
+// DeleteContact
+
+
 
 // =======================
 // Exports

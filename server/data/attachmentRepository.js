@@ -116,6 +116,15 @@ async function getAttachments(entityId, entityTypeName) {
   }
 }
 
+//All stored procedures
+//CreateAttachment
+// GetAttachment
+// GetAttachmentByID
+// UpdateAttachment
+// DeactivateAttachment
+// ReactivateAttachment
+// DeleteAttachment
+
 // =======================
 // Exports
 // =======================

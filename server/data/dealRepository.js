@@ -214,6 +214,17 @@ async function getDealDetails(dealId) {
   }
 }
 
+//All stored procedures
+//InsertTempDealLog
+// CreateDeal
+// GetDeal
+// GetDealByID
+// UpdateDeal
+// DeactivateDeal
+// ReactivateDeal
+// DeleteDeal
+
+
 // =======================
 // Exports
 // =======================

@@ -79,6 +79,19 @@ async function deleteIndustry(industryId) {
     `);
 }
 
+
+//All Stored procedures
+//getAllIndustries
+//getIndustryById
+//getIDByIndustry
+//createIndustry
+//updateIndustry
+//deactivateIndustry
+//reactivateIndustry
+//deleteIndustry
+
+
+
 // =======================
 // Exports
 // =======================

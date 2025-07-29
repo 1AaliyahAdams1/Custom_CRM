@@ -47,6 +47,16 @@ async function revokeAccess(dealRoomId, userId) {
     `);
 }
 
+//All stored procedures
+//CreateDealRoomAccess
+// GetDealRoomAccess
+// GetDealRoomAccessByID
+// UpdateDealRoomAccess
+// DeactivateDealRoomAccess
+// ReactivateDealRoomAccess
+// DeleteDealRoomAccess
+
+
 // =======================
 // Exports
 // =======================

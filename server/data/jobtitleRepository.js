@@ -79,6 +79,16 @@ async function deleteJobTitle(jobTitleId) {
     `);
 }
 
+//All Stored Procedures
+//getAllJobTitles
+//getJobTitleById
+//getIDbyJobTitle
+//createJobTitle
+//updateJobTitle
+//deactiveJobTitle
+//reactivateJobTitle
+//deleteJobTitle
+
 // =======================
 // Exports
 // =======================

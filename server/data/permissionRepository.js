@@ -10,6 +10,14 @@ async function getAllPermissions() {
   return result.recordset;
 }
 
+//All Stored Procedures
+//getAllPermissions
+//createPermission
+//updatePermission
+//deactivatePermission
+//reactivatePermission
+//deletePermission
+
 module.exports = {
   getAllPermissions
 };

@@ -50,3 +50,10 @@ module.exports = {
   addEntityToGroup,
   removeEntityFromGroup,
 };
+
+//All Stored Procedures
+//getEntitiesByGroup
+//addEntityToGroup
+//deactivateGroupEntity
+//reactivateGroupEntity
+//deleteGroupEntity

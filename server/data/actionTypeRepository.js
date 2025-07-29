@@ -10,6 +10,15 @@ async function getAllActionTypes() {
   return result.recordset;
 }
 
+//All Stored procedures
+// CreateActionType
+// GetAllActionType
+// GetActionTypeByID
+// UpdateActionTpype
+// DeactivateActionType
+// ReactivateActionType
+// DeleteActionType
+
 // =======================
 // Exports
 // =======================

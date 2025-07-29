@@ -107,6 +107,15 @@ async function deleteCity(cityId) {
   }
 }
 
+//All stored procedures
+//CreateCity
+// GetCity
+// GetCityByID
+// UpdateCity
+// DeactivateCity
+// ReactivateCity
+// DeleteCity
+
 // =======================
 // Exports
 // =======================

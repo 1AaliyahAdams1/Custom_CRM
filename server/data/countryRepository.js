@@ -110,6 +110,16 @@ async function deleteCountry(id) {
   }
 }
 
+//All stored procedures
+//CreateCountry
+// GetCountry
+// GetCountryByID
+// UpdateCountry
+// DeactivateCountry
+// ReactivateCountry
+// DeleteCountry
+
+
 // =======================
 // Exports
 // =======================

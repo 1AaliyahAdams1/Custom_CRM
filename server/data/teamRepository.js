@@ -75,6 +75,17 @@ async function deleteTeam(id) {
     .query(`UPDATE Team SET Active = 0 WHERE TeamID = @TeamID`);
 }
 
+//All Stored Procedures
+//getAllTeams
+//getTeamByID
+//getIDByTeamName
+//createTeam
+//updateTeam
+//deactivateTeam
+//reactivateTeam
+//deleteTeam
+
+
 module.exports = {
   getAllTeams,
   getTeamById,

@@ -74,6 +74,14 @@ async function deleteActivityType(id) {
     .query("DELETE FROM ActivityType WHERE TypeID = @TypeID");
 }
 
+//All stored procedures
+//CreateActivityType
+// GetActivityType
+// GetActivityTypeByID
+// UpdateActivityType
+// DeactivateActivityType
+// ReactivateActivityType
+// DeleteActivityType
 
 // =======================
 // Exports

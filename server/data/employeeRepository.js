@@ -138,6 +138,17 @@ async function deactivateEmployee(employeeId) {
     `);
 }
 
+//all stored procedures
+//InsertEmployeeLog
+// CreateEmployee
+// GetEmployee
+// GetEmployeeByID
+// UpdateEmployee
+// DeactivateEmployee
+// ReactivateEmployee
+// DeleteEmployee
+
+
 // =======================
 // Exports
 // =======================

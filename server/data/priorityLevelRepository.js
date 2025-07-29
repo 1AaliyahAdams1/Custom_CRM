@@ -101,6 +101,16 @@ async function deletePriorityLevel(id) {
   }
 }
 
+//All stored procedures
+//getAllPriorityLevels
+//getPriorityLevelByID
+//getIDByPriorityLevel
+//createPriorityLevel
+//updatePriorityLevel
+//deactivatePriorityLevel
+//reactivatePriorityLevel
+//deletePriorityLevel
+
 // =======================
 // Exports
 // =======================

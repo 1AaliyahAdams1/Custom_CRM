@@ -70,6 +70,15 @@ async function updateAccountInfo(accountId, updates) {
     `);
 }
 
+//All stored procedures
+//CreateAccountInfo
+// GetAccountInfo
+// GetAccountInfoByID
+// UpdateAccountInfo
+// DeactivateAccountInfo
+// ReactivateAccountInfo
+// DeleteAccountInfo
+
 // =======================
 // Exports
 // =======================
@@ -78,3 +87,5 @@ module.exports = {
   createAccountInfo,
   updateAccountInfo
 };
+
+//
