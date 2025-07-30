@@ -77,21 +77,22 @@ const AccountsPage = () => {
   };
 
   // Delete an account after user confirmation, then refresh data
-  const handleDelete = async (id) => {
-    const confirm = window.confirm("Are you sure you want to delete this account?");
-    if (!confirm) return; // Cancel delete if user says no
+  const handleDeactivate = async (id) => {
+  const confirm = window.confirm("Are you sure you want to delete this account? This will deactivate it.");
+  if (!confirm) return;
 
-    setError(null);
-    try {
-      console.log("Deleting account with ID:", id);
-      await deactivateAccount(id);   
-      setSuccessMessage("Account deleted successfully.");
-      await fetchAccounts();      // Refresh accounts list after delete
-    } catch (error) {
-      console.error("Delete failed:", error);
-      setError("Failed to delete account. Please try again.");
-    }
-  };
+  setError(null);
+  try {
+    console.log("Deactivating (soft deleting) account with ID:", id);
+    await deactivateAccount(id);
+    setSuccessMessage("Account deleted successfully.");  // message visible to user
+    await fetchAccounts();
+  } catch (error) {
+    console.error("Delete failed:", error);
+    setError("Failed to delete account. Please try again.");
+  }
+};
+
 
   // Handle form submission for both create and update operations
   const handleSave = async (accountData) => {
@@ -164,8 +165,8 @@ const AccountsPage = () => {
       ) : (
         <AccountsTable
           accounts={accounts}
-          onEdit={handleOpenEdit}   // Edit button callback
-          onDelete={handleDelete}    // Delete button callback
+          onEdit={handleOpenEdit}   
+          onDeactivate={handleDeactivate}    
         />
       )}
 
