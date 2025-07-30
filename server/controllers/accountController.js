@@ -1,83 +1,105 @@
 const accountService = require("../services/accountService");
 
-// Helper to get changedBy (only from authenticated user)
-function getChangedBy(req) {
-  return req.user?.username || "UnknownUser";
-}
-
-// Get all accounts
-async function getAccounts(req, res) {
+const getAllAccounts = async (req, res) => {
   try {
-    // Validation can go here
-
-    const accounts = await accountService.getAllAccounts();
-    res.json(accounts);
+    const accounts = await accountService.listAllAccounts();
+    res.status(200).json(accounts);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Create a new account
-async function createAccount(req, res) {
+const getActiveAccounts = async (req, res) => {
   try {
-    // Validation can go here
-
-    const changedBy = getChangedBy(req);
-    const newAccount = await accountService.createAccount(req.body, changedBy);
-    res.status(201).json(newAccount);
+    const accounts = await accountService.listActiveAccounts();
+    res.status(200).json(accounts);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Update an existing account by ID
-async function updateAccount(req, res) {
-  const id = parseInt(req.params.id, 10);
-
+const getInactiveAccounts = async (req, res) => {
   try {
-    // Validation can go here
-
-    const changedBy = getChangedBy(req);
-    const updatedAccount = await accountService.updateAccount(id, req.body, changedBy);
-    res.json(updatedAccount);
+    const accounts = await accountService.listInactiveAccounts();
+    res.status(200).json(accounts);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Delete an account by ID
-async function deleteAccount(req, res) {
-  const id = parseInt(req.params.id, 10);
-
+const getAccountById = async (req, res) => {
   try {
-    // Validation can go here
-
-    const changedBy = getChangedBy(req);
-    const deleted = await accountService.deleteAccount(id, changedBy);
-    res.json(deleted);
+    const id = parseInt(req.params.id);
+    const account = await accountService.getAccountById(id);
+    if (!account) return res.status(404).json({ error: "Account not found" });
+    res.status(200).json(account);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Get Account Details for Details Page
-async function getAccountDetails(req, res) {
-  const id = parseInt(req.params.id, 10);
-
+const createAccount = async (req, res) => {
   try {
-    // Validation can go here
-
-    const accountDetails = await accountService.getAccountDetails(id);
-    res.json(accountDetails);
+    const userId = req.user?.UserID || 1;
+    const result = await accountService.createNewAccount(req.body, userId);
+    res.status(201).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
+
+const updateAccount = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.user?.UserID || 1;
+    const result = await accountService.updateExistingAccount(id, req.body, userId);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const deactivateAccount = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.user?.UserID || 1;
+    const result = await accountService.deactivateExistingAccount(id, userId);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const reactivateAccount = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.user?.UserID || 1;
+    const result = await accountService.reactivateExistingAccount(id, userId);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const deleteAccount = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.user?.UserID || 1;
+    const result = await accountService.deleteAccountPermanently(id, userId);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 module.exports = {
-  getAccounts,
+  getAllAccounts,
+  getActiveAccounts,
+  getInactiveAccounts,
+  getAccountById,
   createAccount,
   updateAccount,
+  deactivateAccount,
+  reactivateAccount,
   deleteAccount,
-  getAccountDetails,
 };

@@ -3,51 +3,47 @@ import axios from "axios";
 const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
 const RESOURCE = `${BASE_URL}/accounts`;
 
-// ===========================
 // Get all accounts
-// ===========================
-export async function getAllAccounts() {
-  const response = await axios.get(RESOURCE);
-  return response.data;
-}
+export const getAllAccounts = () => {
+  return axios.get(RESOURCE);
+};
 
-// ===========================
-// Get details of a specific account (with notes & attachments)
-// ===========================
-export async function getAccountDetails(accountId) {
-  const response = await axios.get(`${RESOURCE}/${accountId}`);
-  return response.data;
-}
+// Get active accounts
+export const getActiveAccounts = () => {
+  return axios.get(`${RESOURCE}/active`);
+};
 
-// ===========================
-// Create a new account
-// ===========================
-export async function createAccount(accountData, changedBy = "System") {
-  const payload = { ...accountData, changedBy };
-  const response = await axios.post(RESOURCE, payload);
-  return response.data;
-}
+// Get inactive accounts
+export const getInactiveAccounts = () => {
+  return axios.get(`${RESOURCE}/inactive`);
+};
 
-// ===========================
-// Update an existing account
-// ===========================
-export async function updateAccount(accountId, accountData, changedBy = "System") {
-  const payload = { ...accountData, changedBy };
-  const response = await axios.put(`${RESOURCE}/${accountId}`, payload);
-  return response.data;
-}
+// Get account by ID
+export const fetchAccountById = (id) => {
+  return axios.get(`${RESOURCE}/${id}`);
+};
 
-// ===========================
-// Delete an account
-// ===========================
-export async function deleteAccount(accountId, changedBy = "System") {
-  const response = await axios.delete(`${RESOURCE}/${accountId}`, {
-    data: { changedBy },
-  });
-  return response.data;
-}
+// Create new account
+export const createAccount = (data) => {
+  return axios.post(RESOURCE, data);
+};
 
+// Update account
+export const updateAccount = (id, data) => {
+  return axios.put(`${RESOURCE}/${id}`, data);
+};
 
+// Deactivate account
+export const deactivateAccount = (id) => {
+  return axios.patch(`${RESOURCE}/${id}/deactivate`);
+};
 
+// Reactivate account
+export const reactivateAccount = (id) => {
+  return axios.patch(`${RESOURCE}/${id}/reactivate`);
+};
 
-
+// Hard delete account
+export const deleteAccount = (id) => {
+  return axios.delete(`${RESOURCE}/${id}`);
+};

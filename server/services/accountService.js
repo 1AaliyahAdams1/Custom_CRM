@@ -1,70 +1,58 @@
-const accountRepository = require("../data/accountRepository");
-const notesRepo = require("../data/noteRepository");
-const attachmentsRepo = require("../data/attachmentRepository");
-const contactsRepo = require("../data/contactRepository");
+const accountRepo = require("../data/accountRepository");
 
-// Helper to get changedBy, default to "System" if not passed
-function getChangedByOrDefault(changedBy) {
-  return changedBy || "System";
+// Get all accounts
+async function listAllAccounts() {
+  return await accountRepo.getAllAccounts();
 }
 
-async function getAllAccounts() {
-  // Business logic for filtering, pagination, or permissions
-  // could be added here before or after fetching data
-  return await accountRepository.getAllAccounts();
-
+// Get only active accounts
+async function listActiveAccounts() {
+  return await accountRepo.getActiveAccounts();
 }
 
-async function getAccountDetails(id) {
-  // Business logic like access control, data transformation,
-  // or enriching details could be added here
-  const account = await accountRepository.getAccountDetails(id);
-
-  const [notes, attachments, contacts] = await Promise.all([
-    notesRepo.getNotes(id, "Account"),
-    attachmentsRepo.getAttachments(id, "Account"),
-    contactsRepo.getContactsByAccountId(id)
-  ]);
-
-  return {
-    ...account,
-    notes,
-    attachments,
-    contacts,
-  };
+// Get only inactive accounts
+async function listInactiveAccounts() {
+  return await accountRepo.getInactiveAccounts();
 }
 
-async function createAccount(accountData, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-
-  // Business logic to validate input data, enforce rules,
-  // or modify data before creation goes here
-
-  return await accountRepository.createAccount(accountData, user);
+// Get account by ID
+async function getAccountById(id) {
+  return await accountRepo.getAccountDetails(id);
 }
 
-async function updateAccount(id, accountData, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-
-  // Business logic to validate updates, check permissions,
-  // or handle side effects could be added here
-
-  return await accountRepository.updateAccount(id, accountData, user);
+// Create a new account
+async function createNewAccount(data, userId) {
+  return await accountRepo.createAccount(data, userId);
 }
 
-async function deleteAccount(id, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
+// Update an existing account
+async function updateExistingAccount(id, data, userId) {
+  return await accountRepo.updateAccount(id, data, userId);
+}
 
-  // Business logic to prevent deletion, cascade deletes,
-  // or archive data can be added here
+// Soft delete an account
+async function deactivateExistingAccount(id, userId) {
+  return await accountRepo.deactivateAccount(id, userId);
+}
 
-  return await accountRepository.deleteAccount(id, user);
+// Reactivate an account
+async function reactivateExistingAccount(id, userId) {
+  return await accountRepo.reactivateAccount(id, userId);
+}
+
+// Hard delete an account
+async function deleteAccountPermanently(id, userId) {
+  return await accountRepo.deleteAccount(id, userId);
 }
 
 module.exports = {
-  getAllAccounts,
-  getAccountDetails,
-  createAccount,
-  updateAccount,
-  deleteAccount,
+  listAllAccounts,
+  listActiveAccounts,
+  listInactiveAccounts,
+  getAccountById,
+  createNewAccount,
+  updateExistingAccount,
+  deactivateExistingAccount,
+  reactivateExistingAccount,
+  deleteAccountPermanently
 };

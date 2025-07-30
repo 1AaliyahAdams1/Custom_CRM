@@ -176,7 +176,7 @@ async function updateAccount(id, accountData, changedBy = 1) {
 //======================================
 // Soft delete account using stored procedure
 //======================================
-async function deleteAccount(id, changedBy = 1) {
+async function deactivateAccount(id, changedBy = 1) {
   const pool = await sql.connect(dbConfig);
 
   // Get existing account details first
@@ -286,7 +286,7 @@ async function getAccountDetails(id) {
 //======================================
 // Hard delete account using stored procedure
 //======================================
-async function hardDeleteAccount(id, changedBy = 1) {
+async function deleteAccount(id, changedBy = 1) {
   const pool = await sql.connect(dbConfig);
 
   // Get existing account details first
@@ -368,8 +368,8 @@ module.exports = {
   getInactiveAccounts,
   createAccount,
   updateAccount,
-  deleteAccount, // This is the soft delete (deactivate)
+  deactivateAccount, 
   reactivateAccount,
-  hardDeleteAccount, // This is the permanent delete
+  deleteAccount, 
   getAccountDetails
 };
