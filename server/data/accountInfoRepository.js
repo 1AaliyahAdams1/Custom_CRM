@@ -2,24 +2,31 @@ const sql = require("mssql");
 const dbConfig = require("../dbConfig");
 
 // =======================
-// Get AccountInfo by AccountID
+// Get all AccountInfo entries
+// Calls stored procedure: GetAccountInfo
 // =======================
-async function getAccountInfoByAccountId(accountId) {
+async function getAllAccountInfo() {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
-    .input("AccountID", sql.Int, accountId)
-    .query(`
-      SELECT ai.*, vt.VenueTypeName, c.CityName
-      FROM AccountInfo ai
-      LEFT JOIN VenueType vt ON ai.VenueTypeID = vt.VenueTypeID
-      LEFT JOIN City c ON ai.EntCityID = c.CityID
-      WHERE ai.AccountID = @AccountID
-    `);
-  return result.recordset[0];
+    .execute("GetAccountInfo");
+  return result.recordset;
+}
+
+// =======================
+// Get AccountInfo by AIID (primary key)
+// Calls stored procedure: GetAccountInfoByID
+// =======================
+async function getAccountInfoById(aiid) {
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .input("AIID", sql.Int, aiid)
+    .execute("GetAccountInfoByID");
+  return result.recordset[0]; // single record
 }
 
 // =======================
 // Create AccountInfo entry
+// Calls stored procedure: CreateAccountInfo
 // =======================
 async function createAccountInfo(data) {
   const {
@@ -35,57 +42,68 @@ async function createAccountInfo(data) {
     .input("isVenueCompany", sql.Bit, isVenueCompany)
     .input("isEventCompany", sql.Bit, isEventCompany)
     .input("isRecordLabel", sql.Bit, isRecordLabel)
-    .query(`
-      INSERT INTO AccountInfo (
-        AccountID, VenueTypeID, EntCityID,
-        isVenueCompany, isEventCompany, isRecordLabel
-      )
-      VALUES (
-        @AccountID, @VenueTypeID, @EntCityID,
-        @isVenueCompany, @isEventCompany, @isRecordLabel
-      )
-    `);
+    .execute("CreateAccountInfo");
 }
 
 // =======================
-// Update AccountInfo by AccountID
+// Update AccountInfo by AIID
+// Calls stored procedure: UpdateAccountInfo
 // =======================
-async function updateAccountInfo(accountId, updates) {
+async function updateAccountInfo(aiid, updates) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
-    .input("AccountID", sql.Int, accountId)
+    .input("AIID", sql.Int, aiid)
+    .input("AccountID", sql.Int, updates.AccountID) // your proc expects AccountID too
     .input("VenueTypeID", sql.Int, updates.VenueTypeID)
     .input("EntCityID", sql.Int, updates.EntCityID)
     .input("isVenueCompany", sql.Bit, updates.isVenueCompany)
     .input("isEventCompany", sql.Bit, updates.isEventCompany)
     .input("isRecordLabel", sql.Bit, updates.isRecordLabel)
-    .query(`
-      UPDATE AccountInfo SET
-        VenueTypeID = @VenueTypeID,
-        EntCityID = @EntCityID,
-        isVenueCompany = @isVenueCompany,
-        isEventCompany = @isEventCompany,
-        isRecordLabel = @isRecordLabel
-      WHERE AccountID = @AccountID
-    `);
+    .execute("UpdateAccountInfo");
 }
 
-//All stored procedures
-//CreateAccountInfo
-// GetAccountInfo
-// GetAccountInfoByID
-// UpdateAccountInfo
-// DeactivateAccountInfo
-// ReactivateAccountInfo
-// DeleteAccountInfo
+// =======================
+// Deactivate AccountInfo by AIID
+// Calls stored procedure: DeactivateAccountInfo
+// =======================
+async function deactivateAccountInfo(aiid) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("AIID", sql.Int, aiid)
+    .execute("DeactivateAccountInfo");
+}
+
+// =======================
+// Reactivate AccountInfo by AIID
+// Calls stored procedure: ReactivateAccountInfo
+// =======================
+async function reactivateAccountInfo(aiid) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("AIID", sql.Int, aiid)
+    .execute("ReactivateAccountInfo");
+}
+
+// =======================
+// Delete AccountInfo by AIID
+// Calls stored procedure: DeleteAccountInfo
+// =======================
+async function deleteAccountInfo(aiid) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("AIID", sql.Int, aiid)
+    .execute("DeleteAccountInfo");
+}
 
 // =======================
 // Exports
 // =======================
 module.exports = {
-  getAccountInfoByAccountId,
+  getAllAccountInfo,
+  getAccountInfoById,
   createAccountInfo,
-  updateAccountInfo
+  updateAccountInfo,
+  deactivateAccountInfo,
+  reactivateAccountInfo,
+  deleteAccountInfo,
 };
-
-//
