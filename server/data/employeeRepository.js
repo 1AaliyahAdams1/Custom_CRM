@@ -2,149 +2,224 @@ const sql = require("mssql");
 const dbConfig = require("../dbConfig");
 
 // =======================
-// Get all active employees (with joins)
+// Get all active employees with joins
 // =======================
 async function getAllEmployees() {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request().query(`
-    SELECT 
-      e.*, 
-      u.Username, 
-      jt.JobTitleName, 
-      c.CityName, 
-      sp.StateProvinceName,
-      d.DepartmentName,
-      t.TeamName
-    FROM Employee e
-    LEFT JOIN Users u ON e.UserID = u.UserID
-    LEFT JOIN JobTitle jt ON e.JobTitleID = jt.JobTitleID
-    LEFT JOIN City c ON e.CityID = c.CityID
-    LEFT JOIN StateProvince sp ON e.StateProvinceID = sp.StateProvinceID
-    LEFT JOIN Department d ON e.DepartmentID = d.DepartmentID
-    LEFT JOIN Team t ON e.TeamID = t.TeamID
-    WHERE e.Active = 1
-    ORDER BY e.EmployeeName
-  `);
-  return result.recordset;
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().execute("GetEmployee");
+    return result.recordset;
+  } catch (error) {
+    console.error("EmployeeRepo Error [getAllEmployees]:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Get employee by ID
+// Get employee by ID with joins
 // =======================
 async function getEmployeeById(employeeId) {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request()
-    .input("EmployeeID", sql.Int, employeeId)
-    .query(`
-      SELECT * FROM Employee WHERE EmployeeID = @EmployeeID
-    `);
-  return result.recordset[0];
+  if (!employeeId) throw new Error("employeeId is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("EmployeeID", sql.Int, employeeId)
+      .execute("GetEmployeeByID");
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("EmployeeRepo Error [getEmployeeById]:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Create a new employee
 // =======================
-async function createEmployee(data) {
+async function createEmployee(data, changedBy, actionTypeId) {
   const {
     EmployeeName, EmployeeEmail, EmployeePhone,
     CityID, StateProvinceID, HireDate, TerminationDate,
     DepartmentID, salary, Holidays_PA, JobTitleID,
-    UserID, TeamID, Active
+    UserID, TeamID, Active = 1
   } = data;
 
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("EmployeeName", sql.NVarChar(100), EmployeeName)
-    .input("EmployeeEmail", sql.VarChar(255), EmployeeEmail)
-    .input("EmployeePhone", sql.VarChar(255), EmployeePhone)
-    .input("CityID", sql.Int, CityID)
-    .input("StateProvinceID", sql.Int, StateProvinceID)
-    .input("HireDate", sql.Date, HireDate)
-    .input("TerminationDate", sql.Date, TerminationDate)
-    .input("DepartmentID", sql.Int, DepartmentID)
-    .input("salary", sql.Decimal(18, 2), salary)
-    .input("Holidays_PA", sql.Int, Holidays_PA)
-    .input("JobTitleID", sql.Int, JobTitleID)
-    .input("UserID", sql.Int, UserID)
-    .input("TeamID", sql.Int, TeamID)
-    .input("Active", sql.Bit, Active ?? 1)
-    .query(`
-      INSERT INTO Employee (
-        EmployeeName, EmployeeEmail, EmployeePhone,
-        CityID, StateProvinceID, HireDate, TerminationDate,
-        DepartmentID, salary, Holidays_PA, JobTitleID,
-        UserID, TeamID, Active, CreatedAt
-      ) VALUES (
-        @EmployeeName, @EmployeeEmail, @EmployeePhone,
-        @CityID, @StateProvinceID, @HireDate, @TerminationDate,
-        @DepartmentID, @salary, @Holidays_PA, @JobTitleID,
-        @UserID, @TeamID, @Active, GETDATE()
-      )
-    `);
+  if (!EmployeeName) throw new Error("EmployeeName is required");
+  if (!changedBy) throw new Error("changedBy user ID is required");
+  if (!actionTypeId) throw new Error("actionTypeId is required");
+
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("EmployeeID", sql.Int, 0)
+      .input("EmployeeName", sql.NVarChar(100), EmployeeName)
+      .input("EmployeeEmail", sql.VarChar(255), EmployeeEmail)
+      .input("EmployeePhone", sql.VarChar(255), EmployeePhone)
+      .input("CityID", sql.Int, CityID)
+      .input("StateProvinceID", sql.Int, StateProvinceID)
+      .input("HireDate", sql.Date, HireDate)
+      .input("TerminationDate", sql.Date, TerminationDate)
+      .input("DepartmentID", sql.Int, DepartmentID)
+      .input("Salary", sql.Decimal(18, 0), salary)
+      .input("Holidays_PA", sql.Int, Holidays_PA)
+      .input("JobTitleID", sql.Int, JobTitleID)
+      .input("UserID", sql.Int, UserID)
+      .input("TeamID", sql.Int, TeamID)
+      .input("Active", sql.Bit, Active)
+      .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, actionTypeId)
+      .execute("CreateEmployee");
+  } catch (error) {
+    console.error("EmployeeRepo Error [createEmployee]:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Update an existing employee
+// Update an existing employee 
 // =======================
-async function updateEmployee(employeeId, updates) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("EmployeeID", sql.Int, employeeId)
-    .input("EmployeeName", sql.NVarChar(100), updates.EmployeeName)
-    .input("EmployeeEmail", sql.VarChar(255), updates.EmployeeEmail)
-    .input("EmployeePhone", sql.VarChar(255), updates.EmployeePhone)
-    .input("CityID", sql.Int, updates.CityID)
-    .input("StateProvinceID", sql.Int, updates.StateProvinceID)
-    .input("HireDate", sql.Date, updates.HireDate)
-    .input("TerminationDate", sql.Date, updates.TerminationDate)
-    .input("DepartmentID", sql.Int, updates.DepartmentID)
-    .input("salary", sql.Decimal(18, 2), updates.salary)
-    .input("Holidays_PA", sql.Int, updates.Holidays_PA)
-    .input("JobTitleID", sql.Int, updates.JobTitleID)
-    .input("UserID", sql.Int, updates.UserID)
-    .input("TeamID", sql.Int, updates.TeamID)
-    .input("Active", sql.Bit, updates.Active)
-    .query(`
-      UPDATE Employee SET
-        EmployeeName = @EmployeeName,
-        EmployeeEmail = @EmployeeEmail,
-        EmployeePhone = @EmployeePhone,
-        CityID = @CityID,
-        StateProvinceID = @StateProvinceID,
-        HireDate = @HireDate,
-        TerminationDate = @TerminationDate,
-        DepartmentID = @DepartmentID,
-        salary = @salary,
-        Holidays_PA = @Holidays_PA,
-        JobTitleID = @JobTitleID,
-        UserID = @UserID,
-        TeamID = @TeamID,
-        Active = @Active,
-        UpdatedAt = GETDATE()
-      WHERE EmployeeID = @EmployeeID
-    `);
+async function updateEmployee(employeeId, updates, changedBy, actionTypeId) {
+  if (!employeeId) throw new Error("employeeId is required");
+  if (!changedBy) throw new Error("changedBy user ID is required");
+  if (!actionTypeId) throw new Error("actionTypeId is required");
+
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("EmployeeID", sql.Int, employeeId)
+      .input("EmployeeName", sql.NVarChar(100), updates.EmployeeName)
+      .input("EmployeeEmail", sql.VarChar(255), updates.EmployeeEmail)
+      .input("EmployeePhone", sql.VarChar(255), updates.EmployeePhone)
+      .input("CityID", sql.Int, updates.CityID)
+      .input("StateProvinceID", sql.Int, updates.StateProvinceID)
+      .input("HireDate", sql.Date, updates.HireDate)
+      .input("TerminationDate", sql.Date, updates.TerminationDate)
+      .input("DepartmentID", sql.Int, updates.DepartmentID)
+      .input("Salary", sql.Decimal(18, 0), updates.salary)
+      .input("Holidays_PA", sql.Int, updates.Holidays_PA)
+      .input("JobTitleID", sql.Int, updates.JobTitleID)
+      .input("UserID", sql.Int, updates.UserID)
+      .input("TeamID", sql.Int, updates.TeamID)
+      .input("Active", sql.Bit, updates.Active)
+      .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, actionTypeId)
+      .execute("UpdateEmployee");
+  } catch (error) {
+    console.error("EmployeeRepo Error [updateEmployee]:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Soft delete employee
+// Deactivate employee 
 // =======================
-async function deactivateEmployee(employeeId) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("EmployeeID", sql.Int, employeeId)
-    .query(`
-      UPDATE Employee SET Active = 0, UpdatedAt = GETDATE()
-      WHERE EmployeeID = @EmployeeID
-    `);
+async function deactivateEmployee(employee, changedBy, actionTypeId) {
+  if (!employee || !employee.EmployeeID) throw new Error("employee with EmployeeID is required");
+  if (!changedBy) throw new Error("changedBy user ID is required");
+  if (!actionTypeId) throw new Error("actionTypeId is required");
+
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("EmployeeID", sql.Int, employee.EmployeeID)
+      .input("EmployeeName", sql.NVarChar(100), employee.EmployeeName)
+      .input("EmployeeEmail", sql.VarChar(255), employee.EmployeeEmail)
+      .input("EmployeePhone", sql.VarChar(255), employee.EmployeePhone)
+      .input("CityID", sql.Int, employee.CityID)
+      .input("StateProvinceID", sql.Int, employee.StateProvinceID)
+      .input("HireDate", sql.Date, employee.HireDate)
+      .input("TerminationDate", sql.Date, employee.TerminationDate)
+      .input("DepartmentID", sql.Int, employee.DepartmentID)
+      .input("Salary", sql.Decimal(18, 0), employee.salary)
+      .input("Holidays_PA", sql.Int, employee.Holidays_PA)
+      .input("JobTitleID", sql.Int, employee.JobTitleID)
+      .input("UserID", sql.Int, employee.UserID)
+      .input("TeamID", sql.Int, employee.TeamID)
+      .input("Active", sql.Bit, employee.Active)
+      .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, actionTypeId)
+      .execute("DeactivateEmployee");
+  } catch (error) {
+    console.error("EmployeeRepo Error [deactivateEmployee]:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Exports
+// Reactivate employee
 // =======================
+async function reactivateEmployee(employee, changedBy, actionTypeId) {
+  if (!employee || !employee.EmployeeID) throw new Error("employee with EmployeeID is required");
+  if (!changedBy) throw new Error("changedBy user ID is required");
+  if (!actionTypeId) throw new Error("actionTypeId is required");
+
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("EmployeeID", sql.Int, employee.EmployeeID)
+      .input("EmployeeName", sql.NVarChar(100), employee.EmployeeName)
+      .input("EmployeeEmail", sql.VarChar(255), employee.EmployeeEmail)
+      .input("EmployeePhone", sql.VarChar(255), employee.EmployeePhone)
+      .input("CityID", sql.Int, employee.CityID)
+      .input("StateProvinceID", sql.Int, employee.StateProvinceID)
+      .input("HireDate", sql.Date, employee.HireDate)
+      .input("TerminationDate", sql.Date, employee.TerminationDate)
+      .input("DepartmentID", sql.Int, employee.DepartmentID)
+      .input("Salary", sql.Decimal(18, 0), employee.salary)
+      .input("Holidays_PA", sql.Int, employee.Holidays_PA)
+      .input("JobTitleID", sql.Int, employee.JobTitleID)
+      .input("UserID", sql.Int, employee.UserID)
+      .input("TeamID", sql.Int, employee.TeamID)
+      .input("Active", sql.Bit, employee.Active)
+      .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, actionTypeId)
+      .execute("ReactivateEmployee");
+  } catch (error) {
+    console.error("EmployeeRepo Error [reactivateEmployee]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Hard delete employee
+// =======================
+async function deleteEmployee(employee, changedBy, actionTypeId) {
+  if (!employee || !employee.EmployeeID) throw new Error("employee with EmployeeID is required");
+  if (!changedBy) throw new Error("changedBy user ID is required");
+  if (!actionTypeId) throw new Error("actionTypeId is required");
+
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("EmployeeID", sql.Int, employee.EmployeeID)
+      .input("EmployeeName", sql.NVarChar(100), employee.EmployeeName)
+      .input("EmployeeEmail", sql.VarChar(255), employee.EmployeeEmail)
+      .input("EmployeePhone", sql.VarChar(255), employee.EmployeePhone)
+      .input("CityID", sql.Int, employee.CityID)
+      .input("StateProvinceID", sql.Int, employee.StateProvinceID)
+      .input("HireDate", sql.Date, employee.HireDate)
+      .input("TerminationDate", sql.Date, employee.TerminationDate)
+      .input("DepartmentID", sql.Int, employee.DepartmentID)
+      .input("Salary", sql.Decimal(18, 0), employee.salary)
+      .input("Holidays_PA", sql.Int, employee.Holidays_PA)
+      .input("JobTitleID", sql.Int, employee.JobTitleID)
+      .input("UserID", sql.Int, employee.UserID)
+      .input("TeamID", sql.Int, employee.TeamID)
+      .input("Active", sql.Bit, employee.Active)
+      .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, actionTypeId)
+      .execute("DeleteEmployee");
+  } catch (error) {
+    console.error("EmployeeRepo Error [deleteEmployee]:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   getAllEmployees,
   getEmployeeById,
   createEmployee,
   updateEmployee,
-  deactivateEmployee
+  deactivateEmployee,
+  reactivateEmployee,
+  deleteEmployee,
 };

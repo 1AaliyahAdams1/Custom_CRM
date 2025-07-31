@@ -16,7 +16,7 @@ app.use(cors({
     process.env.SERVER_URL,
     process.env.ALT_SERVER_URL
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],  // Allow full set of HTTP methods
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Allow full set of HTTP methods
   allowedHeaders: ['Content-Type'],                      // Allow JSON headers
 }));
 app.options("*", cors()); // Handle CORS preflight for PUT/DELETE

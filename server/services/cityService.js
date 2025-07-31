@@ -1,34 +1,46 @@
-const cityRepository = require("../data/cityRepository");
+const cityRepo = require("../data/cityRepository");
 
-async function getAllCities() {
-  // Business logic: e.g., apply filters, access checks, caching
-  return await cityRepository.getAllCities();
-}
+const getAllCities = async () => {
+  return await cityRepo.getAllCities();
+};
 
-async function getCityById(cityId) {
-  // Business logic: e.g., validate cityId, check permissions
-  return await cityRepository.getCityById(cityId);
-}
+const getCityById = async (cityId) => {
+  if (!cityId) throw new Error("CityID is required");
+  return await cityRepo.getCityById(cityId);
+};
 
-async function createCity(cityData) {
-  // Business logic: validate cityData (e.g., required fields, duplicates)
-  return await cityRepository.createCity(cityData);
-}
+const createCity = async (data) => {
+  const { CityName, StateProvinceID } = data;
+  if (!CityName || !StateProvinceID) throw new Error("Missing required fields");
+  return await cityRepo.createCity(data);
+};
 
-async function updateCity(cityId, cityData) {
-  // Business logic: validate cityId and cityData, check if city exists, check for changes
-  return await cityRepository.updateCity(cityId, cityData);
-}
+const updateCity = async (cityId, data) => {
+  if (!cityId) throw new Error("CityID is required");
+  return await cityRepo.updateCity(cityId, data);
+};
 
-async function deleteCity(cityId) {
-  // Business logic: validate cityId, check if city is in use before deleting
-  return await cityRepository.deleteCity(cityId);
-}
+const deactivateCity = async (cityId) => {
+  if (!cityId) throw new Error("CityID is required");
+  return await cityRepo.deactivateCity(cityId);
+};
+
+const reactivateCity = async (cityId) => {
+  if (!cityId) throw new Error("CityID is required");
+  return await cityRepo.reactivateCity(cityId);
+};
+
+const deleteCity = async (cityId) => {
+  if (!cityId) throw new Error("CityID is required");
+  return await cityRepo.deleteCity(cityId);
+};
 
 module.exports = {
   getAllCities,
   getCityById,
   createCity,
   updateCity,
+  deactivateCity,
+  reactivateCity,
   deleteCity,
 };

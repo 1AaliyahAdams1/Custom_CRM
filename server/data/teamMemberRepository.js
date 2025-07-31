@@ -1,61 +1,96 @@
 const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
-
 // =======================
-// Get all members of the team [pulls all teams and their respective members]
+// Get all active team members
 // =======================
 async function getAllTeamMembers() {
   const pool = await sql.connect(dbConfig);
-  const result = await pool.request().query(`
-    SELECT * FROM TeamMember
-  `);
+  const result = await pool.request().execute("getAllTeamMembers");
   return result.recordset;
 }
 
-
 // =======================
-// Get all Team Members by specific team id
+// Get all active team members by TeamID
 // =======================
 async function getTeamMembersByTeamId(teamId) {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
     .input("TeamID", sql.Int, teamId)
-    .query(`SELECT * FROM TeamMember WHERE TeamID = @TeamID`);
+    .execute("getTeamMembersByTeamId");
   return result.recordset;
 }
-
 
 // =======================
 // Add a team member to a team
 // =======================
 async function addTeamMember(data) {
-  const { TeamID, UserID, Active } = data;
+  const { TeamID, UserID } = data;
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("TeamID", sql.Int, TeamID)
     .input("UserID", sql.Int, UserID)
-    .input("Active", sql.Bit, Active ?? true)
-    .query(`
-      INSERT INTO TeamMember (TeamID, UserID, JoinedAt, Active)
-      VALUES (@TeamID, @UserID, GETDATE(), @Active)
-    `);
+    .input("JoinedAt", sql.DateTime, new Date())
+    .execute("addTeamMember");
+  return { message: "Team member added" };
 }
 
-
 // =======================
-// Remove a team member from a team [Sets active to 0]
+// Deactivate a team member from a team
 // =======================
-async function removeTeamMember(teamMemberId) {
+async function deactivateTeamMember(TeamID, UserID) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
-    .input("TeamMemberID", sql.Int, teamMemberId)
-    .query(`UPDATE TeamMember SET Active = 0 WHERE TeamMemberID = @TeamMemberID`);
+    .input("TeamID", sql.Int, TeamID)
+    .input("UserID", sql.Int, UserID)
+    .execute("deactivateTeamMember");
+  return { message: "Team member deactivated" };
+}
+
+// =======================
+// Reactivate a team member in a team
+// =======================
+async function reactivateTeamMember(TeamID, UserID) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("TeamID", sql.Int, TeamID)
+    .input("UserID", sql.Int, UserID)
+    .execute("reactivateTeamMember");
+  return { message: "Team member reactivated" };
+}
+
+// =======================
+// Delete a deactivated team member
+// =======================
+async function deleteTeamMember(TeamID, UserID) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("TeamID", sql.Int, TeamID)
+    .input("UserID", sql.Int, UserID)
+    .execute("deleteTeamMember");
+  return { message: "Team member deleted" };
+}
+
+// =======================
+// Update a team member's team or user association
+// =======================
+async function updateTeamMember(TeamMemberID, data) {
+  const { TeamID, UserID } = data;
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("TeamMemberID", sql.Int, TeamMemberID)
+    .input("TeamID", sql.Int, TeamID)
+    .input("UserID", sql.Int, UserID)
+    .execute("updateTeamMember");
+  return { message: "Team member updated" };
 }
 
 module.exports = {
   getAllTeamMembers,
   getTeamMembersByTeamId,
   addTeamMember,
-  removeTeamMember
+  deactivateTeamMember,
+  reactivateTeamMember,
+  deleteTeamMember,
+  updateTeamMember,
 };

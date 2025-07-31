@@ -1,83 +1,46 @@
 const dealService = require("../services/dealService");
 
-// Helper to get changedBy from authenticated user or default
-function getChangedBy(req) {
-  return req.user?.username || "System";
-}
-
-// Get all deals
 async function getAllDeals(req, res) {
-  try {
-    // Validation for filters, pagination, permissions can go here
-
-    const deals = await dealService.getAllDeals();
-    res.json(deals);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const deals = await dealService.getAllDeals();
+  res.json(deals);
 }
 
-// Create a new deal
+async function getDealById(req, res) {
+  const deal = await dealService.getDealById(parseInt(req.params.id));
+  res.json(deal);
+}
+
 async function createDeal(req, res) {
-  // Validation of req.body should go here
-
-  try {
-    const changedBy = getChangedBy(req);
-    const newDeal = await dealService.createDeal(req.body, changedBy);
-    res.status(201).json(newDeal);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const newDeal = await dealService.createDeal(req.body);
+  res.status(201).json(newDeal);
 }
 
-// Update deal by ID
 async function updateDeal(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validation of id and req.body should go here
-
-  try {
-    const changedBy = getChangedBy(req);
-    const updatedDeal = await dealService.updateDeal(id, req.body, changedBy);
-    res.json(updatedDeal);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const updated = await dealService.updateDeal(parseInt(req.params.id), req.body);
+  res.json(updated);
 }
 
-// Delete deal by ID
+async function deactivateDeal(req, res) {
+  const result = await dealService.deactivateDeal(parseInt(req.params.id), req.body);
+  res.json(result);
+}
+
+async function reactivateDeal(req, res) {
+  const result = await dealService.reactivateDeal(parseInt(req.params.id), req.body);
+  res.json(result);
+}
+
 async function deleteDeal(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validation of id should go here
-
-  try {
-    const changedBy = getChangedBy(req);
-    const deleted = await dealService.deleteDeal(id, changedBy);
-    res.json(deleted);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
-
-// Get deal details including products, notes, attachments
-async function getDealDetails(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validation of id should go here
-
-  try {
-    const details = await dealService.getDealDetails(id);
-    if (!details) {
-      return res.status(404).json({ error: "Deal not found" });
-    }
-    res.json(details);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const result = await dealService.deleteDeal(parseInt(req.params.id), req.body);
+  res.json(result);
 }
 
 module.exports = {
   getAllDeals,
+  getDealById,
   createDeal,
   updateDeal,
+  deactivateDeal,
+  reactivateDeal,
   deleteDeal,
-  getDealDetails,
 };

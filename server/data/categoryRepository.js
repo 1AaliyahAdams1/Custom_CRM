@@ -6,10 +6,8 @@ const dbConfig = require("../dbConfig");
 // =======================
 async function getAllCategories() {
   const pool = await sql.connect(dbConfig);
-  const result = await pool.request().query(`
-    SELECT * FROM Category
-    ORDER BY CategoryName
-  `);
+  const result = await pool.request()
+    .execute("GetAllCategories");
   return result.recordset;
 }
 
@@ -20,7 +18,7 @@ async function getCategoryById(categoryId) {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
     .input("CategoryID", sql.Int, categoryId)
-    .query("SELECT * FROM Category WHERE CategoryID = @CategoryID");
+    .execute("GetCategoryByID");
   return result.recordset[0];
 }
 
@@ -31,10 +29,7 @@ async function createCategory(categoryName) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CategoryName", sql.VarChar(255), categoryName)
-    .query(`
-      INSERT INTO Category (CategoryName)
-      VALUES (@CategoryName)
-    `);
+    .execute("CreateCategory");
 }
 
 // =======================
@@ -45,21 +40,37 @@ async function updateCategory(categoryId, categoryName) {
   await pool.request()
     .input("CategoryID", sql.Int, categoryId)
     .input("CategoryName", sql.VarChar(255), categoryName)
-    .query(`
-      UPDATE Category
-      SET CategoryName = @CategoryName
-      WHERE CategoryID = @CategoryID
-    `);
+    .execute("UpdateCategory");
 }
 
 // =======================
-// Delete a category (hard delete)
+// Deactivate a category
+// =======================
+async function deactivateCategory(categoryId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CategoryID", sql.Int, categoryId)
+    .execute("DeactivateCategory");
+}
+
+// =======================
+// Reactivate a category
+// =======================
+async function reactivateCategory(categoryId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CategoryID", sql.Int, categoryId)
+    .execute("ReactivateCategory");
+}
+
+// =======================
+// Delete a category 
 // =======================
 async function deleteCategory(categoryId) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CategoryID", sql.Int, categoryId)
-    .query("DELETE FROM Category WHERE CategoryID = @CategoryID");
+    .execute("DeleteCategory");
 }
 
 // =======================
@@ -70,5 +81,7 @@ module.exports = {
   getCategoryById,
   createCategory,
   updateCategory,
-  deleteCategory
+  deactivateCategory,
+  reactivateCategory,
+  deleteCategory,
 };
