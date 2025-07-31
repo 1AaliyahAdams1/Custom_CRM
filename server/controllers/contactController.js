@@ -1,95 +1,40 @@
 const contactService = require("../services/contactService");
 
-// Helper to get changedBy from authenticated user or default
-function getChangedBy(req) {
-  return req.user?.username || "System";
-}
-
-// Get all contacts
 async function getAllContacts(req, res) {
-  try {
-    // Validation can go here (e.g., filters, pagination params)
-    const contacts = await contactService.getAllContacts();
-    res.json(contacts);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const contacts = await contactService.getAllContacts();
+  res.json(contacts);
 }
 
-// Get all persons
-async function getAllPersons(req, res) {
-  try {
-    // Validation can go here
-    const persons = await contactService.getAllPersons();
-    res.json(persons);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+async function getContactById(req, res) {
+  const contact = await contactService.getContactDetails(req.params.id);
+  res.json(contact);
 }
 
-// Create a new contact (with optional new person)
+async function getContactsByAccountId(req, res) {
+  const contacts = await contactService.getContactsByAccountId(req.params.accountId);
+  res.json(contacts);
+}
+
 async function createContact(req, res) {
-  // Validation for req.body should go here
-
-  try {
-    const changedBy = getChangedBy(req);
-    const newContact = await contactService.createContact(req.body, changedBy);
-    res.status(201).json(newContact);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const result = await contactService.createContact(req.body, req.body.changedBy || 0);
+  res.status(201).json(result);
 }
 
-// Update a contact by ID
 async function updateContact(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validation for id and req.body goes here
-
-  try {
-    const changedBy = getChangedBy(req);
-    const updatedContact = await contactService.updateContact(id, req.body, changedBy);
-    res.json(updatedContact);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const result = await contactService.updateContact(req.params.id, req.body, req.body.changedBy || 0);
+  res.json(result);
 }
 
-// Delete a contact by ID
 async function deleteContact(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validation for id goes here
-
-  try {
-    const changedBy = getChangedBy(req);
-    const deleted = await contactService.deleteContact(id, changedBy);
-    res.json(deleted);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const result = await contactService.deleteContact(req.params.id, req.body.changedBy || 0);
+  res.json(result);
 }
-
-// Get contact details including notes and attachments
-async function getContactDetails(req, res) {
-  const contactId = parseInt(req.params.id, 10);
-  // Validation for contactId goes here
-
-  try {
-    const details = await contactService.getContactDetails(contactId);
-    if (!details) {
-      return res.status(404).json({ error: "Contact not found" });
-    }
-    res.json(details);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
-
 
 module.exports = {
   getAllContacts,
-  getAllPersons,
+  getContactById,
+  getContactsByAccountId,
   createContact,
   updateContact,
   deleteContact,
-  getContactDetails,
 };

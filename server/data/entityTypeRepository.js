@@ -2,57 +2,124 @@ const sql = require("mssql");
 const dbConfig = require("../dbConfig");
 
 // =======================
-// Get all entity types
+// Get all active entity types
 // =======================
 async function getAllEntityTypes() {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request().query(`
-    SELECT * FROM EntityType ORDER BY TypeName
-  `);
-  return result.recordset;
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().execute("getAllEntityTypes");
+    return result.recordset;
+  } catch (error) {
+    console.error("EntityTypeRepo Error [getAllEntityTypes]:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Create entity type
+// Get entity type by ID
+// =======================
+async function getEntityTypeById(entityTypeId) {
+  if (!entityTypeId) throw new Error("entityTypeId is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("EntityTypeID", sql.Int, entityTypeId)
+      .execute("getEntityTypeByID");
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("EntityTypeRepo Error [getEntityTypeById]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Create new entity type
 // =======================
 async function createEntityType(typeName) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("TypeName", sql.VarChar(100), typeName)
-    .query(`INSERT INTO EntityType (TypeName) VALUES (@TypeName)`);
+  if (!typeName) throw new Error("typeName is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("TypeName", sql.VarChar(100), typeName)
+      .execute("createEntityType");
+  } catch (error) {
+    console.error("EntityTypeRepo Error [createEntityType]:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Update entity type
 // =======================
 async function updateEntityType(entityTypeId, typeName) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("EntityTypeID", sql.Int, entityTypeId)
-    .input("TypeName", sql.VarChar(100), typeName)
-    .query(`
-      UPDATE EntityType
-      SET TypeName = @TypeName
-      WHERE EntityTypeID = @EntityTypeID
-    `);
+  if (!entityTypeId) throw new Error("entityTypeId is required");
+  if (!typeName) throw new Error("typeName is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("EntityTypeID", sql.Int, entityTypeId)
+      .input("TypeName", sql.VarChar(100), typeName)
+      .execute("updateEntityType");
+  } catch (error) {
+    console.error("EntityTypeRepo Error [updateEntityType]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Deactivate entity type 
+// =======================
+async function deactivateEntityType(entityTypeId) {
+  if (!entityTypeId) throw new Error("entityTypeId is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("EntityTypeID", sql.Int, entityTypeId)
+      .execute("deactivateEntityType");
+  } catch (error) {
+    console.error("EntityTypeRepo Error [deactivateEntityType]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Reactivate entity type
+// =======================
+async function reactivateEntityType(entityTypeId) {
+  if (!entityTypeId) throw new Error("entityTypeId is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("EntityTypeID", sql.Int, entityTypeId)
+      .execute("reactivateEntityType");
+  } catch (error) {
+    console.error("EntityTypeRepo Error [reactivateEntityType]:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Delete entity type
 // =======================
 async function deleteEntityType(entityTypeId) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("EntityTypeID", sql.Int, entityTypeId)
-    .query("DELETE FROM EntityType WHERE EntityTypeID = @EntityTypeID");
+  if (!entityTypeId) throw new Error("entityTypeId is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("EntityTypeID", sql.Int, entityTypeId)
+      .execute("deleteEntityType");
+  } catch (error) {
+    console.error("EntityTypeRepo Error [deleteEntityType]:", error);
+    throw error;
+  }
 }
 
-// =======================
-// Exports
-// =======================
 module.exports = {
   getAllEntityTypes,
+  getEntityTypeById,
   createEntityType,
   updateEntityType,
+  deactivateEntityType,
+  reactivateEntityType,
   deleteEntityType,
 };

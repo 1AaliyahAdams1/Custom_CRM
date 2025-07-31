@@ -11,6 +11,10 @@ import {
   Select,
   MenuItem,
   FormHelperText,
+  Grid,
+  Typography,
+  Box,
+  CircularProgress,
 } from "@mui/material";
 import axios from "axios";
 
@@ -43,33 +47,105 @@ const AccountFormDialog = ({ open, onClose, account, onSubmit }) => {
   const [cities, setCities] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [dropdownsLoading, setDropdownsLoading] = useState(false);
 
   useEffect(() => {
-    if (isEdit) {
-      setFormData(account);
-    } else {
-      setFormData(emptyForm);
+    if (open) {
+      // Reset form when dialog opens
+      if (isEdit) {
+        setFormData(account);
+      } else {
+        setFormData(emptyForm);
+      }
+      setErrors({});
+      loadDropdownData();
     }
-    setErrors({});
+  }, [account, isEdit, open]);
 
-    axios
-      .get(`${baseUrl}/city`)
-      .then((res) => setCities(res.data))
-      .catch((err) => console.error("Failed to load cities:", err));
+  const loadDropdownData = async () => {
+    setDropdownsLoading(true);
+    try {
+      const [citiesRes, industriesRes] = await Promise.all([
+        axios.get(`${baseUrl}/city`).catch(err => {
+          console.error("Failed to load cities:", err);
+          return { data: [] };
+        }),
+        axios.get(`${baseUrl}/industry`).catch(err => {
+          console.error("Failed to load industries:", err);
+          return { data: [] };
+        })
+      ]);
+      
+      setCities(citiesRes.data || []);
+      setIndustries(industriesRes.data || []);
+    } catch (error) {
+      console.error("Error loading dropdown data:", error);
+    } finally {
+      setDropdownsLoading(false);
+    }
+  };
 
-    axios
-      .get(`${baseUrl}/industry`)
-      .then((res) => setIndustries(res.data))
-      .catch((err) => console.error("Failed to load industries:", err));
-  }, [account, isEdit]);
-
-  // Empty validation function
-  //Add validation into this function 
+  // Enhanced validation function
   const validate = () => {
     const newErrors = {};
-    //Example validation : (!formData.AccountName) newErrors.AccountName = "Account name is required";
+    
+    // Required field validation
+    if (!formData.AccountName?.trim()) {
+      newErrors.AccountName = "Account name is required";
+    } else if (formData.AccountName.length > 255) {
+      newErrors.AccountName = "Account name must be less than 255 characters";
+    }
+    
+    // Email validation
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+    
+    // Phone validation (basic)
+    if (formData.PrimaryPhone && formData.PrimaryPhone.length > 63) {
+      newErrors.PrimaryPhone = "Phone number must be less than 63 characters";
+    }
+    
+    // Website validation
+    if (formData.Website && !isValidUrl(formData.Website)) {
+      newErrors.Website = "Invalid website URL";
+    }
+    
+    // Numeric field validation
+    if (formData.number_of_employees && (formData.number_of_employees < 0 || formData.number_of_employees > 2147483647)) {
+      newErrors.number_of_employees = "Must be a positive number";
+    }
+    
+    if (formData.annual_revenue && formData.annual_revenue < 0) {
+      newErrors.annual_revenue = "Must be a positive number";
+    }
+    
+    if (formData.number_of_venues && (formData.number_of_venues < 0 || formData.number_of_venues > 32767)) {
+      newErrors.number_of_venues = "Must be between 0 and 32767";
+    }
+    
+    if (formData.number_of_releases && (formData.number_of_releases < 0 || formData.number_of_releases > 32767)) {
+      newErrors.number_of_releases = "Must be between 0 and 32767";
+    }
+    
+    if (formData.number_of_events_anually && (formData.number_of_events_anually < 0 || formData.number_of_events_anually > 32767)) {
+      newErrors.number_of_events_anually = "Must be between 0 and 32767";
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const isValidUrl = (string) => {
+    try {
+      // Allow URLs with or without protocol
+      const url = string.startsWith('http') ? string : `https://${string}`;
+      new URL(url);
+      return true;
+    } catch (_) {
+      return false;
+    }
   };
 
   const handleChange = (e) => {
@@ -85,20 +161,40 @@ const AccountFormDialog = ({ open, onClose, account, onSubmit }) => {
           "number_of_venues",
           "number_of_releases",
           "number_of_events_anually",
+          "ParentAccount"
         ].includes(name)
           ? value === "" ? "" : Number(value)
           : value,
     }));
+    
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ""
+      }));
+    }
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
 
+    setLoading(true);
     try {
       await onSubmit(formData);
       if (!isEdit) setFormData(emptyForm);
     } catch (error) {
       console.error("Submission failed:", error);
+      // You might want to show an error message to the user here
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!loading) {
+      onClose();
+      setErrors({});
     }
   };
 

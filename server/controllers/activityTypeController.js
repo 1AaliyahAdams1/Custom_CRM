@@ -1,75 +1,75 @@
 const activityTypeService = require("../services/activityTypeService");
 
-// Get all activity types
-async function getAllActivityTypes(req, res) {
+const getAllActivityTypes = async (req, res) => {
   try {
-    // Validation can be done here if needed
-
     const data = await activityTypeService.getAllActivityTypes();
-    res.json(data);
+    res.status(200).json(data);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch activity types" });
+    res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Get single activity type by ID
-async function getActivityTypeById(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validate id here if needed
-
+const getActivityTypeById = async (req, res) => {
   try {
-    const data = await activityTypeService.getActivityTypeById(id);
-    if (!data) {
-      return res.status(404).json({ message: "Activity type not found" });
-    }
-    res.json(data);
+    const data = await activityTypeService.getActivityTypeById(req.params.id);
+    if (!data) return res.status(404).json({ error: "Activity type not found" });
+    res.status(200).json(data);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch activity type" });
+    res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Create a new activity type
-async function createActivityType(req, res) {
-  // Validate request body here if needed
-
+const createActivityType = async (req, res) => {
   try {
-    const newActivityType = await activityTypeService.createActivityType(req.body);
-    res.status(201).json(newActivityType);
+    await activityTypeService.createActivityType(req.body);
+    res.status(201).json({ message: "Activity type created successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Failed to create activity type" });
+    res.status(400).json({ error: err.message });
   }
-}
+};
 
-// Update an activity type by ID
-async function updateActivityType(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validate id and request body here if needed
-
+const updateActivityType = async (req, res) => {
   try {
-    const updatedActivityType = await activityTypeService.updateActivityType(id, req.body);
-    res.json(updatedActivityType);
+    await activityTypeService.updateActivityType(req.params.id, req.body);
+    res.status(200).json({ message: "Activity type updated successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Failed to update activity type" });
+    res.status(400).json({ error: err.message });
   }
-}
+};
 
-// Delete an activity type by ID
-async function deleteActivityType(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validate id here if needed
-
+const deactivateActivityType = async (req, res) => {
   try {
-    const result = await activityTypeService.deleteActivityType(id);
-    res.json(result);
+    await activityTypeService.deactivateActivityType(req.params.id);
+    res.status(200).json({ message: "Activity type deactivated successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Failed to delete activity type" });
+    res.status(400).json({ error: err.message });
   }
-}
+};
+
+const reactivateActivityType = async (req, res) => {
+  try {
+    await activityTypeService.reactivateActivityType(req.params.id);
+    res.status(200).json({ message: "Activity type reactivated successfully" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+const deleteActivityType = async (req, res) => {
+  try {
+    await activityTypeService.deleteActivityType(req.params.id);
+    res.status(200).json({ message: "Activity type deleted successfully" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
 
 module.exports = {
   getAllActivityTypes,
   getActivityTypeById,
   createActivityType,
   updateActivityType,
+  deactivateActivityType,
+  reactivateActivityType,
   deleteActivityType,
 };
