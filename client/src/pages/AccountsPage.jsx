@@ -13,7 +13,7 @@ import {
   getAllAccounts,
   createAccount,
   updateAccount,
-  deleteAccount,
+  deactivateAccount,
 } from "../services/accountService";
 
 const AccountsPage = () => {
@@ -32,17 +32,17 @@ const AccountsPage = () => {
 
   // Function to fetch accounts data from backend API
   const fetchAccounts = async () => {
-    setLoading(true);      // Start loading spinner
-    setError(null);        // Clear any previous errors
+    setLoading(true);
+    setError(null);
     try {
-      const data = await getAllAccounts();  // API call to get accounts
-      console.log("Fetched accounts:", data);
-      setAccounts(data);    // Save fetched data to state
+      const response = await getAllAccounts();
+      console.log("Fetched accounts:", response.data);
+      setAccounts(response.data);
     } catch (error) {
       console.error("Failed to fetch accounts:", error);
-      setError("Failed to load accounts. Please try again.");  // Show error alert
+      setError("Failed to load accounts. Please try again.");
     } finally {
-      setLoading(false);    // Stop loading spinner
+      setLoading(false);
     }
   };
 
@@ -77,21 +77,22 @@ const AccountsPage = () => {
   };
 
   // Delete an account after user confirmation, then refresh data
-  const handleDelete = async (id) => {
-    const confirm = window.confirm("Are you sure you want to delete this account?");
-    if (!confirm) return; // Cancel delete if user says no
+  const handleDeactivate = async (id) => {
+  const confirm = window.confirm("Are you sure you want to delete this account? This will deactivate it.");
+  if (!confirm) return;
 
-    setError(null);
-    try {
-      console.log("Deleting account with ID:", id);
-      await deleteAccount(id);    // Call backend delete API
-      setSuccessMessage("Account deleted successfully.");
-      await fetchAccounts();      // Refresh accounts list after delete
-    } catch (error) {
-      console.error("Delete failed:", error);
-      setError("Failed to delete account. Please try again.");
-    }
-  };
+  setError(null);
+  try {
+    console.log("Deactivating (soft deleting) account with ID:", id);
+    await deactivateAccount(id);
+    setSuccessMessage("Account deleted successfully.");  // message visible to user
+    await fetchAccounts();
+  } catch (error) {
+    console.error("Delete failed:", error);
+    setError("Failed to delete account. Please try again.");
+  }
+};
+
 
   // Handle form submission for both create and update operations
   const handleSave = async (accountData) => {
@@ -123,7 +124,7 @@ const AccountsPage = () => {
     setSelectedAccount(null);
   };
 
-  
+
   return (
     <Box p={4}>
       {/* Page Title */}
@@ -146,10 +147,10 @@ const AccountsPage = () => {
       )}
 
       {/* Button to add a new account */}
-      <Button 
-        variant="contained" 
-        color="primary" 
-        onClick={handleOpenCreate} 
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleOpenCreate}
         sx={{ mb: 2 }}
         disabled={loading}  // Disable button while loading
       >
@@ -164,8 +165,8 @@ const AccountsPage = () => {
       ) : (
         <AccountsTable
           accounts={accounts}
-          onEdit={handleOpenEdit}   // Edit button callback
-          onDelete={handleDelete}    // Delete button callback
+          onEdit={handleOpenEdit}   
+          onDeactivate={handleDeactivate}    
         />
       )}
 
@@ -178,7 +179,7 @@ const AccountsPage = () => {
       />
     </Box>
   );
-  
+
 
 };
 

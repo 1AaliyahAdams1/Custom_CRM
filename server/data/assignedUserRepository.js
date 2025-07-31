@@ -1,58 +1,91 @@
 const sql = require("mssql");
-const dbConfig = require("../dbConfig");
+const { dbConfig } = require("../dbConfig");
 
-//Users will have access to a client's Accounts/deals/contacts all linked via account
-
-
-//======================================
-// Get the assigned users for an Account
-//======================================
-async function getAssignedUsersByAccount(accountId) {
+// ==========================================
+// Get all AssignedUsers
+// ==========================================
+async function getAllAssignedUsers() {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
-    .input("AccountID", sql.Int, accountId)
-    .query(`
-      SELECT au.*, u.Username, u.Email
-      FROM AssignedUser au
-      JOIN Users u ON au.UserID = u.UserID
-      WHERE au.AccountID = @AccountID
-    `);
+    .execute("GetAssignedUser");
   return result.recordset;
 }
 
-//======================================
-// Assign a user access to an account
-//======================================
-async function assignUserToAccount(accountId, userId) {
+// ==========================================
+// Get AssignedUser by AccountUserID
+// ==========================================
+async function getAssignedUserById(accountUserId) {
   const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("AccountID", sql.Int, accountId)
-    .input("UserID", sql.Int, userId)
-    .query(`
-      INSERT INTO AssignedUser (AccountID, UserID)
-      VALUES (@AccountID, @UserID)
-    `);
+  const result = await pool.request()
+    .input("AccountUserID", sql.Int, accountUserId)
+    .execute("GetAssignedUserByID");
+  return result.recordset[0]; // single record
 }
 
-//======================================
-// Unassign a user from an account
-//======================================
-async function unassignUserFromAccount(accountId, userId) {
+// ==========================================
+// Create AssignedUser
+// ==========================================
+async function createAssignedUser(data) {
+  const { UserID, AccountID } = data;
   const pool = await sql.connect(dbConfig);
   await pool.request()
-    .input("AccountID", sql.Int, accountId)
-    .input("UserID", sql.Int, userId)
-    .query(`
-      DELETE FROM AssignedUser
-      WHERE AccountID = @AccountID AND UserID = @UserID
-    `);
+    .input("UserID", sql.Int, UserID)
+    .input("AccountID", sql.Int, AccountID)
+    .execute("CreateAssignedUser");
 }
 
-// =======================
+// ==========================================
+// Update AssignedUser by AccountUserID
+// ==========================================
+async function updateAssignedUser(accountUserId, updates) {
+  const { UserID, AccountID } = updates;
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("AccountUserID", sql.Int, accountUserId)
+    .input("UserID", sql.Int, UserID)
+    .input("AccountID", sql.Int, AccountID)
+    .execute("UpdateAssignedUser");
+}
+
+// ==========================================
+// Deactivate AssignedUser by AccountUserID
+// ==========================================
+async function deactivateAssignedUser(accountUserId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("AccountUserID", sql.Int, accountUserId)
+    .execute("DeactivateAssignedUser");
+}
+
+// ==========================================
+// Reactivate AssignedUser by AccountUserID
+// ==========================================
+async function reactivateAssignedUser(accountUserId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("AccountUserID", sql.Int, accountUserId)
+    .execute("ReactivateAssignedUser");
+}
+
+// ==========================================
+// Delete AssignedUser by AccountUserID
+// ==========================================
+async function deleteAssignedUser(accountUserId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("AccountUserID", sql.Int, accountUserId)
+    .execute("DeleteAssignedUser");
+}
+
+// ==========================================
 // Exports
-// =======================
+// ==========================================
 module.exports = {
-  getAssignedUsersByAccount,
-  assignUserToAccount,
-  unassignUserFromAccount
+  getAllAssignedUsers,
+  getAssignedUserById,
+  createAssignedUser,
+  updateAssignedUser,
+  deactivateAssignedUser,
+  reactivateAssignedUser,
+  deleteAssignedUser,
 };

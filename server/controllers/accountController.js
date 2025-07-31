@@ -1,83 +1,156 @@
 const accountService = require("../services/accountService");
 
-// Helper to get changedBy (only from authenticated user)
-function getChangedBy(req) {
-  return req.user?.username || "UnknownUser";
-}
-
-// Get all accounts
-async function getAccounts(req, res) {
+// List all accounts
+async function getAllAccounts(req, res) {
   try {
-    // Validation can go here
-
-    const accounts = await accountService.getAllAccounts();
+    const accounts = await accountService.listAllAccounts();
     res.json(accounts);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting all accounts:", err);
+    res.status(500).json({ error: "Failed to get accounts" });
   }
 }
 
-// Create a new account
+// Get active accounts
+async function getActiveAccounts(req, res) {
+  try {
+    const accounts = await accountService.listActiveAccounts();
+    res.json(accounts);
+  } catch (err) {
+    console.error("Error getting active accounts:", err);
+    res.status(500).json({ error: "Failed to get active accounts" });
+  }
+}
+
+// Get inactive accounts
+async function getInactiveAccounts(req, res) {
+  try {
+    const accounts = await accountService.listInactiveAccounts();
+    res.json(accounts);
+  } catch (err) {
+    console.error("Error getting inactive accounts:", err);
+    res.status(500).json({ error: "Failed to get inactive accounts" });
+  }
+}
+
+// Get account by ID
+async function getAccountById(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid account ID" });
+
+    const account = await accountService.getAccountById(id);
+    if (!account) return res.status(404).json({ error: "Account not found" });
+
+    res.json(account);
+  } catch (err) {
+    console.error("Error getting account by ID:", err);
+    res.status(500).json({ error: "Failed to get account" });
+  }
+}
+
+// Create account
 async function createAccount(req, res) {
   try {
-    // Validation can go here
-
-    const changedBy = getChangedBy(req);
-    const newAccount = await accountService.createAccount(req.body, changedBy);
+    const newAccount = await accountService.createAccount(req.body);
     res.status(201).json(newAccount);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error creating account:", err);
+    res.status(500).json({ error: "Failed to create account" });
   }
 }
 
-// Update an existing account by ID
+// Update account
 async function updateAccount(req, res) {
-  const id = parseInt(req.params.id, 10);
-
   try {
-    // Validation can go here
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid account ID" });
 
-    const changedBy = getChangedBy(req);
-    const updatedAccount = await accountService.updateAccount(id, req.body, changedBy);
-    res.json(updatedAccount);
+    const updated = await accountService.updateAccount(id, req.body);
+    res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error updating account:", err);
+    res.status(500).json({ error: "Failed to update account" });
   }
 }
 
-// Delete an account by ID
+// Deactivate account (soft delete) - Fixed to match controller pattern
+async function deactivateAccount(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid account ID" });
+
+    const result = await accountService.deactivateAccount(id);
+    res.json(result);
+  } catch (err) {
+    console.error("Error deactivating account:", err);
+    
+    // Handle specific error messages from service layer
+    if (err.message === "Account not found") {
+      return res.status(404).json({ error: err.message });
+    }
+    if (err.message === "Account is already deactivated") {
+      return res.status(400).json({ error: err.message });
+    }
+    
+    res.status(500).json({ error: "Failed to deactivate account" });
+  }
+}
+
+// Reactivate account
+async function reactivateAccount(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid account ID" });
+
+    const result = await accountService.reactivateAccount(id);
+    res.json(result);
+  } catch (err) {
+    console.error("Error reactivating account:", err);
+    
+    // Handle specific error messages from service layer
+    if (err.message === "Account not found") {
+      return res.status(404).json({ error: err.message });
+    }
+    if (err.message === "Account is already active") {
+      return res.status(400).json({ error: err.message });
+    }
+    
+    res.status(500).json({ error: "Failed to reactivate account" });
+  }
+}
+
+// Delete account (hard delete)
 async function deleteAccount(req, res) {
-  const id = parseInt(req.params.id, 10);
-
   try {
-    // Validation can go here
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid account ID" });
 
-    const changedBy = getChangedBy(req);
-    const deleted = await accountService.deleteAccount(id, changedBy);
-    res.json(deleted);
+    const result = await accountService.deleteAccount(id);
+    res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
-
-// Get Account Details for Details Page
-async function getAccountDetails(req, res) {
-  const id = parseInt(req.params.id, 10);
-
-  try {
-    // Validation can go here
-
-    const accountDetails = await accountService.getAccountDetails(id);
-    res.json(accountDetails);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error deleting account:", err);
+    
+    // Handle specific error messages from service layer
+    if (err.message === "Account not found") {
+      return res.status(404).json({ error: err.message });
+    }
+    if (err.message === "Account must be deactivated before permanent deletion") {
+      return res.status(400).json({ error: err.message });
+    }
+    
+    res.status(500).json({ error: "Failed to delete account" });
   }
 }
 
 module.exports = {
-  getAccounts,
+  getAllAccounts,
+  getActiveAccounts,
+  getInactiveAccounts,
+  getAccountById,
   createAccount,
   updateAccount,
+  deactivateAccount,
+  reactivateAccount,
   deleteAccount,
-  getAccountDetails,
 };

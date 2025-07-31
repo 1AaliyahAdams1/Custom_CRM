@@ -1,50 +1,44 @@
-const stateRepository = require("../data/stateProvinceRepository");
-
-// Helper to get changedBy or default user
-function getChangedByOrDefault(changedBy) {
-  return changedBy || "System";
-}
+const stateRepo = require("../data/stateProvinceRepository");
 
 async function getAllStates() {
-  // Business logic: filtering, caching, permission checks could go here
-  return await stateRepository.getAllStates();
+  return await stateRepo.getAllStates();
 }
 
 async function getStateById(id) {
-  // Business logic: validate id, permissions checks
-  return await stateRepository.getStateById(id);
+  return await stateRepo.getStateById(id);
 }
 
-async function createState(stateData, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-
-  // Business logic: validate stateData (name, countryId), check duplicates
-
-  return await stateRepository.createState(stateData);
+async function getIDByStateProvince(name) {
+  return await stateRepo.getIDByStateProvince(name);
 }
 
-async function updateState(id, stateData, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-
-  // Business logic: validate id and stateData, permission checks
-
-  const result = await stateRepository.updateState(id, stateData);
-  return result;
+async function createState(data) {
+  return await stateRepo.createState(data);
 }
 
-async function deleteState(id, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
+async function updateState(id, data) {
+  return await stateRepo.updateState(id, data);
+}
 
-  // Business logic: validate id, check dependencies before delete
+async function deactivateState(id) {
+  return await stateRepo.deactivateState(id);
+}
 
-  const result = await stateRepository.deleteState(id);
-  return result;
+async function reactivateState(id) {
+  return await stateRepo.reactivateState(id);
+}
+
+async function deleteState(id) {
+  return await stateRepo.deleteState(id);
 }
 
 module.exports = {
   getAllStates,
   getStateById,
+  getIDByStateProvince,
   createState,
   updateState,
+  deactivateState,
+  reactivateState,
   deleteState,
 };
