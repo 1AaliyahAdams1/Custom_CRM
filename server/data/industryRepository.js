@@ -1,96 +1,111 @@
 const sql = require("mssql");
-const { dbConfig } = require("../dbConfig");
-
+const dbConfig = require("../dbConfig");
 
 // =======================
-// Get all industries
+// Get all active industries
 // =======================
-async function getAllIndustries(activeOnly = false) {
-  const pool = await sql.connect(dbConfig);
-  const query = `
-    SELECT IndustryID, IndustryName, Active
-    FROM Industry
-    ORDER BY IndustryName
-  `;
-  const result = await pool.request().query(query);
-  return result.recordset;
+async function getAllIndustries() {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().execute("getAllIndustries");
+    return result.recordset;
+  } catch (error) {
+    console.error("DB error in getAllIndustries:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Get an industry by ID
+// Get industry by ID
 // =======================
 async function getIndustryById(industryId) {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request()
-    .input("IndustryID", sql.Int, industryId)
-    .query(`
-      SELECT IndustryID, IndustryName, Active
-      FROM Industry
-      WHERE IndustryID = @IndustryID
-    `);
-  return result.recordset[0];
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("IndustryID", sql.Int, industryId)
+      .execute("getIndustryById");
+    return result.recordset[0];
+  } catch (error) {
+    console.error("DB error in getIndustryById:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Create a new industry
 // =======================
-async function createIndustry(industryName, active = true) {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request()
-    .input("IndustryName", sql.NVarChar(100), industryName)
-    .input("Active", sql.Bit, active)
-    .query(`
-      INSERT INTO Industry (IndustryName, Active)
-      VALUES (@IndustryName, @Active);
-      SELECT SCOPE_IDENTITY() AS IndustryID;
-    `);
-  return result.recordset[0];
+async function createIndustry(industryName) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("IndustryName", sql.VarChar(255), industryName)
+      .execute("createIndustry");
+  } catch (error) {
+    console.error("DB error in createIndustry:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Update an industry
 // =======================
-async function updateIndustry(industryId, data) {
-  const { IndustryName, Active } = data;
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("IndustryID", sql.Int, industryId)
-    .input("IndustryName", sql.NVarChar(100), IndustryName)
-    .input("Active", sql.Bit, Active)
-    .query(`
-      UPDATE Industry
-      SET IndustryName = @IndustryName,
-          Active = @Active
-      WHERE IndustryID = @IndustryID;
-    `);
+async function updateIndustry(industryId, industryName) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("IndustryID", sql.Int, industryId)
+      .input("IndustryName", sql.VarChar(255), industryName)
+      .execute("updateIndustry");
+  } catch (error) {
+    console.error("DB error in updateIndustry:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Soft delete: mark industry as inactive
+// Deactivate an industry
+// =======================
+async function deactivateIndustry(industryId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("IndustryID", sql.Int, industryId)
+      .execute("deactivateIndustry");
+  } catch (error) {
+    console.error("DB error in deactivateIndustry:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Reactivate an industry
+// =======================
+async function reactivateIndustry(industryId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("IndustryID", sql.Int, industryId)
+      .execute("reactivateIndustry");
+  } catch (error) {
+    console.error("DB error in reactivateIndustry:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Delete an industry 
 // =======================
 async function deleteIndustry(industryId) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("IndustryID", sql.Int, industryId)
-    .query(`
-      UPDATE Industry
-      SET Active = 0
-      WHERE IndustryID = @IndustryID;
-    `);
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("IndustryID", sql.Int, industryId)
+      .execute("deleteIndustry");
+  } catch (error) {
+    console.error("DB error in deleteIndustry:", error);
+    throw error;
+  }
 }
-
-
-//All Stored procedures
-//getAllIndustries
-//getIndustryById
-//getIDByIndustry
-//createIndustry
-//updateIndustry
-//deactivateIndustry
-//reactivateIndustry
-//deleteIndustry
-
-
 
 // =======================
 // Exports
@@ -100,5 +115,7 @@ module.exports = {
   getIndustryById,
   createIndustry,
   updateIndustry,
+  deactivateIndustry,
+  reactivateIndustry,
   deleteIndustry,
 };

@@ -1,103 +1,144 @@
 const sql = require("mssql");
-const dbConfig = require("../dbConfig");
+const { dbConfig } = require("../dbConfig");
 
-// =======================
+//======================================
 // Get all AccountInfo entries
-// Calls stored procedure: GetAccountInfo
-// =======================
+//======================================
 async function getAllAccountInfo() {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request()
-    .execute("GetAccountInfo");
-  return result.recordset;
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().execute("GetAccountInfo");
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getAllAccountInfo:", err);
+    throw err;
+  }
 }
 
-// =======================
-// Get AccountInfo by AIID (primary key)
-// Calls stored procedure: GetAccountInfoByID
-// =======================
+//======================================
+// Get AccountInfo by AIID 
+//======================================
 async function getAccountInfoById(aiid) {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request()
-    .input("AIID", sql.Int, aiid)
-    .execute("GetAccountInfoByID");
-  return result.recordset[0]; // single record
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("AIID", sql.Int, aiid)
+      .execute("GetAccountInfoByID");
+    return result.recordset[0] || null;
+  } catch (err) {
+    console.error("Database error in getAccountInfoById:", err);
+    throw err;
+  }
 }
 
-// =======================
+//======================================
 // Create AccountInfo entry
-// Calls stored procedure: CreateAccountInfo
-// =======================
-async function createAccountInfo(data) {
-  const {
-    AccountID, VenueTypeID, EntCityID,
-    isVenueCompany, isEventCompany, isRecordLabel
-  } = data;
+//======================================
+async function createAccountInfo(data, changedBy = 1) {
+  try {
+    const {
+      AccountID,
+      VenueTypeID,
+      EntCityID,
+      isVenueCompany,
+      isEventCompany,
+      isRecordLabel
+    } = data;
 
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("AccountID", sql.Int, AccountID)
-    .input("VenueTypeID", sql.Int, VenueTypeID)
-    .input("EntCityID", sql.Int, EntCityID)
-    .input("isVenueCompany", sql.Bit, isVenueCompany)
-    .input("isEventCompany", sql.Bit, isEventCompany)
-    .input("isRecordLabel", sql.Bit, isRecordLabel)
-    .execute("CreateAccountInfo");
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("AccountID", sql.Int, AccountID)
+      .input("VenueTypeID", sql.Int, VenueTypeID)
+      .input("EntCityID", sql.Int, EntCityID)
+      .input("isVenueCompany", sql.Bit, isVenueCompany)
+      .input("isEventCompany", sql.Bit, isEventCompany)
+      .input("isRecordLabel", sql.Bit, isRecordLabel)
+      .execute("CreateAccountInfo");
+
+    return { message: "AccountInfo created successfully" };
+  } catch (err) {
+    console.error("Database error in createAccountInfo:", err);
+    throw err;
+  }
 }
 
-// =======================
+//======================================
 // Update AccountInfo by AIID
-// Calls stored procedure: UpdateAccountInfo
-// =======================
-async function updateAccountInfo(aiid, updates) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("AIID", sql.Int, aiid)
-    .input("AccountID", sql.Int, updates.AccountID) // your proc expects AccountID too
-    .input("VenueTypeID", sql.Int, updates.VenueTypeID)
-    .input("EntCityID", sql.Int, updates.EntCityID)
-    .input("isVenueCompany", sql.Bit, updates.isVenueCompany)
-    .input("isEventCompany", sql.Bit, updates.isEventCompany)
-    .input("isRecordLabel", sql.Bit, updates.isRecordLabel)
-    .execute("UpdateAccountInfo");
+//======================================
+async function updateAccountInfo(aiid, updates, changedBy = 1) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("AIID", sql.Int, aiid)
+      .input("AccountID", sql.Int, updates.AccountID)
+      .input("VenueTypeID", sql.Int, updates.VenueTypeID)
+      .input("EntCityID", sql.Int, updates.EntCityID)
+      .input("isVenueCompany", sql.Bit, updates.isVenueCompany)
+      .input("isEventCompany", sql.Bit, updates.isEventCompany)
+      .input("isRecordLabel", sql.Bit, updates.isRecordLabel)
+      .execute("UpdateAccountInfo");
+
+    return { message: "AccountInfo updated", AIID: aiid };
+  } catch (err) {
+    console.error("Database error in updateAccountInfo:", err);
+    throw err;
+  }
 }
 
-// =======================
+//======================================
 // Deactivate AccountInfo by AIID
-// Calls stored procedure: DeactivateAccountInfo
-// =======================
-async function deactivateAccountInfo(aiid) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("AIID", sql.Int, aiid)
-    .execute("DeactivateAccountInfo");
+//======================================
+async function deactivateAccountInfo(aiid, changedBy = 1) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("AIID", sql.Int, aiid)
+      .execute("DeactivateAccountInfo");
+
+    return { message: "AccountInfo deactivated", AIID: aiid };
+  } catch (err) {
+    console.error("Database error in deactivateAccountInfo:", err);
+    throw err;
+  }
 }
 
-// =======================
+//======================================
 // Reactivate AccountInfo by AIID
-// Calls stored procedure: ReactivateAccountInfo
-// =======================
-async function reactivateAccountInfo(aiid) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("AIID", sql.Int, aiid)
-    .execute("ReactivateAccountInfo");
+//======================================
+async function reactivateAccountInfo(aiid, changedBy = 1) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("AIID", sql.Int, aiid)
+      .execute("ReactivateAccountInfo");
+
+    return { message: "AccountInfo reactivated", AIID: aiid };
+  } catch (err) {
+    console.error("Database error in reactivateAccountInfo:", err);
+    throw err;
+  }
 }
 
-// =======================
+//======================================
 // Delete AccountInfo by AIID
-// Calls stored procedure: DeleteAccountInfo
-// =======================
-async function deleteAccountInfo(aiid) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("AIID", sql.Int, aiid)
-    .execute("DeleteAccountInfo");
+//======================================
+async function deleteAccountInfo(aiid, changedBy = 1) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("AIID", sql.Int, aiid)
+      .execute("DeleteAccountInfo");
+
+    return { message: "AccountInfo permanently deleted", AIID: aiid };
+  } catch (err) {
+    console.error("Database error in deleteAccountInfo:", err);
+    throw err;
+  }
 }
 
-// =======================
+//======================================
 // Exports
-// =======================
+//======================================
 module.exports = {
   getAllAccountInfo,
   getAccountInfoById,

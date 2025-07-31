@@ -1,82 +1,50 @@
-const activityRepository = require("../data/activityRepository");
-const activityContactRepo = require("../data/activityContactRepository");
-const notesRepo = require("../data/noteRepository");
-const attachmentsRepo = require("../data/attachmentRepository");
+const activityRepo = require("../data/activityRepository");
 
-async function getAllActivities() {
-  // Business logic like filtering, permissions, caching can be added here if needed
-  return await activityRepository.getAllActivities();
-}
+const getAllActivities = async () => {
+  return await activityRepo.getAllActivities();
+};
 
-async function getActivityDetails(id) {
-  try {
-    // Business logic for validating input data,
-    // applying rules or modifying activityData before creation
-    const activity = await activityRepository.getActivityDetails(id);
-    if (!activity) {
-      throw new Error("Activity not found");
-    }
+const getActivityByID = async (ActivityID) => {
+  if (!ActivityID) throw new Error("ActivityID is required");
+  return await activityRepo.getActivityByID(ActivityID);
+};
 
-    const [notes, attachments, activityContacts] = await Promise.all([
-      notesRepo.getNotes(id, "Activity"),
-      attachmentsRepo.getAttachments(id, "Activity"),
-      activityContactRepo.getContactsByActivityId(id),
-    ]);
+const createActivity = async (activityData) => {
+  const { AccountID, TypeID, Due_date, PriorityLevelID } = activityData;
 
-    return {
-      ...activity,
-      notes,
-      attachments,
-      activityContacts,
-    };
-  } catch (error) {
-    throw error;
+  if (!AccountID || !TypeID || !Due_date || !PriorityLevelID) {
+    throw new Error("Missing required activity fields");
   }
-}
 
-async function createActivity(activityData) {
-  try {
-    // Business logic for validating input data,
-    // applying rules or modifying activityData before creation
-    return await activityRepository.createActivity(activityData);
-  } catch (error) {
-    throw error;
-  }
-}
+  return await activityRepo.createActivity(activityData);
+};
 
-async function updateActivity(id, activityData) {
-  try {
-    // Business logic for validating update data,
-    // checking permissions, detecting changes, etc.
-    return await activityRepository.updateActivity(id, activityData);
-  } catch (error) {
-    throw error;
-  }
-}
+const updateActivity = async (ActivityID, activityData) => {
+  if (!ActivityID) throw new Error("ActivityID is required");
+  return await activityRepo.updateActivity(ActivityID, activityData);
+};
 
-async function deleteActivity(id) {
-  try {
-    // Business logic to check if deletion is allowed,
-    // handle cascading deletes or archiving
-    return await activityRepository.deleteActivity(id);
-  } catch (error) {
-    throw error;
-  }
-}
+const deactivateActivity = async (ActivityID) => {
+  if (!ActivityID) throw new Error("ActivityID is required");
+  return await activityRepo.deactivateActivity(ActivityID);
+};
 
-async function getActivityDetails(id) {
-  try {
-    // Business logic to enrich or transform details can be added here
-    return await activityRepository.getActivityDetails(id);
-  } catch (error) {
-    throw error;
-  }
-}
+const reactivateActivity = async (ActivityID) => {
+  if (!ActivityID) throw new Error("ActivityID is required");
+  return await activityRepo.reactivateActivity(ActivityID);
+};
+
+const deleteActivity = async (ActivityID) => {
+  if (!ActivityID) throw new Error("ActivityID is required");
+  return await activityRepo.deleteActivity(ActivityID);
+};
 
 module.exports = {
   getAllActivities,
+  getActivityByID,
   createActivity,
   updateActivity,
+  deactivateActivity,
+  reactivateActivity,
   deleteActivity,
-  getActivityDetails,
 };

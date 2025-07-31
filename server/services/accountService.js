@@ -1,6 +1,6 @@
 const accountRepo = require("../data/accountRepository");
 
-// Hardcoded userId for now, replace with auth user id as needed
+// Hardcoded userId for now
 const userId = 1;
 
 // Get all accounts

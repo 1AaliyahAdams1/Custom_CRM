@@ -1,33 +1,33 @@
 const sql = require("mssql");
-const dbConfig = require("../dbConfig");
+const { dbConfig } = require("../dbConfig");
 
 // =======================
-// Gets a list of all Currencies
+// Get all currencies
 // =======================
 async function getAllCurrencies() {
   const pool = await sql.connect(dbConfig);
-  const result = await pool.request().query("SELECT * FROM Currency WHERE Active = 1");
-  return result.recordset;
+  const result = await pool.request().execute("GetCurrency");
+  return result.recordset.filter(c => c.Active === 1);
 }
 
 // =======================
-// Gets Currency Details by CurrencyID
+// Get currency by ID
 // =======================
 async function getCurrencyById(id) {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
     .input("CurrencyID", sql.Int, id)
-    .query("SELECT * FROM Currency WHERE CurrencyID = @CurrencyID");
+    .execute("GetCurrencyByID");
   return result.recordset[0];
 }
 
 // =======================
-// Creates a new Currency
+// Create new currency
 // =======================
 async function createCurrency(data) {
   const {
     Symbol, ISOcode, DecimalPlaces, EnglishName,
-    LocalName, ExchangeRate, LastUpdated, Active, Prefix
+    LocalName, ExchangeRate, Prefix
   } = data;
 
   const pool = await sql.connect(dbConfig);
@@ -38,34 +38,75 @@ async function createCurrency(data) {
     .input("EnglishName", sql.NVarChar(100), EnglishName)
     .input("LocalName", sql.NVarChar(100), LocalName)
     .input("ExchangeRate", sql.Decimal(9, 4), ExchangeRate)
-    .input("LastUpdated", sql.SmallDateTime, LastUpdated)
-    .input("Active", sql.Bit, Active)
     .input("Prefix", sql.Bit, Prefix)
-    .query(`
-      INSERT INTO Currency (
-        Symbol, ISOcode, DecimalPlaces, EnglishName, LocalName,
-        ExchangeRate, LastUpdated, Active, Prefix
-      ) VALUES (
-        @Symbol, @ISOcode, @DecimalPlaces, @EnglishName, @LocalName,
-        @ExchangeRate, @LastUpdated, @Active, @Prefix
-      )
-    `);
+    .execute("CreateCurrency");
+
+  return { message: "Currency created" };
 }
 
-//All stored procedures
-//CreateCurrency
-// GetCurrency
-// GetCurrencyByID
-// UpdateCurrency
-// DeactivateCurrency
-// ReactivateCurrency
-// DeleteCurrency
+// =======================
+// Update currency by ID
+// =======================
+async function updateCurrency(id, data) {
+  const {
+    Symbol, ISOcode, DecimalPlaces, EnglishName,
+    LocalName, ExchangeRate, Prefix
+  } = data;
+
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CurrencyID", sql.Int, id)
+    .input("Symbol", sql.NVarChar(5), Symbol)
+    .input("ISOcode", sql.NVarChar(3), ISOcode)
+    .input("DecimalPlaces", sql.TinyInt, DecimalPlaces)
+    .input("EnglishName", sql.NVarChar(100), EnglishName)
+    .input("LocalName", sql.NVarChar(100), LocalName)
+    .input("ExchangeRate", sql.Decimal(9, 4), ExchangeRate)
+    .input("Prefix", sql.Bit, Prefix)
+    .execute("UpdateCurrency");
+
+  return { message: "Currency updated", CurrencyID: id };
+}
 
 // =======================
-// Exports
+// Deactivate currency by ID
 // =======================
+async function deleteCurrency(id) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CurrencyID", sql.Int, id)
+    .execute("DeactivateCurrency");
+  return { message: "Currency deactivated", CurrencyID: id };
+}
+
+// =======================
+// Reactivate currency by ID
+// =======================
+async function reactivateCurrency(id) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CurrencyID", sql.Int, id)
+    .execute("ReactivateCurrency");
+  return { message: "Currency reactivated", CurrencyID: id };
+}
+
+// =======================
+// Hard delete currency by ID
+// =======================
+async function hardDeleteCurrency(id) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CurrencyID", sql.Int, id)
+    .execute("DeleteCurrency");
+  return { message: "Currency hard deleted", CurrencyID: id };
+}
+
 module.exports = {
   getAllCurrencies,
   getCurrencyById,
-  createCurrency
+  createCurrency,
+  updateCurrency,
+  deleteCurrency,
+  reactivateCurrency,
+  hardDeleteCurrency,
 };

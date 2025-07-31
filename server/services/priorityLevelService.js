@@ -1,44 +1,31 @@
-const priorityLevelRepository = require("../data/priorityLevelRepository");
-
-// Helper to get changedBy or default user if needed in the future
-function getChangedByOrDefault(changedBy) {
-  return changedBy || "System";
-}
+const priorityLevelRepo = require("../data/priorityLevelRepository");
 
 async function getAllPriorityLevels() {
-  // Business logic: filtering, sorting enhancements, caching, permission checks can go here
-  return await priorityLevelRepository.getAllPriorityLevels();
+  return await priorityLevelRepo.getAllPriorityLevels();
 }
 
 async function getPriorityLevelById(id) {
-  // Business logic: validate id, permission checks
-  return await priorityLevelRepository.getPriorityLevelById(id);
+  return await priorityLevelRepo.getPriorityLevelById(id);
 }
 
-async function createPriorityLevel(data, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-
-  // Business logic: validate data.PriorityLevelName, data.PriorityLevelValue, check duplicates etc.
-
-  return await priorityLevelRepository.createPriorityLevel(data);
+async function createPriorityLevel(data) {
+  return await priorityLevelRepo.createPriorityLevel(data);
 }
 
-async function updatePriorityLevel(id, data, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-
-  // Business logic: validate id and data, check permissions, enforce business rules
-
-  const result = await priorityLevelRepository.updatePriorityLevel(id, data);
-  return result;
+async function updatePriorityLevel(id, data) {
+  return await priorityLevelRepo.updatePriorityLevel(id, data);
 }
 
-async function deletePriorityLevel(id, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
+async function deactivatePriorityLevel(id) {
+  return await priorityLevelRepo.deactivatePriorityLevel(id);
+}
 
-  // Business logic: validate id, check dependencies or usage before delete
+async function reactivatePriorityLevel(id) {
+  return await priorityLevelRepo.reactivatePriorityLevel(id);
+}
 
-  const result = await priorityLevelRepository.deletePriorityLevel(id);
-  return result;
+async function deletePriorityLevel(id) {
+  return await priorityLevelRepo.deletePriorityLevel(id);
 }
 
 module.exports = {
@@ -46,5 +33,7 @@ module.exports = {
   getPriorityLevelById,
   createPriorityLevel,
   updatePriorityLevel,
+  deactivatePriorityLevel,
+  reactivatePriorityLevel,
   deletePriorityLevel,
 };

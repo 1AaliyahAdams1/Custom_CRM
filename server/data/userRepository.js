@@ -1,45 +1,194 @@
 const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
-
 // =======================
-// Gets all Users
+// Get all active users
 // =======================
 async function getAllUsers() {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request().query(`
-    SELECT * FROM Users WHERE Active = 1
-  `);
-  return result.recordset;
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().execute("getAllUsers");
+    return result.recordset;
+  } catch (error) {
+    console.error("User Repo Error [getAllUsers]:", error);
+    throw error;
+  }
 }
 
-
 // =======================
-// Gets a specific user by ID
+// Get user by ID
 // =======================
 async function getUserById(userId) {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request()
-    .input("UserID", sql.Int, userId)
-    .query(`SELECT * FROM Users WHERE UserID = @UserID`);
-  return result.recordset[0];
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .execute("getUserById");
+    return result.recordset[0];
+  } catch (error) {
+    console.error("User Repo Error [getUserById]:", error);
+    throw error;
+  }
 }
 
-// Will add CRUD functionality later
-// Password hashing should be handled in a service or controller
+// =======================
+// Get user ID by username
+// =======================
+async function getIdByUsername(username) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("Username", sql.VarChar(100), username)
+      .execute("getIdByUsername");
+    return result.recordset[0]?.UserID || null;
+  } catch (error) {
+    console.error("User Repo Error [getIdByUsername]:", error);
+    throw error;
+  }
+}
 
-//All stored Procedures
-//getAllUsers
-//getUserById
-//getIdByUsername
-//createUser
-//updateUser
-//deactivateUser
-//reactivateUser
-//deleteUser
+// =======================
+// Create new user
+// =======================
+async function createUser(userData) {
+  try {
+    const {
+      Username,
+      Email,
+      PasswordHash,
+      Salt,
+      FirstName,
+      LastName,
+      CityID,
+      isEmailVerified,
+      LastLoginAt,
+      PasswordResetToken,
+      PasswordResetExpires,
+      EmailVerificationToken,
+      CreatedAt,
+      UpdatedAt,
+    } = userData;
 
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("Username", sql.VarChar(100), Username)
+      .input("Email", sql.VarChar(255), Email)
+      .input("PasswordHash", sql.VarChar(255), PasswordHash)
+      .input("Salt", sql.VarChar(255), Salt)
+      .input("FirstName", sql.VarChar(100), FirstName)
+      .input("LastName", sql.VarChar(100), LastName)
+      .input("CityID", sql.Int, CityID)
+      .input("isEmailVerified", sql.Bit, isEmailVerified)
+      .input("LastLoginAt", sql.DateTime, LastLoginAt)
+      .input("PasswordResetToken", sql.VarChar(255), PasswordResetToken)
+      .input("PasswordResetExpires", sql.DateTime, PasswordResetExpires)
+      .input("EmailVerificationToken", sql.VarChar(255), EmailVerificationToken)
+      .input("CreatedAt", sql.DateTime, CreatedAt)
+      .input("UpdatedAt", sql.DateTime, UpdatedAt)
+      .execute("createUser");
+  } catch (error) {
+    console.error("User Repo Error [createUser]:", error);
+    throw error;
+  }
+}
 
+// =======================
+// Update user by ID
+// =======================
+async function updateUser(userId, userData) {
+  try {
+    const {
+      Username,
+      Email,
+      PasswordHash,
+      Salt,
+      FirstName,
+      LastName,
+      CityID,
+      isEmailVerified,
+      LastLoginAt,
+      PasswordResetToken,
+      PasswordResetExpires,
+      EmailVerificationToken,
+    } = userData;
+
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("UserID", sql.Int, userId)
+      .input("Username", sql.VarChar(100), Username)
+      .input("Email", sql.VarChar(255), Email)
+      .input("PasswordHash", sql.VarChar(255), PasswordHash)
+      .input("Salt", sql.VarChar(255), Salt)
+      .input("FirstName", sql.VarChar(100), FirstName)
+      .input("LastName", sql.VarChar(100), LastName)
+      .input("CityID", sql.Int, CityID)
+      .input("isEmailVerified", sql.Bit, isEmailVerified)
+      .input("LastLoginAt", sql.DateTime, LastLoginAt)
+      .input("PasswordResetToken", sql.VarChar(255), PasswordResetToken)
+      .input("PasswordResetExpires", sql.DateTime, PasswordResetExpires)
+      .input("EmailVerificationToken", sql.VarChar(255), EmailVerificationToken)
+      .execute("updateUser");
+  } catch (error) {
+    console.error("User Repo Error [updateUser]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Deactivate user by ID (set Active = 0)
+// =======================
+async function deactivateUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("UserID", sql.Int, userId)
+      .execute("deactivateUser");
+  } catch (error) {
+    console.error("User Repo Error [deactivateUser]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Reactivate user by ID (set Active = 1)
+// =======================
+async function reactivateUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("UserID", sql.Int, userId)
+      .execute("reactivateUser");
+  } catch (error) {
+    console.error("User Repo Error [reactivateUser]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Delete user by ID (only if inactive)
+// =======================
+async function deleteUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("UserID", sql.Int, userId)
+      .execute("deleteUser");
+  } catch (error) {
+    console.error("User Repo Error [deleteUser]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Exports
+// =======================
 module.exports = {
   getAllUsers,
-  getUserById
+  getUserById,
+  getIdByUsername,
+  createUser,
+  updateUser,
+  deactivateUser,
+  reactivateUser,
+  deleteUser,
 };

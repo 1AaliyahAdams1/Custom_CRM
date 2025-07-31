@@ -1,28 +1,38 @@
-const repo = require("../data/activityTypeRepository");
+const activityTypeRepo = require("../data/activityTypeRepository");
 
 const getAllActivityTypes = async () => {
-  // Business logic: e.g., filter by active status, apply user role restrictions
-  return await repo.getAll();
+  return await activityTypeRepo.getAllActivityTypes();
 };
 
-const getActivityTypeById = async (id) => {
-  // Business logic: validate id, check permissions or if type exists
-  return await repo.getById(id);
+const getActivityTypeById = async (TypeID) => {
+  if (!TypeID) throw new Error("TypeID is required");
+  return await activityTypeRepo.getActivityTypeById(TypeID);
 };
 
 const createActivityType = async (data) => {
-  // Business logic: validate data (e.g., name required, uniqueness)
-  return await repo.create(data);
+  const { TypeName, Description } = data;
+  if (!TypeName || !Description) throw new Error("Missing required fields");
+  return await activityTypeRepo.createActivityType(data);
 };
 
-const updateActivityType = async (id, data) => {
-  // Business logic: validate id & data, check for name conflict or changes
-  return await repo.update(id, data);
+const updateActivityType = async (TypeID, data) => {
+  if (!TypeID) throw new Error("TypeID is required");
+  return await activityTypeRepo.updateActivityType(TypeID, data);
 };
 
-const deleteActivityType = async (id) => {
-  // Business logic: validate id, check if in use before deleting
-  return await repo.delete(id);
+const deactivateActivityType = async (TypeID) => {
+  if (!TypeID) throw new Error("TypeID is required");
+  return await activityTypeRepo.deactivateActivityType(TypeID);
+};
+
+const reactivateActivityType = async (TypeID) => {
+  if (!TypeID) throw new Error("TypeID is required");
+  return await activityTypeRepo.reactivateActivityType(TypeID);
+};
+
+const deleteActivityType = async (TypeID) => {
+  if (!TypeID) throw new Error("TypeID is required");
+  return await activityTypeRepo.deleteActivityType(TypeID);
 };
 
 module.exports = {
@@ -30,5 +40,7 @@ module.exports = {
   getActivityTypeById,
   createActivityType,
   updateActivityType,
+  deactivateActivityType,
+  reactivateActivityType,
   deleteActivityType,
 };
