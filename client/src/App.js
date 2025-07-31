@@ -13,6 +13,8 @@ import {
 // COMPONENTS
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
+import LoadingScreen from "./components/LoadingScreen";
+
 
 // Lazy load main pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -59,7 +61,7 @@ const Layout = ({ children }) => {
 function App() {
   return (
     <Router>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<LoadingScreen />}>
         <Layout>
           <Routes>
             {/* Redirect root to login */}

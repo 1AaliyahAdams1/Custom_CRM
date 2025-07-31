@@ -1,84 +1,38 @@
-const jobTitleService = require("../services/jobtitleService");
+const jobTitleService = require("../services/jobTitleService");
 
-// Get all job titles
 async function getAllJobTitles(req, res) {
-  try {
-    // Validation could go here (e.g., query params)
-
-    const jobTitles = await jobTitleService.getAllJobTitles();
-    res.json(jobTitles);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const jobTitles = await jobTitleService.getAllJobTitles();
+  res.json(jobTitles);
 }
 
-// Get job title by ID
 async function getJobTitleById(req, res) {
-  try {
-    const id = parseInt(req.params.id, 10);
-
-    // Validation for id could go here
-
-    const jobTitle = await jobTitleService.getJobTitleById(id);
-
-    // Handle not found case here if needed
-    if (!jobTitle) {
-      return res.status(404).json({ error: "Job title not found" });
-    }
-
-    res.json(jobTitle);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const jobTitle = await jobTitleService.getJobTitleById(parseInt(req.params.id));
+  res.json(jobTitle);
 }
 
-// Create a new job title
 async function createJobTitle(req, res) {
-  try {
-    const { jobTitleName, active } = req.body;
-
-    // Validation for jobTitleName and active could go here
-
-    const changedBy = req.user?.username || "System";
-
-    const newJobTitle = await jobTitleService.createJobTitle(jobTitleName, active, changedBy);
-    res.status(201).json(newJobTitle);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  await jobTitleService.createJobTitle(req.body.JobTitleName);
+  res.status(201).json({ message: "Job title created" });
 }
 
-// Update a job title by ID
 async function updateJobTitle(req, res) {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const data = req.body;
-
-    // Validation for id and data could go here
-
-    const changedBy = req.user?.username || "System";
-
-    const result = await jobTitleService.updateJobTitle(id, data, changedBy);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  await jobTitleService.updateJobTitle(parseInt(req.params.id), req.body.JobTitleName);
+  res.json({ message: "Job title updated" });
 }
 
-// Delete (soft delete) a job title by ID
+async function deactivateJobTitle(req, res) {
+  await jobTitleService.deactivateJobTitle(parseInt(req.params.id));
+  res.json({ message: "Job title deactivated" });
+}
+
+async function reactivateJobTitle(req, res) {
+  await jobTitleService.reactivateJobTitle(parseInt(req.params.id));
+  res.json({ message: "Job title reactivated" });
+}
+
 async function deleteJobTitle(req, res) {
-  try {
-    const id = parseInt(req.params.id, 10);
-
-    // Validation for id could go here
-
-    const changedBy = req.user?.username || "System";
-
-    const result = await jobTitleService.deleteJobTitle(id, changedBy);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  await jobTitleService.deleteJobTitle(parseInt(req.params.id));
+  res.json({ message: "Job title deleted" });
 }
 
 module.exports = {
@@ -86,5 +40,7 @@ module.exports = {
   getJobTitleById,
   createJobTitle,
   updateJobTitle,
+  deactivateJobTitle,
+  reactivateJobTitle,
   deleteJobTitle,
 };

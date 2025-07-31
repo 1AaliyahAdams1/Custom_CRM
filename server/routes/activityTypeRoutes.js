@@ -6,6 +6,8 @@ router.get("/", activityTypeController.getAllActivityTypes);
 router.get("/:id", activityTypeController.getActivityTypeById);
 router.post("/", activityTypeController.createActivityType);
 router.put("/:id", activityTypeController.updateActivityType);
-router.delete("/:id", activityTypeController.deleteActivityType);
+router.patch("/:id/deactivate", activityTypeController.deactivateActivityType);
+router.patch("/:id/reactivate", activityTypeController.reactivateActivityType);
+router.delete("/:id/delete", activityTypeController.deleteActivityType);
 
 module.exports = router;

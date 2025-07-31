@@ -2,118 +2,112 @@ const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
 // =======================
-// Helper to get EntityTypeID by TypeName (e.g., 'Contact', 'Activity')
+// Helper: Get EntityTypeID by TypeName
 // =======================
 async function getEntityTypeId(typeName) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("typeName", sql.VarChar, typeName)
-      .query(`SELECT EntityTypeID FROM EntityType WHERE TypeName = @typeName`);
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .input("typeName", sql.VarChar, typeName)
+    .query(`SELECT EntityTypeID FROM EntityType WHERE TypeName = @typeName`);
 
-    if (result.recordset.length === 0) {
-      throw new Error(`EntityType '${typeName}' not found`);
-    }
-    return result.recordset[0].EntityTypeID;
-  } catch (error) {
-    console.error("Error fetching EntityTypeID:", error);
-    throw error;
+  if (result.recordset.length === 0) {
+    throw new Error(`EntityType '${typeName}' not found`);
   }
+  return result.recordset[0].EntityTypeID;
 }
 
-
 // =======================
-// Add Attachment
+// Create Attachment
 // =======================
 async function addAttachment(entityId, entityTypeName, fileName, fileUrl) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const entityTypeId = await getEntityTypeId(entityTypeName);
+  const pool = await sql.connect(dbConfig);
+  const entityTypeId = await getEntityTypeId(entityTypeName);
 
-    await pool.request()
-      .input("EntityID", sql.Int, entityId)
-      .input("EntityTypeID", sql.Int, entityTypeId)
-      .input("FileName", sql.VarChar, fileName)
-      .input("FileUrl", sql.VarChar, fileUrl)
-      .query(`
-        INSERT INTO Attachment (EntityID, EntityTypeID, FileName, FileUrl, UploadedAt)
-        VALUES (@EntityID, @EntityTypeID, @FileName, @FileUrl, GETDATE())
-      `);
+  await pool.request()
+    .input("EntityID", sql.Int, entityId)
+    .input("EntityTypeID", sql.Int, entityTypeId)
+    .input("FileName", sql.VarChar, fileName)
+    .input("FileUrl", sql.VarChar, fileUrl)
+    .execute("CreateAttachment");
 
-    return { message: `Attachment added to ${entityTypeName} successfully` };
-  } catch (error) {
-    console.error("Error adding attachment:", error);
-    throw error;
-  }
+  return { message: `Attachment added to ${entityTypeName} successfully` };
 }
 
 // =======================
-// Update Attachment
-// =======================
-async function updateAttachment(attachmentId, fileName, fileUrl) {
-  try {
-    const pool = await sql.connect(dbConfig);
-
-    await pool.request()
-      .input("AttachmentID", sql.Int, attachmentId)
-      .input("FileName", sql.VarChar, fileName)
-      .input("FileUrl", sql.VarChar, fileUrl)
-      .query(`
-        UPDATE Attachment
-        SET FileName = @FileName,
-            FileUrl = @FileUrl,
-            UploadedAt = GETDATE()
-        WHERE AttachmentID = @AttachmentID
-      `);
-
-    return { message: "Attachment updated successfully" };
-  } catch (error) {
-    console.error("Error updating attachment:", error);
-    throw error;
-  }
-}
-
-// =======================
-// Delete Attachment
-// =======================
-async function deleteAttachment(attachmentId) {
-  try {
-    const pool = await sql.connect(dbConfig);
-
-    await pool.request()
-      .input("AttachmentID", sql.Int, attachmentId)
-      .query(`DELETE FROM Attachment WHERE AttachmentID = @AttachmentID`);
-
-    return { message: "Attachment deleted successfully" };
-  } catch (error) {
-    console.error("Error deleting attachment:", error);
-    throw error;
-  }
-}
-
-// =======================
-// Fetch Attachments for entity
+// Get all Attachments for an entity
 // =======================
 async function getAttachments(entityId, entityTypeName) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const entityTypeId = await getEntityTypeId(entityTypeName);
+  const pool = await sql.connect(dbConfig);
+  const entityTypeId = await getEntityTypeId(entityTypeName);
 
-    const result = await pool.request()
-      .input("EntityID", sql.Int, entityId)
-      .input("EntityTypeID", sql.Int, entityTypeId)
-      .query(`
-        SELECT AttachmentID, FileName, FileUrl, UploadedAt
-        FROM Attachment 
-        WHERE EntityID = @EntityID AND EntityTypeID = @EntityTypeID
-        ORDER BY UploadedAt DESC
-      `);
+  const result = await pool.request()
+    .execute("GetAttachment");
 
-    return result.recordset;
-  } catch (error) {
-    console.error("Error fetching attachments:", error);
-    throw error;
-  }
+  // Filter attachments in code by EntityID and EntityTypeID, order by UploadedAt desc
+  const filtered = result.recordset
+    .filter(att => att.EntityID === entityId && att.EntityTypeID === entityTypeId)
+    .sort((a, b) => new Date(b.UploadedAt) - new Date(a.UploadedAt));
+
+  return filtered;
+}
+
+// =======================
+// Get Attachment by ID
+// =======================
+async function getAttachmentById(attachmentId) {
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .input("AttachmentID", sql.Int, attachmentId)
+    .execute("GetAttachmentByID");
+  return result.recordset[0];
+}
+
+// =======================
+// Update Attachment by ID
+// =======================
+async function updateAttachment(attachmentId, entityId, entityTypeName, fileName, fileUrl) {
+  const pool = await sql.connect(dbConfig);
+  const entityTypeId = await getEntityTypeId(entityTypeName);
+
+  await pool.request()
+    .input("AttachmentID", sql.Int, attachmentId)
+    .input("EntityID", sql.Int, entityId)
+    .input("EntityTypeID", sql.Int, entityTypeId)
+    .input("FileName", sql.VarChar, fileName)
+    .input("FileUrl", sql.VarChar, fileUrl)
+    .execute("UpdateAttachment");
+
+  return { message: "Attachment updated successfully" };
+}
+
+// =======================
+// Deactivate Attachment by ID
+// =======================
+async function deactivateAttachment(attachmentId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("AttachmentID", sql.Int, attachmentId)
+    .execute("DeactivateAttachment");
+}
+
+// =======================
+// Reactivate Attachment by ID
+// =======================
+async function reactivateAttachment(attachmentId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("AttachmentID", sql.Int, attachmentId)
+    .execute("ReactivateAttachment");
+}
+
+// =======================
+// Delete Attachment by ID
+// =======================
+async function deleteAttachment(attachmentId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("AttachmentID", sql.Int, attachmentId)
+    .execute("DeleteAttachment");
 }
 
 // =======================
@@ -121,7 +115,10 @@ async function getAttachments(entityId, entityTypeName) {
 // =======================
 module.exports = {
   addAttachment,
-  updateAttachment,
-  deleteAttachment,
   getAttachments,
+  getAttachmentById,
+  updateAttachment,
+  deactivateAttachment,
+  reactivateAttachment,
+  deleteAttachment,
 };

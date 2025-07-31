@@ -79,8 +79,6 @@ COMMANDS for Client folder [client]
 
 > powershell -ExecutionPolicy Bypass -command "npm install @emotion/react @emotion/styled"
 
-<<<<<<< HEAD
-=======
 = Here are the COMMANDS for synfusion components, run this in the terminal =
 DO THIS IN CLIENT FOLDER ALSO
 
@@ -105,9 +103,15 @@ DO THIS IN CLIENT FOLDER ALSO
 [For TextBox, NumericTextBox, etc.]
 
 > powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-notifications"
->>>>>>> e5231f2f88150dcd05d34da46f4b5c0c2330b26f
-
+=====================================================================================================
 COMMAND to run program:
 MAKE SURE YOU ARE ON THE ROOT FOLDER [Custom_CRM] WHEN YOU RUN THIS COMMAND
 > powershell -ExecutionPolicy Bypass -command "npm run dev"  
 
+=====================================================================================================
+WHEN YOU PROGRAM IS RUNNING EVEN THO YOU CLOSED THE TERMINAL:
+This command finds if the port is being used
+> netstat -ano | findstr :3000
+
+Run the below command to close whatever is using the port
+>taskkill /PID 19508 /F

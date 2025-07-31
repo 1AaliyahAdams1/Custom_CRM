@@ -11,6 +11,7 @@ import {
   Grid,
   CircularProgress,
   Button,
+  Tooltip,
   Box,
 } from "@mui/material";
 import { getContactDetails } from "../services/contactService";
@@ -60,53 +61,149 @@ function ContactsDetailsPage() {
 
   return (
     <Box p={4}>
-      {/* Back button navigates back to previous page */}
       <Button variant="outlined" onClick={() => navigate(-1)} sx={{ mb: 3 }}>
-        &larr; Back to Contacts
+        ← Back to Contacts
       </Button>
 
-      <Card elevation={3}>
+      <Card sx={{ p: 3 }}>
         <CardContent>
-          {/* Contact header with ID */}
           <Typography variant="h5" gutterBottom>
             Contact #{contact.ContactID}
           </Typography>
 
-          {/* Grid layout with two columns */}
-          <Grid container spacing={2}>
-            {/* Left column with main contact info */}
-            <Grid item xs={6}>
-              <Typography>
-                <strong>Account:</strong> {contact.Account || "-"}
-              </Typography>
-              <Typography>
-                <strong>Person Name:</strong> {contact.ContactName || "-"}
-              </Typography>
-              <Typography>
-                <strong>Email:</strong> {contact.PrimaryEmail || "-"}
-              </Typography>
-              <Typography>
-                <strong>Phone:</strong> {contact.PrimaryPhone || "-"}
-              </Typography>
+          <Grid container spacing={3}>
+            {/* Left Column */}
+            <Grid item xs={12} md={6}>
+              <Tooltip title="Associated account with this contact" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2">
+                    <strong>Account:</strong> {contact.AccountName || "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              <Tooltip title="Full name of the person" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2">
+                    <strong>Person Name:</strong>{" "}
+                    {contact.persons
+                      ? `${contact.persons.Title || ""} ${contact.persons.first_name || ""} ${contact.persons.middle_name || ""} ${contact.persons.surname || ""}`.trim()
+                      : "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              <Tooltip title="Work email address" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2">
+                    <strong>Email:</strong> {contact.WorkEmail || "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              <Tooltip title="Work phone number" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2">
+                    <strong>Phone:</strong> {contact.WorkPhone || "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
             </Grid>
 
-            {/* Right column with additional info */}
-            <Grid item xs={6}>
-              <Typography>
-                <strong>Position:</strong> {contact.Position || "-"}
-              </Typography>
-              <Typography>
-                <strong>City:</strong> {contact.CityName || "-"}
-              </Typography>
-              <Typography>
-                <strong>Country:</strong> {contact.CountryName || "-"}
-              </Typography>
-              <Typography>
-                <strong>Created At:</strong> {formatDate(contact.CreatedAt)}
-              </Typography>
-              <Typography>
-                <strong>Updated At:</strong> {formatDate(contact.UpdatedAt)}
-              </Typography>
+            {/* Right Column */}
+            <Grid item xs={12} md={6}>
+              <Tooltip title="Current job title" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2">
+                    <strong>Position:</strong> {contact.JobTitleName || "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              <Tooltip title="City where the contact is based" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2">
+                    <strong>City:</strong> {contact.CityName || "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              <Tooltip title="Country of residence" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2">
+                    <strong>Country:</strong> {contact.CountryName || "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              <Tooltip title="Record creation date" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2">
+                    <strong>Created At:</strong> {formatDate(contact.CreatedAt)}
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              <Tooltip title="Last update to the contact record" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2">
+                    <strong>Updated At:</strong> {formatDate(contact.UpdatedAt)}
+                  </Typography>
+                </Box>
+              </Tooltip>
+            </Grid>
+
+            {/* Attachments */}
+            <Grid item xs={12}>
+              <Tooltip title="Files uploaded for this contact" placement="top">
+                <Box mt={3}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Attachments
+                  </Typography>
+                  {contact.attachments?.length > 0 ? (
+                    contact.attachments.map((att) => (
+                      <Box key={att.AttachmentID} mb={1}>
+                        <Typography variant="body2">
+                          <strong>File:</strong>{" "}
+                          <a href={att.FilePath} target="_blank" rel="noopener noreferrer">
+                            {att.FileName}
+                          </a>
+                        </Typography>
+                        <Typography variant="caption">
+                          Uploaded: {new Date(att.UploadedAt).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography variant="body2">No attachments found for this contact.</Typography>
+                  )}
+                </Box>
+              </Tooltip>
+            </Grid>
+
+            {/* Notes */}
+            <Grid item xs={12}>
+              <Tooltip title="Internal notes about this contact" placement="top">
+                <Box mt={3}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Notes
+                  </Typography>
+                  {contact.notes?.length > 0 ? (
+                    contact.notes.map((note) => (
+                      <Box key={note.NoteID} mb={1}>
+                        <Typography variant="body2" fontWeight="bold">
+                          {note.Content}
+                        </Typography>
+                        <Typography variant="caption">
+                          Created: {new Date(note.CreatedAt).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography variant="body2">No notes found for this contact.</Typography>
+                  )}
+                </Box>
+              </Tooltip>
             </Grid>
           </Grid>
         </CardContent>
