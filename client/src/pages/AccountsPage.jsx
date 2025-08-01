@@ -2,12 +2,13 @@
 //Combines the UI components onto one page
 
 //IMPORTS
+import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
 
 
 import AccountsTable from "../components/AccountsTable";
-import AccountFormDialog from "../components/AccountsFormDialog";
+// import AccountFormDialog from "../components/AccountsFormDialog";
 
 import {
   getAllAccounts,
@@ -17,6 +18,7 @@ import {
 } from "../services/accountService";
 
 const AccountsPage = () => {
+  const navigate = useNavigate();
   // State for list of accounts fetched from backend
   const [accounts, setAccounts] = useState([]);
   // Loading indicator for data fetching or mutations
@@ -63,11 +65,16 @@ const AccountsPage = () => {
     }
   }, [successMessage]);
 
-  // Open the dialog in "create" mode (no selected account)
+  // //Open the dialog in "create" mode (no selected account)
+  // const handleOpenCreate = () => {
+  //   setSelectedAccount(null);
+  //   setDialogOpen(true);
+  // };
+  // Navigate to create account page
   const handleOpenCreate = () => {
-    setSelectedAccount(null);
-    setDialogOpen(true);
+    navigate("/accounts/create");
   };
+
 
   // Open the dialog in "edit" mode with the selected account data
   const handleOpenEdit = (account) => {
@@ -146,16 +153,16 @@ const AccountsPage = () => {
         </Alert>
       )}
 
-      {/* Button to add a new account */}
+      {/* Button to add a new account */} 
       <Button
-        variant="contained"
-        color="primary"
+         variant="contained"
+         color="primary"
         onClick={handleOpenCreate}
         sx={{ mb: 2 }}
-        disabled={loading}  // Disable button while loading
+        disabled={loading}
       >
         Add Account
-      </Button>
+    </Button>
 
       {/* Show loading spinner or accounts table depending on loading state */}
       {loading ? (
@@ -170,13 +177,13 @@ const AccountsPage = () => {
         />
       )}
 
-      {/* Dialog for adding/editing an account */}
+      {/* Dialog for adding/editing an account
       <AccountFormDialog
         open={dialogOpen}
         onClose={handleCloseDialog}
         account={selectedAccount}
         onSubmit={handleSave}
-      />
+      /> */}
     </Box>
   );
 

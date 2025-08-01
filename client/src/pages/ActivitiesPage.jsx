@@ -6,9 +6,9 @@ import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
 
 
-
+import { useNavigate } from "react-router-dom";
 import ActivitiesTable from "../components/ActivitiesTable";
-import ActivityFormDialog from "../components/ActivitiesFormDialog";
+// import ActivityFormDialog from "../components/ActivitiesFormDialog";
 
 import {
   getAllActivities,
@@ -18,6 +18,7 @@ import {
 } from "../services/activityService";
 
 const ActivitiesPage = () => {
+  const navigate = useNavigate();
   // State to hold activities data
   const [activities, setActivities] = useState([]);
   // Loading spinner state
@@ -60,12 +61,17 @@ const ActivitiesPage = () => {
     }
   }, [successMessage]);
 
-  // Open dialog for creating a new activity
+  // // Open dialog for creating a new activity
+  // const handleOpenCreate = () => {
+  //   setSelectedActivity(null); // clear any selected activity
+  //   setError(null);
+  //   setDialogOpen(true);
+  // };
+  // Navigate to create acctivity page
   const handleOpenCreate = () => {
-    setSelectedActivity(null); // clear any selected activity
-    setError(null);
-    setDialogOpen(true);
+    navigate("/activities/create");
   };
+
 
   // Open dialog for editing an existing activity
   const handleOpenEdit = (activity) => {
@@ -110,11 +116,11 @@ const ActivitiesPage = () => {
     }
   };
 
-  // Close the dialog and clear selected activity
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedActivity(null);
-  };
+  // // Close the dialog and clear selected activity
+  // const handleCloseDialog = () => {
+  //   setDialogOpen(false);
+  //   setSelectedActivity(null);
+  // };
 
   return (
     <Box p={4}>
@@ -161,13 +167,13 @@ const ActivitiesPage = () => {
         />
       )}
 
-      {/* Dialog for creating/editing activity */}
+      {/* Dialog for creating/editing activity
       <ActivityFormDialog
         open={dialogOpen}
         onClose={handleCloseDialog}
         activity={selectedActivity}
         onSubmit={handleSave}
-      />
+      /> */}
     </Box>
   );
 

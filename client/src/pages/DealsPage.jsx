@@ -2,6 +2,7 @@
 //Combines the UI components onto one page
 
 //IMPORTS
+import { useParams, useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
 
@@ -9,7 +10,7 @@ import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material"
 
 
 import DealsTable from "../components/DealsTable";          // Table component to display deals list
-import DealFormDialog from "../components/DealsFormDialog";  // Dialog component for add/edit form
+// import DealFormDialog from "../components/DealsFormDialog";  // Dialog component for add/edit form
 
 import {
   getAllDeals,
@@ -19,6 +20,7 @@ import {
 } from "../services/dealService";
 
 const DealsPage = () => {
+  const navigate = useNavigate();
   // State to store list of deals
   const [deals, setDeals] = useState([]);
   // Loading state to show spinner during API calls
@@ -59,11 +61,15 @@ const DealsPage = () => {
     }
   }, [successMessage]);
 
-  // Open form dialog for creating a new deal
+  // // Open form dialog for creating a new deal
+  // const handleOpenCreate = () => {
+  //   setSelectedDeal(null); // Clear selected deal (create mode)
+  //   setError(null);        // Clear errors
+  //   setDialogOpen(true);   // Show dialog
+  // };
+  // Navigate to create deal page
   const handleOpenCreate = () => {
-    setSelectedDeal(null); // Clear selected deal (create mode)
-    setError(null);        // Clear errors
-    setDialogOpen(true);   // Show dialog
+    navigate("/deals/create");
   };
 
   // Open form dialog for editing an existing deal
@@ -108,11 +114,11 @@ const DealsPage = () => {
     }
   };
 
-  // Close the form dialog and reset selected deal
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedDeal(null);
-  };
+  // // Close the form dialog and reset selected deal
+  // const handleCloseDialog = () => {
+  //   setDialogOpen(false);
+  //   setSelectedDeal(null);
+  // };
 
  return (
     <Box p={4}>
@@ -137,14 +143,14 @@ const DealsPage = () => {
 
       {/* Button to open create deal form */}
       <Button
-        variant="contained"
-        color="primary"
-        onClick={handleOpenCreate}
-        sx={{ mb: 2 }}
-        disabled={loading}   // Disable button while loading
-      >
-        Add Deal
-      </Button>
+              variant="contained"
+              color="primary"
+              onClick={handleOpenCreate}
+              sx={{ mb: 2 }}
+              disabled={loading} // Disable while loading
+            >
+              Add Deal
+            </Button>
 
       {/* Show loading spinner or deals table */}
       {loading ? (
@@ -159,13 +165,13 @@ const DealsPage = () => {
         />
       )}
 
-      {/* Dialog for creating or editing a deal */}
+      {/* Dialog for creating or editing a deal
       <DealFormDialog
         open={dialogOpen}
         onClose={handleCloseDialog}
         deal={selectedDeal}
         onSubmit={handleSave}
-      />
+      /> */}
     </Box>
   );
 
