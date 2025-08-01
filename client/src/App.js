@@ -29,6 +29,13 @@ const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
 const DealsDetailsPage = lazy(() => import("./pages/DealsDetailsPage"));
 const ActivitiesDetailsPage = lazy(() => import("./pages/ActivitiesDetailsPage"));
 
+// Lazy load create/edit pages
+const CreateAccountPage = lazy(() => import("./pages/CreateAccountPage"));
+const CreateContactsPage = lazy(() => import("./pages/CreateContactsPage"));
+const CreateDealPage = lazy(() => import("./pages/CreateDealPage"));
+const CreateActivitiesPage = lazy(() => import("./pages/CreateActivitiesPage"));
+
+
 // Login page
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 
@@ -75,15 +82,20 @@ function App() {
 
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/accounts/:id" element={<AccountsDetailsPage />} />
+            <Route path="/accounts/create" element={<CreateAccountPage />} />
+
 
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/contacts/:id" element={<ContactsDetailsPage />} />
+            <Route path="/contacts/create" element={<CreateContactsPage />} />
 
             <Route path="/deals" element={<Deals />} />
             <Route path="/deals/:id" element={<DealsDetailsPage />} />
+            <Route path="/deals/create" element={<CreateDealPage />} />
 
             <Route path="/activities" element={<Activities />} />
             <Route path="/activities/:id" element={<ActivitiesDetailsPage />} />
+            <Route path="/activities/create" element={<CreateActivitiesPage />} />
 
             {/* Catch-all for undefined routes */}
             <Route path="*" element={<NotFoundPage />} />

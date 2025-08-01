@@ -3,11 +3,12 @@
 
 //IMPORTS
 import React, { useEffect, useState } from "react";
+
 import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
 
-
+import { useNavigate } from "react-router-dom";
 import ContactsTable from "../components/ContactsTable";
-import ContactFormDialog from "../components/ContactsFormDialog";
+// import ContactFormDialog from "../components/ContactsFormDialog";
 
 import {
   getAllContacts,
@@ -17,6 +18,7 @@ import {
 } from "../services/contactService";
 
 const ContactsPage = () => {
+  const navigate = useNavigate();
   // State to hold list of contacts fetched from backend
   const [contacts, setContacts] = useState([]);
   // Loading spinner state during data fetch or operations
@@ -57,11 +59,16 @@ const ContactsPage = () => {
     }
   }, [successMessage]);
 
-  // Opens the dialog for adding a new contact
+  // // Opens the dialog for adding a new contact
+  // const handleOpenCreate = () => {
+  //   setSelectedContact(null); // Clear selected contact (create mode)
+  //   setError(null);           // Clear any errors
+  //   setDialogOpen(true);      // Open dialog
+  // };
+  
+  // Navigate to create contact page
   const handleOpenCreate = () => {
-    setSelectedContact(null); // Clear selected contact (create mode)
-    setError(null);           // Clear any errors
-    setDialogOpen(true);      // Open dialog
+    navigate("/contacts/create");
   };
 
   // Opens the dialog to edit an existing contact
@@ -86,7 +93,7 @@ const ContactsPage = () => {
     }
   };
 
-  // Handles form submission for creating or updating a contact
+  //Handles form submission for creating or updating a contact
   const handleSave = async (contactData) => {
     setError(null);
     try {
@@ -106,11 +113,11 @@ const ContactsPage = () => {
     }
   };
 
-  // Closes the add/edit contact dialog
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedContact(null); // Clear selected contact when dialog closes
-  };
+  // //Closes the add/edit contact dialog
+  // const handleCloseDialog = () => {
+  //   setDialogOpen(false);
+  //   setSelectedContact(null); // Clear selected contact when dialog closes
+  // };
  return (
     <Box p={4}>
       {/* Page title */}
@@ -142,6 +149,8 @@ const ContactsPage = () => {
       >
         Add Contact
       </Button>
+      
+     
 
       {/* Show loading spinner or contacts table */}
       {loading ? (
@@ -156,18 +165,19 @@ const ContactsPage = () => {
         />
       )}
 
-      {/* Dialog component for add/edit contact form */}
+      {/* Dialog component for add/edit contact form
       <ContactFormDialog
         open={dialogOpen}
         onClose={handleCloseDialog}
         contact={selectedContact}
         onSubmit={handleSave}
-      />
+      /> */}
     </Box>
   );
 
   
 };
+
 
 
 export default ContactsPage;

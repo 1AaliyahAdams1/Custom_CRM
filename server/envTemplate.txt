@@ -1,9 +1,9 @@
 Create a ".env" file in the server folder and copy the fields below and add the credidentials next to it
 
-DB_USER=
-DB_PASS=
-DB_HOST=
-DB_NAME=
+DB_USER=Team16
+DB_PASS=UFFXquPyvH4dR6y@
+DB_HOST=26.187.179.92,1433
+DB_NAME=CRM
 
 HOST_ALT =
 
