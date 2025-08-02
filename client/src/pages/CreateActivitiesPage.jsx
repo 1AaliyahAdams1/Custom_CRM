@@ -1,15 +1,17 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-   
   Button, 
-  Grid, 
-  Box ,
+  Box,
   TextField, 
-  Typography 
+  Typography,
+  Paper,
+  Stack
 } from '@mui/material';
 import { createActivity } from '../services/activityService';
+import { getAllAccounts } from '../services/accountService';
+import SmartDropdown from '../components/SmartDropdown';
+import { activityTypeService, priorityLevelService } from '../services/dropdownServices';
 
 const CreateActivitiesPage = () => {
   const navigate = useNavigate();
@@ -18,8 +20,19 @@ const CreateActivitiesPage = () => {
     TypeID: "",
     Due_date: "",
     Priority: "",
-    
   });
+
+  const accountService = {
+    getAll: async () => {
+      try {
+        const response = await getAllAccounts();
+        return response.data || [];
+      } catch (error) {
+        console.error('Error loading accounts:', error);
+        return [];
+      }
+    },
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -41,70 +54,131 @@ const CreateActivitiesPage = () => {
     }
   };
 
-
   const handleCancel = () => {
     navigate('/activities');
   };
 
   return (
-    <Box p={4} maxWidth={900} mx="auto">
-        {/* Page Title */}
-              <Typography variant="h4" gutterBottom>
-                Create New Activity
-              </Typography>
-      {/* Buttons at the top */}
-      <Box mb={3} display="flex" justifyContent="flex-end" gap={2}>
-        <Button variant="outlined" onClick={() => navigate(-1)}>
-          Back
-        </Button>
-        <Button variant="outlined" onClick={handleCancel}>
-          Cancel
-        </Button>
-        <Button variant="contained" color="primary" onClick={handleSubmit}>
-          Save 
-        </Button>
-      </Box>
+    <Box
+      sx={{
+        maxWidth: 600,
+        mx: 'auto',
+        p: 4,
+        backgroundColor: '#f9fafb',
+        borderRadius: 2,
+        boxShadow: '0 4px 12px rgb(0 0 0 / 0.05)'
+      }}
+    >
+      <Typography
+        variant="h4"
+        fontWeight={700}
+        mb={3}
+        color="primary.main"
+        textAlign="center"
+        letterSpacing={1}
+      >
+        Create New Activity
+      </Typography>
 
-      <form onSubmit={handleSubmit}>
-        
-          <Grid item xs={20} sm={10}>
-            <TextField
-              label="Account ID"
-              name="AccountID"
-              value={formData.AccountID}
-              onChange={handleInputChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Type ID"
-              name="TypeID"
-              value={formData.TypeID}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            <TextField
-              label="Due Date"
-              name="Due_date"
-              value={formData.Due_date}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            <TextField
-              label="Priority"
-              name="Priority"
-              value={formData.Priority}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            </Grid>
-      </form>
+      <Paper
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{
+          p: 4,
+          borderRadius: 3,
+          backgroundColor: '#fff',
+          boxShadow: '0 8px 20px rgb(0 0 0 / 0.1)',
+        }}
+        elevation={3}
+      >
+        <Stack spacing={3}>
+          <SmartDropdown
+            label="Account"
+            name="AccountID"
+            value={formData.AccountID}
+            onChange={handleInputChange}
+            service={accountService}
+            displayField="AccountName"
+            valueField="AccountID"
+            placeholder="Search for account..."
+            required
+            fullWidth
+          />
+
+          <SmartDropdown
+            label="Activity Type"
+            name="TypeID"
+            value={formData.TypeID}
+            onChange={handleInputChange}
+            service={activityTypeService}
+            displayField="TypeName"
+            valueField="TypeID"
+            placeholder="Search for activity type..."
+            createFields={[
+              { name: 'TypeName', label: 'Type Name', required: true },
+              { name: 'Description', label: 'Description', multiline: true, rows: 3 }
+            ]}
+            fullWidth
+          />
+
+          <TextField
+            label="Due Date"
+            name="Due_date"
+            type="datetime-local"
+            value={formData.Due_date}
+            onChange={handleInputChange}
+            fullWidth
+            size="medium"
+            InputLabelProps={{ shrink: true }}
+          />
+
+          <SmartDropdown
+            label="Priority"
+            name="Priority"
+            value={formData.Priority}
+            onChange={handleInputChange}
+            service={priorityLevelService}
+            displayField="PriorityName"
+            valueField="PriorityID"
+            placeholder="Search for priority level..."
+            createFields={[
+              { name: 'PriorityName', label: 'Priority Name', required: true },
+              { name: 'PriorityLevel', label: 'Priority Level (1-10)', type: 'number', required: true },
+              { name: 'Description', label: 'Description', multiline: true, rows: 2 }
+            ]}
+            fullWidth
+          />
+
+          <Stack direction="row" justifyContent="flex-end" spacing={2} mt={3}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => navigate(-1)}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              Back
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleCancel}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{ textTransform: 'none', fontWeight: 700 }}
+            >
+              Save Activity
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
     </Box>
   );
 };
-
-
-
-
 
 export default CreateActivitiesPage;

@@ -11,28 +11,6 @@ async function getAllAccounts(req, res) {
   }
 }
 
-// Get active accounts
-async function getActiveAccounts(req, res) {
-  try {
-    const accounts = await accountService.listActiveAccounts();
-    res.json(accounts);
-  } catch (err) {
-    console.error("Error getting active accounts:", err);
-    res.status(500).json({ error: "Failed to get active accounts" });
-  }
-}
-
-// Get inactive accounts
-async function getInactiveAccounts(req, res) {
-  try {
-    const accounts = await accountService.listInactiveAccounts();
-    res.json(accounts);
-  } catch (err) {
-    console.error("Error getting inactive accounts:", err);
-    res.status(500).json({ error: "Failed to get inactive accounts" });
-  }
-}
-
 // Get account by ID
 async function getAccountById(req, res) {
   try {
@@ -145,8 +123,6 @@ async function deleteAccount(req, res) {
 
 module.exports = {
   getAllAccounts,
-  getActiveAccounts,
-  getInactiveAccounts,
   getAccountById,
   createAccount,
   updateAccount,

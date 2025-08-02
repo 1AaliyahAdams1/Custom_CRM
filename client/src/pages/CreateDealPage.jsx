@@ -1,15 +1,17 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-   
   Button, 
-  Grid, 
-  Box ,
+  Box,
   TextField, 
-  Typography 
+  Typography,
+  Paper,
+  Stack
 } from '@mui/material';
 import { createDeal } from '../services/dealService';
+import { getAllAccounts } from '../services/accountService';
+import SmartDropdown from '../components/SmartDropdown';
+import { dealStageService } from '../services/dropdownServices';
 
 const CreateDealPage = () => {
   const navigate = useNavigate();
@@ -23,10 +25,20 @@ const CreateDealPage = () => {
     Probability: "",
     CreatedAt: "",
     UpdatedAt: "",
-    
   });
 
- 
+  // Account service wrapper for dropdown - matching your pattern
+  const accountService = {
+    getAll: async () => {
+      try {
+        const response = await getAllAccounts();
+        return response.data || [];
+      } catch (error) {
+        console.error('Error loading accounts:', error);
+        return [];
+      }
+    },
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -48,122 +60,183 @@ const CreateDealPage = () => {
     }
   };
 
-
   const handleCancel = () => {
     navigate('/deals');
   };
 
   return (
-    <Box p={4} maxWidth={900} mx="auto">
-        {/* Page Title */}
-              <Typography variant="h4" gutterBottom>
-                Create New Deal
-              </Typography>
-      {/* Buttons at the top */}
-      <Box mb={3} display="flex" justifyContent="flex-end" gap={2}>
-        <Button variant="outlined" onClick={() => navigate(-1)}>
-          Back
-        </Button>
-        <Button variant="outlined" onClick={handleCancel}>
-          Cancel
-        </Button>
-        <Button variant="contained" color="primary" onClick={handleSubmit}>
-          Save 
-        </Button>
-      </Box>
+    <Box
+      sx={{
+        maxWidth: 600,
+        mx: 'auto',
+        p: 4,
+        backgroundColor: '#f9fafb',
+        borderRadius: 2,
+        boxShadow: '0 4px 12px rgb(0 0 0 / 0.05)'
+      }}
+    >
+      <Typography
+        variant="h4"
+        fontWeight={700}
+        mb={3}
+        color="primary.main"
+        textAlign="center"
+        letterSpacing={1}
+      >
+        Create New Deal
+      </Typography>
 
-      <form onSubmit={handleSubmit}>
-        
-          <Grid item xs={20} sm={10}>
-            <TextField
-              label="Deal ID"
-              name="DealID"
-              value={formData.DealID}
-              onChange={handleInputChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Account ID"
-              name="AccountID"
-              value={formData.AccountID}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            <TextField
-              label="Deal Stage ID"
-              name="DealStageID"
-              value={formData.DealStageID}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            <TextField
-              label="Deal Name"
-              name="DealName"
-              value={formData.DealName}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            <TextField
-              label="Value"
-              name="Value"
-              value={formData.Value}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+      <Paper
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{
+          p: 4,
+          borderRadius: 3,
+          backgroundColor: '#fff',
+          boxShadow: '0 8px 20px rgb(0 0 0 / 0.1)',
+        }}
+        elevation={3}
+      >
+        <Stack spacing={3}>
+          <SmartDropdown
+            label="Account"
+            name="AccountID"
+            value={formData.AccountID}
+            onChange={handleInputChange}
+            service={accountService}
+            displayField="AccountName"
+            valueField="AccountID"
+            placeholder="Search for account..."
+            required
+            fullWidth
+          />
 
+          <TextField
+            label="Deal Name"
+            name="DealName"
+            value={formData.DealName}
+            onChange={handleInputChange}
+            required
+            fullWidth
+            size="medium"
+            InputLabelProps={{ shrink: true }}
+          />
 
+          <SmartDropdown
+            label="Deal Stage"
+            name="DealStageID"
+            value={formData.DealStageID}
+            onChange={handleInputChange}
+            service={dealStageService}
+            displayField="StageName"
+            valueField="DealStageID"
+            placeholder="Search for deal stage..."
+            required
+            createFields={[
+              { name: 'StageName', label: 'Stage Name', required: true },
+              { name: 'StageOrder', label: 'Stage Order', type: 'number', required: true },
+              { name: 'DefaultProbability', label: 'Default Probability (%)', type: 'number' },
+              { name: 'Description', label: 'Description', multiline: true, rows: 3 }
+            ]}
+            fullWidth
+          />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="CloseDate"
-              name="CloseDate"
-              value={formData.CloseDate}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+          <TextField
+            label="Value"
+            name="Value"
+            type="number"
+            value={formData.Value}
+            onChange={handleInputChange}
+            fullWidth
+            size="medium"
+            inputProps={{ step: "0.01", min: "0" }}
+            InputLabelProps={{ shrink: true }}
+          />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Probability"
-              name="Probability"
-              value={formData.Probability}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+          <TextField
+            label="Close Date"
+            name="CloseDate"
+            type="date"
+            value={formData.CloseDate}
+            onChange={handleInputChange}
+            fullWidth
+            size="medium"
+            InputLabelProps={{
+              shrink: true,
+            }}
+          />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Created At"
-              name=" CreatedAt"
-              value={formData.CreatedAt}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+          <TextField
+            label="Probability (%)"
+            name="Probability"
+            type="number"
+            value={formData.Probability}
+            onChange={handleInputChange}
+            fullWidth
+            size="medium"
+            inputProps={{ min: "0", max: "100" }}
+            helperText="Percentage chance of closing (0-100)"
+            InputLabelProps={{ shrink: true }}
+          />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Updated At"
-              name="UpdatedAt"
-              value={formData.UpdatedAt}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+          <TextField
+            label="Created At"
+            name="CreatedAt"
+            type="datetime-local"
+            value={formData.CreatedAt}
+            onChange={handleInputChange}
+            fullWidth
+            size="medium"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            helperText="Leave empty for current timestamp"
+          />
 
-          
-        
-      </form>
+          <TextField
+            label="Updated At"
+            name="UpdatedAt"
+            type="datetime-local"
+            value={formData.UpdatedAt}
+            onChange={handleInputChange}
+            fullWidth
+            size="medium"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            helperText="Leave empty for current timestamp"
+          />
+
+          <Stack direction="row" justifyContent="flex-end" spacing={2} mt={3}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => navigate(-1)}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              Back
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleCancel}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{ textTransform: 'none', fontWeight: 700 }}
+            >
+              Save Deal
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
     </Box>
   );
 };
-
-
-
-
 
 export default CreateDealPage;

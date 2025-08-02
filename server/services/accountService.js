@@ -8,16 +8,6 @@ async function listAllAccounts() {
   return await accountRepo.getAllAccounts();
 }
 
-// Get only active accounts
-async function listActiveAccounts() {
-  return await accountRepo.getActiveAccounts();
-}
-
-// Get only inactive accounts
-async function listInactiveAccounts() {
-  return await accountRepo.getInactiveAccounts();
-}
-
 // Get account by ID
 async function getAccountById(id) {
   return await accountRepo.getAccountDetails(id);
@@ -74,8 +64,6 @@ async function deleteAccount(id) {
 
 module.exports = {
   listAllAccounts,
-  listActiveAccounts,
-  listInactiveAccounts,
   getAccountById,
   createAccount,
   updateAccount,

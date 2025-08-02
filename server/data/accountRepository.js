@@ -18,42 +18,6 @@ async function getAllAccounts() {
 }
 
 //======================================
-// Get active accounts only - Fixed to use stored procedure
-//======================================
-async function getActiveAccounts() {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .execute('GetActiveAccounts'); // You'll need to create this stored procedure
-    
-    return result.recordset;
-  } catch (err) {
-    console.error("Database error in getActiveAccounts:", err);
-    // Fallback to filtering if stored procedure doesn't exist
-    const allAccounts = await getAllAccounts();
-    return allAccounts.filter(account => account.Active);
-  }
-}
-
-//======================================
-// Get inactive accounts only - Fixed to use stored procedure
-//======================================
-async function getInactiveAccounts() {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .execute('GetInactiveAccounts'); // You'll need to create this stored procedure
-    
-    return result.recordset;
-  } catch (err) {
-    console.error("Database error in getInactiveAccounts:", err);
-    // Fallback to filtering if stored procedure doesn't exist
-    const allAccounts = await getAllAccounts();
-    return allAccounts.filter(account => !account.Active);
-  }
-}
-
-//======================================
 // Create account using stored procedure
 //======================================
 async function createAccount(accountData, changedBy) {
@@ -410,8 +374,6 @@ async function deleteAccount(id, changedBy) {
 // =======================
 module.exports = {
   getAllAccounts,
-  getActiveAccounts,
-  getInactiveAccounts,
   createAccount,
   updateAccount,
   deactivateAccount, 
