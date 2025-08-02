@@ -29,11 +29,19 @@ const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
 const DealsDetailsPage = lazy(() => import("./pages/DealsDetailsPage"));
 const ActivitiesDetailsPage = lazy(() => import("./pages/ActivitiesDetailsPage"));
 
-// Lazy load create/edit pages
+// Lazy load create pages
 const CreateAccountPage = lazy(() => import("./pages/CreateAccountPage"));
 const CreateContactsPage = lazy(() => import("./pages/CreateContactsPage"));
 const CreateDealPage = lazy(() => import("./pages/CreateDealPage"));
 const CreateActivitiesPage = lazy(() => import("./pages/CreateActivitiesPage"));
+
+// Lazy load edit pages
+const EditAccountPage = React.lazy(() => import('./pages/EditAccountPage'));
+const EditContactPage = React.lazy(() => import('./pages/EditContactPage'));
+const EditDealPage = React.lazy(() => import('./pages/EditDealPage'));
+const EditActivityPage = React.lazy(() => import('./pages/EditActivityPage'));
+
+
 
 
 // Login page
@@ -83,19 +91,24 @@ function App() {
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/accounts/:id" element={<AccountsDetailsPage />} />
             <Route path="/accounts/create" element={<CreateAccountPage />} />
+            <Route path="/accounts/edit/:id" element={<EditAccountPage />} />
 
 
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/contacts/:id" element={<ContactsDetailsPage />} />
             <Route path="/contacts/create" element={<CreateContactsPage />} />
+            <Route path="/contacts/edit/:id" element={<EditContactPage />} />
+
 
             <Route path="/deals" element={<Deals />} />
             <Route path="/deals/:id" element={<DealsDetailsPage />} />
             <Route path="/deals/create" element={<CreateDealPage />} />
+            <Route path="/deals/edit/:id" element={<EditDealPage />} />
 
             <Route path="/activities" element={<Activities />} />
             <Route path="/activities/:id" element={<ActivitiesDetailsPage />} />
             <Route path="/activities/create" element={<CreateActivitiesPage />} />
+            <Route path="/activities/edit/:id" element={<EditActivityPage />} />
 
             {/* Catch-all for undefined routes */}
             <Route path="*" element={<NotFoundPage />} />
