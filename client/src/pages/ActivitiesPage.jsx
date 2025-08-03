@@ -24,7 +24,7 @@ const ActivitiesPage = () => {
   // Loading spinner state
   const [loading, setLoading] = useState(false);
   // Controls visibility of the create/edit dialog
-  const [dialogOpen, setDialogOpen] = useState(false);
+  // const [dialogOpen, setDialogOpen] = useState(false);
   // Stores currently selected activity for editing
   const [selectedActivity, setSelectedActivity] = useState(null);
   // Stores any error messages for display
@@ -73,12 +73,27 @@ const ActivitiesPage = () => {
   };
 
 
-  // Open dialog for editing an existing activity
+  // // Open dialog for editing an existing activity
+  // const handleOpenEdit = (activity) => {
+  //   setSelectedActivity(activity); // set selected activity to edit
+  //   setError(null);
+  //   setDialogOpen(true);
+  // };
+  // Navigate to edit activity page with the selected account ID
   const handleOpenEdit = (activity) => {
-    setSelectedActivity(activity); // set selected activity to edit
-    setError(null);
-    setDialogOpen(true);
-  };
+    console.log("Opening edit for activity:", activity);
+    
+  
+  // Check if activity has the required ID field
+  if (!activity || !activity.ActivityID) {
+    console.error(" Activity ID is missing:", activity);
+    setError("Unable to edit activity - missing activity ID");
+    return;
+  }
+  
+  // Navigate to edit page
+  navigate(`/activities/edit/${activity.AccountID}`);
+};
 
   // Handle deleting an activity
   const handleDelete = async (id) => {
@@ -96,25 +111,25 @@ const ActivitiesPage = () => {
     }
   };
 
-  // Handle saving (creating or updating) an activity
-  const handleSave = async (activityData) => {
-    setError(null);
-    try {
-      if (activityData.ActivityID) {
-        // Update existing
-        await updateActivity(activityData.ActivityID, activityData);
-        setSuccessMessage("Activity updated successfully.");
-      } else {
-        // Create new
-        await createActivity(activityData);
-        setSuccessMessage("Activity created successfully.");
-      }
-      setDialogOpen(false);
-      await fetchActivities(); // refresh list
-    } catch (err) {
-      setError("Failed to save activity. Please try again.");
-    }
-  };
+  // // Handle saving (creating or updating) an activity
+  // const handleSave = async (activityData) => {
+  //   setError(null);
+  //   try {
+  //     if (activityData.ActivityID) {
+  //       // Update existing
+  //       await updateActivity(activityData.ActivityID, activityData);
+  //       setSuccessMessage("Activity updated successfully.");
+  //     } else {
+  //       // Create new
+  //       await createActivity(activityData);
+  //       setSuccessMessage("Activity created successfully.");
+  //     }
+  //     setDialogOpen(false);
+  //     await fetchActivities(); // refresh list
+  //   } catch (err) {
+  //     setError("Failed to save activity. Please try again.");
+  //   }
+  // };
 
   // // Close the dialog and clear selected activity
   // const handleCloseDialog = () => {

@@ -14,11 +14,20 @@ export async function getAllActivities() {
 // ===========================
 // Get details of a specific activity (with notes, attachments, and contacts)
 // ===========================
-export async function getActivityDetails(activityId) {
-  const response = await axios.get(`${RESOURCE}/${activityId}`);
-  return response.data;
-}
-
+// export async function getActivityDetails(activityId) {
+//   const response = await axios.get(`${RESOURCE}/${activityId}`);
+//   return response.data;
+// }
+// Get activity by ID
+export const fetchActivityById = async (id) => {
+  try {
+    if (!id) throw new Error("Activity ID is required");
+    return await axios.get(`${RESOURCE}/${id}`);
+  } catch (error) {
+    console.error(`Error fetching activity ${id}:`, error);
+    throw error;
+  }
+};
 // ===========================
 // Create a new activity
 // ===========================

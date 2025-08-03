@@ -14,10 +14,21 @@ export async function getAllDeals() {
 // ===========================
 // Get deal details (with products, notes, attachments)
 // ===========================
-export async function getDealDetails(dealId) {
-  const response = await axios.get(`${DEALS_URL}/${dealId}`);
-  return response.data;
-}
+// export async function getDealDetails(dealId) {
+//   const response = await axios.get(`${DEALS_URL}/${dealId}`);
+//   return response.data;
+// }
+// Get deal by ID
+export const fetchDealById = async (id) => {
+  try {
+    if (!id) throw new Error("Deal ID is required");
+    return await axios.get(`${DEALS_URL}/${id}`);
+  } catch (error) {
+    console.error(`Error fetching deal ${id}:`, error);
+    throw error;
+  }
+};
+
 
 // ===========================
 // Create new deal

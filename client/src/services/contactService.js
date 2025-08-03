@@ -23,10 +23,20 @@ export async function getAllPersons() {
 // ===========================
 // Get detailed contact (with person, notes, attachments)
 // ===========================
-export async function getContactDetails(contactId) {
-  const response = await axios.get(`${CONTACTS_URL}/${contactId}`);
-  return response.data;
-}
+// export async function getContactDetails(contactId) {
+//   const response = await axios.get(`${CONTACTS_URL}/${contactId}`);
+//   return response.data;
+// }
+// Get contact by ID
+export const fetchContactById = async (id) => {
+  try {
+    if (!id) throw new Error("Contact ID is required");
+    return await axios.get(`${CONTACTS_URL}/${id}`);
+  } catch (error) {
+    console.error(`Error fetching contact ${id}:`, error);
+    throw error;
+  }
+};
 
 // ===========================
 // Create a contact (with optional new person)

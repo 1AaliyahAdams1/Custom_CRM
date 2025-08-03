@@ -26,7 +26,7 @@ const DealsPage = () => {
   // Loading state to show spinner during API calls
   const [loading, setLoading] = useState(false);
   // Controls visibility of the form dialog (create/edit)
-  const [dialogOpen, setDialogOpen] = useState(false);
+  // const [dialogOpen, setDialogOpen] = useState(false);
   // Currently selected deal for editing; null means create mode
   const [selectedDeal, setSelectedDeal] = useState(null);
   // Error message state to display errors
@@ -72,12 +72,27 @@ const DealsPage = () => {
     navigate("/deals/create");
   };
 
-  // Open form dialog for editing an existing deal
+  // // Open form dialog for editing an existing deal
+  // const handleOpenEdit = (deal) => {
+  //   setSelectedDeal(deal); // Set selected deal for editing
+  //   setError(null);        // Clear errors
+  //   setDialogOpen(true);   // Show dialog
+  // };
+  // Navigate to edit deal page with the selected account ID
   const handleOpenEdit = (deal) => {
-    setSelectedDeal(deal); // Set selected deal for editing
-    setError(null);        // Clear errors
-    setDialogOpen(true);   // Show dialog
-  };
+    console.log("Opening edit for deal:", deal);
+    
+  
+  // Check if account has the required ID field
+  if (!deal || !deal.DealID) {
+    console.error("Deal or DealID is missing:", deal);
+    setError("Unable to edit deal - missing deal ID");
+    return;
+  }
+  
+  // Navigate to edit page
+  navigate(`/deals/edit/${deal.DealID}`);
+};
 
   // Delete a deal after user confirmation and refresh list
   const handleDelete = async (id) => {
@@ -94,25 +109,25 @@ const DealsPage = () => {
     }
   };
 
-  // Save new or updated deal and refresh list
-  const handleSave = async (dealData) => {
-    setError(null);
-    try {
-      if (dealData.DealID) {
-        // Update existing deal
-        await updateDeal(dealData.DealID, dealData);
-        setSuccessMessage("Deal updated successfully.");
-      } else {
-        // Create new deal
-        await createDeal(dealData);
-        setSuccessMessage("Deal created successfully.");
-      }
-      setDialogOpen(false);  // Close form dialog
-      await fetchDeals();    // Refresh deals list
-    } catch (err) {
-      setError("Failed to save deal. Please try again."); // Show error on failure
-    }
-  };
+  // // Save new or updated deal and refresh list
+  // const handleSave = async (dealData) => {
+  //   setError(null);
+  //   try {
+  //     if (dealData.DealID) {
+  //       // Update existing deal
+  //       await updateDeal(dealData.DealID, dealData);
+  //       setSuccessMessage("Deal updated successfully.");
+  //     } else {
+  //       // Create new deal
+  //       await createDeal(dealData);
+  //       setSuccessMessage("Deal created successfully.");
+  //     }
+  //     setDialogOpen(false);  // Close form dialog
+  //     await fetchDeals();    // Refresh deals list
+  //   } catch (err) {
+  //     setError("Failed to save deal. Please try again."); // Show error on failure
+  //   }
+  // };
 
   // // Close the form dialog and reset selected deal
   // const handleCloseDialog = () => {

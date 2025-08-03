@@ -21,8 +21,9 @@ const ActivitiesFormDialog = ({ open, onClose, activity, onSubmit }) => {
   const isEdit = Boolean(activity?.ActivityID);
 
   const emptyForm = {
-    AccountID: "",
-    TypeID: "",
+    ActivityID: "",
+    ActvityType: "",
+    AccountName: "",
     Due_date: "",
     Priority: "",
   };

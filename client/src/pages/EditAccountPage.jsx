@@ -158,7 +158,7 @@ const EditAccountPage = () => {
   return (
     <Box p={4}>
       <Typography variant="h4" gutterBottom>
-        Edit Account
+        Edit Deal
       </Typography>
 
       {/* Error Alert */}
