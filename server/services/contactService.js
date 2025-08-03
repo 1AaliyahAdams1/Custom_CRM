@@ -1,4 +1,4 @@
-const contactRepo = require("../repositories/contactRepository");
+const contactRepo = require("../data/contactRepository");
 
 // Get all contacts
 async function getAllContacts() {

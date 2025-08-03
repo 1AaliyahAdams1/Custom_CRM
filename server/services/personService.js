@@ -20,26 +20,24 @@ async function updatePerson(id, data) {
 }
 
 async function deactivatePerson(id) {
-  const account = await personRepo.getPersonById(id);
-  if (!account) {
-    throw new Error("Account not found");
+  const person = await personRepo.getPersonById(id);
+  if (!person) {
+    throw new Error("Person not found");
   }
 
-  if (!account.Active) {
-    throw new Error("Account is already deactivated");
+  if (!person.Active) {
+    throw new Error("Person is already deactivated");
   }
 
-  account.Active = false;
+  person.Active = false;
 
-  return await personRepo.deactivatePerson(account, userId, 7);
+  return await personRepo.deactivatePerson(person, userId, 7);
 }
 
-// Reactivate an account
 async function reactivatePerson(id) {
   return await personRepo.reactivatePerson(id, userId);
 }
 
-// Hard delete an account
 async function deletePerson(id) {
   return await personRepo.deletePerson(id, userId);
 }

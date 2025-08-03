@@ -124,11 +124,13 @@ const CreateContactsPage = () => {
   // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       let personIdToUse = contactData.PersonID;
 
+      console.log('personIdToUse:', personIdToUse, 'typeof:', typeof personIdToUse);
+
       if (isNewPerson) {
-        // Create person first
         console.log('Creating person:', personData);
         const createdPerson = await createPerson(personData);
         personIdToUse = createdPerson.PersonID || createdPerson.id || createdPerson;
@@ -139,38 +141,18 @@ const CreateContactsPage = () => {
         return;
       }
 
-      const contactPayload = {
-        AccountID: Number(contactData.AccountID),
+      // Clean and normalize contact data like your account example
+      const cleanedContactData = {
+        AccountID: contactData.AccountID === "" ? null : Number(contactData.AccountID),
         PersonID: Number(personIdToUse),
-        JobTitleID: contactData.JobTitleID ? Number(contactData.JobTitleID) : null,
+        JobTitleID: contactData.JobTitleID === "" ? null : Number(contactData.JobTitleID),
         Still_employed: contactData.Still_employed ?? true,
-        WorkEmail: contactData.WorkEmail || null,
-        WorkPhone: contactData.WorkPhone || null,
+        WorkEmail: contactData.WorkEmail === "" ? null : contactData.WorkEmail,
+        WorkPhone: contactData.WorkPhone === "" ? null : contactData.WorkPhone,
       };
 
-      console.log('Creating Contact:', contactPayload);
-      await createContact(contactPayload, 1);
-
-      // Reset states after success
-      setPersonData({
-        Title: '',
-        first_name: '',
-        middle_name: '',
-        surname: '',
-        linkedin_link: '',
-        personal_email: '',
-        personal_mobile: '',
-        CityID: '',
-      });
-      setContactData({
-        AccountID: '',
-        PersonID: '',
-        JobTitleID: '',
-        Still_employed: true,
-        WorkEmail: '',
-        WorkPhone: '',
-      });
-      setIsNewPerson(true);
+      console.log('Creating Contact:', cleanedContactData);
+      await createContact(cleanedContactData);
 
       navigate('/contacts');
     } catch (error) {

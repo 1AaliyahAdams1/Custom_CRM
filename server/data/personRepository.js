@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const dbConfig = require("../dbConfig");
+const { dbConfig } = require("../dbConfig");
 
 // =======================
 // Get all persons
@@ -49,7 +49,14 @@ async function createPerson(data) {
       .input("personal_mobile", sql.VarChar(63), personal_mobile)
       .execute("createPerson");
 
-    return { ContactID: result.recordset[0].PersonID || null };
+    console.log("createPerson raw result:", result);
+
+    const personId = result.recordset?.[0]?.PersonID;
+    if (!personId) {
+      throw new Error("No PersonID returned from stored procedure");
+    }
+
+    return { PersonID: parseInt(personId) };
   } catch (error) {
     console.error("Person Repository Error [createPerson]:", error);
     throw error;
