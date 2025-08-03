@@ -91,11 +91,14 @@ function App() {
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/accounts/:id" element={<AccountsDetailsPage />} />
             <Route path="/accounts/create" element={<CreateAccountPage />} />
+
+            <Route path="/accounts/create" element={<CreateAccountPage />} />
             <Route path="/accounts/edit/:id" element={<EditAccountPage />} />
 
 
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/contacts/:id" element={<ContactsDetailsPage />} />
+            <Route path="/contacts/create" element={<CreateContactsPage />} />
             <Route path="/contacts/create" element={<CreateContactsPage />} />
             <Route path="/contacts/edit/:id" element={<EditContactPage />} />
 
@@ -103,10 +106,12 @@ function App() {
             <Route path="/deals" element={<Deals />} />
             <Route path="/deals/:id" element={<DealsDetailsPage />} />
             <Route path="/deals/create" element={<CreateDealPage />} />
+            <Route path="/deals/create" element={<CreateDealPage />} />
             <Route path="/deals/edit/:id" element={<EditDealPage />} />
 
             <Route path="/activities" element={<Activities />} />
             <Route path="/activities/:id" element={<ActivitiesDetailsPage />} />
+            <Route path="/activities/create" element={<CreateActivitiesPage />} />
             <Route path="/activities/create" element={<CreateActivitiesPage />} />
             <Route path="/activities/edit/:id" element={<EditActivityPage />} />
 
