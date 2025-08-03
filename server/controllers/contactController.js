@@ -9,7 +9,7 @@ async function getAllContacts(req, res) {
   }
 }
 
-async function getContactById(req, res) {
+async function getContactDetails(req, res) {
   try {
     const contact = await contactService.getContactDetails(req.params.id);
     res.json(contact);
@@ -74,7 +74,7 @@ async function deleteContact(req, res) {
 
 module.exports = {
   getAllContacts,
-  getContactById,
+  getContactDetails,          
   getContactsByAccountId,
   createContact,
   updateContact,
