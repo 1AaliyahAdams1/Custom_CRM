@@ -9,6 +9,6 @@ router.post('/', personController.createPerson);
 router.put('/:id', personController.updatePerson);
 router.patch('/:id/deactivate', personController.deactivatePerson);
 router.patch('/:id/reactivate', personController.reactivatePerson);
-router.delete('/:id', personController.deletePerson);
+router.delete('/:id/delete', personController.deletePerson);
 
 module.exports = router;

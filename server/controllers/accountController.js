@@ -11,10 +11,10 @@ async function getAllAccounts(req, res) {
   }
 }
 
-// Get account by ID (no validation on ID)
+// Get account by ID
 async function getAccountById(req, res) {
   try {
-    const id = req.params.id; // no parseInt or isNaN check
+    const id = req.params.id;
     const account = await accountService.getAccountById(id);
     if (!account) return res.status(404).json({ error: "Account not found" });
     res.json(account);
@@ -35,7 +35,7 @@ async function createAccount(req, res) {
   }
 }
 
-// Update account (no validation on ID)
+// Update account
 async function updateAccount(req, res) {
   try {
     const id = req.params.id;
@@ -47,7 +47,7 @@ async function updateAccount(req, res) {
   }
 }
 
-// Deactivate account (no validation on ID)
+// Deactivate account
 async function deactivateAccount(req, res) {
   try {
     const id = req.params.id;
@@ -65,7 +65,7 @@ async function deactivateAccount(req, res) {
   }
 }
 
-// Reactivate account (no validation on ID)
+// Reactivate account
 async function reactivateAccount(req, res) {
   try {
     const id = req.params.id;
@@ -83,7 +83,7 @@ async function reactivateAccount(req, res) {
   }
 }
 
-// Delete account (no validation on ID)
+// Delete account
 async function deleteAccount(req, res) {
   try {
     const id = req.params.id;
