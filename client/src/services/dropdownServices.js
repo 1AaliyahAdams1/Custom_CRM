@@ -165,20 +165,3 @@ export const productService = {
     return response.data;
   }
 };
-
-// Person Service
-export const personService = {
-  getAll: async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/persons`);
-      return response.data || [];
-    } catch (error) {
-      console.error('Error loading persons:', error);
-      return [];
-    }
-  },
-  create: async (personData) => {
-    const response = await axios.post(`${BASE_URL}/persons`, personData);
-    return response.data;
-  }
-};

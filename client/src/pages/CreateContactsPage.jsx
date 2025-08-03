@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 import { 
   Button, 
@@ -14,9 +14,10 @@ import {
   FormControlLabel,
 } from '@mui/material';
 import { createContact } from '../services/contactService';
+import { getAllPersons, createPerson } from '../services/personService';
 import { getAllAccounts } from '../services/accountService';
 import SmartDropdown from '../components/SmartDropdown';
-import { cityService, jobTitleService, personService } from '../services/dropdownServices';
+import { cityService, jobTitleService } from '../services/dropdownServices';
 
 const CreateContactsPage = () => {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ const CreateContactsPage = () => {
     personal_mobile: "",
     PersonCityID: "",
     PersonStateProvinceID: "",
-    Still_employed: true,  // Always true, hidden from UI
+    Still_employed: true,
     JobTitleID: "",
     PrimaryEmail: "",
     PrimaryPhone: "",
@@ -54,6 +55,19 @@ const CreateContactsPage = () => {
     },
   };
 
+  // Wrap personService for dropdown to match expected getAll() method
+  const personDropdownService = {
+    getAll: async () => {
+      try {
+        const data = await getAllPersons();
+        return data || [];
+      } catch (error) {
+        console.error('Error loading persons:', error);
+        return [];
+      }
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -65,7 +79,7 @@ const CreateContactsPage = () => {
   const handlePersonToggle = (event) => {
     const newIsNewPerson = event.target.checked;
     setIsNewPerson(newIsNewPerson);
-    
+
     setFormData(prev => ({
       ...prev,
       isNewPerson: newIsNewPerson,
@@ -84,17 +98,52 @@ const CreateContactsPage = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const dataToSubmit = { ...formData, Still_employed: true };
-      console.log('Creating contact:', dataToSubmit);
-      await createContact(dataToSubmit);
-      navigate('/contacts');
-    } catch (error) {
-      console.error('Error creating contact:', error);
-      alert('Failed to create contact. Please try again.');
+  e.preventDefault();
+  try {
+    let personIdToUse = formData.PersonID;
+
+    if (isNewPerson) {
+      const personData = {
+        Title: formData.Title,
+        first_name: formData.first_name,
+        middle_name: formData.middle_name,
+        surname: formData.surname,
+        linkedin_link: formData.linkedin_link,
+        personal_email: formData.personal_email,
+        personal_mobile: formData.personal_mobile,
+        CityID: formData.PersonCityID || null,
+        StateProvinceID: formData.PersonStateProvinceID || null,
+      };
+
+      const createdPerson = await createPerson(personData);
+      personIdToUse = createdPerson.PersonID || createdPerson.id || createdPerson;
     }
-  };
+
+    // Convert to number or null
+    personIdToUse = Number(personIdToUse);
+    if (isNaN(personIdToUse)) {
+      throw new Error("Invalid PersonID - must be a valid number");
+    }
+
+    const contactData = {
+      AccountID: Number(formData.AccountID), // also ensure AccountID is a number
+      PersonID: personIdToUse,
+      Still_employed: true,
+      JobTitleID: formData.JobTitleID ? Number(formData.JobTitleID) : null,
+      WorkEmail: formData.PrimaryEmail || null,
+      WorkPhone: formData.PrimaryPhone || null,
+      Position: formData.Position,
+      Active: true,
+    };
+
+    await createContact(contactData);
+    navigate('/contacts');
+  } catch (error) {
+    console.error('Error creating contact or person:', error);
+    alert('Failed to create contact. Please try again.');
+  }
+};
+
 
   const handleCancel = () => {
     navigate('/contacts');
@@ -140,17 +189,6 @@ const CreateContactsPage = () => {
           </Typography>
 
           <Stack spacing={2}>
-            <TextField
-              label="Contact ID"
-              name="ContactID"
-              value={formData.ContactID}
-              onChange={handleInputChange}
-              fullWidth
-              size="medium"
-              helperText="Leave empty for auto-generation"
-              InputLabelProps={{ shrink: true }}
-            />
-
             <SmartDropdown
               label="Account"
               name="AccountID"
@@ -200,7 +238,7 @@ const CreateContactsPage = () => {
               name="PersonID"
               value={formData.PersonID}
               onChange={handleInputChange}
-              service={personService}
+              service={personDropdownService}  // <---- use wrapped service here
               displayField="full_name"
               valueField="PersonID"
               placeholder="Search for person..."

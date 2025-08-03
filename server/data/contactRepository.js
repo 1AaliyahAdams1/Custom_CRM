@@ -26,17 +26,16 @@ async function getContactDetails(contactId) {
 // =======================
 async function createContact(contactData, changedBy = 0) {
   const pool = await sql.connect(dbConfig);
+  let { PersonID } = contactData;
   const {
     AccountID,
-    PersonID,
     Still_employed = 1,
     JobTitleID = null,
     WorkEmail = null,
     WorkPhone = null,
     Active = 1,
   } = contactData;
-
-  const result = await pool.request()
+  const contactResult = await pool.request()
     .input("AccountID", sql.Int, AccountID)
     .input("PersonID", sql.Int, PersonID)
     .input("Still_employed", sql.Bit, Still_employed)
@@ -45,17 +44,10 @@ async function createContact(contactData, changedBy = 0) {
     .input("WorkPhone", sql.VarChar(255), WorkPhone)
     .input("Active", sql.Bit, Active)
     .input("ChangedBy", sql.Int, changedBy)
-    .input("ActionTypeID", sql.Int, 1) // Create
-    .query(`
-      DECLARE @NewContactID int;
-      INSERT INTO Contact (AccountID, PersonID, Still_employed, JobTitleID, WorkEmail, WorkPhone, Active, CreatedAt, UpdatedAt)
-      VALUES (@AccountID, @PersonID, @Still_employed, @JobTitleID, @WorkEmail, @WorkPhone, @Active, GETDATE(), GETDATE());
-      SET @NewContactID = SCOPE_IDENTITY();
-      EXEC InsertTempContact @NewContactID, @AccountID, @PersonID, @Still_employed, @JobTitleID, @WorkEmail, @WorkPhone, @Active, @ChangedBy, @ActionTypeID;
-      SELECT @NewContactID as ContactID;
-    `);
-
-  return { ContactID: result.recordset[0].ContactID };
+    .input("ActionTypeID", sql.Int, 1)
+    .output("NewContactID", sql.Int)
+    .execute("CreateContact");
+  return { ContactID: contactResult.output.NewContactID };
 }
 
 // =======================
@@ -129,26 +121,11 @@ async function deleteContact(contactId, changedBy = 0) {
 // =======================
 // Get contacts by AccountID
 // =======================
-async function getContactsByAccountId(accountId) {
+async function getContactsByAccountId(accountName) {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
-    .input("AccountID", sql.Int, accountId)
-    .query(`
-      SELECT 
-        c.ContactID,
-        p.Title,
-        p.first_name,
-        p.middle_name,
-        p.surname,
-        c.WorkEmail,
-        c.WorkPhone,
-        jt.JobTitleName,       
-        c.AccountID
-      FROM Contact c
-      JOIN Person p ON c.PersonID = p.PersonID
-      LEFT JOIN JobTitle jt ON c.JobTitleID = jt.JobTitleID  
-      WHERE c.AccountID = @AccountID
-    `);
+    .input("AccountName", sql.NVarChar(255), accountName)
+    .execute("GetContactDetailsByAccountName");
 
   return result.recordset;
 }

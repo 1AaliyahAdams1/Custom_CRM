@@ -95,41 +95,42 @@ const AccountsPage = () => {
     setSuccessMessage("Account deleted successfully.");  // message visible to user
     await fetchAccounts();
   } catch (error) {
+    console.log("Deactivating (soft deleting) account with ID:", id);
     console.error("Delete failed:", error);
     setError("Failed to delete account. Please try again.");
   }
 };
 
 
-  // Handle form submission for both create and update operations
-  const handleSave = async (accountData) => {
-    setError(null);
-    try {
-      console.log("Saving account data:", accountData);
+  // // Handle form submission for both create and update operations
+  // const handleSave = async (accountData) => {
+  //   setError(null);
+  //   try {
+  //     console.log("Saving account data:", accountData);
 
-      if (accountData.AccountID) {
-        // If AccountID exists, update the existing account
-        await updateAccount(accountData.AccountID, accountData);
-        setSuccessMessage("Account updated successfully.");
-      } else {
-        // Otherwise, create a new account
-        await createAccount(accountData);
-        setSuccessMessage("Account created successfully.");
-      }
+  //     if (accountData.AccountID) {
+  //       // If AccountID exists, update the existing account
+  //       await updateAccount(accountData.AccountID, accountData);
+  //       setSuccessMessage("Account updated successfully.");
+  //     } else {
+  //       // Otherwise, create a new account
+  //       await createAccount(accountData);
+  //       setSuccessMessage("Account created successfully.");
+  //     }
 
-      setDialogOpen(false);  // Close the form dialog after success
-      await fetchAccounts(); // Refresh the accounts list
-    } catch (error) {
-      console.error("Save failed:", error);
-      setError("Failed to save account. Please try again.");
-    }
-  };
+  //     setDialogOpen(false);  // Close the form dialog after success
+  //     await fetchAccounts(); // Refresh the accounts list
+  //   } catch (error) {
+  //     console.error("Save failed:", error);
+  //     setError("Failed to save account. Please try again.");
+  //   }
+  // };
 
-  // Close the form dialog and clear selected account state
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedAccount(null);
-  };
+  // // Close the form dialog and clear selected account state
+  // const handleCloseDialog = () => {
+  //   setDialogOpen(false);
+  //   setSelectedAccount(null);
+  // };
 
 
   return (
