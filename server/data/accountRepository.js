@@ -2,7 +2,7 @@ const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
 //======================================
-// Get all accounts using stored procedure
+// Get all accounts
 //======================================
 async function getAllAccounts() {
   try {
@@ -18,7 +18,7 @@ async function getAllAccounts() {
 }
 
 //======================================
-// Create account using stored procedure
+// Create account 
 //======================================
 async function createAccount(accountData, changedBy) {
   try {
@@ -80,7 +80,7 @@ async function createAccount(accountData, changedBy) {
 }
 
 //======================================
-// Update account using stored procedure
+// Update account
 //======================================
 async function updateAccount(id, accountData, changedBy = 1) {
   try {
@@ -152,7 +152,7 @@ async function updateAccount(id, accountData, changedBy = 1) {
 }
 
 //======================================
-// Soft delete account using stored procedure - Fixed function signature
+// Deactivate account
 //======================================
 async function deactivateAccount(account, changedBy, actionTypeId) {
   try {
@@ -198,7 +198,7 @@ async function deactivateAccount(account, changedBy, actionTypeId) {
 }
 
 //======================================
-// Reactivate account using stored procedure
+// Reactivate account
 //======================================
 async function reactivateAccount(id, changedBy) {
   try {
@@ -276,7 +276,7 @@ async function getAccountDetails(id) {
 }
 
 //======================================
-// Hard delete account using stored procedure
+// Delete account 
 //======================================
 async function deleteAccount(id, changedBy) {
   try {
@@ -293,12 +293,10 @@ async function deleteAccount(id, changedBy) {
 
     const existing = existingResult.recordset[0];
 
-    // Check if account is deactivated (typically required before hard delete)
     if (existing.Active) {
       throw new Error("Account must be deactivated before permanent deletion");
     }
 
-    // Use the DeleteAccount stored procedure
     await pool.request()
       .input("AccountID", sql.Int, id)
       .input("AccountName", sql.NVarChar, existing.AccountName)

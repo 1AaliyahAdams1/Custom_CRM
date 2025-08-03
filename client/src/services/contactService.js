@@ -13,7 +13,7 @@ export async function getAllContacts() {
 }
 
 // ===========================
-// Get all persons (used for selection/dropdowns)
+// Get all persons 
 // ===========================
 export async function getAllPersons() {
   const response = await axios.get(PERSONS_URL);
@@ -21,7 +21,7 @@ export async function getAllPersons() {
 }
 
 // ===========================
-// Get detailed contact (with person, notes, attachments)
+// Get detailed contact
 // ===========================
 export async function getContactDetails(contactId) {
   const response = await axios.get(`${CONTACTS_URL}/${contactId}`);
@@ -29,7 +29,7 @@ export async function getContactDetails(contactId) {
 }
 
 // ===========================
-// Create a contact (with optional new person)
+// Create a contact 
 // ===========================
 // 
 export async function createContact(contactData) {

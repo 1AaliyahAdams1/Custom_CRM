@@ -3,7 +3,9 @@ import axios from "axios";
 const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
 const PERSONS_API = `${BASE_URL}/persons`;
 
+// ===========================
 // Get all persons
+// ===========================
 export async function getAllPersons() {
   try {
     const response = await axios.get(PERSONS_API);
@@ -14,7 +16,9 @@ export async function getAllPersons() {
   }
 }
 
+// ===========================
 // Get person by ID
+// ===========================
 export async function getPersonById(personId) {
   try {
     const response = await axios.get(`${PERSONS_API}/${personId}`);
@@ -29,7 +33,7 @@ export async function getPersonById(personId) {
 export async function createPerson(personData) {
   try {
     const response = await axios.post(PERSONS_API, personData);
-    return response.data; // assume backend returns created person object or ID
+    return response.data; 
   } catch (error) {
     console.error("Error creating person:", error);
     throw error;
@@ -72,7 +76,7 @@ export async function reactivatePerson(personId) {
 // Delete person
 export async function deletePerson(personId) {
   try {
-    const response = await axios.delete(`${PERSONS_API}/${personId}`);
+    const response = await axios.delete(`${PERSONS_API}/${personId}/delete`);
     return response.data;
   } catch (error) {
     console.error(`Error deleting person ${personId}:`, error);

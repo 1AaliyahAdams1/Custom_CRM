@@ -127,6 +127,8 @@ const CreateContactsPage = () => {
     try {
       let personIdToUse = contactData.PersonID;
 
+      console.log('personIdToUse:', personIdToUse, 'typeof:', typeof personIdToUse);
+      
       if (isNewPerson) {
         // Create person first
         console.log('Creating person:', personData);
@@ -138,6 +140,8 @@ const CreateContactsPage = () => {
         alert('Please select or create a person.');
         return;
       }
+      
+
 
       const contactPayload = {
         AccountID: Number(contactData.AccountID),
