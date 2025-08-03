@@ -47,8 +47,7 @@ async function createDeal(data, changedBy = 1, actionTypeId = 1) {
     } = data;
 
     const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("DealID", sql.Int, 0) // SP expects DealID param but ignores on insert
+    const result = await pool.request() 
       .input("AccountID", sql.Int, AccountID)
       .input("DealStageID", sql.Int, DealStageID)
       .input("DealName", sql.VarChar(100), DealName)
@@ -59,16 +58,6 @@ async function createDeal(data, changedBy = 1, actionTypeId = 1) {
       .input("ChangedBy", sql.Int, changedBy)
       .input("ActionTypeID", sql.Int, actionTypeId) // 1 = Create
       .execute("CreateDeal");
-
-    const newDeal = await pool.request()
-      .query(`
-        SELECT TOP 1 DealID 
-        FROM Deal 
-        WHERE AccountID = @AccountID AND DealName = @DealName
-        ORDER BY CreatedAt DESC
-      `)
-      .input("AccountID", sql.Int, AccountID)
-      .input("DealName", sql.VarChar(100), DealName);
 
     return { DealID: newDeal.recordset[0]?.DealID || null };
   } catch (error) {

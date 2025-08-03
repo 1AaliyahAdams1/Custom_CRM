@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Button,
+  Grid,
   Box,
   TextField,
-  Typography,
-  Paper,
-  Stack
+  Typography
 } from '@mui/material';
 import { createActivity } from '../services/activityService';
 import { getAllAccounts } from '../services/accountService';
@@ -59,125 +58,74 @@ const CreateActivitiesPage = () => {
   };
 
   return (
-    <Box
-      sx={{
-        maxWidth: 600,
-        mx: 'auto',
-        p: 4,
-        backgroundColor: '#f9fafb',
-        borderRadius: 2,
-        boxShadow: '0 4px 12px rgb(0 0 0 / 0.05)'
-      }}
-    >
-      <Typography
-        variant="h4"
-        fontWeight={700}
-        mb={3}
-        color="primary.main"
-        textAlign="center"
-        letterSpacing={1}
-      >
+    <Box p={4} maxWidth={900} mx="auto">
+      {/* Page Title */}
+      <Typography variant="h4" gutterBottom>
         Create New Activity
       </Typography>
+      {/* Buttons at the top */}
+      <Box mb={3} display="flex" justifyContent="flex-end" gap={2}>
+        <Button variant="outlined" onClick={() => navigate(-1)}>
+          Back
+        </Button>
+        <Button variant="outlined" onClick={handleCancel}>
+          Cancel
+        </Button>
+        <Button variant="contained" color="primary" onClick={handleSubmit}>
+          Save
+        </Button>
+      </Box>
 
-      <Paper
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{
-          p: 4,
-          borderRadius: 3,
-          backgroundColor: '#fff',
-          boxShadow: '0 8px 20px rgb(0 0 0 / 0.1)',
-        }}
-        elevation={3}
-      >
-        <Stack spacing={3}>
-          <SmartDropdown
-            label="Account"
-            name="AccountID"
-            value={formData.AccountID}
-            onChange={handleInputChange}
-            service={accountService}
-            displayField="AccountName"
-            valueField="AccountID"
-            placeholder="Search for account..."
-            required
-            fullWidth
-          />
+      <Grid item xs={20} sm={10}>
+        <SmartDropdown
+          label="Account"
+          name="AccountID"
+          value={formData.AccountID}
+          onChange={handleInputChange}
+          service={accountService}
+          displayField="AccountName"
+          valueField="AccountID"
+          placeholder="Search for account..."
+          required
+          fullWidth
+        />
 
-          <SmartDropdown
-            label="Activity Type"
-            name="TypeID"
-            value={formData.TypeID}
-            onChange={handleInputChange}
-            service={activityTypeService}
-            displayField="TypeName"
-            valueField="TypeID"
-            placeholder="Search for activity type..."
-            //MAKE CREATE PAGE/POP UP for Activity Type [down below is just filler for now] 
-            createFields={[
-              { name: 'TypeName', label: 'Type Name', required: true },
-              { name: 'Description', label: 'Description', multiline: true, rows: 3 }
-            ]}
-            fullWidth
-          />
+        <SmartDropdown
+          label="Activity Type"
+          name="TypeID"
+          value={formData.TypeID}
+          onChange={handleInputChange}
+          service={activityTypeService}
+          displayField="TypeName"
+          valueField="TypeID"
+          placeholder="Search for activity type..."
+          //make a create activity type page to use in the below command
+          // onCreateNewClick={() => setShowActivityTypePopup(true)}
+          fullWidth
+        />
 
-          <TextField
-            label="Due Date"
-            name="Due_date"
-            type="datetime-local"
-            value={formData.Due_date}
-            onChange={handleInputChange}
-            fullWidth
-            size="medium"
-            InputLabelProps={{ shrink: true }}
-          />
+        <TextField
+          label="Due Date"
+          name="Due_date"
+          value={formData.Due_date}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <SmartDropdown
-            label="Priority"
-            name="PriorityLevelID"
-            value={formData.PriorityLevelID}
-            onChange={handleInputChange}
-            service={priorityLevelService}
-            displayField="PriorityLevelName"
-            valueField="PriorityLevelID"
-            placeholder="Search for priority level..."
-            createFields={[
-              { name: 'PriorityLevelName', label: 'Priority Name', required: true },
-              { name: 'PriorityLevelValue', label: 'Priority Level (1-10)', type: 'number', required: true },
-            ]}
-            fullWidth
-          />
-
-
-          <Stack direction="row" justifyContent="flex-end" spacing={2} mt={3}>
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={() => navigate(-1)}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
-            >
-              Back
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={handleCancel}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              sx={{ textTransform: 'none', fontWeight: 700 }}
-            >
-              Save Activity
-            </Button>
-          </Stack>
-        </Stack>
-      </Paper>
+        <SmartDropdown
+          label="Priority"
+          name="PriorityLevelID"
+          value={formData.PriorityLevelID}
+          onChange={handleInputChange}
+          service={priorityLevelService}
+          displayField="PriorityLevelName"
+          valueField="PriorityLevelID"
+          placeholder="Search for priority level..."
+          //make a create priority level page to use in the below command
+          // onCreateNewClick={() => setShowPriorityPopup(true)}
+          fullWidth
+        />
+      </Grid>
     </Box>
   );
 };

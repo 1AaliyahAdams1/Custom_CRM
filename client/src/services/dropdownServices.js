@@ -23,10 +23,6 @@ export const stateProvinceService = {
       return [];
     }
   },
-  create: async (stateProvinceData) => {
-    const response = await axios.post(`${BASE_URL}/stateprovinces`, stateProvinceData);
-    return response.data;
-  }
 };
 
 // Country Service
@@ -40,10 +36,6 @@ export const countryService = {
       return [];
     }
   },
-  create: async (countryData) => {
-    const response = await axios.post(`${BASE_URL}/countries`, countryData);
-    return response.data;
-  }
 };
 
 // City Service
@@ -57,10 +49,6 @@ export const cityService = {
       return [];
     }
   },
-  create: async (cityData) => {
-    const response = await axios.post(`${BASE_URL}/cities`, cityData);
-    return response.data;
-  }
 };
 
 // Industry Service
@@ -74,10 +62,6 @@ export const industryService = {
       return [];
     }
   },
-  create: async (industryData) => {
-    const response = await axios.post(`${BASE_URL}/industries`, industryData);
-    return response.data;
-  }
 };
 
 // Job Title Service
@@ -91,10 +75,6 @@ export const jobTitleService = {
       return [];
     }
   },
-  create: async (jobTitleData) => {
-    const response = await axios.post(`${BASE_URL}/jobtitles`, jobTitleData);
-    return response.data;
-  }
 };
 
 // Activity Type Service
@@ -108,10 +88,6 @@ export const activityTypeService = {
       return [];
     }
   },
-  create: async (activityTypeData) => {
-    const response = await axios.post(`${BASE_URL}/activitytypes`, activityTypeData);
-    return response.data;
-  }
 };
 
 // Deal Stage Service
@@ -125,10 +101,6 @@ export const dealStageService = {
       return [];
     }
   },
-  create: async (dealStageData) => {
-    const response = await axios.post(`${BASE_URL}/dealstages`, dealStageData);
-    return response.data;
-  }
 };
 
 // Priority Level Service
@@ -143,10 +115,6 @@ export const priorityLevelService = {
       return [];
     }
   },
-  create: async (priorityLevelData) => {
-    const response = await axios.post(`${BASE_URL}/prioritylevels`, priorityLevelData);
-    return response.data;
-  }
 };
 
 // Product Service
@@ -160,8 +128,4 @@ export const productService = {
       return [];
     }
   },
-  create: async (productData) => {
-    const response = await axios.post(`${BASE_URL}/products`, productData);
-    return response.data;
-  }
 };
