@@ -1,44 +1,95 @@
 import axios from "axios";
 
 const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
-const RESOURCE = `${BASE_URL}/activities`;
+const ACTIVITIES_API = `${BASE_URL}/activities`;
 
 // ===========================
 // Get all activities
 // ===========================
 export async function getAllActivities() {
-  const response = await axios.get(RESOURCE);
-  return response.data;
+  try {
+    const response = await axios.get(ACTIVITIES_API);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching activities:", error);
+    throw error;
+  }
 }
 
 // ===========================
-// Get details of a specific activity (with notes, attachments, and contacts)
+// Get activity by ID
 // ===========================
 export async function getActivityDetails(activityId) {
-  const response = await axios.get(`${RESOURCE}/${activityId}`);
-  return response.data;
+  try {
+    const response = await axios.get(`${ACTIVITIES_API}/${activityId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching activity ${activityId}:`, error);
+    throw error;
+  }
 }
 
 // ===========================
 // Create a new activity
 // ===========================
 export async function createActivity(activityData) {
-  const response = await axios.post(RESOURCE, activityData);
-  return response.data;
+  try {
+    const response = await axios.post(ACTIVITIES_API, activityData);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating activity:", error);
+    throw error;
+  }
 }
 
 // ===========================
-// Update an existing activity
+// Update activity
 // ===========================
 export async function updateActivity(activityId, activityData) {
-  const response = await axios.put(`${RESOURCE}/${activityId}`, activityData);
-  return response.data;
+  try {
+    const response = await axios.put(`${ACTIVITIES_API}/${activityId}`, activityData);
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating activity ${activityId}:`, error);
+    throw error;
+  }
 }
 
 // ===========================
-// Delete an activity
+// Deactivate activity
+// ===========================
+export async function deactivateActivity(activityId) {
+  try {
+    const response = await axios.patch(`${ACTIVITIES_API}/${activityId}/deactivate`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deactivating activity ${activityId}:`, error);
+    throw error;
+  }
+}
+
+// ===========================
+// Reactivate activity
+// ===========================
+export async function reactivateActivity(activityId) {
+  try {
+    const response = await axios.patch(`${ACTIVITIES_API}/${activityId}/reactivate`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error reactivating activity ${activityId}:`, error);
+    throw error;
+  }
+}
+
+// ===========================
+// Delete activity
 // ===========================
 export async function deleteActivity(activityId) {
-  const response = await axios.delete(`${RESOURCE}/${activityId}`);
-  return response.data;
+  try {
+    const response = await axios.delete(`${ACTIVITIES_API}/${activityId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting activity ${activityId}:`, error);
+    throw error;
+  }
 }

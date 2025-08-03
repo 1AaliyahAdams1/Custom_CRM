@@ -83,7 +83,7 @@ export async function reactivateContact(contactId) {
 // Delete a contact
 export async function deleteContact(contactId) {
   try {
-    const response = await axios.delete(`${CONTACTS_API}/${contactId}`);
+    const response = await axios.delete(`${CONTACTS_API}/${contactId}/delete`);
     return response.data;
   } catch (error) {
     console.error(`Error deleting contact ${contactId}:`, error);
