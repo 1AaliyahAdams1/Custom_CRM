@@ -2,62 +2,115 @@ const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
 // =======================
-// Add a product to a deal
+// Create a new DealProduct
 // =======================
-async function addDealProduct(dealId, productId) {
+async function createDealProduct(dealId, productId) {
   try {
     const pool = await sql.connect(dbConfig);
     await pool.request()
       .input("DealID", sql.Int, dealId)
       .input("ProductID", sql.Int, productId)
-      .query(`
-        INSERT INTO DealProduct (DealID, ProductID)
-        VALUES (@DealID, @ProductID)
-      `);
-    return { message: "Product added to deal." };
+      .execute("CreateDealProduct");
+    return { message: "DealProduct created successfully." };
   } catch (error) {
-    console.error("Error adding product to deal:", error);
-    throw error;
-  }
-}
-// =======================
-// Remove a product from a deal
-// =======================
-async function removeDealProduct(dealId, productId) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    await pool.request()
-      .input("DealID", sql.Int, dealId)
-      .input("ProductID", sql.Int, productId)
-      .query(`
-        DELETE FROM DealProduct
-        WHERE DealID = @DealID AND ProductID = @ProductID
-      `);
-    return { message: "Product removed from deal." };
-  } catch (error) {
-    console.error("Error removing product from deal:", error);
+    console.error("DealProduct Repo Error [createDealProduct]:", error);
     throw error;
   }
 }
 
 // =======================
-// Get all products linked to a deal
+// Get all active DealProducts
 // =======================
-async function getProductsByDealId(dealId) {
+async function getAllDealProducts() {
   try {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
-      .input("DealID", sql.Int, dealId)
-      .query(`
-        SELECT dp.DealProductID, dp.ProductID, p.ProductName
-        FROM DealProduct dp
-        JOIN Product p ON dp.ProductID = p.ProductID
-        WHERE dp.DealID = @DealID
-        ORDER BY p.ProductName
-      `);
+      .execute("GetDealProduct");
     return result.recordset;
   } catch (error) {
-    console.error("Error fetching deal products:", error);
+    console.error("DealProduct Repo Error [getAllDealProducts]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Get DealProduct by ID
+// =======================
+async function getDealProductById(dealProductId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("DealProductID", sql.Int, dealProductId)
+      .execute("GetDealProductByID");
+    return result.recordset[0];
+  } catch (error) {
+    console.error("DealProduct Repo Error [getDealProductById]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Update DealProduct
+// =======================
+async function updateDealProduct(dealProductId, dealId, productId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("DealProductID", sql.Int, dealProductId)
+      .input("DealID", sql.Int, dealId)
+      .input("ProductID", sql.Int, productId)
+      .execute("UpdateDealProduct");
+    return { message: "DealProduct updated successfully." };
+  } catch (error) {
+    console.error("DealProduct Repo Error [updateDealProduct]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Deactivate DealProduct
+// =======================
+async function deactivateDealProduct(dealProductId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("DealProductID", sql.Int, dealProductId)
+      .execute("DeactivateDealProduct");
+    return { message: "DealProduct deactivated successfully." };
+  } catch (error) {
+    console.error("DealProduct Repo Error [deactivateDealProduct]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Reactivate DealProduct
+// =======================
+async function reactivateDealProduct(dealProductId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("DealProductID", sql.Int, dealProductId)
+      .execute("ReactivateDealProduct");
+    return { message: "DealProduct reactivated successfully." };
+  } catch (error) {
+    console.error("DealProduct Repo Error [reactivateDealProduct]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Hard delete DealProduct
+// =======================
+async function deleteDealProduct(dealProductId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("DealProductID", sql.Int, dealProductId)
+      .execute("DeleteDealProduct");
+    return { message: "DealProduct deleted successfully." };
+  } catch (error) {
+    console.error("DealProduct Repo Error [deleteDealProduct]:", error);
     throw error;
   }
 }
@@ -66,7 +119,11 @@ async function getProductsByDealId(dealId) {
 // Exports
 // =======================
 module.exports = {
-  addDealProduct,
-  removeDealProduct,
-  getProductsByDealId,
+  createDealProduct,
+  getAllDealProducts,
+  getDealProductById,
+  updateDealProduct,
+  deactivateDealProduct,
+  reactivateDealProduct,
+  deleteDealProduct,
 };

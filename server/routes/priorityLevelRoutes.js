@@ -6,6 +6,8 @@ router.get("/", priorityLevelController.getAllPriorityLevels);
 router.get("/:id", priorityLevelController.getPriorityLevelById);
 router.post("/", priorityLevelController.createPriorityLevel);
 router.put("/:id", priorityLevelController.updatePriorityLevel);
-router.delete("/:id", priorityLevelController.deletePriorityLevel);
+router.patch("/:id/deactivate", priorityLevelController.deactivatePriorityLevel);
+router.patch("/:id/reactivate", priorityLevelController.reactivatePriorityLevel);
+router.delete("/:id/delete", priorityLevelController.deletePriorityLevel);
 
 module.exports = router;

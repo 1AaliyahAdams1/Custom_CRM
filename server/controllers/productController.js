@@ -1,16 +1,9 @@
 const productService = require("../services/productService");
 
-// Get the username of the person making changes (or fallback to "System")
-function getChangedBy(req) {
-  return req.user?.username || "System";
-}
-
-// GET products
 async function getAllProducts(req, res) {
   try {
-    // can add validation here
-    const products = await productService.getAllProducts();
-    res.json(products);
+    const data = await productService.getAllProducts();
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -18,10 +11,9 @@ async function getAllProducts(req, res) {
 
 async function getProductById(req, res) {
   try {
-    // Can add validation here
-    const product = await productService.getProductById(req.params.id);
-    if (!product) return res.status(404).json({ error: "Product not found" });
-    res.json(product);
+    const data = await productService.getProductById(parseInt(req.params.id));
+    if (!data) return res.status(404).json({ message: "Product not found" });
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -29,25 +21,43 @@ async function getProductById(req, res) {
 
 async function createProduct(req, res) {
   try {
-    const product = await productService.createProduct(req.body, getChangedBy(req));
-    res.status(201).json(product);
+    const result = await productService.createProduct(req.body, req.body.changedBy || 0);
+    res.status(201).json(result);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 }
 
 async function updateProduct(req, res) {
   try {
-    const product = await productService.updateProduct(req.params.id, req.body, getChangedBy(req));
-    res.json(product);
+    const result = await productService.updateProduct(parseInt(req.params.id), req.body, req.body.changedBy || 0);
+    res.json(result);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: err.message });
+  }
+}
+
+async function deactivateProduct(req, res) {
+  try {
+    const result = await productService.deactivateProduct(req.body, req.body.changedBy || 0);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+async function reactivateProduct(req, res) {
+  try {
+    const result = await productService.reactivateProduct(req.body, req.body.changedBy || 0);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 }
 
 async function deleteProduct(req, res) {
   try {
-    const result = await productService.deleteProduct(req.params.id, getChangedBy(req));
+    const result = await productService.deleteProduct(req.body, req.body.changedBy || 0);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -59,5 +69,7 @@ module.exports = {
   getProductById,
   createProduct,
   updateProduct,
+  deactivateProduct,
+  reactivateProduct,
   deleteProduct,
 };

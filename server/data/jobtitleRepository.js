@@ -1,82 +1,110 @@
 const sql = require("mssql");
-const { dbConfig } = require("../dbConfig");
-
+const dbConfig = require("../dbConfig");
 
 // =======================
-// Get all job titles
+// Get all active job titles
 // =======================
-async function getAllJobTitles(activeOnly = false) {
-  const pool = await sql.connect(dbConfig);
-  const query = `
-    SELECT JobTitleID, JobTitleName, Active
-    FROM JobTitle
-    ORDER BY JobTitleName
-  `;
-  const result = await pool.request().query(query);
-  return result.recordset;
+async function getAllJobTitles() {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().execute("getAllJobTitles");
+    return result.recordset;
+  } catch (error) {
+    console.error("DB error in getAllJobTitles:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Get a single job title by ID
 // =======================
 async function getJobTitleById(jobTitleId) {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request()
-    .input("JobTitleID", sql.SmallInt, jobTitleId)
-    .query(`
-      SELECT JobTitleID, JobTitleName, Active
-      FROM JobTitle
-      WHERE JobTitleID = @JobTitleID
-    `);
-  return result.recordset[0];
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("JobTitleID", sql.Int, jobTitleId)
+      .execute("getJobTitleById");
+    return result.recordset[0];
+  } catch (error) {
+    console.error("DB error in getJobTitleById:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Create a new job title
 // =======================
-async function createJobTitle(jobTitleName, active = true) {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request()
-    .input("JobTitleName", sql.NVarChar(100), jobTitleName)
-    .input("Active", sql.Bit, active)
-    .query(`
-      INSERT INTO JobTitle (JobTitleName, Active)
-      VALUES (@JobTitleName, @Active);
-      SELECT SCOPE_IDENTITY() AS JobTitleID;
-    `);
-  return result.recordset[0];
+async function createJobTitle(jobTitleName) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("JobTitleName", sql.VarChar(255), jobTitleName)
+      .execute("createJobTitle");
+  } catch (error) {
+    console.error("DB error in createJobTitle:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Update an existing job title
 // =======================
-async function updateJobTitle(jobTitleId, data) {
-  const { JobTitleName, Active } = data;
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("JobTitleID", sql.SmallInt, jobTitleId)
-    .input("JobTitleName", sql.NVarChar(100), JobTitleName)
-    .input("Active", sql.Bit, Active)
-    .query(`
-      UPDATE JobTitle
-      SET JobTitleName = @JobTitleName,
-          Active = @Active
-      WHERE JobTitleID = @JobTitleID;
-    `);
+async function updateJobTitle(jobTitleId, jobTitleName) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("JobTitleID", sql.Int, jobTitleId)
+      .input("JobTitleName", sql.VarChar(255), jobTitleName)
+      .execute("updateJobTitle");
+  } catch (error) {
+    console.error("DB error in updateJobTitle:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Soft delete: mark job title as inactive
+// Deactivate a job title
+// =======================
+async function deactivateJobTitle(jobTitleId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("JobTitleID", sql.Int, jobTitleId)
+      .execute("deactiveJobTitle");
+  } catch (error) {
+    console.error("DB error in deactivateJobTitle:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Reactivate a job title
+// =======================
+async function reactivateJobTitle(jobTitleId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("JobTitleID", sql.Int, jobTitleId)
+      .execute("reactivateJobTitle");
+  } catch (error) {
+    console.error("DB error in reactivateJobTitle:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Delete a job title
 // =======================
 async function deleteJobTitle(jobTitleId) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("JobTitleID", sql.SmallInt, jobTitleId)
-    .query(`
-      UPDATE JobTitle
-      SET Active = 0
-      WHERE JobTitleID = @JobTitleID;
-    `);
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("JobTitleID", sql.Int, jobTitleId)
+      .execute("deleteJobTitle");
+  } catch (error) {
+    console.error("DB error in deleteJobTitle:", error);
+    throw error;
+  }
 }
 
 // =======================
@@ -87,5 +115,7 @@ module.exports = {
   getJobTitleById,
   createJobTitle,
   updateJobTitle,
+  deactivateJobTitle,
+  reactivateJobTitle,
   deleteJobTitle,
 };

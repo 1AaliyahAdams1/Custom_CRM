@@ -16,14 +16,9 @@ click Code Button and copy repo "https://github.com/1AaliyahAdams1/Custom_CRM.gi
 
 > Then you should select Yes when the next pop up appears
 
-============================
-
 To make a new branch visual Studio Code:
-
 MAKE ONLY ONE BRANCH AND THAT WILL BE YOUR BRANCH. AVOID MAKING MULTIPLE BRANCHES
-
   = Paste these commands in the terminal = 
-  
 > git checkout -b "your-branch-name-here"
 
 [CREATES YOUR BRANCH LOCALLY ON YOUR COMPUTER]
@@ -32,12 +27,8 @@ MAKE ONLY ONE BRANCH AND THAT WILL BE YOUR BRANCH. AVOID MAKING MULTIPLE BRANCHE
 
 [PUSHES YOUR BRANCH ONLINE]
 
-============================
-
 To save changes in your branch and push it to GitHub:
-
   = Paste these commands in the terminal =
-  
 > git add .
 
 [THIS STAGES ALL CHANGES MADE ON BRANCH]
@@ -50,32 +41,14 @@ To save changes in your branch and push it to GitHub:
 
 [THIS PUSHES ALL CHANGES TO GITHUB]
 
-============================
-
 To pull changes from GitHub into your branch:
-
  = Paste these commands in the terminal =
-
 > git pull origin main
 
 [PULLS ALL CHANGES MADE TO MAIN BRANCH TO YOUR BRANCH ON YOUR COMPUTER]
 
 
-========================================================
-
-MAKE THE .ENV FILES IN THE SERVER FOLDER AND THE CLIENT FOLDER
-
-There is a .env template with missing credentials in each folder
-
-The credentials are in the MVP folder on the Onedrive
-
-Intergrating Syncfusion with the project
-
-Add this to your client side .env file
-
-REACT_APP_LICENSE= PASTE YOUR LICENSE CODE HERE
- 
-========================================================
+=====================================================================================================
 
 Install dependencies in the terminal:
 
@@ -92,9 +65,7 @@ COMMANDS for Root folder [Custom_CRM]
 
 
 COMMANDS for Client folder [client]
-> cd C:\Desktop\Custom_CRM\client
-
-[CHANGE THIS COMMAND TO MATCH YOUR FILE DIRECTORY]
+> C:\Desktop\Custom_CRM\client [CHANGE THIS COMMAND TO MATCH YOUR FILE DIRECTORY]
 
 > powershell -ExecutionPolicy Bypass -command "npm install react@18.2.0 react-dom@18.2.0"
 
@@ -132,14 +103,15 @@ DO THIS IN CLIENT FOLDER ALSO
 [For TextBox, NumericTextBox, etc.]
 
 > powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-notifications"
-
+=====================================================================================================
 COMMAND to run program:
-
 MAKE SURE YOU ARE ON THE ROOT FOLDER [Custom_CRM] WHEN YOU RUN THIS COMMAND
-
-> cd C:\Desktop\Custom_CRM\
-
-[CHANGE THIS COMMAND TO MATCH YOUR FILE DIRECTORY]
-
 > powershell -ExecutionPolicy Bypass -command "npm run dev"  
 
+=====================================================================================================
+WHEN YOU PROGRAM IS RUNNING EVEN THO YOU CLOSED THE TERMINAL:
+This command finds if the port is being used
+> netstat -ano | findstr :3000
+
+Run the below command to close whatever is using the port
+>taskkill /PID 19508 /F

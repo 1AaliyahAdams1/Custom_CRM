@@ -9,17 +9,19 @@ import React, { useEffect, useState } from "react";
 import { ButtonComponent } from "@syncfusion/ej2-react-buttons";
 import { MessageComponent } from "@syncfusion/ej2-react-notifications";
 
+import { useNavigate } from "react-router-dom";
 import ContactsTable from "../components/ContactsTable";
-import ContactFormDialog from "../components/ContactsFormDialog";
+// import ContactFormDialog from "../components/ContactsFormDialog";
 
 import {
-  getContacts,
+  getAllContacts,
   createContact,
   updateContact,
-  deleteContact,
+  deleteContact
 } from "../services/contactService";
 
 const ContactsPage = () => {
+  const navigate = useNavigate();
   // State to hold list of contacts fetched from backend
   const [contacts, setContacts] = useState([]);
   // Loading spinner state during data fetch or operations
@@ -38,7 +40,7 @@ const ContactsPage = () => {
     setLoading(true);
     setError(null); // Clear previous errors
     try {
-      const data = await getContacts(); // API call to fetch contacts
+      const data = await getAllContacts(); // API call to fetch contacts
       setContacts(data); // Save data to state
     } catch (err) {
       setError("Failed to load contacts. Please try again."); // Show error message
@@ -60,11 +62,16 @@ const ContactsPage = () => {
     }
   }, [successMessage]);
 
-  // Opens the dialog for adding a new contact
+  // // Opens the dialog for adding a new contact
+  // const handleOpenCreate = () => {
+  //   setSelectedContact(null); // Clear selected contact (create mode)
+  //   setError(null);           // Clear any errors
+  //   setDialogOpen(true);      // Open dialog
+  // };
+  
+  // Navigate to create contact page
   const handleOpenCreate = () => {
-    setSelectedContact(null); // Clear selected contact (create mode)
-    setError(null);           // Clear any errors
-    setDialogOpen(true);      // Open dialog
+    navigate("/contacts/create");
   };
 
   // Opens the dialog to edit an existing contact
@@ -89,7 +96,7 @@ const ContactsPage = () => {
     }
   };
 
-  // Handles form submission for creating or updating a contact
+  //Handles form submission for creating or updating a contact
   const handleSave = async (contactData) => {
     setError(null);
     try {
@@ -208,6 +215,8 @@ const ContactsPage = () => {
       />
     </div>
   );
+
+  
 };
 
 

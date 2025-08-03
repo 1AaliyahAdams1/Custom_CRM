@@ -1,62 +1,105 @@
-// SERVICE : Account Service
-// Service module for handling all API calls related to accounts
-
-//IMPORTS
 import axios from "axios";
 
-// Set base URLs from environment
-const baseApiUrl = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
+const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
+const RESOURCE = `${BASE_URL}/accounts`;
 
-// Base endpoint for account-related API calls
-const DB_URL = `${baseApiUrl}/account`;
+// Configure axios defaults
+axios.defaults.timeout = 10000; // 10 second timeout
 
-// Fetch all accounts from the backend
-export const getAccounts = async () => {
+// Get all accounts
+export const getAllAccounts = async () => {
   try {
-    const response = await axios.get(DB_URL);  // GET request to /account
-    return response.data;                      // Return array of accounts
+    return await axios.get(RESOURCE);
   } catch (error) {
-    // Throw error with backend message if available, else default message
-    throw new Error(error.response?.data?.error || "Failed to fetch accounts");
+    console.error("Error fetching all accounts:", error);
+    throw error;
   }
 };
 
-// Fetch details of a single account by ID
-export const getAccountDetails = async (id) => {
+// Get active accounts
+export const getActiveAccounts = async () => {
   try {
-    const response = await axios.get(`${DB_URL}/${id}`);  // GET /account/:id
-    return response.data;                                 // Return account object
+    return await axios.get(`${RESOURCE}/active`);
   } catch (error) {
-    throw new Error(error.response?.data?.error || "Failed to fetch account details");
+    console.error("Error fetching active accounts:", error);
+    throw error;
   }
 };
 
-// Create a new account by sending POST with account data
-export const createAccount = async (account) => {
+// Get inactive accounts
+export const getInactiveAccounts = async () => {
   try {
-    const response = await axios.post(DB_URL, account);  // POST /account with payload
-    return response.data;                                // Return created account
+    return await axios.get(`${RESOURCE}/inactive`);
   } catch (error) {
-    throw new Error(error.response?.data?.error || "Failed to create account");
+    console.error("Error fetching inactive accounts:", error);
+    throw error;
   }
 };
 
-// Update an existing account by ID with new data
-export const updateAccount = async (id, account) => {
+// Get account by ID
+export const fetchAccountById = async (id) => {
   try {
-    const response = await axios.put(`${DB_URL}/${id}`, account);  // PUT /account/:id
-    return response.data;                                         // Return updated account
+    if (!id) throw new Error("Account ID is required");
+    return await axios.get(`${RESOURCE}/${id}`);
   } catch (error) {
-    throw new Error(error.response?.data?.error || "Failed to update account");
+    console.error(`Error fetching account ${id}:`, error);
+    throw error;
   }
 };
 
-// Delete an account by ID
+// Create new account
+export const createAccount = async (data) => {
+  try {
+    if (!data.AccountName) throw new Error("Account name is required");
+    return await axios.post(RESOURCE, data);
+  } catch (error) {
+    console.error("Error creating account:", error);
+    throw error;
+  }
+};
+
+// Update account
+export const updateAccount = async (id, data) => {
+  try {
+    if (!id) throw new Error("Account ID is required");
+    if (!data.AccountName) throw new Error("Account name is required");
+    return await axios.put(`${RESOURCE}/${id}`, data);
+  } catch (error) {
+    console.error(`Error updating account ${id}:`, error);
+    throw error;
+  }
+};
+
+// Deactivate account (soft delete)
+export const deactivateAccount = async (id) => {
+  try {
+    if (!id) throw new Error("Account ID is required");
+    const response = await axios.patch(`${RESOURCE}/${id}/deactivate`);
+    return response.data;
+  } catch (error) {
+    console.error("Deactivate account error:", error);
+    throw error;
+  }
+};
+
+// Reactivate account
+export const reactivateAccount = async (id) => {
+  try {
+    if (!id) throw new Error("Account ID is required");
+    return await axios.patch(`${RESOURCE}/${id}/reactivate`);
+  } catch (error) {
+    console.error("Reactivate account error:", error);
+    throw error;
+  }
+};
+
+// Hard delete account - Fixed endpoint
 export const deleteAccount = async (id) => {
   try {
-    const response = await axios.delete(`${DB_URL}/${id}`);  // DELETE /account/:id
-    return response.data;                                    // Return any confirmation
+    if (!id) throw new Error("Account ID is required");
+    return await axios.delete(`${RESOURCE}/${id}/delete`);
   } catch (error) {
-    throw new Error(error.response?.data?.error || "Failed to delete account");
+    console.error("Delete account error:", error);
+    throw error;
   }
 };

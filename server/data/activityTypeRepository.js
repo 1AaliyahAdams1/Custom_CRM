@@ -1,87 +1,137 @@
 const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
-// ==========================================
-// Get all activity types (ordered alphabetically)
-// ==========================================
-async function getAllActivityTypes() {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request().query(`
-    SELECT TypeID, TypeName, Description
-    FROM ActivityType
-    ORDER BY TypeName
-  `);
-  return result.recordset;
-}
+//======================================
+// Get all activity types 
+//======================================
+const getAllActivityTypes = async () => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().execute("GetActivityType");
+    return result.recordset;
+  } catch (error) {
+    console.error("Error fetching activity types:", error);
+    throw error;
+  }
+};
 
-// ==========================================
-// Get a single activity type by ID
-// ==========================================
-async function getActivityTypeById(id) {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request()
-    .input("TypeID", sql.SmallInt, id)
-    .query("SELECT * FROM ActivityType WHERE TypeID = @TypeID");
-  return result.recordset[0];
-}
+//======================================
+// Get activity type by ID
+//======================================
+const getActivityTypeById = async (TypeID) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("TypeID", sql.Int, TypeID)
+      .execute("GetActivityTypeByID");
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("Error fetching activity type by ID:", error);
+    throw error;
+  }
+};
 
-// ==========================================
+//======================================
 // Create a new activity type
-// ==========================================
-async function createActivityType(data) {
-  const { TypeName, Description = null } = data;
-  const pool = await sql.connect(dbConfig);
+//======================================
+const createActivityType = async (data) => {
+  const { TypeName, Description } = data;
 
-  const result = await pool.request()
-    .input("TypeName", sql.NVarChar(100), TypeName)
-    .input("Description", sql.NVarChar(255), Description)
-    .query(`
-      INSERT INTO ActivityType (TypeName, Description, CreatedAt, UpdatedAt)
-      VALUES (@TypeName, @Description, GETDATE(), GETDATE());
-      SELECT SCOPE_IDENTITY() AS TypeID;
-    `);
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("TypeName", sql.VarChar(50), TypeName)
+      .input("Description", sql.VarChar(255), Description)
+      .execute("CreateActivityType");
 
-  return result.recordset[0];
-}
+    return true;
+  } catch (error) {
+    console.error("Error creating activity type:", error);
+    throw error;
+  }
+};
 
-// ==========================================
-// Update an existing activity type
-// ==========================================
-async function updateActivityType(id, data) {
-  const { TypeName, Description = null } = data;
-  const pool = await sql.connect(dbConfig);
+//======================================
+// Update an activity type by ID
+//======================================
+const updateActivityType = async (TypeID, data) => {
+  const { TypeName, Description } = data;
 
-  await pool.request()
-    .input("TypeID", sql.SmallInt, id)
-    .input("TypeName", sql.NVarChar(100), TypeName)
-    .input("Description", sql.NVarChar(255), Description)
-    .query(`
-      UPDATE ActivityType
-      SET TypeName = @TypeName,
-          Description = @Description,
-          UpdatedAt = GETDATE()
-      WHERE TypeID = @TypeID;
-    `);
-}
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("TypeID", sql.Int, TypeID)
+      .input("TypeName", sql.VarChar(50), TypeName)
+      .input("Description", sql.VarChar(255), Description)
+      .execute("UpdateActivityType");
 
-// ==========================================
-// Delete an activity type (hard delete)
-// ==========================================
-async function deleteActivityType(id) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("TypeID", sql.SmallInt, id)
-    .query("DELETE FROM ActivityType WHERE TypeID = @TypeID");
-}
+    return true;
+  } catch (error) {
+    console.error("Error updating activity type:", error);
+    throw error;
+  }
+};
 
+//======================================
+// Deactivate activity type
+//======================================
+const deactivateActivityType = async (TypeID) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("TypeID", sql.Int, TypeID)
+      .execute("DeactivateActivityType");
 
-// =======================
+    return true;
+  } catch (error) {
+    console.error("Error deactivating activity type:", error);
+    throw error;
+  }
+};
+
+//======================================
+// Reactivate activity type
+//======================================
+const reactivateActivityType = async (TypeID) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("TypeID", sql.Int, TypeID)
+      .execute("ReactivateActivityType");
+
+    return true;
+  } catch (error) {
+    console.error("Error reactivating activity type:", error);
+    throw error;
+  }
+};
+
+//======================================
+// Delete activity type
+//======================================
+const deleteActivityType = async (TypeID) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("TypeID", sql.Int, TypeID)
+      .execute("DeleteActivityType");
+
+    return true;
+  } catch (error) {
+    console.error("Error deleting activity type:", error);
+    throw error;
+  }
+};
+
+//======================================
 // Exports
-// =======================
+//======================================
 module.exports = {
   getAllActivityTypes,
   getActivityTypeById,
   createActivityType,
   updateActivityType,
+  deactivateActivityType,
+  reactivateActivityType,
   deleteActivityType,
 };

@@ -1,7 +1,7 @@
-//PAGE : Account Details
-//Shows all details related to an individual account
+// PAGE: Account Details
+// Shows all details related to an individual account
 
-//IMPORTS
+// IMPORTS
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -15,41 +15,29 @@ import { getAccountDetails } from "../services/accountService";
 
 // Component to display detailed information about a single Account
 function AccountDetailsPage() {
-  // Get the account ID from the URL parameters
   const { id } = useParams();
-  // Hook for programmatic navigation
   const navigate = useNavigate();
 
-  // State to hold the fetched account details
   const [account, setAccount] = useState(null);
-  // Loading state while fetching data
   const [loading, setLoading] = useState(true);
-  // Error state to capture fetch errors
   const [error, setError] = useState(null);
 
-  // Fetch account details when component mounts or when `id` changes
   useEffect(() => {
-    async function fetchAccount() {
-      setLoading(true);
-      setError(null);
+    async function loadAccount() {
       try {
-        // Call service to get account details by ID
-        const data = await getAccountDetails(id);
-        // The API may return an array; take the first item if so
-        const account = Array.isArray(data) ? data[0] : data;
-        // If no account is found, throw an error to show message
-        if (!account) throw new Error("Account not found");
-        // Update state with fetched account details
-        setAccount(account);
+        setLoading(true);
+        const res = await fetchAccountById(id);
+        const data = Array.isArray(res.data) ? res.data[0] : res.data;
+        if (!data) throw new Error("Account not found");
+        setAccount(data);
       } catch (err) {
-        // Capture error message for display
-        setError(err.message || "Failed to fetch account details");
+        setError(err.message || "Failed to load account");
       } finally {
-        // Stop loading indicator regardless of success or failure
         setLoading(false);
       }
     }
-    fetchAccount();
+
+    loadAccount();
   }, [id]);
 
   // // While loading, show a spinner

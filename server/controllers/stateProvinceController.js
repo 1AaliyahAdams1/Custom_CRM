@@ -1,80 +1,75 @@
 const stateService = require("../services/stateProvinceService");
 
-// Get all states/provinces
 async function getAllStates(req, res) {
   try {
-    // Validation or query param parsing could go here
-
-    const states = await stateService.getAllStates();
-    res.json(states);
+    const data = await stateService.getAllStates();
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-// Get state/province by ID
 async function getStateById(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-
-    // Validation for id could go here
-
-    const state = await stateService.getStateById(id);
-
-    // Handle not found
-    if (!state) {
-      return res.status(404).json({ error: "State/Province not found" });
-    }
-
-    res.json(state);
+    const data = await stateService.getStateById(parseInt(req.params.id));
+    if (!data) return res.status(404).json({ message: "State/Province not found" });
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-// Create a new state/province
+async function getIDByStateProvince(req, res) {
+  try {
+    const name = req.params.name;
+    if (!name) return res.status(400).json({ message: "State/Province name is required" });
+    const id = await stateService.getIDByStateProvince(name);
+    if (!id) return res.status(404).json({ message: "State/Province not found" });
+    res.json({ StateProvinceID: id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 async function createState(req, res) {
   try {
-    const stateData = req.body;
-
-    // Validation for required fields (StateProvinceName, CountryID) could go here
-
-    const changedBy = req.user?.username || "System";
-
-    const newState = await stateService.createState(stateData, changedBy);
-    res.status(201).json(newState);
+    const result = await stateService.createState(req.body);
+    res.status(201).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-// Update a state/province by ID
 async function updateState(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-    const stateData = req.body;
-
-    // Validation for id and body data could go here
-
-    const changedBy = req.user?.username || "System";
-
-    const result = await stateService.updateState(id, stateData, changedBy);
+    const result = await stateService.updateState(parseInt(req.params.id), req.body);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-// Delete a state/province by ID
+async function deactivateState(req, res) {
+  try {
+    const result = await stateService.deactivateState(parseInt(req.params.id));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+async function reactivateState(req, res) {
+  try {
+    const result = await stateService.reactivateState(parseInt(req.params.id));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 async function deleteState(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-
-    // Validation for id could go here
-
-    const changedBy = req.user?.username || "System";
-
-    const result = await stateService.deleteState(id, changedBy);
+    const result = await stateService.deleteState(parseInt(req.params.id));
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -84,7 +79,10 @@ async function deleteState(req, res) {
 module.exports = {
   getAllStates,
   getStateById,
+  getIDByStateProvince,
   createState,
   updateState,
+  deactivateState,
+  reactivateState,
   deleteState,
 };

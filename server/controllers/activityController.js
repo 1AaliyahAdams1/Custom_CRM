@@ -1,75 +1,77 @@
+// controllers/activityController.js
+
 const activityService = require("../services/activityService");
 
-// Get all activities
-async function getActivities(req, res) {
+const getAllActivities = async (req, res) => {
   try {
-    // Validation can go here
-
-    const activities = await activityService.getAllActivities();
-    res.json(activities);
+    const data = await activityService.getAllActivities();
+    res.status(200).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Create a new activity
-async function createActivity(req, res) {
+const getActivityByID = async (req, res) => {
   try {
-    // Validation can go here
-
-    const newActivity = await activityService.createActivity(req.body);
-    res.status(201).json(newActivity);
+    const activity = await activityService.getActivityByID(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Activity not found" });
+    res.status(200).json(activity);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Update an activity by ID
-async function updateActivity(req, res) {
-  const id = parseInt(req.params.id, 10);
-
+const createActivity = async (req, res) => {
   try {
-    // Validation can go here
-
-    const updatedActivity = await activityService.updateActivity(id, req.body);
-    res.json(updatedActivity);
+    await activityService.createActivity(req.body);
+    res.status(201).json({ message: "Activity created successfully" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
-}
+};
 
-// Delete an activity by ID
-async function deleteActivity(req, res) {
-  const id = parseInt(req.params.id, 10);
-
+const updateActivity = async (req, res) => {
   try {
-    // Validation can go here
-
-    const deleted = await activityService.deleteActivity(id);
-    res.json(deleted);
+    await activityService.updateActivity(req.params.id, req.body);
+    res.status(200).json({ message: "Activity updated successfully" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
-}
+};
 
-// Get Activity Details for Details Page
-async function getActivityDetails(req, res) {
-  const id = parseInt(req.params.id, 10);
-
+const deactivateActivity = async (req, res) => {
   try {
-    // Validation can go here
-
-    const details = await activityService.getActivityDetails(id);
-    res.json(details);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    await activityService.deactivateActivity(req.params.id);
+    res.status(200).json({ message: "Activity deactivated successfully" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
-}
+};
+
+const reactivateActivity = async (req, res) => {
+  try {
+    await activityService.reactivateActivity(req.params.id);
+    res.status(200).json({ message: "Activity reactivated successfully" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+const deleteActivity = async (req, res) => {
+  try {
+    await activityService.deleteActivity(req.params.id);
+    res.status(200).json({ message: "Activity deleted successfully" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
 
 module.exports = {
-  getActivities,
+  getAllActivities,
+  getActivityByID,
   createActivity,
   updateActivity,
+  deactivateActivity,
+  reactivateActivity,
   deleteActivity,
-  getActivityDetails,
 };

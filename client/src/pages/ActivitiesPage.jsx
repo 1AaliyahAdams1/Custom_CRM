@@ -10,16 +10,17 @@ import { MessageComponent } from "@syncfusion/ej2-react-notifications";
 
 
 import ActivitiesTable from "../components/ActivitiesTable";
-import ActivityFormDialog from "../components/ActivitiesFormDialog";
+// import ActivityFormDialog from "../components/ActivitiesFormDialog";
 
 import {
-  getActivities,
+  getAllActivities,
   createActivity,
   updateActivity,
   deleteActivity,
 } from "../services/activityService";
 
 const ActivitiesPage = () => {
+  const navigate = useNavigate();
   // State to hold activities data
   const [activities, setActivities] = useState([]);
   // Loading spinner state
@@ -38,7 +39,7 @@ const ActivitiesPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getActivities();
+      const data = await getAllActivities();
       setActivities(data);
     } catch (err) {
       setError("Failed to load activities. Please try again.");
@@ -62,12 +63,17 @@ const ActivitiesPage = () => {
     }
   }, [successMessage]);
 
-  // Open dialog for creating a new activity
+  // // Open dialog for creating a new activity
+  // const handleOpenCreate = () => {
+  //   setSelectedActivity(null); // clear any selected activity
+  //   setError(null);
+  //   setDialogOpen(true);
+  // };
+  // Navigate to create acctivity page
   const handleOpenCreate = () => {
-    setSelectedActivity(null); // clear any selected activity
-    setError(null);
-    setDialogOpen(true);
+    navigate("/activities/create");
   };
+
 
   // Open dialog for editing an existing activity
   const handleOpenEdit = (activity) => {
@@ -212,6 +218,9 @@ return (
       />
     </div>
   );
+
+
+
 };
 
 export default ActivitiesPage;

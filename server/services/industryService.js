@@ -1,47 +1,31 @@
-const industryRepository = require("../data/industryRepository");
+const industryRepo = require("../data/industryRepository");
 
-// Helper to get changedBy or default value
-function getChangedByOrDefault(changedBy) {
-  return changedBy || "System";
+async function getAllIndustries() {
+  return await industryRepo.getAllIndustries();
 }
 
-async function getAllIndustries(activeOnly = false) {
-  // Business logic: filter by activeOnly flag, caching, permissions, etc. can go here
-  return await industryRepository.getAllIndustries(activeOnly);
+async function getIndustryById(id) {
+  return await industryRepo.getIndustryById(id);
 }
 
-async function getIndustryById(industryId) {
-  // Business logic: validate industryId, permissions checks, etc.
-  return await industryRepository.getIndustryById(industryId);
+async function createIndustry(name) {
+  return await industryRepo.createIndustry(name);
 }
 
-async function createIndustry(industryName, active = true, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-
-  // Business logic: validate industryName, enforce uniqueness, sanitize input
-
-  // Call repo to create industry
-  return await industryRepository.createIndustry(industryName, active);
+async function updateIndustry(id, name) {
+  return await industryRepo.updateIndustry(id, name);
 }
 
-async function updateIndustry(industryId, data, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-  
-  // Business logic: validate industryId, validate input data, permission checks
-
-  await industryRepository.updateIndustry(industryId, data);
-  
-  return { message: "Industry updated successfully", IndustryID: industryId };
+async function deactivateIndustry(id) {
+  return await industryRepo.deactivateIndustry(id);
 }
 
-async function deleteIndustry(industryId, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-  
-  // Business logic: check if industry can be deleted, soft delete logic
+async function reactivateIndustry(id) {
+  return await industryRepo.reactivateIndustry(id);
+}
 
-  await industryRepository.deleteIndustry(industryId);
-  
-  return { message: "Industry marked as inactive", IndustryID: industryId };
+async function deleteIndustry(id) {
+  return await industryRepo.deleteIndustry(id);
 }
 
 module.exports = {
@@ -49,5 +33,7 @@ module.exports = {
   getIndustryById,
   createIndustry,
   updateIndustry,
+  deactivateIndustry,
+  reactivateIndustry,
   deleteIndustry,
 };

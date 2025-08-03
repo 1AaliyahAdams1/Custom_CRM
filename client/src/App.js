@@ -13,6 +13,8 @@ import {
 // COMPONENTS
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
+import LoadingScreen from "./components/LoadingScreen";
+
 
 // Lazy load main pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -27,6 +29,13 @@ const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
 const DealsDetailsPage = lazy(() => import("./pages/DealsDetailsPage"));
 const ActivitiesDetailsPage = lazy(() => import("./pages/ActivitiesDetailsPage"));
 
+// Lazy load create/edit pages
+const CreateAccountPage = lazy(() => import("./pages/CreateAccountPage"));
+const CreateContactsPage = lazy(() => import("./pages/CreateContactsPage"));
+const CreateDealPage = lazy(() => import("./pages/CreateDealPage"));
+const CreateActivitiesPage = lazy(() => import("./pages/CreateActivitiesPage"));
+
+
 // Login page
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 
@@ -35,7 +44,7 @@ const NotFoundPage = lazy(() => import("./pages/Error"));
 
 //Layout component: shows Header and Sidebar except on /login page
 const Layout = ({ children }) => {
-  const location = useLocation(); // ✅ Now this works because Layout is inside Router
+  const location = useLocation();
   const hideLayout = location.pathname === "/login";
 
   return (
@@ -59,7 +68,7 @@ const Layout = ({ children }) => {
 function App() {
   return (
     <Router>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<LoadingScreen />}>
         <Layout>
           <Routes>
             {/* Redirect root to login */}
@@ -73,15 +82,20 @@ function App() {
 
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/accounts/:id" element={<AccountsDetailsPage />} />
+            <Route path="/accounts/create" element={<CreateAccountPage />} />
+
 
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/contacts/:id" element={<ContactsDetailsPage />} />
+            <Route path="/contacts/create" element={<CreateContactsPage />} />
 
             <Route path="/deals" element={<Deals />} />
             <Route path="/deals/:id" element={<DealsDetailsPage />} />
+            <Route path="/deals/create" element={<CreateDealPage />} />
 
             <Route path="/activities" element={<Activities />} />
             <Route path="/activities/:id" element={<ActivitiesDetailsPage />} />
+            <Route path="/activities/create" element={<CreateActivitiesPage />} />
 
             {/* Catch-all for undefined routes */}
             <Route path="*" element={<NotFoundPage />} />
