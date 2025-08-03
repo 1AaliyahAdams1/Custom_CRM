@@ -22,7 +22,7 @@ async function getContactDetails(contactId) {
 }
 
 // =======================
-// Create a new contact 
+// Create a new contact
 // =======================
 async function createContact(data, changedBy = 1, actionTypeId = 1) {
   try {
