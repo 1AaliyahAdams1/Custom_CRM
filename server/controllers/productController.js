@@ -5,17 +5,18 @@ async function getAllProducts(req, res) {
     const data = await productService.getAllProducts();
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting all products:", err);
+    res.status(500).json({ error: "Failed to get products" });
   }
 }
 
 async function getProductById(req, res) {
   try {
-    const data = await productService.getProductById(parseInt(req.params.id));
-    if (!data) return res.status(404).json({ message: "Product not found" });
+    const data = await productService.getProductById(req.params.id);
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting product by ID:", err);
+    res.status(500).json({ error: "Failed to get product" });
   }
 }
 
@@ -24,16 +25,18 @@ async function createProduct(req, res) {
     const result = await productService.createProduct(req.body, req.body.changedBy || 0);
     res.status(201).json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error creating product:", err);
+    res.status(500).json({ error: "Failed to create product" });
   }
 }
 
 async function updateProduct(req, res) {
   try {
-    const result = await productService.updateProduct(parseInt(req.params.id), req.body, req.body.changedBy || 0);
+    const result = await productService.updateProduct(req.params.id, req.body, req.body.changedBy || 0);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error updating product:", err);
+    res.status(500).json({ error: "Failed to update product" });
   }
 }
 
@@ -42,7 +45,8 @@ async function deactivateProduct(req, res) {
     const result = await productService.deactivateProduct(req.body, req.body.changedBy || 0);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error deactivating product:", err);
+    res.status(500).json({ error: "Failed to deactivate product" });
   }
 }
 
@@ -51,7 +55,8 @@ async function reactivateProduct(req, res) {
     const result = await productService.reactivateProduct(req.body, req.body.changedBy || 0);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error reactivating product:", err);
+    res.status(500).json({ error: "Failed to reactivate product" });
   }
 }
 
@@ -60,7 +65,8 @@ async function deleteProduct(req, res) {
     const result = await productService.deleteProduct(req.body, req.body.changedBy || 0);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error deleting product:", err);
+    res.status(500).json({ error: "Failed to delete product" });
   }
 }
 

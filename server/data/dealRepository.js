@@ -2,18 +2,21 @@ const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
 // =======================
-// Get all deals with related info
+// Get all deals
 // =======================
-async function getAllDeals() {
+async function getAllDeals(onlyActive = true) {
   try {
     const pool = await sql.connect(dbConfig);
-    const result = await pool.request().execute("GetDeal");
+    const result = await pool.request()
+      .input("OnlyActive", sql.Bit, onlyActive ? 1 : 0)
+      .execute("GetDeal");
     return result.recordset;
   } catch (error) {
     console.error("Deal Repo Error [getAllDeals]:", error);
     throw error;
   }
 }
+
 
 // =======================
 // Get deal details by ID
@@ -48,7 +51,6 @@ async function createDeal(data, changedBy = 1, actionTypeId = 1) {
 
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
-      .input("DealID", sql.Int, 0) // SP expects DealID param but ignores on insert
       .input("AccountID", sql.Int, AccountID)
       .input("DealStageID", sql.Int, DealStageID)
       .input("DealName", sql.VarChar(100), DealName)
@@ -57,20 +59,10 @@ async function createDeal(data, changedBy = 1, actionTypeId = 1) {
       .input("Probability", sql.Int, Probability)
       .input("CurrencyID", sql.Int, CurrencyID)
       .input("ChangedBy", sql.Int, changedBy)
-      .input("ActionTypeID", sql.Int, actionTypeId) // 1 = Create
+      .input("ActionTypeID", sql.Int, actionTypeId)
       .execute("CreateDeal");
 
-    const newDeal = await pool.request()
-      .query(`
-        SELECT TOP 1 DealID 
-        FROM Deal 
-        WHERE AccountID = @AccountID AND DealName = @DealName
-        ORDER BY CreatedAt DESC
-      `)
-      .input("AccountID", sql.Int, AccountID)
-      .input("DealName", sql.VarChar(100), DealName);
-
-    return { DealID: newDeal.recordset[0]?.DealID || null };
+    return { DealID: result.recordset[0].DealID || null };
   } catch (error) {
     console.error("Deal Repo Error [createDeal]:", error);
     throw error;
@@ -148,7 +140,7 @@ async function deactivateDeal(dealId, data, changedBy = 1, actionTypeId = 3) {
       .input("Probability", sql.Int, Probability)
       .input("CurrencyID", sql.Int, CurrencyID)
       .input("ChangedBy", sql.Int, changedBy)
-      .input("ActionTypeID", sql.Int, actionTypeId) 
+      .input("ActionTypeID", sql.Int, actionTypeId)
       .execute("DeactivateDeal");
 
     return { message: "Deal deactivated", DealID: dealId };
@@ -185,7 +177,7 @@ async function reactivateDeal(dealId, data, changedBy = 1, actionTypeId = 4) {
       .input("Probability", sql.Int, Probability)
       .input("CurrencyID", sql.Int, CurrencyID)
       .input("ChangedBy", sql.Int, changedBy)
-      .input("ActionTypeID", sql.Int, actionTypeId) 
+      .input("ActionTypeID", sql.Int, actionTypeId)
       .execute("ReactivateDeal");
 
     return { message: "Deal reactivated", DealID: dealId };
@@ -196,7 +188,7 @@ async function reactivateDeal(dealId, data, changedBy = 1, actionTypeId = 4) {
 }
 
 // =======================
-// Hard delete deal (with audit)
+// delete deal
 // =======================
 async function deleteDeal(dealId, data, changedBy = 1, actionTypeId = 5) {
   try {
@@ -222,7 +214,7 @@ async function deleteDeal(dealId, data, changedBy = 1, actionTypeId = 5) {
       .input("Probability", sql.Int, Probability)
       .input("CurrencyID", sql.Int, CurrencyID)
       .input("ChangedBy", sql.Int, changedBy)
-      .input("ActionTypeID", sql.Int, actionTypeId) 
+      .input("ActionTypeID", sql.Int, actionTypeId)
       .execute("DeleteDeal");
 
     return { message: "Deal deleted", DealID: dealId };
@@ -231,6 +223,8 @@ async function deleteDeal(dealId, data, changedBy = 1, actionTypeId = 5) {
     throw error;
   }
 }
+
+//This is a test comment
 
 module.exports = {
   getAllDeals,

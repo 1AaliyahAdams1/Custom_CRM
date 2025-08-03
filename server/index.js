@@ -10,6 +10,7 @@ const cors = require("cors");
 const app = express();
 
 // Middleware
+app.use(cors());
 app.use(cors({
 
   origin: [
@@ -36,6 +37,7 @@ const jobTitleRoutes = require("./routes/jobtitleRoutes");
 const priorityLevelRoutes = require("./routes/priorityLevelRoutes");
 const stateProvinceRoutes = require("./routes/stateProvinceRoutes");
 const productRoutes = require("./routes/productRoutes");
+const personRoutes = require('./routes/personRoutes');
 
 
 // Test route
@@ -56,6 +58,7 @@ app.use("/jobtitles", jobTitleRoutes);
 app.use("/prioritylevels", priorityLevelRoutes);
 app.use("/states", stateProvinceRoutes);
 app.use("/products", productRoutes);
+app.use('/persons', personRoutes);
 
 
 const PORT = process.env.PORT || 5000;

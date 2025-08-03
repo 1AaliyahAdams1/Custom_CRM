@@ -9,25 +9,16 @@ import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material"
 
 import AccountsTable from "../components/AccountsTable";
 
-
 import {
   getAllAccounts,
-  createAccount,
-  updateAccount,
   deactivateAccount,
 } from "../services/accountService";
 
 const AccountsPage = () => {
   const navigate = useNavigate();
-  // State for list of accounts fetched from backend
   const [accounts, setAccounts] = useState([]);
-  // Loading indicator for data fetching or mutations
   const [loading, setLoading] = useState(false);
-  
- 
-  // Error message string (empty or null means no error)
   const [error, setError] = useState(null);
-  // Success message shown after create/update/delete
   const [successMessage, setSuccessMessage] = useState("");
 
   // Function to fetch accounts data from backend API
@@ -63,30 +54,15 @@ const AccountsPage = () => {
     }
   }, [successMessage]);
 
-  
+
   // Navigate to create account page
   const handleOpenCreate = () => {
     navigate("/accounts/create");
   };
 
 
- 
-  // Navigate to edit account page with the selected account ID
-  const handleOpenEdit = (account) => {
-    console.log("Opening edit for account:", account);
-    
-  
-  // Check if account has the required ID field
-  if (!account || !account.AccountID) {
-    console.error("Account or AccountID is missing:", account);
-    setError("Unable to edit account - missing account ID");
-    return;
-  }
-  
-  // Navigate to edit page
-  navigate(`/accounts/edit/${account.AccountID}`);
-};
-  // Delete an account after user confirmation, then refresh data
+
+  // Deactivates an account 
   const handleDeactivate = async (id) => {
   const confirm = window.confirm("Are you sure you want to delete this account? This will deactivate it.");
   if (!confirm) return;
@@ -98,42 +74,11 @@ const AccountsPage = () => {
     setSuccessMessage("Account deleted successfully.");  // message visible to user
     await fetchAccounts();
   } catch (error) {
+    console.log("Deactivating (soft deleting) account with ID:", id);
     console.error("Delete failed:", error);
     setError("Failed to delete account. Please try again.");
   }
 };
-
-
-  // // Handle form submission for both create and update operations
-  // const handleSave = async (accountData) => {
-  //   setError(null);
-  //   try {
-  //     console.log("Saving account data:", accountData);
-
-  //     if (accountData.AccountID) {
-  //       // If AccountID exists, update the existing account
-  //       await updateAccount(accountData.AccountID, accountData);
-  //       setSuccessMessage("Account updated successfully.");
-  //     } else {
-  //       // Otherwise, create a new account
-  //       await createAccount(accountData);
-  //       setSuccessMessage("Account created successfully.");
-  //     }
-
-  //     setDialogOpen(false);  // Close the form dialog after success
-  //     await fetchAccounts(); // Refresh the accounts list
-  //   } catch (error) {
-  //     console.error("Save failed:", error);
-  //     setError("Failed to save account. Please try again.");
-  //   }
-  // };
-
-  // // Close the form dialog and clear selected account state
-  // const handleCloseDialog = () => {
-  //   setDialogOpen(false);
-  //   setSelectedAccount(null);
-  // };
-
 
   return (
     <Box p={4}>
@@ -175,18 +120,11 @@ const AccountsPage = () => {
       ) : (
         <AccountsTable
           accounts={accounts}
-          onEdit={handleOpenEdit}   
           onDeactivate={handleDeactivate}    
         />
       )}
 
-      {/* Dialog for adding/editing an account
-      <AccountFormDialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        account={selectedAccount}
-        onSubmit={handleSave}
-      /> */}
+
     </Box>
   );
 

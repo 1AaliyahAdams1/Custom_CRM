@@ -4,16 +4,19 @@ const { dbConfig } = require("../dbConfig");
 //======================================
 // Get all activities
 //======================================
-const getAllActivities = async () => {
+const getAllActivities = async (onlyActive = true) => {
   try {
     const pool = await sql.connect(dbConfig);
-    const result = await pool.request().execute("GetActivity");
+    const result = await pool.request()
+      .input('OnlyActive', sql.Bit, onlyActive ? 1 : 0)
+      .execute("GetActivity"); 
     return result.recordset;
   } catch (error) {
     console.error("Error fetching all activities:", error);
     throw error;
   }
 };
+
 
 //======================================
 // Get activity by ID

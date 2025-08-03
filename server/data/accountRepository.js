@@ -2,7 +2,7 @@ const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
 //======================================
-// Get all accounts using stored procedure
+// Get all accounts
 //======================================
 async function getAllAccounts() {
   try {
@@ -18,43 +18,7 @@ async function getAllAccounts() {
 }
 
 //======================================
-// Get active accounts only - Fixed to use stored procedure
-//======================================
-async function getActiveAccounts() {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .execute('GetActiveAccounts'); // You'll need to create this stored procedure
-    
-    return result.recordset;
-  } catch (err) {
-    console.error("Database error in getActiveAccounts:", err);
-    // Fallback to filtering if stored procedure doesn't exist
-    const allAccounts = await getAllAccounts();
-    return allAccounts.filter(account => account.Active);
-  }
-}
-
-//======================================
-// Get inactive accounts only - Fixed to use stored procedure
-//======================================
-async function getInactiveAccounts() {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .execute('GetInactiveAccounts'); // You'll need to create this stored procedure
-    
-    return result.recordset;
-  } catch (err) {
-    console.error("Database error in getInactiveAccounts:", err);
-    // Fallback to filtering if stored procedure doesn't exist
-    const allAccounts = await getAllAccounts();
-    return allAccounts.filter(account => !account.Active);
-  }
-}
-
-//======================================
-// Create account using stored procedure
+// Create account 
 //======================================
 async function createAccount(accountData, changedBy) {
   try {
@@ -76,74 +40,37 @@ async function createAccount(accountData, changedBy) {
       number_of_venues = null,
       number_of_releases = null,
       number_of_events_anually = null,
-      ParentAccount = null
+      ParentAccount = null,
+      Active = true
     } = accountData;
 
-    // First insert the account and get the new ID
-    const insertResult = await pool.request()
-      .input("AccountName", sql.NVarChar, AccountName)
+    // Call your CreateAccount stored procedure
+    const result = await pool.request()
+      .input("AccountName", sql.NVarChar(255), AccountName)
       .input("CityID", sql.Int, CityID)
-      .input("street_address1", sql.NVarChar, street_address1)
-      .input("street_address2", sql.NVarChar, street_address2)
-      .input("street_address3", sql.NVarChar, street_address3)
-      .input("postal_code", sql.VarChar, postal_code)
-      .input("PrimaryPhone", sql.VarChar, PrimaryPhone)
+      .input("street_address1", sql.NVarChar(255), street_address1)
+      .input("street_address2", sql.NVarChar(255), street_address2)
+      .input("street_address3", sql.NVarChar(255), street_address3)
+      .input("postal_code", sql.NVarChar(31), postal_code)
+      .input("PrimaryPhone", sql.NVarChar(63), PrimaryPhone)
       .input("IndustryID", sql.Int, IndustryID)
-      .input("Website", sql.VarChar, Website)
-      .input("fax", sql.VarChar, fax)
-      .input("email", sql.VarChar, email)
+      .input("Website", sql.NVarChar(255), Website)
+      .input("fax", sql.NVarChar(63), fax)
+      .input("email", sql.VarChar(255), email)
       .input("number_of_employees", sql.Int, number_of_employees)
-      .input("annual_revenue", sql.Decimal, annual_revenue)
+      .input("annual_revenue", sql.Decimal(18, 0), annual_revenue)
       .input("number_of_venues", sql.SmallInt, number_of_venues)
       .input("number_of_releases", sql.SmallInt, number_of_releases)
       .input("number_of_events_anually", sql.SmallInt, number_of_events_anually)
       .input("ParentAccount", sql.Int, ParentAccount)
-      .query(`
-        INSERT INTO Account (
-          AccountName, CityID, street_address1, street_address2, street_address3,
-          postal_code, PrimaryPhone, IndustryID, Website, fax, email,
-          number_of_employees, annual_revenue, number_of_venues,
-          number_of_releases, number_of_events_anually, ParentAccount,
-          Active, CreatedAt, UpdatedAt
-        )
-        VALUES (
-          @AccountName, @CityID, @street_address1, @street_address2, @street_address3,
-          @postal_code, @PrimaryPhone, @IndustryID, @Website, @fax, @email,
-          @number_of_employees, @annual_revenue, @number_of_venues,
-          @number_of_releases, @number_of_events_anually, @ParentAccount,
-          1, GETDATE(), GETDATE()
-        );
-        SELECT SCOPE_IDENTITY() AS AccountID;
-      `);
-
-    const newAccountID = insertResult.recordset[0].AccountID;
-
-    // Now call the stored procedure to log the creation
-    await pool.request()
-      .input("AccountID", sql.Int, newAccountID)
-      .input("AccountName", sql.NVarChar, AccountName)
-      .input("CityID", sql.Int, CityID)
-      .input("street_address1", sql.NVarChar, street_address1)
-      .input("street_address2", sql.NVarChar, street_address2)
-      .input("street_address3", sql.NVarChar, street_address3)
-      .input("postal_code", sql.NVarChar, postal_code)
-      .input("PrimaryPhone", sql.NVarChar, PrimaryPhone)
-      .input("IndustryID", sql.Int, IndustryID)
-      .input("Website", sql.NVarChar, Website)
-      .input("fax", sql.NVarChar, fax)
-      .input("email", sql.VarChar, email)
-      .input("number_of_employees", sql.Int, number_of_employees)
-      .input("annual_revenue", sql.Decimal, annual_revenue)
-      .input("number_of_venues", sql.SmallInt, number_of_venues)
-      .input("number_of_releases", sql.SmallInt, number_of_releases)
-      .input("number_of_events_anually", sql.SmallInt, number_of_events_anually)
-      .input("ParentAccount", sql.Int, ParentAccount)
-      .input("Active", sql.Bit, true)
-      .input("CreatedAt", sql.SmallDateTime, new Date())
-      .input("UpdatedAt", sql.SmallDateTime, new Date())
+      .input("Active", sql.Bit, Active)
       .input("ChangedBy", sql.Int, changedBy)
-      .input("ActionTypeID", sql.Int, 1) 
-      .execute('InsertTempAccount');
+      .input("ActionTypeID", sql.Int, 1) // 1 = Create action type id
+      .execute("CreateAccount");
+
+    // Your SP should return AccountID via SELECT or OUTPUT param
+    // Assuming first recordset has the AccountID
+    const newAccountID = result.recordset?.[0]?.AccountID;
 
     return { AccountID: newAccountID };
   } catch (err) {
@@ -153,7 +80,7 @@ async function createAccount(accountData, changedBy) {
 }
 
 //======================================
-// Update account using stored procedure
+// Update account
 //======================================
 async function updateAccount(id, accountData, changedBy = 1) {
   try {
@@ -225,7 +152,7 @@ async function updateAccount(id, accountData, changedBy = 1) {
 }
 
 //======================================
-// Soft delete account using stored procedure - Fixed function signature
+// Deactivate account
 //======================================
 async function deactivateAccount(account, changedBy, actionTypeId) {
   try {
@@ -271,7 +198,7 @@ async function deactivateAccount(account, changedBy, actionTypeId) {
 }
 
 //======================================
-// Reactivate account using stored procedure
+// Reactivate account
 //======================================
 async function reactivateAccount(id, changedBy) {
   try {
@@ -349,7 +276,7 @@ async function getAccountDetails(id) {
 }
 
 //======================================
-// Hard delete account using stored procedure
+// Delete account 
 //======================================
 async function deleteAccount(id, changedBy) {
   try {
@@ -366,12 +293,10 @@ async function deleteAccount(id, changedBy) {
 
     const existing = existingResult.recordset[0];
 
-    // Check if account is deactivated (typically required before hard delete)
     if (existing.Active) {
       throw new Error("Account must be deactivated before permanent deletion");
     }
 
-    // Use the DeleteAccount stored procedure
     await pool.request()
       .input("AccountID", sql.Int, id)
       .input("AccountName", sql.NVarChar, existing.AccountName)
@@ -410,8 +335,6 @@ async function deleteAccount(id, changedBy) {
 // =======================
 module.exports = {
   getAllAccounts,
-  getActiveAccounts,
-  getInactiveAccounts,
   createAccount,
   updateAccount,
   deactivateAccount, 
