@@ -1,8 +1,8 @@
 const contactRepo = require("../data/contactRepository");
 
 // Get all contacts
-async function getAllContacts() {
-  return await contactRepo.getAllContacts();
+async function getAllContacts(onlyActive = true) {
+  return await contactRepo.getAllContacts(onlyActive = true);
 }
 
 // Get contact details by ID

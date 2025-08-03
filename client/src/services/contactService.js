@@ -4,9 +4,11 @@ const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_
 const CONTACTS_API = `${BASE_URL}/contacts`;
 
 // Get all contacts
-export async function getAllContacts() {
+export async function getAllContacts(onlyActive = true) {
   try {
-    const response = await axios.get(CONTACTS_API);
+    const response = await axios.get(CONTACTS_API, {
+      params: { onlyActive }
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching contacts:", error);

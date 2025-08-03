@@ -24,14 +24,14 @@ const ContactsPage = () => {
   // Function to fetch contacts from backend API
   const fetchContacts = async () => {
     setLoading(true);
-    setError(null); 
+    setError(null);
     try {
-      const data = await getAllContacts(); 
-      setContacts(data); 
+      const data = await getAllContacts();
+      setContacts(data);
     } catch (err) {
-      setError("Failed to load contacts. Please try again."); 
+      setError("Failed to load contacts. Please try again.");
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -54,22 +54,26 @@ const ContactsPage = () => {
   };
 
 
-  // Deletes a contact after user confirmation
-  const deactivateDelete = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this contact?");
-    if (!confirmDelete) return; 
+  // Deactivates a contact
+  const handleDeactivate = async (id) => {
+    const confirm = window.confirm("Are you sure you want to delete this contact? This will deactivate it.");
+    if (!confirm) return;
 
     setError(null);
     try {
-      await deactivateContact(id);           
-      setSuccessMessage("Contact deleted successfully."); 
-      await fetchContacts();             
-    } catch (err) {
-      setError("Failed to delete contact. Please try again."); 
+      console.log("Deactivating (soft deleting) contact with ID:", id);
+      await deactivateContact(id);
+      setSuccessMessage("Contact deleted successfully."); // message visible to user
+      await fetchContacts();
+    } catch (error) {
+      console.log("Deactivating (soft deleting) contact with ID:", id);
+      console.error("Delete failed:", error);
+      setError("Failed to delete contact. Please try again.");
     }
   };
 
- return (
+
+  return (
     <Box p={4}>
       {/* Page title */}
       <Typography variant="h4" gutterBottom>
@@ -100,7 +104,7 @@ const ContactsPage = () => {
       >
         Add Contact
       </Button>
-    
+
       {/* Show loading spinner or contacts table */}
       {loading ? (
         <Box display="flex" justifyContent="center" mt={4}>
@@ -108,15 +112,15 @@ const ContactsPage = () => {
         </Box>
       ) : (
         <ContactsTable
-          contacts={contacts} 
-          onDelete={deactivateDelete}    
+          contacts={contacts}
+          onDelete={handleDeactivate}
         />
       )}
 
     </Box>
   );
 
-  
+
 };
 
 

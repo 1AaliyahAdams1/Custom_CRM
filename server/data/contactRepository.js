@@ -4,7 +4,21 @@ const { dbConfig } = require("../dbConfig");
 // =======================
 // Get all contacts
 // =======================
-async function getAllContacts() {
+async function getAllContacts(onlyActive = true) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().input("OnlyActive", sql.Bit, onlyActive ? 1 : 0).execute("GetAllContacts");
+    return result.recordset;
+  } catch (error) {
+    console.error("Contacts Repo Error [getAllContacts]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Get all contacts
+// =======================
+async function getAllContactDetails() {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request().execute("GetContactDetails");
   return result.recordset;
@@ -88,7 +102,7 @@ async function updateContact(contactId, contactData, changedBy = 1) {
     .input("WorkPhone", sql.VarChar(255), WorkPhone)
     .input("Active", sql.Bit, Active)
     .input("ChangedBy", sql.Int, changedBy)
-    .input("ActionTypeID", sql.Int, 2) 
+    .input("ActionTypeID", sql.Int, 2)
     .execute("UpdateContact");
 
   return { message: "Contact updated", ContactID: contactId };
@@ -116,7 +130,8 @@ async function deactivateContact(contactId, changedBy = 1) {
     .input("WorkPhone", sql.VarChar(255), deleted.WorkPhone)
     .input("Active", sql.Bit, 0)
     .input("ChangedBy", sql.Int, changedBy)
-    .input("ActionTypeID", sql.Int, 7) 
+    .input("ActionTypeID", sql.Int, 7)
+    .execute("DeactiveContact");
 
   return { message: "Contact deactivated successfully", ContactID: contactId };
 }
@@ -143,7 +158,7 @@ async function reactivateContact(contactId, changedBy = 0) {
     .input("WorkPhone", sql.VarChar(255), contact.WorkPhone)
     .input("Active", sql.Bit, 1)
     .input("ChangedBy", sql.Int, changedBy)
-    .input("ActionTypeID", sql.Int, 8) 
+    .input("ActionTypeID", sql.Int, 8)
     .execute("ReactiveContact");
 
   return { message: "Contact reactivated successfully", ContactID: contactId };
@@ -192,6 +207,7 @@ async function getContactsByAccountId(accountName) {
 
 module.exports = {
   getAllContacts,
+  getAllContactDetails,
   getContactDetails,
   createContact,
   updateContact,

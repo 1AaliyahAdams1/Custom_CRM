@@ -2,7 +2,7 @@ const contactService = require("../services/contactService");
 
 async function getAllContacts(req, res) {
   try {
-    const contacts = await contactService.getAllContacts();
+    const contacts = await contactService.getAllContacts(onlyActive = true);
     res.json(contacts);
   } catch (error) {
     res.status(500).json({ error: error.message });
