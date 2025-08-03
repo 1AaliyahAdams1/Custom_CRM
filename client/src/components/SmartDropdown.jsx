@@ -112,7 +112,10 @@ const SmartDropdown = ({
     const syntheticEvent = {
       target: {
         name,
-        value: selectedOption ? (selectedOption[valueField] || selectedOption.id || selectedOption.ID) : ''
+        value: selectedOption
+          ? Number(selectedOption[valueField] || selectedOption.id || selectedOption.ID)
+          : null
+
       }
     };
     onChange(syntheticEvent);

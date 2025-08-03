@@ -22,6 +22,7 @@ const CreateDealPage = () => {
     Value: "",
     CloseDate: "",
     Probability: "",
+    CurrencyID: "",
     CreatedAt: "",
     UpdatedAt: "",
   });
@@ -138,6 +139,14 @@ const CreateDealPage = () => {
           label="Probability"
           name="Probability"
           value={formData.Probability}
+          onChange={handleInputChange}
+          fullWidth
+        />
+
+        <TextField
+          label="CurrencyID"
+          name="CurrencyID"
+          value={formData.CurrencyID}
           onChange={handleInputChange}
           fullWidth
         />

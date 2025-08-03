@@ -59,10 +59,19 @@ const CreateAccountPage = () => {
 
     const cleanedData = {
       ...formData,
-      ParentAccount: formData.ParentAccount || null
+      CityID: formData.CityID === "" ? null : parseInt(formData.CityID),
+      IndustryID: formData.IndustryID === "" ? null : parseInt(formData.IndustryID),
+      number_of_employees: formData.number_of_employees === "" ? null : parseInt(formData.number_of_employees),
+      annual_revenue: formData.annual_revenue === "" ? null : parseFloat(formData.annual_revenue),
+      number_of_venues: formData.number_of_venues === "" ? null : parseInt(formData.number_of_venues),
+      number_of_releases: formData.number_of_releases === "" ? null : parseInt(formData.number_of_releases),
+      number_of_events_anually: formData.number_of_events_anually === "" ? null : parseInt(formData.number_of_events_anually),
+      ParentAccount: formData.ParentAccount || null,
     };
 
+
     try {
+      console.log('Creating account:', formData);
       await createAccount(cleanedData);
       navigate('/accounts');
     } catch (error) {

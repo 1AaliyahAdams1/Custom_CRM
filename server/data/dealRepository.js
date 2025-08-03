@@ -59,7 +59,7 @@ async function createDeal(data, changedBy = 1, actionTypeId = 1) {
       .input("ActionTypeID", sql.Int, actionTypeId) // 1 = Create
       .execute("CreateDeal");
 
-    return { DealID: newDeal.recordset[0]?.DealID || null };
+    return { DealID: result.recordset[0]?.DealID || null };
   } catch (error) {
     console.error("Deal Repo Error [createDeal]:", error);
     throw error;
@@ -185,7 +185,7 @@ async function reactivateDeal(dealId, data, changedBy = 1, actionTypeId = 4) {
 }
 
 // =======================
-// Hard delete deal (with audit)
+// delete deal
 // =======================
 async function deleteDeal(dealId, data, changedBy = 1, actionTypeId = 5) {
   try {

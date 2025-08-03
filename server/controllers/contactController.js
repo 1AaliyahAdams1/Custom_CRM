@@ -16,17 +16,17 @@ async function getContactsByAccountId(req, res) {
 }
 
 async function createContact(req, res) {
-  const result = await contactService.createContact(req.body, req.body.changedBy || 0);
+  const result = await contactService.createContact(req.body);
   res.status(201).json(result);
 }
 
 async function updateContact(req, res) {
-  const result = await contactService.updateContact(req.params.id, req.body, req.body.changedBy || 0);
+  const result = await contactService.updateContact(req.params.id, req.body);
   res.json(result);
 }
 
 async function deleteContact(req, res) {
-  const result = await contactService.deleteContact(req.params.id, req.body.changedBy || 0);
+  const result = await contactService.deleteContact(req.params.id);
   res.json(result);
 }
 

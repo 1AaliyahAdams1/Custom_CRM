@@ -8,47 +8,48 @@ import {
   Card,
   CardContent,
   Switch,
-  Divider,
-  Paper,
   Stack,
   FormControlLabel,
-  Grid
 } from '@mui/material';
+import SmartDropdown from '../components/SmartDropdown';
 import { createContact } from '../services/contactService';
 import { getAllPersons, createPerson } from '../services/personService';
 import { getAllAccounts } from '../services/accountService';
-import SmartDropdown from '../components/SmartDropdown';
 import { cityService, jobTitleService } from '../services/dropdownServices';
 
 const CreateContactsPage = () => {
   const navigate = useNavigate();
+
   const [isNewPerson, setIsNewPerson] = useState(true);
-  const [formData, setFormData] = useState({
-    ContactID: "",
-    AccountID: "",
-    PersonID: "",
-    Title: "",
-    first_name: "",
-    middle_name: "",
-    surname: "",
-    linkedin_link: "",
-    personal_email: "",
-    personal_mobile: "",
-    PersonCityID: "",
-    PersonStateProvinceID: "",
-    Still_employed: true,
-    JobTitleID: "",
-    PrimaryEmail: "",
-    PrimaryPhone: "",
-    Position: "",
-    isNewPerson: true,
+
+  // Separate state for person form data
+  const [personData, setPersonData] = useState({
+    Title: '',
+    first_name: '',
+    middle_name: '',
+    surname: '',
+    linkedin_link: '',
+    personal_email: '',
+    personal_mobile: '',
+    CityID: '',
   });
 
+  // Separate state for contact form data
+  const [contactData, setContactData] = useState({
+    AccountID: '',
+    PersonID: '',
+    JobTitleID: '',
+    Still_employed: true,
+    WorkEmail: '',
+    WorkPhone: '',
+  });
+
+  // Services wrapped for dropdowns
   const accountService = {
     getAll: async () => {
       try {
-        const response = await getAllAccounts();
-        return response.data || [];
+        const res = await getAllAccounts();
+        return res.data || [];
       } catch (error) {
         console.error('Error loading accounts:', error);
         return [];
@@ -56,7 +57,6 @@ const CreateContactsPage = () => {
     },
   };
 
-  // Wrap personService for dropdown to match expected getAll() method
   const personDropdownService = {
     getAll: async () => {
       try {
@@ -66,85 +66,118 @@ const CreateContactsPage = () => {
         console.error('Error loading persons:', error);
         return [];
       }
+    },
+  };
+
+  // Handle toggle between new/existing person
+  const handlePersonToggle = (event) => {
+    const checked = event.target.checked;
+    setIsNewPerson(checked);
+
+    if (checked) {
+      // Clear personData when switching to new person
+      setPersonData({
+        Title: '',
+        first_name: '',
+        middle_name: '',
+        surname: '',
+        linkedin_link: '',
+        personal_email: '',
+        personal_mobile: '',
+        CityID: '',
+      });
+      // Clear selected PersonID in contactData
+      setContactData((prev) => ({ ...prev, PersonID: '' }));
+    } else {
+      // Clear new person fields
+      setPersonData({
+        Title: '',
+        first_name: '',
+        middle_name: '',
+        surname: '',
+        linkedin_link: '',
+        personal_email: '',
+        personal_mobile: '',
+        CityID: '',
+      });
     }
   };
 
-  const handleInputChange = (e) => {
+  // Input handlers for personData
+  const handlePersonChange = (e) => {
+    const { name, value } = e.target;
+    setPersonData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Input handlers for contactData
+  const handleContactChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setContactData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
-  const handlePersonToggle = (event) => {
-    const newIsNewPerson = event.target.checked;
-    setIsNewPerson(newIsNewPerson);
-
-    setFormData(prev => ({
-      ...prev,
-      isNewPerson: newIsNewPerson,
-      PersonID: "",
-      ...(newIsNewPerson ? {} : {
-        first_name: "",
-        middle_name: "",
-        surname: "",
-        Title: "",
-        linkedin_link: "",
-        personal_email: "",
-        personal_mobile: "",
-        PersonCityID: "",
-      })
-    }));
-  };
-
+  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      let personIdToUse = formData.PersonID;
+      let personIdToUse = contactData.PersonID;
 
       if (isNewPerson) {
-        const personData = {
-          Title: formData.Title,
-          first_name: formData.first_name,
-          middle_name: formData.middle_name,
-          surname: formData.surname,
-          linkedin_link: formData.linkedin_link,
-          personal_email: formData.personal_email,
-          personal_mobile: formData.personal_mobile,
-          CityID: formData.PersonCityID || null,
-          StateProvinceID: formData.PersonStateProvinceID || null,
-        };
-
+        // Create person first
+        console.log('Creating person:', personData);
         const createdPerson = await createPerson(personData);
         personIdToUse = createdPerson.PersonID || createdPerson.id || createdPerson;
       }
 
-      // Convert to number or null
-      personIdToUse = Number(personIdToUse);
-      if (isNaN(personIdToUse)) {
-        throw new Error("Invalid PersonID - must be a valid number");
+      if (!personIdToUse) {
+        alert('Please select or create a person.');
+        return;
       }
 
-      const contactData = {
-        AccountID: Number(formData.AccountID), // also ensure AccountID is a number
-        PersonID: personIdToUse,
-        Still_employed: true,
-        JobTitleID: formData.JobTitleID ? Number(formData.JobTitleID) : null,
-        WorkEmail: formData.PrimaryEmail || null,
-        WorkPhone: formData.PrimaryPhone || null,
-        Position: formData.Position,
-        Active: true,
+      const contactPayload = {
+        AccountID: Number(contactData.AccountID),
+        PersonID: Number(personIdToUse),
+        JobTitleID: contactData.JobTitleID ? Number(contactData.JobTitleID) : null,
+        Still_employed: contactData.Still_employed ?? true,
+        WorkEmail: contactData.WorkEmail || null,
+        WorkPhone: contactData.WorkPhone || null,
       };
 
-      await createContact(contactData);
+      console.log('Creating Contact:', contactPayload);
+      await createContact(contactPayload, 1);
+
+      // Reset states after success
+      setPersonData({
+        Title: '',
+        first_name: '',
+        middle_name: '',
+        surname: '',
+        linkedin_link: '',
+        personal_email: '',
+        personal_mobile: '',
+        CityID: '',
+      });
+      setContactData({
+        AccountID: '',
+        PersonID: '',
+        JobTitleID: '',
+        Still_employed: true,
+        WorkEmail: '',
+        WorkPhone: '',
+      });
+      setIsNewPerson(true);
+
       navigate('/contacts');
     } catch (error) {
-      console.error('Error creating contact or person:', error);
+      console.error('Error creating contact/person:', error);
       alert('Failed to create contact. Please try again.');
     }
   };
-
 
   const handleCancel = () => {
     navigate('/contacts');
@@ -152,11 +185,11 @@ const CreateContactsPage = () => {
 
   return (
     <Box p={4} maxWidth={900} mx="auto">
-      {/* Page Title */}
       <Typography variant="h4" gutterBottom>
         Create New Contact
       </Typography>
-      {/* Buttons at the top */}
+
+      {/* Buttons */}
       <Box mb={3} display="flex" justifyContent="flex-end" gap={2}>
         <Button variant="outlined" onClick={() => navigate(-1)}>
           Back
@@ -169,13 +202,12 @@ const CreateContactsPage = () => {
         </Button>
       </Box>
 
-
-
+      {/* Account Dropdown */}
       <SmartDropdown
         label="Account"
         name="AccountID"
-        value={formData.AccountID}
-        onChange={handleInputChange}
+        value={contactData.AccountID}
+        onChange={handleContactChange}
         service={accountService}
         displayField="AccountName"
         valueField="AccountID"
@@ -185,157 +217,145 @@ const CreateContactsPage = () => {
       />
 
       {/* Person Selection Toggle */}
-      <Card variant="outlined">
+      <Card variant="outlined" sx={{ my: 3 }}>
         <CardContent>
-          <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h5" fontWeight={600} color="primary.main">
               Person Information
             </Typography>
             <FormControlLabel
               control={
-                <Switch
-                  checked={isNewPerson}
-                  onChange={handlePersonToggle}
-                  color="primary"
-                />
+                <Switch checked={isNewPerson} onChange={handlePersonToggle} color="primary" />
               }
-              label={isNewPerson ? "Create New Person" : "Use Existing Person"}
+              label={isNewPerson ? 'Create New Person' : 'Use Existing Person'}
             />
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             {isNewPerson
-              ? "Fill in the person details below to create a new person record"
-              : "Select an existing person from the dropdown"
-            }
+              ? 'Fill in the person details below to create a new person record'
+              : 'Select an existing person from the dropdown'}
           </Typography>
         </CardContent>
       </Card>
 
-      {/* Existing Person Selection */}
+      {/* Existing Person Dropdown */}
       {!isNewPerson && (
         <SmartDropdown
           label="Select Person"
           name="PersonID"
-          value={formData.PersonID}
-          onChange={handleInputChange}
+          value={contactData.PersonID}
+          onChange={handleContactChange}
           service={personDropdownService}
-          displayField="full_name"
+          displayField="PersonID" // or whatever field exists, you can customize display
           valueField="PersonID"
           placeholder="Search for person..."
           required
           fullWidth
+          customDisplayFormatter={(item) =>
+            `${item.first_name || ''} ${item.surname || ''}`.trim()
+          }
         />
       )}
 
       {/* New Person Fields */}
       {isNewPerson && (
-        <Stack>
+        <Stack spacing={2} my={2}>
           <TextField
             label="Title"
             name="Title"
-            value={formData.Title}
-            onChange={handleInputChange}
+            value={personData.Title}
+            onChange={handlePersonChange}
             fullWidth
           />
-
           <TextField
             label="First Name"
             name="first_name"
-            value={formData.first_name}
-            onChange={handleInputChange}
+            value={personData.first_name}
+            onChange={handlePersonChange}
             fullWidth
+            required
           />
-
           <TextField
             label="Middle Name"
             name="middle_name"
-            value={formData.middle_name}
-            onChange={handleInputChange}
+            value={personData.middle_name}
+            onChange={handlePersonChange}
             fullWidth
           />
-
           <TextField
             label="Surname"
             name="surname"
-            value={formData.surname}
-            onChange={handleInputChange}
+            value={personData.surname}
+            onChange={handlePersonChange}
             fullWidth
+            required
           />
-
           <SmartDropdown
             label="City"
-            name="PersonCityID"
-            value={formData.PersonCityID}
-            onChange={handleInputChange}
+            name="CityID"
+            value={personData.CityID}
+            onChange={handlePersonChange}
             service={cityService}
             displayField="CityName"
             valueField="CityID"
             placeholder="Search for city..."
-            // onCreateNewClick={() => setShowCityPopup(true)}
             fullWidth
           />
-
           <TextField
             label="Personal Email"
-            name=" personal_email"
-            value={formData.personal_email}
-            onChange={handleInputChange}
+            name="personal_email"
+            value={personData.personal_email}
+            onChange={handlePersonChange}
             fullWidth
+            type="email"
           />
-
           <TextField
             label="Personal Mobile"
             name="personal_mobile"
-            value={formData.personal_mobile}
-            onChange={handleInputChange}
+            value={personData.personal_mobile}
+            onChange={handlePersonChange}
             fullWidth
           />
-
           <TextField
-            label="Linkedin Link"
+            label="LinkedIn Link"
             name="linkedin_link"
-            value={formData.linkedin_link}
-            onChange={handleInputChange}
+            value={personData.linkedin_link}
+            onChange={handlePersonChange}
             fullWidth
           />
         </Stack>
       )}
 
+      {/* Job Title Dropdown */}
       <SmartDropdown
         label="Job Title"
         name="JobTitleID"
-        value={formData.JobTitleID}
-        onChange={handleInputChange}
+        value={contactData.JobTitleID}
+        onChange={handleContactChange}
         service={jobTitleService}
         displayField="JobTitleName"
         valueField="JobTitleID"
         placeholder="Search for job title..."
-        // onCreateNewClick={() => setShowJobTitlePopup(true)}
-        fullWidth
-      />
-      <TextField
-        label="Position"
-        name="Position"
-        value={formData.Position}
-        onChange={handleInputChange}
         fullWidth
       />
 
+      {/* Work Email & Phone */}
       <TextField
-        label="Primary Email"
-        name="PrimaryEmail"
+        label="Work Email"
+        name="WorkEmail"
+        value={contactData.WorkEmail}
+        onChange={handleContactChange}
+        fullWidth
         type="email"
-        value={formData.PrimaryEmail}
-        onChange={handleInputChange}
-        fullWidth
+        sx={{ mt: 2 }}
       />
-
       <TextField
-        label="Primary Phone"
-        name="PrimaryPhone"
-        value={formData.PrimaryPhone}
-        onChange={handleInputChange}
+        label="Work Phone"
+        name="WorkPhone"
+        value={contactData.WorkPhone}
+        onChange={handleContactChange}
         fullWidth
+        sx={{ mt: 2 }}
       />
     </Box>
   );

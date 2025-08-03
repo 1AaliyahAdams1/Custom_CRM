@@ -11,15 +11,12 @@ async function getAllAccounts(req, res) {
   }
 }
 
-// Get account by ID
+// Get account by ID (no validation on ID)
 async function getAccountById(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid account ID" });
-
+    const id = req.params.id; // no parseInt or isNaN check
     const account = await accountService.getAccountById(id);
     if (!account) return res.status(404).json({ error: "Account not found" });
-
     res.json(account);
   } catch (err) {
     console.error("Error getting account by ID:", err);
@@ -38,12 +35,10 @@ async function createAccount(req, res) {
   }
 }
 
-// Update account
+// Update account (no validation on ID)
 async function updateAccount(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid account ID" });
-
+    const id = req.params.id;
     const updated = await accountService.updateAccount(id, req.body);
     res.json(updated);
   } catch (err) {
@@ -52,71 +47,56 @@ async function updateAccount(req, res) {
   }
 }
 
-// Deactivate account (soft delete) - Fixed to match controller pattern
+// Deactivate account (no validation on ID)
 async function deactivateAccount(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid account ID" });
-
+    const id = req.params.id;
     const result = await accountService.deactivateAccount(id);
     res.json(result);
   } catch (err) {
     console.error("Error deactivating account:", err);
-    
-    // Handle specific error messages from service layer
     if (err.message === "Account not found") {
       return res.status(404).json({ error: err.message });
     }
     if (err.message === "Account is already deactivated") {
       return res.status(400).json({ error: err.message });
     }
-    
     res.status(500).json({ error: "Failed to deactivate account" });
   }
 }
 
-// Reactivate account
+// Reactivate account (no validation on ID)
 async function reactivateAccount(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid account ID" });
-
+    const id = req.params.id;
     const result = await accountService.reactivateAccount(id);
     res.json(result);
   } catch (err) {
     console.error("Error reactivating account:", err);
-    
-    // Handle specific error messages from service layer
     if (err.message === "Account not found") {
       return res.status(404).json({ error: err.message });
     }
     if (err.message === "Account is already active") {
       return res.status(400).json({ error: err.message });
     }
-    
     res.status(500).json({ error: "Failed to reactivate account" });
   }
 }
 
-// Delete account (hard delete)
+// Delete account (no validation on ID)
 async function deleteAccount(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid account ID" });
-
+    const id = req.params.id;
     const result = await accountService.deleteAccount(id);
     res.json(result);
   } catch (err) {
     console.error("Error deleting account:", err);
-    
-    // Handle specific error messages from service layer
     if (err.message === "Account not found") {
       return res.status(404).json({ error: err.message });
     }
     if (err.message === "Account must be deactivated before permanent deletion") {
       return res.status(400).json({ error: err.message });
     }
-    
     res.status(500).json({ error: "Failed to delete account" });
   }
 }

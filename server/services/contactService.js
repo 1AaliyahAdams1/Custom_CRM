@@ -12,16 +12,16 @@ async function getContactsByAccountId(accountId) {
   return await contactRepo.getContactsByAccountId(accountId);
 }
 
-async function createContact(data, changedBy) {
-  return await contactRepo.createContact(data, changedBy);
+async function createContact(data) {
+  return await contactRepo.createContact(data);
 }
 
-async function updateContact(contactId, data, changedBy) {
-  return await contactRepo.updateContact(contactId, data, changedBy);
+async function updateContact(contactId, data) {
+  return await contactRepo.updateContact(contactId, data);
 }
 
-async function deleteContact(contactId, changedBy) {
-  return await contactRepo.deleteContact(contactId, changedBy);
+async function deleteContact(contactId) {
+  return await contactRepo.deleteContact(contactId);
 }
 
 module.exports = {

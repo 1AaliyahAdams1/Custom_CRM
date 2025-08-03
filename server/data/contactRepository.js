@@ -24,7 +24,7 @@ async function getContactDetails(contactId) {
 // =======================
 // Create a new contact (uses CreateContact SP with audit log inside)
 // =======================
-async function createContact(contactData, changedBy = 0) {
+async function createContact(contactData, changedBy = 1) {
   const pool = await sql.connect(dbConfig);
   let { PersonID } = contactData;
   const {
@@ -45,9 +45,8 @@ async function createContact(contactData, changedBy = 0) {
     .input("Active", sql.Bit, Active)
     .input("ChangedBy", sql.Int, changedBy)
     .input("ActionTypeID", sql.Int, 1)
-    .output("NewContactID", sql.Int)
     .execute("CreateContact");
-  return { ContactID: contactResult.output.NewContactID };
+  return { message: "Contact created"};
 }
 
 // =======================
