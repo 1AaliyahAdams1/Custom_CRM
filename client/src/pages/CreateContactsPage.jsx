@@ -134,6 +134,7 @@ const CreateContactsPage = () => {
         console.log('Creating person:', personData);
         const createdPerson = await createPerson(personData);
         personIdToUse = createdPerson.PersonID || createdPerson.id || createdPerson;
+        console.log('personIdToUse:', personIdToUse, 'typeof:', typeof personIdToUse);
       }
 
       if (!personIdToUse) {

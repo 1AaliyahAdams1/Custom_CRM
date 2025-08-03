@@ -22,13 +22,14 @@ async function getPersonById(req, res) {
 
 async function createPerson(req, res) {
   try {
-    await personService.createPerson(req.body);
-    res.status(201).json({ message: "Person created successfully" });
+    const result = await personService.createPerson(req.body);
+    res.status(201).json(result);
   } catch (err) {
     console.error("Error creating person:", err);
     res.status(500).json({ error: "Failed to create person" });
   }
 }
+
 
 async function updatePerson(req, res) {
   try {
