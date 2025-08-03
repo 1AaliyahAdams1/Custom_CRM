@@ -221,6 +221,8 @@ async function deleteDeal(dealId, data, changedBy = 1, actionTypeId = 5) {
   }
 }
 
+//This is a test comment
+
 module.exports = {
   getAllDeals,
   getDealById,
