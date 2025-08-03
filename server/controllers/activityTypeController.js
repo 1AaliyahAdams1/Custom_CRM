@@ -5,17 +5,18 @@ const getAllActivityTypes = async (req, res) => {
     const data = await activityTypeService.getAllActivityTypes();
     res.status(200).json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting all activity types:", err);
+    res.status(500).json({ error: "Failed to get activity types" });
   }
 };
 
 const getActivityTypeById = async (req, res) => {
   try {
     const data = await activityTypeService.getActivityTypeById(req.params.id);
-    if (!data) return res.status(404).json({ error: "Activity type not found" });
     res.status(200).json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting activity type by ID:", err);
+    res.status(500).json({ error: "Failed to get activity type" });
   }
 };
 
@@ -24,7 +25,8 @@ const createActivityType = async (req, res) => {
     await activityTypeService.createActivityType(req.body);
     res.status(201).json({ message: "Activity type created successfully" });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Error creating activity type:", err);
+    res.status(500).json({ error: "Failed to create activity type" });
   }
 };
 
@@ -33,7 +35,8 @@ const updateActivityType = async (req, res) => {
     await activityTypeService.updateActivityType(req.params.id, req.body);
     res.status(200).json({ message: "Activity type updated successfully" });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Error updating activity type:", err);
+    res.status(500).json({ error: "Failed to update activity type" });
   }
 };
 
@@ -42,7 +45,8 @@ const deactivateActivityType = async (req, res) => {
     await activityTypeService.deactivateActivityType(req.params.id);
     res.status(200).json({ message: "Activity type deactivated successfully" });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Error deactivating activity type:", err);
+    res.status(500).json({ error: "Failed to deactivate activity type" });
   }
 };
 
@@ -51,7 +55,8 @@ const reactivateActivityType = async (req, res) => {
     await activityTypeService.reactivateActivityType(req.params.id);
     res.status(200).json({ message: "Activity type reactivated successfully" });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Error reactivating activity type:", err);
+    res.status(500).json({ error: "Failed to reactivate activity type" });
   }
 };
 
@@ -60,7 +65,8 @@ const deleteActivityType = async (req, res) => {
     await activityTypeService.deleteActivityType(req.params.id);
     res.status(200).json({ message: "Activity type deleted successfully" });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Error deleting activity type:", err);
+    res.status(500).json({ error: "Failed to delete activity type" });
   }
 };
 

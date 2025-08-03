@@ -1,24 +1,22 @@
-const personService = require('../services/personService');
+const personService = require("../services/personService");
 
 async function getAllPersons(req, res) {
   try {
     const persons = await personService.getAllPersons();
     res.json(persons);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error("Error getting all persons:", err);
+    res.status(500).json({ error: "Failed to get persons" });
   }
 }
 
 async function getPersonById(req, res) {
-  const personId = parseInt(req.params.id, 10);
-  if (isNaN(personId)) return res.status(400).json({ error: "Invalid Person ID" });
-
   try {
-    const person = await personService.getPersonById(personId);
-    if (!person) return res.status(404).json({ error: "Person not found" });
+    const person = await personService.getPersonById(req.params.id);
     res.json(person);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error("Error getting person by ID:", err);
+    res.status(500).json({ error: "Failed to get person" });
   }
 }
 
@@ -26,56 +24,49 @@ async function createPerson(req, res) {
   try {
     await personService.createPerson(req.body);
     res.status(201).json({ message: "Person created successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error("Error creating person:", err);
+    res.status(500).json({ error: "Failed to create person" });
   }
 }
 
 async function updatePerson(req, res) {
-  const personId = parseInt(req.params.id, 10);
-  if (isNaN(personId)) return res.status(400).json({ error: "Invalid Person ID" });
-
   try {
-    await personService.updatePerson(personId, req.body);
+    await personService.updatePerson(req.params.id, req.body);
     res.json({ message: "Person updated successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error("Error updating person:", err);
+    res.status(500).json({ error: "Failed to update person" });
   }
 }
 
 async function deactivatePerson(req, res) {
-  const personId = parseInt(req.params.id, 10);
-  if (isNaN(personId)) return res.status(400).json({ error: "Invalid Person ID" });
-
   try {
-    await personService.deactivatePerson(personId);
+    await personService.deactivatePerson(req.params.id);
     res.json({ message: "Person deactivated successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error("Error deactivating person:", err);
+    res.status(500).json({ error: "Failed to deactivate person" });
   }
 }
 
 async function reactivatePerson(req, res) {
-  const personId = parseInt(req.params.id, 10);
-  if (isNaN(personId)) return res.status(400).json({ error: "Invalid Person ID" });
-
   try {
-    await personService.reactivatePerson(personId);
+    await personService.reactivatePerson(req.params.id);
     res.json({ message: "Person reactivated successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error("Error reactivating person:", err);
+    res.status(500).json({ error: "Failed to reactivate person" });
   }
 }
 
 async function deletePerson(req, res) {
-  const personId = parseInt(req.params.id, 10);
-  if (isNaN(personId)) return res.status(400).json({ error: "Invalid Person ID" });
-
   try {
-    await personService.deletePerson(personId);
+    await personService.deletePerson(req.params.id);
     res.json({ message: "Person deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error("Error deleting person:", err);
+    res.status(500).json({ error: "Failed to delete person" });
   }
 }
 
