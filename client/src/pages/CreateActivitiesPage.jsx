@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Button, 
+import {
+  Button,
   Box,
-  TextField, 
+  TextField,
   Typography,
   Paper,
   Stack
@@ -114,6 +114,7 @@ const CreateActivitiesPage = () => {
             displayField="TypeName"
             valueField="TypeID"
             placeholder="Search for activity type..."
+            //MAKE CREATE PAGE/POP UP for Activity Type [down below is just filler for now] 
             createFields={[
               { name: 'TypeName', label: 'Type Name', required: true },
               { name: 'Description', label: 'Description', multiline: true, rows: 3 }
@@ -134,20 +135,20 @@ const CreateActivitiesPage = () => {
 
           <SmartDropdown
             label="Priority"
-            name="Priority"
-            value={formData.Priority}
+            name="PriorityLevelID"
+            value={formData.PriorityLevelID}
             onChange={handleInputChange}
             service={priorityLevelService}
-            displayField="PriorityName"
-            valueField="PriorityID"
+            displayField="PriorityLevelName"
+            valueField="PriorityLevelID"
             placeholder="Search for priority level..."
             createFields={[
-              { name: 'PriorityName', label: 'Priority Name', required: true },
-              { name: 'PriorityLevel', label: 'Priority Level (1-10)', type: 'number', required: true },
-              { name: 'Description', label: 'Description', multiline: true, rows: 2 }
+              { name: 'PriorityLevelName', label: 'Priority Name', required: true },
+              { name: 'PriorityLevelValue', label: 'Priority Level (1-10)', type: 'number', required: true },
             ]}
             fullWidth
           />
+
 
           <Stack direction="row" justifyContent="flex-end" spacing={2} mt={3}>
             <Button
