@@ -6,11 +6,12 @@ const DEALS_URL = `${BASE_URL}/deals`;
 // ===========================
 // Get all deals
 // ===========================
-export async function getAllDeals() {
-  const response = await axios.get(DEALS_URL);
+export async function getAllDeals(onlyActive = true) {
+  const response = await axios.get(DEALS_URL, {
+    params: { onlyActive }
+  });
   return response.data;
 }
-
 // ===========================
 // Get deal details (with products, notes, attachments)
 // ===========================

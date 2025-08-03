@@ -2,7 +2,7 @@ const dealService = require("../services/dealService");
 
 async function getAllDeals(req, res) {
   try {
-    const deals = await dealService.getAllDeals();
+    const deals = await dealService.getAllDeals(onlyActive = true);
     res.json(deals);
   } catch (err) {
     console.error("Error getting all deals:", err);

@@ -8,7 +8,6 @@ import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material"
 
 import { useNavigate } from "react-router-dom";
 import ActivitiesTable from "../components/ActivitiesTable";
-// import ActivityFormDialog from "../components/ActivitiesFormDialog";
 
 import {
   getAllActivities,
@@ -27,7 +26,7 @@ const ActivitiesPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAllActivities();
+      const data = await getAllActivities(true);
       setActivities(data);
     } catch (err) {
       setError("Failed to load activities. Please try again.");

@@ -2,12 +2,14 @@ const activityService = require("../services/activityService");
 
 const getAllActivities = async (req, res) => {
   try {
-    const data = await activityService.getAllActivities();
+    const onlyActive = req.query.onlyActive !== 'false'; 
+    const data = await activityService.getAllActivities(onlyActive);
     res.status(200).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 const getActivityByID = async (req, res) => {
   try {

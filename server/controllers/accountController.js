@@ -3,7 +3,7 @@ const accountService = require("../services/accountService");
 // List all accounts
 async function getAllAccounts(req, res) {
   try {
-    const accounts = await accountService.listAllAccounts();
+    const accounts = await accountService.getAllAccounts();
     res.json(accounts);
   } catch (err) {
     console.error("Error getting all accounts:", err);
