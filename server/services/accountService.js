@@ -4,7 +4,7 @@ const accountRepo = require("../data/accountRepository");
 const userId = 1;
 
 
-async function listAllAccounts() {
+async function getAllAccounts() {
   return await accountRepo.getAllAccounts();
 }
 
@@ -49,7 +49,7 @@ async function deleteAccount(id) {
 }
 
 module.exports = {
-  listAllAccounts,
+  getAllAccounts,
   getAccountById,
   createAccount,
   updateAccount,

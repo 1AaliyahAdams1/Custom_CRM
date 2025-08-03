@@ -2,18 +2,21 @@ const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
 // =======================
-// Get all deals with related info
+// Get all deals
 // =======================
-async function getAllDeals() {
+async function getAllDeals(onlyActive = true) {
   try {
     const pool = await sql.connect(dbConfig);
-    const result = await pool.request().execute("GetDeal");
+    const result = await pool.request()
+      .input("OnlyActive", sql.Bit, onlyActive ? 1 : 0)
+      .execute("GetDeal");
     return result.recordset;
   } catch (error) {
     console.error("Deal Repo Error [getAllDeals]:", error);
     throw error;
   }
 }
+
 
 // =======================
 // Get deal details by ID

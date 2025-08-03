@@ -1,8 +1,9 @@
 const activityRepo = require("../data/activityRepository");
 
-const getAllActivities = async () => {
-  return await activityRepo.getAllActivities();
+const getAllActivities = async (onlyActive = true) => {
+  return await activityRepo.getAllActivities(onlyActive);
 };
+
 
 const getActivityByID = async (ActivityID) => {
   if (!ActivityID) throw new Error("ActivityID is required");

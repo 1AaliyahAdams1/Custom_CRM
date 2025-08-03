@@ -25,7 +25,7 @@ const DealsPage = () => {
     setLoading(true);    
     setError(null);      
     try {
-      const data = await getAllDeals();
+      const data = await getAllDeals(true);
       setDeals(data);     
     } catch (err) {
       setError("Failed to load deals. Please try again.");

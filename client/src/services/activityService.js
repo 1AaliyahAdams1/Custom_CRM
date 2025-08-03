@@ -6,15 +6,18 @@ const ACTIVITIES_API = `${BASE_URL}/activities`;
 // ===========================
 // Get all activities
 // ===========================
-export async function getAllActivities() {
+export async function getAllActivities(onlyActive = true) {
   try {
-    const response = await axios.get(ACTIVITIES_API);
+    const response = await axios.get(ACTIVITIES_API, {
+      params: { onlyActive }
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching activities:", error);
     throw error;
   }
 }
+
 
 // ===========================
 // Get activity by ID
