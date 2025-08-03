@@ -4,9 +4,15 @@
 //IMPORTS
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-// Syncfusion component imports
-import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  CircularProgress,
+  Button,
+  Box,
+} from "@mui/material";
 import { getDealDetails } from "../services/dealService"; // API call to get deal details
 
 function DealsDetailsPage() {
@@ -42,145 +48,103 @@ function DealsDetailsPage() {
   }, [id]);
 
   // Loading spinner
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-        <div className="e-spinner-pane">
-          <div className="e-spinner-inner">
-            <div className="e-spin-material"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  if (loading) return <CircularProgress />;
   // Display error message if any
-  if (error) {
-    return (
-      <div style={{ padding: '20px' }}>
-        <span style={{ color: '#d32f2f', fontSize: '16px' }}>{error}</span>
-      </div>
-    );
-  }
-
+  if (error) return <Typography color="error">{error}</Typography>;
   // Show message if no deal found (edge case)
-  if (!deal) {
-    return (
-      <div style={{ padding: '20px' }}>
-        <span style={{ fontSize: '16px' }}>No deal found.</span>
-      </div>
-    );
-  }
+  if (!deal) return <Typography>No deal found.</Typography>;
 
   return (
-    <div style={{ padding: '32px' }}>
-      {/* Back button to navigate back to deals list */}
-      <ButtonComponent 
-        cssClass="e-outline" 
-        content="← Back to Deals"
-        onClick={() => navigate(-1)}
-        style={{ marginBottom: '24px' }}
-      />
+    <Box p={4}>
+      <Button variant="outlined" onClick={() => navigate(-1)} sx={{ mb: 3 }}>
+        ← Back to Deals
+      </Button>
 
-      {/* Card-style container using Syncfusion's design patterns */}
-      <div className="e-card" style={{ padding: '24px', backgroundColor: '#fff', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}>
-        {/* Deal header */}
-        <div className="e-card-header">
-          <div className="e-card-header-title" style={{ 
-            fontSize: '1.5rem', 
-            fontWeight: '500', 
-            marginBottom: '24px',
-            color: '#333'
-          }}>
+      <Card elevation={2}>
+        <CardContent>
+          <Typography variant="h5" gutterBottom>
             Deal #{deal.DealID}
-          </div>
-        </div>
+          </Typography>
 
-        {/* Card content */}
-        <div className="e-card-content">
-          {/* Deal details in two-column grid */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(2, 1fr)', 
-            gap: '24px',
-            marginBottom: '32px'
-          }}>
-            <div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Account:</strong> {deal.Account || "-"}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Deal Stage:</strong> {deal.StageName || "-"}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Progression:</strong> {deal.Progression ?? "-"}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Deal Name:</strong> {deal.DealName || "-"}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Value:</strong> {deal.Value ?? "-"}
-              </div>
-            </div>
-            <div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Close Date:</strong> {formatDate(deal.CloseDate)}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Created At:</strong> {formatDate(deal.CreatedAt)}
-              </div>
-              <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                <strong>Updated At:</strong> {formatDate(deal.UpdatedAt)}
-              </div>
-            </div>
-          </div>
+          <Grid container spacing={3} mb={3}>
+            <Grid item xs={12} sm={6}>
+              <Typography><strong>Account:</strong> {deal.AccountName || "-"}</Typography>
+              <Typography><strong>Deal Stage:</strong> {deal.StageName || "-"}</Typography>
+              <Typography><strong>Progression:</strong> {deal.Progression ?? "-"}</Typography>
+              <Typography><strong>Deal Name:</strong> {deal.DealName || "-"}</Typography>
+              <Typography><strong>Value:</strong> {deal.Value ?? "-"}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography><strong>Close Date:</strong> {formatDate(deal.CloseDate)}</Typography>
+              <Typography><strong>Created At:</strong> {formatDate(deal.CreatedAt)}</Typography>
+              <Typography><strong>Updated At:</strong> {formatDate(deal.UpdatedAt)}</Typography>
+            </Grid>
+          </Grid>
 
-          {/* Products section */}
-          <div>
-            <h3 style={{ 
-              fontSize: '1.25rem', 
-              fontWeight: '500', 
-              marginBottom: '16px',
-              marginTop: '0',
-              color: '#333'
-            }}>
-              Products
-            </h3>
-
-            {/* Conditional rendering of product(s) */}
+          {/* Products Section */}
+          <Box mb={3}>
+            <Typography variant="h6" gutterBottom>Products</Typography>
             {deal.ProductName ? (
-              <ul style={{ 
-                margin: '0', 
-                paddingLeft: '20px',
-                fontSize: '14px',
-                lineHeight: '1.6'
-              }}>
-                {/* If ProductName is an array, map each product with its price */}
+              <ul style={{ paddingLeft: 20 }}>
                 {Array.isArray(deal.ProductName) ? (
-                  deal.ProductName.map((product, index) => (
-                    <li key={index} style={{ marginBottom: '8px' }}>
-                      {product} - Price at time: {deal.PriceAtTime && deal.PriceAtTime[index] ? deal.PriceAtTime[index] : "-"}
+                  deal.ProductName.map((product, idx) => (
+                    <li key={idx}>
+                      {product} — Price at time: {deal.PriceAtTime?.[idx] ?? "-"}
                     </li>
                   ))
                 ) : (
-                  // If single product, display directly
-                  <li style={{ marginBottom: '8px' }}>
-                    {deal.ProductName} - Price at time: {deal.PriceAtTime || "-"}
+                  <li>
+                    {deal.ProductName} — Price at time: {deal.PriceAtTime ?? "-"}
                   </li>
                 )}
               </ul>
             ) : (
-              // No products found message
-              <div style={{ fontSize: '14px', color: '#666' }}>
-                No products found for this deal.
-              </div>
+              <Typography>No products found for this deal.</Typography>
             )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+          </Box>
 
+          {/* Attachments Section */}
+          <Box mb={3}>
+            <Typography variant="h6" gutterBottom>Attachments</Typography>
+            {deal.attachments?.length > 0 ? (
+              deal.attachments.map((att) => (
+                <Box key={att.AttachmentID} mb={1}>
+                  <Typography>
+                    <strong>File:</strong>{" "}
+                    <a href={att.FilePath} target="_blank" rel="noopener noreferrer">
+                      {att.FileName}
+                    </a>
+                  </Typography>
+                  <Typography variant="body2">
+                    Uploaded: {new Date(att.UploadedAt).toLocaleString()}
+                  </Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography>No attachments found for this deal.</Typography>
+            )}
+          </Box>
+
+          {/* Notes Section */}
+          <Box>
+            <Typography variant="h6" gutterBottom>Notes</Typography>
+            {deal.notes?.length > 0 ? (
+              deal.notes.map((note) => (
+                <Box key={note.NoteID} mb={1}>
+                  <Typography><strong>Note:</strong> {note.Content}</Typography>
+                  <Typography variant="body2">
+                    Created: {new Date(note.CreatedAt).toLocaleString()}
+                  </Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography>No notes found for this deal.</Typography>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
+  );
 }
 
 export default DealsDetailsPage;

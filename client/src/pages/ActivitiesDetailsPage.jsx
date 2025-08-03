@@ -4,11 +4,18 @@
 //IMPORTS
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  CircularProgress,
+  Button,
+  Box,
+  Tooltip,
+} from "@mui/material";
 
 
-//syncfusion component imports
-import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
-import { TooltipComponent } from '@syncfusion/ej2-react-popups';
 import { getActivityDetails } from "../services/activityService"; // Make sure this function exists
 
 function ActivitiesDetailsPage() {
@@ -38,131 +45,147 @@ function ActivitiesDetailsPage() {
     fetchActivity();
   }, [id]);
 
- 
   // Helper to format date/time string or show placeholder
   const formatDate = (str) =>
     str ? new Date(str).toLocaleString() : "-";
 
-  // While loading, show a spinner
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-        <div className="e-spinner-pane">
-          <div className="e-spinner-inner">
-            <div className="e-spin-material"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error message if fetch failed
-  if (error) {
-    return (
-      <div style={{ padding: '20px' }}>
-        <span style={{ color: '#d32f2f', fontSize: '16px' }}>{error}</span>
-      </div>
-    );
-  }
-
-  // Show fallback if no activity found
-  if (!activity) {
-    return (
-      <div style={{ padding: '20px' }}>
-        <span style={{ fontSize: '16px' }}>No activity found.</span>
-      </div>
-    );
-  }
+  if (loading) return <CircularProgress />;
+  if (error) return <Typography color="error">{error}</Typography>;
+  if (!activity) return <Typography>No activity found.</Typography>;
 
   return (
-    <div style={{ padding: '32px' }}>
+    <Box p={4}>
       {/* Back button to go to previous page */}
-      <ButtonComponent 
-        cssClass="e-outline" 
-        content="← Back to Activities"
-        onClick={() => navigate(-1)}
-        style={{ marginBottom: '24px' }}
-      />
+      <Button variant="outlined" onClick={() => navigate(-1)} sx={{ mb: 3 }}>
+        &larr; Back to Activities
+      </Button>
 
-      {/* Card-style container using Syncfusion design patterns */}
-      <div className="e-card" style={{ padding: '24px', backgroundColor: '#fff', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}>
-        {/* Activity title as the header */}
-        <div className="e-card-header">
-          <div className="e-card-header-title" style={{ 
-            fontSize: '1.5rem', 
-            fontWeight: '500', 
-            marginBottom: '24px',
-            color: '#333'
-          }}>
-            Activity #{activity.ActivityID}
-          </div>
-        </div>
+      {/* Activity Details Card */}
+      <Card elevation={3}>
+        <CardContent>
+          {/* Title */}
+          <Typography variant="h5" gutterBottom>
+            {activity.TypeName || "Activity Details"}
+          </Typography>
 
-        {/* Card content */}
-        <div className="e-card-content">
-          {/* Grid layout using CSS Grid to organize details in two columns */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(2, 1fr)', 
-            gap: '24px'
-          }}>
-            {/* Left column with main activity info */}
-            <div>
-              <TooltipComponent content="Associated Account" position="TopCenter">
-                <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                  <strong>Account:</strong> {activity.AccountName || "-"}
-                </div>
-              </TooltipComponent>
+          {/* Grid layout */}
+          <Grid container spacing={3}>
+            {/* Left Column */}
+            <Grid item xs={12} md={6}>
+              <Tooltip title="Associated Account" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Account:</strong> {activity.AccountName || "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
 
-              <TooltipComponent content="Type of activity (e.g., Call, Meeting)" position="TopCenter">
-                <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                  <strong>Type:</strong> {activity.TypeName || "-"}
-                </div>
-              </TooltipComponent>
+              <Tooltip title="Type of activity (e.g., Call, Meeting)" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Type:</strong> {activity.TypeName || "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
 
-              <TooltipComponent content="Detailed description of the activity type" position="TopCenter">
-                <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                  <strong>Description:</strong> {activity.TypeDescription || "-"}
-                </div>
-              </TooltipComponent>
+              <Tooltip title="Detailed description of the activity type" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Description:</strong> {activity.Description || "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
+            </Grid>
 
-              <TooltipComponent content="Kind of interaction performed" position="TopCenter">
-                <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                  <strong>Interaction:</strong> {activity.InteractionType || "-"}
-                </div>
-              </TooltipComponent>
-            </div>
+            {/* Right Column */}
+            <Grid item xs={12} md={6}>
+              <Tooltip title="Contact person involved in this activity" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Contact:</strong>{" "}
+                    {activity.ContactID
+                      ? `${activity.Title || ""} ${activity.first_name || ""} ${activity.middle_name || ""} ${activity.surname || ""}`.trim()
+                      : "-"}
+                  </Typography>
+                </Box>
+              </Tooltip>
 
-            {/* Right column with contact and timestamps */}
-            <div>
-              <TooltipComponent content="Contact person involved in this activity" position="TopCenter">
-                <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                  <strong>Contact:</strong> {activity.Contact || "-"}
-                </div>
-              </TooltipComponent>
+              <Tooltip title="Date and time when the activity occurred" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Date & Time:</strong> {formatDate(activity.Due_date)}
+                  </Typography>
+                </Box>
+              </Tooltip>
 
-              <TooltipComponent content="Date and time when the activity occurred" position="TopCenter">
-                <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                  <strong>Date & Time:</strong> {formatDate(activity.DateTime)}
-                </div>
-              </TooltipComponent>
+              <Tooltip title="Record creation timestamp" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Created At:</strong> {formatDate(activity.CreatedAt)}
+                  </Typography>
+                </Box>
+              </Tooltip>
 
-              <TooltipComponent content="Record creation timestamp" position="TopCenter">
-                <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                  <strong>Created At:</strong> {formatDate(activity.CreatedAt)}
-                </div>
-              </TooltipComponent>
+              <Tooltip title="Last update timestamp" placement="top">
+                <Box mb={1.5}>
+                  <Typography variant="body2" lineHeight={1.5}>
+                    <strong>Updated At:</strong> {formatDate(activity.UpdatedAt)}
+                  </Typography>
+                </Box>
+              </Tooltip>
 
-              <TooltipComponent content="Last update timestamp" position="TopCenter">
-                <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-                  <strong>Updated At:</strong> {formatDate(activity.UpdatedAt)}
-                </div>
-              </TooltipComponent>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+              {/* Attachments */}
+              <Tooltip title="Files uploaded for this activity" placement="top">
+                <Box mt={3}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Attachments
+                  </Typography>
+                  {activity.attachments?.length > 0 ? (
+                    activity.attachments.map((att) => (
+                      <Box key={att.AttachmentID} mb={1}>
+                        <Typography variant="body2">{att.FileName}</Typography>
+                        <Typography variant="caption">
+                          Uploaded: {new Date(att.CreatedAt).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography variant="body2">
+                      No attachments available for this activity.
+                    </Typography>
+                  )}
+                </Box>
+              </Tooltip>
+
+              {/* Notes */}
+              <Tooltip title="Internal notes for this activity" placement="top">
+                <Box mt={3}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Notes
+                  </Typography>
+                  {activity.notes?.length > 0 ? (
+                    activity.notes.map((note) => (
+                      <Box key={note.NoteID} mb={1}>
+                        <Typography variant="body2" fontWeight="bold">
+                          {note.Content}
+                        </Typography>
+                        <Typography variant="caption">
+                          Created: {new Date(note.CreatedAt).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography variant="body2">
+                      No notes available for this activity.
+                    </Typography>
+                  )}
+                </Box>
+              </Tooltip>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
 

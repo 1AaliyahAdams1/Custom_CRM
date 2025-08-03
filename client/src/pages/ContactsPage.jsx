@@ -4,10 +4,7 @@
 //IMPORTS
 import React, { useEffect, useState } from "react";
 
-
-// Syncfusion component imports
-import { ButtonComponent } from "@syncfusion/ej2-react-buttons";
-import { MessageComponent } from "@syncfusion/ej2-react-notifications";
+import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
 
 import { useNavigate } from "react-router-dom";
 import ContactsTable from "../components/ContactsTable";
@@ -26,10 +23,7 @@ const ContactsPage = () => {
   const [contacts, setContacts] = useState([]);
   // Loading spinner state during data fetch or operations
   const [loading, setLoading] = useState(false);
-  // Controls whether the add/edit dialog is open
-  const [dialogOpen, setDialogOpen] = useState(false);
-  // Holds the contact currently selected for editing (null when adding)
-  const [selectedContact, setSelectedContact] = useState(null);
+  
   // Holds error message string to display errors
   const [error, setError] = useState(null);
   // Holds success message string for user feedback
@@ -62,23 +56,26 @@ const ContactsPage = () => {
     }
   }, [successMessage]);
 
-  // // Opens the dialog for adding a new contact
-  // const handleOpenCreate = () => {
-  //   setSelectedContact(null); // Clear selected contact (create mode)
-  //   setError(null);           // Clear any errors
-  //   setDialogOpen(true);      // Open dialog
-  // };
+  
   
   // Navigate to create contact page
   const handleOpenCreate = () => {
     navigate("/contacts/create");
   };
 
-  // Opens the dialog to edit an existing contact
+  // Navigate to edit contact page with the selected contact ID
   const handleOpenEdit = (contact) => {
-    setSelectedContact(contact); // Set the contact to be edited
-    setError(null);              // Clear any errors
-    setDialogOpen(true);         // Open dialog
+    console.log("Opening edit for contact:", contact);
+    
+    // Check if contact has the required ID field
+    if (!contact || !contact.ContactID) {
+      console.error("Contact or ContactID is missing:", contact);
+      setError("Unable to edit contact - missing contact ID");
+      return;
+    }
+    
+    // Navigate to edit page
+    navigate(`/contacts/edit/${contact.ContactID}`);
   };
 
   // Deletes a contact after user confirmation
@@ -96,128 +93,81 @@ const ContactsPage = () => {
     }
   };
 
-  //Handles form submission for creating or updating a contact
-  const handleSave = async (contactData) => {
-    setError(null);
-    try {
-      if (contactData.ContactID) {
-        // Update existing contact
-        await updateContact(contactData.ContactID, contactData);
-        setSuccessMessage("Contact updated successfully.");
-      } else {
-        // Create new contact
-        await createContact(contactData);
-        setSuccessMessage("Contact created successfully.");
-      }
-      setDialogOpen(false);      // Close dialog after save
-      await fetchContacts();     // Refresh contact list
-    } catch (err) {
-      setError("Failed to save contact. Please try again."); // Show error on failure
-    }
-  };
+  // //Handles form submission for creating or updating a contact
+  // const handleSave = async (contactData) => {
+  //   setError(null);
+  //   try {
+  //     if (contactData.ContactID) {
+  //       // Update existing contact
+  //       await updateContact(contactData.ContactID, contactData);
+  //       setSuccessMessage("Contact updated successfully.");
+  //     } else {
+  //       // Create new contact
+  //       await createContact(contactData);
+  //       setSuccessMessage("Contact created successfully.");
+  //     }
+  //     setDialogOpen(false);      // Close dialog after save
+  //     await fetchContacts();     // Refresh contact list
+  //   } catch (err) {
+  //     setError("Failed to save contact. Please try again."); // Show error on failure
+  //   }
+  // };
 
-  // Closes the add/edit contact dialog
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedContact(null); // Clear selected contact when dialog closes
-  };
-
-  // Render the ContactsPage component
-  return (
-    <div style={{ padding: '24px' }}>
-      {/* Page Title */}
-      <h1 style={{ 
-        fontSize: '2.125rem', 
-        fontWeight: 400, 
-        lineHeight: 1.235, 
-        marginBottom: '16px',
-        margin: '0 0 16px 0'
-      }}>
+  
+ return (
+    <Box p={4}>
+      {/* Page title */}
+      <Typography variant="h4" gutterBottom>
         Contacts
-      </h1>
+      </Typography>
 
-      {/* Display error alert if any error */}
+      {/* Error message alert, dismissible */}
       {error && (
-        <div style={{ marginBottom: '16px' }}>
-          <MessageComponent 
-            severity="Error" 
-            showCloseIcon={true}
-            closed={() => setError(null)}
-          >
-            {error}
-          </MessageComponent>
-        </div>
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
       )}
 
-      {/* Display success alert on successful operation */}
+      {/* Success message alert, dismissible */}
       {successMessage && (
-        <div style={{ marginBottom: '16px' }}>
-          <MessageComponent 
-            severity="Success" 
-            showCloseIcon={true}
-            closed={() => setSuccessMessage("")}
-          >
-            {successMessage}
-          </MessageComponent>
-        </div>
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
+          {successMessage}
+        </Alert>
       )}
 
-      {/* Button to add a new contact */}
-      <div style={{ marginBottom: '16px' }}>
-        <ButtonComponent 
-          isPrimary={true}
-          onClick={handleOpenCreate}
-          disabled={loading}  // Disable button while loading
-        >
-          Add Contact
-        </ButtonComponent>
-      </div>
+      {/* Button to open dialog for adding a new contact */}
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleOpenCreate}
+        sx={{ mb: 2 }}
+        disabled={loading} // Disable while loading
+      >
+        Add Contact
+      </Button>
+      
+     
 
-      {/* Show loading spinner or accounts table depending on loading state */}
+      {/* Show loading spinner or contacts table */}
       {loading ? (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          marginTop: '32px' 
-        }}>
-          {/* Simple CSS loading spinner since CircularProgress needs a different approach */}
-          <div className="loading-spinner" style={{
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #3498db',
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
-            animation: 'spin 2s linear infinite'
-          }}></div>
-          <style>
-            {`
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            `}
-          </style>
-        </div>
+        <Box display="flex" justifyContent="center" mt={4}>
+          <CircularProgress />
+        </Box>
       ) : (
         <ContactsTable
           contacts={contacts}
-          onEdit={handleOpenEdit}   // Edit button callback
-          onDelete={handleDelete}    // Delete button callback
+          onEdit={handleOpenEdit}   // Pass edit handler to table
+          onDelete={handleDelete}    // Pass delete handler to table
         />
       )}
 
-      {/* Dialog for adding/editing an contact */}
-      <ContactFormDialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        contact={selectedContact}
-        onSubmit={handleSave}
-      />
-    </div>
+    
+    </Box>
   );
 
   
 };
+
 
 
 export default ContactsPage;

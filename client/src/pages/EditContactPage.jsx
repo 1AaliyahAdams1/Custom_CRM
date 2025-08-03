@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -10,30 +11,31 @@ import {
   Paper,
   Grid,
 } from "@mui/material";
-import { fetchAccountById, updateAccount } from "../services/accountService";
+import { getContactDetails, updateContact } from "../services/contactService";
 
-const EditAccountPage = () => {
+const EditContactPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get account ID from URL params
+  const { id } = useParams(); // Get contact ID from URL params
   
   const [formData, setFormData] = useState({
-    AccountName: "",
-    CityID: "",
-    street_address1: "",
-    street_address2: "",
-    street_address3: "",
-    postal_code: "",
+    ContactID: "",
+    AccountID: "",
+    PersonID: "",
+    Title: "",
+    first_name: "",
+    middle_name: "",
+    surname: "",
+    linkedin_link: "",
+    personal_email: "",
+    personal_mobile: "",
+    PersonCityID: "",
+    PersonStateProvinceID: "",
+    Still_employed: false,
+    JobTitleID: "",
+    PrimaryEmail: "",
     PrimaryPhone: "",
-    IndustryID: "",
-    Website: "",
-    fax: "",
-    email: "",
-    number_of_employees: "",
-    annual_revenue: "",
-    number_of_venues: "",
-    number_of_releases: "",
-    number_of_events_anually: "",
-    ParentAccount: "",
+    Position: "",
+    isNewPerson: true,
   });
 
   const [loading, setLoading] = useState(true);
@@ -41,11 +43,11 @@ const EditAccountPage = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Fetch account data when component mounts
+  // Fetch contact data when component mounts
   useEffect(() => {
-    const loadAccount = async () => {
+    const loadContact = async () => {
       if (!id) {
-        setError("No account ID provided");
+        setError("No contact ID provided");
         setLoading(false);
         return;
       }
@@ -53,38 +55,39 @@ const EditAccountPage = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetchAccountById(id);
+        const response = await getContactDetails(id);
         
         // Populate form with fetched data
-        const accountData = response.data;
+        const contactData = response.data;
         setFormData({
-          AccountName: accountData.AccountName || "",
-          CityID: accountData.CityID || "",
-          street_address1: accountData.street_address1 || "",
-          street_address2: accountData.street_address2 || "",
-          street_address3: accountData.street_address3 || "",
-          postal_code: accountData.postal_code || "",
-          PrimaryPhone: accountData.PrimaryPhone || "",
-          IndustryID: accountData.IndustryID || "",
-          Website: accountData.Website || "",
-          fax: accountData.fax || "",
-          email: accountData.email || "",
-          number_of_employees: accountData.number_of_employees || "",
-          annual_revenue: accountData.annual_revenue || "",
-          number_of_venues: accountData.number_of_venues || "",
-          number_of_releases: accountData.number_of_releases || "",
-          number_of_events_anually: accountData.number_of_events_anually || "",
-          ParentAccount: accountData.ParentAccount || "",
+          ContactID: contactData.ContactID || "",
+          AccountID: contactData.AccountID || "",
+          PersonID: contactData.PersonID || "",
+          Title: contactData.Title || "",
+          first_name: contactData.first_name || "",
+          middle_name: contactData.middle_name || "",
+          surname: contactData.surname || "",
+          linkedin_link: contactData.linkedin_link || "",
+          personal_email: contactData.personal_email || "",
+          personal_mobile: contactData.personal_mobile || "",
+          PersonCityID: contactData.PersonCityID || "",
+          PersonStateProvinceID: contactData.PersonStateProvinceID || "",
+          Still_employed: contactData.Still_employed || false,
+          JobTitleID: contactData.JobTitleID || "",
+          PrimaryEmail: contactData.PrimaryEmail || "",
+          PrimaryPhone: contactData.PrimaryPhone || "",
+          Position: contactData.Position || "",
+          isNewPerson: contactData.isNewPerson || true,
         });
       } catch (error) {
-        console.error("Failed to fetch account:", error);
-        setError("Failed to load account data. Please try again.");
+        console.error("Failed to fetch contact:", error);
+        setError("Failed to load contact data. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
-    loadAccount();
+    loadContact();
   }, [id]);
 
   // Auto-clear success message after 3 seconds
@@ -99,10 +102,10 @@ const EditAccountPage = () => {
 
   // Handle input changes
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -111,8 +114,8 @@ const EditAccountPage = () => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.AccountName.trim()) {
-      setError("Account name is required");
+    if (!formData.first_name.trim() || !formData.surname.trim()) {
+      setError("First name and surname are required");
       return;
     }
 
@@ -120,31 +123,31 @@ const EditAccountPage = () => {
       setSaving(true);
       setError(null);
       
-      // Add AccountID to formData for the update
+      // Add ContactID to formData for the update
       const updateData = {
         ...formData,
-        AccountID: id
+        ContactID: id
       };
       
-      await updateAccount(id, updateData);
-      setSuccessMessage("Account updated successfully!");
+      await updateContact(id, updateData);
+      setSuccessMessage("Contact updated successfully!");
       
-      // Navigate back to accounts page after a short delay
+      // Navigate back to contacts page after a short delay
       setTimeout(() => {
-        navigate("/accounts");
+        navigate("/contacts");
       }, 1500);
       
     } catch (error) {
-      console.error("Failed to update account:", error);
-      setError("Failed to update account. Please try again.");
+      console.error("Failed to update contact:", error);
+      setError("Failed to update contact. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  // Handle cancel - navigate back to accounts page
+  // Handle cancel - navigate back to contacts page
   const handleCancel = () => {
-    navigate("/accounts");
+    navigate("/contacts");
   };
 
   if (loading) {
@@ -158,7 +161,7 @@ const EditAccountPage = () => {
   return (
     <Box p={4}>
       <Typography variant="h4" gutterBottom>
-        Edit Account
+        Edit Contact
       </Typography>
 
       {/* Error Alert */}
@@ -178,76 +181,103 @@ const EditAccountPage = () => {
       <Paper elevation={3} sx={{ p: 3 }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            {/* Account Name - Required */}
+            {/* Title */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Account Name"
-                name="AccountName"
-                value={formData.AccountName}
+                label="Title"
+                name="Title"
+                value={formData.Title}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
+
+            {/* First Name - Required */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="First Name"
+                name="first_name"
+                value={formData.first_name}
                 onChange={handleInputChange}
                 required
                 variant="outlined"
               />
             </Grid>
 
-            {/* City ID */}
+            {/* Middle Name */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="City ID"
-                name="CityID"
-                value={formData.CityID}
+                label="Middle Name"
+                name="middle_name"
+                value={formData.middle_name}
                 onChange={handleInputChange}
                 variant="outlined"
               />
             </Grid>
 
-            {/* Street Address 1 */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Street Address 1"
-                name="street_address1"
-                value={formData.street_address1}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Street Address 2 */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Street Address 2"
-                name="street_address2"
-                value={formData.street_address2}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Street Address 3 */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Street Address 3"
-                name="street_address3"
-                value={formData.street_address3}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Postal Code */}
+            {/* Surname - Required */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Postal Code"
-                name="postal_code"
-                value={formData.postal_code}
+                label="Surname"
+                name="surname"
+                value={formData.surname}
+                onChange={handleInputChange}
+                required
+                variant="outlined"
+              />
+            </Grid>
+
+            {/* Position */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Position"
+                name="Position"
+                value={formData.Position}
                 onChange={handleInputChange}
                 variant="outlined"
+              />
+            </Grid>
+
+            {/* Job Title ID */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Job Title ID"
+                name="JobTitleID"
+                value={formData.JobTitleID}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
+
+            {/* Primary Email */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Primary Email"
+                name="PrimaryEmail"
+                value={formData.PrimaryEmail}
+                onChange={handleInputChange}
+                variant="outlined"
+                type="email"
+              />
+            </Grid>
+
+            {/* Personal Email */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Personal Email"
+                name="personal_email"
+                value={formData.personal_email}
+                onChange={handleInputChange}
+                variant="outlined"
+                type="email"
               />
             </Grid>
 
@@ -263,131 +293,92 @@ const EditAccountPage = () => {
               />
             </Grid>
 
-            {/* Industry ID */}
+            {/* Personal Mobile */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Industry ID"
-                name="IndustryID"
-                value={formData.IndustryID}
+                label="Personal Mobile"
+                name="personal_mobile"
+                value={formData.personal_mobile}
                 onChange={handleInputChange}
                 variant="outlined"
               />
             </Grid>
 
-            {/* Website */}
-            <Grid item xs={12} sm={6}>
+            {/* LinkedIn Link */}
+            <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Website"
-                name="Website"
-                value={formData.Website}
+                label="LinkedIn Profile"
+                name="linkedin_link"
+                value={formData.linkedin_link}
                 onChange={handleInputChange}
                 variant="outlined"
                 type="url"
               />
             </Grid>
 
-            {/* Fax */}
+            {/* Account ID */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Fax"
-                name="fax"
-                value={formData.fax}
+                label="Account ID"
+                name="AccountID"
+                value={formData.AccountID}
                 onChange={handleInputChange}
                 variant="outlined"
               />
             </Grid>
 
-            {/* Email */}
+            {/* Person ID */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Email"
-                name="email"
-                value={formData.email}
+                label="Person ID"
+                name="PersonID"
+                value={formData.PersonID}
                 onChange={handleInputChange}
                 variant="outlined"
-                type="email"
               />
             </Grid>
 
-            {/* Number of Employees */}
+            {/* Person City ID */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Number of Employees"
-                name="number_of_employees"
-                value={formData.number_of_employees}
+                label="Person City ID"
+                name="PersonCityID"
+                value={formData.PersonCityID}
                 onChange={handleInputChange}
                 variant="outlined"
-                type="number"
               />
             </Grid>
 
-            {/* Annual Revenue */}
+            {/* Person State/Province ID */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Annual Revenue"
-                name="annual_revenue"
-                value={formData.annual_revenue}
+                label="Person State/Province ID"
+                name="PersonStateProvinceID"
+                value={formData.PersonStateProvinceID}
                 onChange={handleInputChange}
                 variant="outlined"
-                type="number"
               />
             </Grid>
 
-            {/* Number of Venues */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Number of Venues"
-                name="number_of_venues"
-                value={formData.number_of_venues}
-                onChange={handleInputChange}
-                variant="outlined"
-                type="number"
-              />
-            </Grid>
-
-            {/* Number of Releases */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Number of Releases"
-                name="number_of_releases"
-                value={formData.number_of_releases}
-                onChange={handleInputChange}
-                variant="outlined"
-                type="number"
-              />
-            </Grid>
-
-            {/* Number of Events Annually */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Number of Events Annually"
-                name="number_of_events_anually"
-                value={formData.number_of_events_anually}
-                onChange={handleInputChange}
-                variant="outlined"
-                type="number"
-              />
-            </Grid>
-
-            {/* Parent Account */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Parent Account"
-                name="ParentAccount"
-                value={formData.ParentAccount}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
+            {/* Still Employed Checkbox */}
+            <Grid item xs={12}>
+              <Box display="flex" alignItems="center">
+                <input
+                  type="checkbox"
+                  id="Still_employed"
+                  name="Still_employed"
+                  checked={formData.Still_employed}
+                  onChange={handleInputChange}
+                  style={{ marginRight: '8px' }}
+                />
+                <label htmlFor="Still_employed">Still Employed</label>
+              </Box>
             </Grid>
 
             {/* Action Buttons */}
@@ -407,7 +398,7 @@ const EditAccountPage = () => {
                   disabled={saving}
                   startIcon={saving ? <CircularProgress size={20} /> : null}
                 >
-                  {saving ? "Updating..." : "Update Account"}
+                  {saving ? "Updating..." : "Update Contact"}
                 </Button>
               </Box>
             </Grid>
@@ -418,4 +409,4 @@ const EditAccountPage = () => {
   );
 };
 
-export default EditAccountPage;
+export default EditContactPage;
