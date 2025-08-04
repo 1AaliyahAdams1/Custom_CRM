@@ -149,3 +149,4 @@ const CreateActivitiesPage = () => {
 };
 
 export default CreateActivitiesPage;
+
