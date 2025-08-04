@@ -1,18 +1,31 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-   
-  Button, 
-  Grid, 
-  Box ,
-  TextField, 
-  Typography 
+import {
+  Button,
+  Grid,
+  Box,
+  TextField,
+  Typography
 } from '@mui/material';
-import { createAccount } from '../services/accountService';
+import { createAccount, getAllAccounts } from '../services/accountService';
+import SmartDropdown from '../components/SmartDropdown';
+import { cityService, industryService } from '../services/dropdownServices';
+
+const parentAccountService = {
+  getAll: async () => {
+    try {
+      const response = await getAllAccounts();
+      return response.data || [];
+    } catch (error) {
+      console.error('Error loading parent accounts:', error);
+      return [];
+    }
+  },
+};
 
 const CreateAccountPage = () => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     AccountName: "",
     CityID: "",
@@ -30,11 +43,8 @@ const CreateAccountPage = () => {
     number_of_venues: "",
     number_of_releases: "",
     number_of_events_anually: "",
-    ParentAccount: "",
-    
+    ParentAccount: null,
   });
-
- 
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -46,9 +56,23 @@ const CreateAccountPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const cleanedData = {
+      ...formData,
+      CityID: formData.CityID === "" ? null : parseInt(formData.CityID),
+      IndustryID: formData.IndustryID === "" ? null : parseInt(formData.IndustryID),
+      number_of_employees: formData.number_of_employees === "" ? null : parseInt(formData.number_of_employees),
+      annual_revenue: formData.annual_revenue === "" ? null : parseFloat(formData.annual_revenue),
+      number_of_venues: formData.number_of_venues === "" ? null : parseInt(formData.number_of_venues),
+      number_of_releases: formData.number_of_releases === "" ? null : parseInt(formData.number_of_releases),
+      number_of_events_anually: formData.number_of_events_anually === "" ? null : parseInt(formData.number_of_events_anually),
+      ParentAccount: formData.ParentAccount || null,
+    };
+
+
     try {
       console.log('Creating account:', formData);
-      await createAccount(formData);
+      await createAccount(cleanedData);
       navigate('/accounts');
     } catch (error) {
       console.error('Error creating account:', error);
@@ -56,17 +80,16 @@ const CreateAccountPage = () => {
     }
   };
 
-
   const handleCancel = () => {
     navigate('/accounts');
   };
 
   return (
     <Box p={4} maxWidth={900} mx="auto">
-        {/* Page Title */}
-              <Typography variant="h4" gutterBottom>
-                Create New Account
-              </Typography>
+      {/* Page Title */}
+      <Typography variant="h4" gutterBottom>
+        Create New Account
+      </Typography>
       {/* Buttons at the top */}
       <Box mb={3} display="flex" justifyContent="flex-end" gap={2}>
         <Button variant="outlined" onClick={() => navigate(-1)}>
@@ -80,182 +103,166 @@ const CreateAccountPage = () => {
         </Button>
       </Box>
 
-      <form onSubmit={handleSubmit}>
-        
-          <Grid item xs={20} sm={10}>
-            <TextField
-              label="Account Name"
-              name="AccountName"
-              value={formData.AccountName}
-              onChange={handleInputChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="City ID"
-              name="CityID"
-              value={formData.CityID}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            <TextField
-              label="Street Address 1"
-              name="street_address1"
-              value={formData.street_address1}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            <TextField
-              label="Street Address 2"
-              name="street_address2"
-              value={formData.street_address2}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            <TextField
-              label="Street Address 3"
-              name="street_address3"
-              value={formData.street_address3}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+      <Grid item xs={20} sm={10}>
+        <TextField
+          label="Account Name"
+          name="AccountName"
+          value={formData.AccountName}
+          onChange={handleInputChange}
+          required
+          fullWidth
+        />
 
+        <SmartDropdown
+          label="City"
+          name="CityID"
+          value={formData.CityID}
+          onChange={handleInputChange}
+          service={cityService}
+          displayField="CityName"
+          valueField="CityID"
+          //Make a create page for city and link it to the command below
+          // onCreateNewClick={() => setOpenCreateCityDialog(true)}
+          fullWidth
+        />
 
+        <SmartDropdown
+          label="Industry"
+          name="IndustryID"
+          value={formData.IndustryID}
+          onChange={handleInputChange}
+          service={industryService}
+          displayField="IndustryName"
+          valueField="IndustryID"
+          //Make a create page for industry and link it to the command below
+          // onCreateNewClick={() => setOpenCreateIndustryDialog(true)}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Postal Code"
-              name="postal_code"
-              value={formData.postal_code}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Street Address 1"
+          name="street_address1"
+          value={formData.street_address1}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Primary Phone"
-              name="PrimaryPhone"
-              value={formData.PrimaryPhone}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Street Address 2"
+          name="street_address2"
+          value={formData.street_address2}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Industry ID"
-              name="IndustryID"
-              value={formData.IndustryID}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Street Address 3"
+          name="street_address3"
+          value={formData.street_address3}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Website"
-              name="Website"
-              value={formData.Website}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Postal Code"
+          name="postal_code"
+          value={formData.postal_code}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Fax"
-              name="fax"
-              value={formData.fax}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Primary Phone"
+          name="PrimaryPhone"
+          value={formData.PrimaryPhone}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Fax"
+          name="fax"
+          value={formData.fax}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Number of Employees"
-              name="number_of_employees"
-              type="number"
-              value={formData.number_of_employees}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Annual Revenue"
-              name="annual_revenue"
-              type="number"
-              value={formData.annual_revenue}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Website"
+          name="Website"
+          value={formData.Website}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Number of Venues"
-              name="number_of_venues"
-              type="number"
-              value={formData.number_of_venues}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Number of Employees"
+          name="number_of_employees"
+          type="number"
+          value={formData.number_of_employees}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Number of Releases"
-              name="number_of_releases"
-              type="number"
-              value={formData.number_of_releases}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Annual Revenue"
+          name="annual_revenue"
+          type="number"
+          value={formData.annual_revenue}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Number of Events Annually"
-              name="number_of_events_anually"
-              type="number"
-              value={formData.number_of_events_anually}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <TextField
+          label="Number of Venues"
+          name="number_of_venues"
+          type="number"
+          value={formData.number_of_venues}
+          onChange={handleInputChange}
+          fullWidth
+        />
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Parent Account"
-              name="ParentAccount"
-              value={formData.ParentAccount}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
-        
-      </form>
+        <TextField
+          label="Number of Releases"
+          name="number_of_releases"
+          type="number"
+          value={formData.number_of_releases}
+          onChange={handleInputChange}
+          fullWidth
+        />
+
+        <TextField
+          label="Number of Events Annually"
+          name="number_of_events_anually"
+          type="number"
+          value={formData.number_of_events_anually}
+          onChange={handleInputChange}
+          fullWidth
+        />
+
+        <SmartDropdown
+          label="Parent Account"
+          name="ParentAccount"
+          value={formData.ParentAccount}
+          onChange={handleInputChange}
+          service={parentAccountService}
+          displayField="AccountName"
+          valueField="AccountID"
+          fullWidth
+        />
+
+      </Grid>
     </Box>
   );
 };
-
-
-
-
 
 export default CreateAccountPage;

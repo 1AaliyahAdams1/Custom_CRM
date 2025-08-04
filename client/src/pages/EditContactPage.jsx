@@ -11,7 +11,7 @@ import {
   Paper,
   Grid,
 } from "@mui/material";
-import { fetchContactById, updateContact } from "../services/contactService";
+import { getContactDetails, updateContact } from "../services/contactService";
 
 const EditContactPage = () => {
   const navigate = useNavigate();
@@ -55,9 +55,9 @@ const EditContactPage = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetchContactById(id);
+        const response = await getContactDetails(id);
         
-        // Populate  with fetched data
+        // Populate form with fetched data
         const contactData = response.data;
         setFormData({
           ContactID: contactData.ContactID || "",

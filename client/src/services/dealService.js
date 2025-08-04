@@ -6,11 +6,12 @@ const DEALS_URL = `${BASE_URL}/deals`;
 // ===========================
 // Get all deals
 // ===========================
-export async function getAllDeals() {
-  const response = await axios.get(DEALS_URL);
+export async function getAllDeals(onlyActive = true) {
+  const response = await axios.get(DEALS_URL, {
+    params: { onlyActive }
+  });
   return response.data;
 }
-
 // ===========================
 // Get deal details (with products, notes, attachments)
 // ===========================
@@ -46,10 +47,32 @@ export async function updateDeal(dealId, dealData) {
   return response.data;
 }
 
+// Deactivate a deal 
+export async function deactivateDeal(dealId) {
+  try {
+    const response = await axios.patch(`${DEALS_URL}/${dealId}/deactivate`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deactivating deal ${dealId}:`, error);
+    throw error;
+  }
+}
+
+// Reactivate a deal
+export async function reactivateDeal(dealId) {
+  try {
+    const response = await axios.patch(`${DEALS_URL}/${dealId}/reactivate`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error reactivating deal ${dealId}:`, error);
+    throw error;
+  }
+}
+
 // ===========================
 // Delete deal
 // ===========================
 export async function deleteDeal(dealId) {
-  const response = await axios.delete(`${DEALS_URL}/${dealId}`);
+  const response = await axios.delete(`${DEALS_URL}/${dealId}/delete`);
   return response.data;
 }

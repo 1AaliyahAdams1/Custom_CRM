@@ -1,38 +1,73 @@
 const dealStageService = require("../services/dealStageService");
 
 async function getAllDealStages(req, res) {
-  const dealStages = await dealStageService.getAllDealStages();
-  res.json(dealStages);
+  try {
+    const dealStages = await dealStageService.getAllDealStages();
+    res.json(dealStages);
+  } catch (err) {
+    console.error("Error getting all deal stages:", err);
+    res.status(500).json({ error: "Failed to get deal stages" });
+  }
 }
 
 async function getDealStageById(req, res) {
-  const dealStage = await dealStageService.getDealStageById(parseInt(req.params.id));
-  res.json(dealStage);
+  try {
+    const dealStage = await dealStageService.getDealStageById(req.params.id);
+    res.json(dealStage);
+  } catch (err) {
+    console.error("Error getting deal stage by ID:", err);
+    res.status(500).json({ error: "Failed to get deal stage" });
+  }
 }
 
 async function createDealStage(req, res) {
-  const newDealStage = await dealStageService.createDealStage(req.body);
-  res.status(201).json(newDealStage);
+  try {
+    const newDealStage = await dealStageService.createDealStage(req.body);
+    res.status(201).json(newDealStage);
+  } catch (err) {
+    console.error("Error creating deal stage:", err);
+    res.status(500).json({ error: "Failed to create deal stage" });
+  }
 }
 
 async function updateDealStage(req, res) {
-  const updatedDealStage = await dealStageService.updateDealStage(parseInt(req.params.id), req.body);
-  res.json(updatedDealStage);
+  try {
+    const updatedDealStage = await dealStageService.updateDealStage(req.params.id, req.body);
+    res.json(updatedDealStage);
+  } catch (err) {
+    console.error("Error updating deal stage:", err);
+    res.status(500).json({ error: "Failed to update deal stage" });
+  }
 }
 
 async function deactivateDealStage(req, res) {
-  const result = await dealStageService.deactivateDealStage(parseInt(req.params.id));
-  res.json(result);
+  try {
+    const result = await dealStageService.deactivateDealStage(req.params.id);
+    res.json(result);
+  } catch (err) {
+    console.error("Error deactivating deal stage:", err);
+    res.status(500).json({ error: "Failed to deactivate deal stage" });
+  }
 }
 
 async function reactivateDealStage(req, res) {
-  const result = await dealStageService.reactivateDealStage(parseInt(req.params.id));
-  res.json(result);
+  try {
+    const result = await dealStageService.reactivateDealStage(req.params.id);
+    res.json(result);
+  } catch (err) {
+    console.error("Error reactivating deal stage:", err);
+    res.status(500).json({ error: "Failed to reactivate deal stage" });
+  }
 }
 
 async function deleteDealStage(req, res) {
-  const result = await dealStageService.deleteDealStage(parseInt(req.params.id));
-  res.json(result);
+  try {
+    const result = await dealStageService.deleteDealStage(req.params.id);
+    res.json(result);
+  } catch (err) {
+    console.error("Error deleting deal stage:", err);
+    res.status(500).json({ error: "Failed to delete deal stage" });
+  }
 }
 
 module.exports = {
