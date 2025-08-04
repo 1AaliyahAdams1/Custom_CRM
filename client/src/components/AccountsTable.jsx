@@ -2,6 +2,7 @@
 // Description: Displays a list of accounts in a MUI DataGrid with edit, delete, and view detail actions
 
 import React from "react";
+// import {GridComponent} from "syncfusion/ej2-react-grids";
 import { DataGrid } from "@mui/x-data-grid";
 import { IconButton, Box, Tooltip, Chip } from "@mui/material";
 import { Edit, Delete, Info } from "@mui/icons-material";
