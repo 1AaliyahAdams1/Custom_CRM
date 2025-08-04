@@ -11,9 +11,9 @@ const getActivityByID = async (ActivityID) => {
 };
 
 const createActivity = async (activityData) => {
-  const { AccountID, TypeID, Due_date, PriorityLevelID } = activityData;
+  const { AccountID, TypeID, PriorityLevelID, DueToStart, DueToEnd, Completed } = activityData;
 
-  if (!AccountID || !TypeID || !Due_date || !PriorityLevelID) {
+  if (!AccountID || !TypeID || !PriorityLevelID || !DueToStart || !DueToEnd || !Completed) {
     throw new Error("Missing required activity fields");
   }
 
