@@ -18,7 +18,8 @@ const Header = () => {
 const styles = {
   header: {
     height: "60px",                 // Fixed height for the header bar
-    backgroundColor: "#0d47a1",    // Dark blue background color
+    // backgroundColor: "#0d47a1", 
+    backgroundColor: "black",    // Dark blue background color
     color: "#fff",                 // White text color
     display: "flex",               // Flexbox to align content
     alignItems: "center",          // Vertically center the text

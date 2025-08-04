@@ -4,16 +4,19 @@ const { dbConfig } = require("../dbConfig");
 //======================================
 // Get all activities
 //======================================
-const getAllActivities = async () => {
+const getAllActivities = async (onlyActive = true) => {
   try {
     const pool = await sql.connect(dbConfig);
-    const result = await pool.request().execute("GetActivity");
+    const result = await pool.request()
+      .input('OnlyActive', sql.Bit, onlyActive ? 1 : 0)
+      .execute("GetActivity"); 
     return result.recordset;
   } catch (error) {
     console.error("Error fetching all activities:", error);
     throw error;
   }
 };
+
 
 //======================================
 // Get activity by ID
@@ -36,15 +39,17 @@ const getActivityByID = async (ActivityID) => {
 // Create activity
 //======================================
 const createActivity = async (activityData) => {
-  const { AccountID, TypeID, Due_date, PriorityLevelID } = activityData;
+  const { AccountID, TypeID, PriorityLevelID, DueToStart, DueToEnd, Completed } = activityData;
 
   try {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
       .input("AccountID", sql.Int, AccountID)
       .input("TypeID", sql.Int, TypeID)
-      .input("Due_date", sql.SmallDateTime, Due_date)
       .input("PriorityLevelID", sql.Int, PriorityLevelID)
+      .input("DueToStart", sql.SmallDateTime, DueToStart)
+      .input("DueToEnd", sql.SmallDateTime, DueToEnd)
+      .input("Completed", sql.SmallDateTime, Completed)
       .execute("CreateActivity");
 
     return true;
@@ -58,16 +63,17 @@ const createActivity = async (activityData) => {
 // Update activity
 //======================================
 const updateActivity = async (ActivityID, activityData) => {
-  const { AccountID, TypeID, Due_date, PriorityLevelID } = activityData;
+  const { AccountID, TypeID, PriorityLevelID, DueToStart, DueToEnd, Completed } = activityData;
 
   try {
     const pool = await sql.connect(dbConfig);
     await pool.request()
-      .input("ActivityID", sql.Int, ActivityID)
       .input("AccountID", sql.Int, AccountID)
       .input("TypeID", sql.Int, TypeID)
-      .input("Due_date", sql.SmallDateTime, Due_date)
       .input("PriorityLevelID", sql.Int, PriorityLevelID)
+      .input("DueToStart", sql.SmallDateTime, DueToStart)
+      .input("DueToEnd", sql.SmallDateTime, DueToEnd)
+      .input("Completed", sql.SmallDateTime, Completed)
       .execute("UpdateActivity");
 
     return true;

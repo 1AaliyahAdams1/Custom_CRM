@@ -9,6 +9,8 @@ router.post("/", stateController.createState);
 router.put("/:id", stateController.updateState);
 router.patch("/deactivate/:id", stateController.deactivateState);
 router.patch("/reactivate/:id", stateController.reactivateState);
-router.delete("/:id", stateController.deleteState);
+router.delete("/:id/delete", stateController.deleteState);
+
+router.get("/name/:name", stateController.getIDByStateProvince);
 
 module.exports = router;

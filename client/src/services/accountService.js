@@ -16,26 +16,6 @@ export const getAllAccounts = async () => {
   }
 };
 
-// Get active accounts
-export const getActiveAccounts = async () => {
-  try {
-    return await axios.get(`${RESOURCE}/active`);
-  } catch (error) {
-    console.error("Error fetching active accounts:", error);
-    throw error;
-  }
-};
-
-// Get inactive accounts
-export const getInactiveAccounts = async () => {
-  try {
-    return await axios.get(`${RESOURCE}/inactive`);
-  } catch (error) {
-    console.error("Error fetching inactive accounts:", error);
-    throw error;
-  }
-};
-
 // Get account by ID
 export const fetchAccountById = async (id) => {
   try {

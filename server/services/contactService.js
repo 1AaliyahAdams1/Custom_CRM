@@ -1,34 +1,52 @@
 const contactRepo = require("../data/contactRepository");
 
-async function getAllContacts() {
-  return await contactRepo.getAllContacts();
+// Get all contacts
+async function getAllContacts(onlyActive = true) {
+  return await contactRepo.getAllContacts(onlyActive = true);
 }
 
+// Get contact details by ID
 async function getContactDetails(contactId) {
   return await contactRepo.getContactDetails(contactId);
 }
 
-async function getContactsByAccountId(accountId) {
-  return await contactRepo.getContactsByAccountId(accountId);
+// Create a new contact
+async function createContact(data, changedBy = 1) {
+  return await contactRepo.createContact(data, changedBy, 1);
 }
 
-async function createContact(data, changedBy) {
-  return await contactRepo.createContact(data, changedBy);
-}
-
-async function updateContact(contactId, data, changedBy) {
+// Update contact
+async function updateContact(contactId, data, changedBy = 1) {
   return await contactRepo.updateContact(contactId, data, changedBy);
 }
 
-async function deleteContact(contactId, changedBy) {
+// Deactivate contact (soft delete)
+async function deactivateContact(contactId, changedBy = 1) {
+  return await contactRepo.deactivateContact(contactId, changedBy);
+}
+
+// Reactivate contact
+async function reactivateContact(contactId, changedBy = 1) {
+  return await contactRepo.reactivateContact(contactId, changedBy);
+}
+
+// Hard delete contact (permanent delete)
+async function deleteContact(contactId, changedBy = 1) {
   return await contactRepo.deleteContact(contactId, changedBy);
+}
+
+// Get contacts by account name
+async function getContactsByAccountId(accountName) {
+  return await contactRepo.getContactsByAccountId(accountName);
 }
 
 module.exports = {
   getAllContacts,
   getContactDetails,
-  getContactsByAccountId,
   createContact,
   updateContact,
+  deactivateContact,
+  reactivateContact,
   deleteContact,
+  getContactsByAccountId,
 };
