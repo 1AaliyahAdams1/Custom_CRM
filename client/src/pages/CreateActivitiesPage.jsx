@@ -17,8 +17,10 @@ const CreateActivitiesPage = () => {
   const [formData, setFormData] = useState({
     AccountID: "",
     TypeID: "",
-    Due_date: "",
     Priority: "",
+    DueToStart: "",
+    DueToEnd: "",
+    Completed: ""
   });
 
   const accountService = {
@@ -104,14 +106,6 @@ const CreateActivitiesPage = () => {
           fullWidth
         />
 
-        <TextField
-          label="Due Date"
-          name="Due_date"
-          value={formData.Due_date}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
         <SmartDropdown
           label="Priority"
           name="PriorityLevelID"
@@ -125,9 +119,34 @@ const CreateActivitiesPage = () => {
           // onCreateNewClick={() => setShowPriorityPopup(true)}
           fullWidth
         />
+
+        <TextField
+          label="DueToStart"
+          name="DueToStart"
+          value={formData.DueToStart}
+          onChange={handleInputChange}
+          fullWidth
+        />
+
+        <TextField
+          label="DueToEnd"
+          name="DueToEnd"
+          value={formData.DueToEnd}
+          onChange={handleInputChange}
+          fullWidth
+        />
+
+        <TextField
+          label="Completed"
+          name="Completed"
+          value={formData.Completed}
+          onChange={handleInputChange}
+          fullWidth
+        />
       </Grid>
     </Box>
   );
 };
 
 export default CreateActivitiesPage;
+
