@@ -59,6 +59,10 @@ const AccountsPage = () => {
   const handleOpenCreate = () => {
     navigate("/accounts/create");
   };
+  // Handle edit action
+  const handleEdit = (account) => {
+  navigate(`/accounts/edit/${account.AccountID}`);
+};
 
 
 
@@ -120,6 +124,8 @@ const AccountsPage = () => {
       ) : (
         <AccountsTable
           accounts={accounts}
+          loading={loading}
+          onEdit={handleEdit} 
           onDeactivate={handleDeactivate}    
         />
       )}

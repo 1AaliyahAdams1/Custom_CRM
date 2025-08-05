@@ -11,6 +11,7 @@ import ContactsTable from "../components/ContactsTable";
 
 import {
   getAllContacts,
+  getContactsByAccountId,
   deactivateContact
 } from "../services/contactService";
 
@@ -48,6 +49,10 @@ const ContactsPage = () => {
     }
   }, [successMessage]);
 
+  // Handle edit action
+  const handleEdit = (contact) => {
+    navigate(`/contacts/edit/${contact.ContactID}`);
+  };
   // Navigate to create contact page
   const handleOpenCreate = () => {
     navigate("/contacts/create");
@@ -113,6 +118,8 @@ const ContactsPage = () => {
       ) : (
         <ContactsTable
           contacts={contacts}
+          loading={loading}
+          onEdit={handleEdit}  
           onDelete={handleDeactivate}
         />
       )}

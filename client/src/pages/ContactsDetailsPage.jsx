@@ -14,7 +14,7 @@ import {
   Tooltip,
   Box,
 } from "@mui/material";
-import { fetchContactById } from "../services/contactService";
+import { getContactsByAccountId } from "../services/contactService";
 
 function ContactsDetailsPage() {
   // Extract contact ID from URL params
@@ -38,7 +38,7 @@ function ContactsDetailsPage() {
       setLoading(true);  // Start loading spinner
       setError(null);    // Clear previous errors
       try {
-        const data = await fetchContactById(id);
+        const data = await getContactsByAccountId(id);
         // Handle if data is an array or single object
         const contact = Array.isArray(data) ? data[0] : data;
         if (!contact) throw new Error("Contact not found");
