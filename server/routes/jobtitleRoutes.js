@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const jobTitleController = require("../controllers/jobTitleController");
+const jobTitleController = require("../controllers/jobtitleController");
 
 router.get("/", jobTitleController.getAllJobTitles);
 router.get("/:id", jobTitleController.getJobTitleById);

@@ -1,40 +1,84 @@
 const contactService = require("../services/contactService");
 
 async function getAllContacts(req, res) {
-  const contacts = await contactService.getAllContacts();
-  res.json(contacts);
+  try {
+    const contacts = await contactService.getAllContacts(onlyActive = true);
+    res.json(contacts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
 
-async function getContactById(req, res) {
-  const contact = await contactService.getContactDetails(req.params.id);
-  res.json(contact);
+async function getContactDetails(req, res) {
+  try {
+    const contact = await contactService.getContactDetails(req.params.id);
+    res.json(contact);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
 
 async function getContactsByAccountId(req, res) {
-  const contacts = await contactService.getContactsByAccountId(req.params.accountId);
-  res.json(contacts);
+  try {
+    const contacts = await contactService.getContactsByAccountId(req.params.accountName);
+    res.json(contacts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
 
 async function createContact(req, res) {
-  const result = await contactService.createContact(req.body, req.body.changedBy || 0);
-  res.status(201).json(result);
+  try {
+    const result = await contactService.createContact(req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
 
 async function updateContact(req, res) {
-  const result = await contactService.updateContact(req.params.id, req.body, req.body.changedBy || 0);
-  res.json(result);
+  try {
+    const result = await contactService.updateContact(req.params.id, req.body);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+async function deactivateContact(req, res) {
+  try {
+    const result = await contactService.deactivateContact(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+async function reactivateContact(req, res) {
+  try {
+    const result = await contactService.reactivateContact(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
 
 async function deleteContact(req, res) {
-  const result = await contactService.deleteContact(req.params.id, req.body.changedBy || 0);
-  res.json(result);
+  try {
+    const result = await contactService.deleteContact(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
 
 module.exports = {
   getAllContacts,
-  getContactById,
+  getContactDetails,          
   getContactsByAccountId,
   createContact,
   updateContact,
+  deactivateContact,
+  reactivateContact,
   deleteContact,
 };

@@ -3,44 +3,35 @@
 
 //IMPORTS
 import React, { useEffect, useState } from "react";
+
 import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
 
-
+import { useNavigate } from "react-router-dom";
 import ContactsTable from "../components/ContactsTable";
-import ContactFormDialog from "../components/ContactsFormDialog";
 
 import {
   getAllContacts,
-  createContact,
-  updateContact,
-  deleteContact
+  deactivateContact
 } from "../services/contactService";
 
 const ContactsPage = () => {
-  // State to hold list of contacts fetched from backend
+  const navigate = useNavigate();
   const [contacts, setContacts] = useState([]);
-  // Loading spinner state during data fetch or operations
   const [loading, setLoading] = useState(false);
-  // Controls whether the add/edit dialog is open
-  const [dialogOpen, setDialogOpen] = useState(false);
-  // Holds the contact currently selected for editing (null when adding)
-  const [selectedContact, setSelectedContact] = useState(null);
-  // Holds error message string to display errors
   const [error, setError] = useState(null);
-  // Holds success message string for user feedback
   const [successMessage, setSuccessMessage] = useState("");
 
   // Function to fetch contacts from backend API
   const fetchContacts = async () => {
     setLoading(true);
-    setError(null); // Clear previous errors
+    setError(null);
     try {
-      const data = await getAllContacts(); // API call to fetch contacts
-      setContacts(data); // Save data to state
+      const data = await getAllContacts();
+      setContacts(data);
     } catch (err) {
-      setError("Failed to load contacts. Please try again."); // Show error message
+      setError("Failed to load contacts. Please try again.");
     } finally {
-      setLoading(false); // Turn off loading spinner
+      setLoading(false);
     }
   };
 
@@ -57,61 +48,32 @@ const ContactsPage = () => {
     }
   }, [successMessage]);
 
-  // Opens the dialog for adding a new contact
+  // Navigate to create contact page
   const handleOpenCreate = () => {
-    setSelectedContact(null); // Clear selected contact (create mode)
-    setError(null);           // Clear any errors
-    setDialogOpen(true);      // Open dialog
+    navigate("/contacts/create");
   };
 
-  // Opens the dialog to edit an existing contact
-  const handleOpenEdit = (contact) => {
-    setSelectedContact(contact); // Set the contact to be edited
-    setError(null);              // Clear any errors
-    setDialogOpen(true);         // Open dialog
-  };
 
-  // Deletes a contact after user confirmation
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this contact?");
-    if (!confirmDelete) return; // Cancel if user declines
+  // Deactivates a contact
+  const handleDeactivate = async (id) => {
+    const confirm = window.confirm("Are you sure you want to delete this contact? This will deactivate it.");
+    if (!confirm) return;
 
     setError(null);
     try {
-      await deleteContact(id);           // Call API to delete contact
-      setSuccessMessage("Contact deleted successfully."); // Show success message
-      await fetchContacts();             // Refresh list
-    } catch (err) {
-      setError("Failed to delete contact. Please try again."); // Show error
+      console.log("Deactivating (soft deleting) contact with ID:", id);
+      await deactivateContact(id);
+      setSuccessMessage("Contact deleted successfully."); // message visible to user
+      await fetchContacts();
+    } catch (error) {
+      console.log("Deactivating (soft deleting) contact with ID:", id);
+      console.error("Delete failed:", error);
+      setError("Failed to delete contact. Please try again.");
     }
   };
 
-  // Handles form submission for creating or updating a contact
-  const handleSave = async (contactData) => {
-    setError(null);
-    try {
-      if (contactData.ContactID) {
-        // Update existing contact
-        await updateContact(contactData.ContactID, contactData);
-        setSuccessMessage("Contact updated successfully.");
-      } else {
-        // Create new contact
-        await createContact(contactData);
-        setSuccessMessage("Contact created successfully.");
-      }
-      setDialogOpen(false);      // Close dialog after save
-      await fetchContacts();     // Refresh contact list
-    } catch (err) {
-      setError("Failed to save contact. Please try again."); // Show error on failure
-    }
-  };
 
-  // Closes the add/edit contact dialog
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedContact(null); // Clear selected contact when dialog closes
-  };
- return (
+  return (
     <Box p={4}>
       {/* Page title */}
       <Typography variant="h4" gutterBottom>
@@ -151,23 +113,16 @@ const ContactsPage = () => {
       ) : (
         <ContactsTable
           contacts={contacts}
-          onEdit={handleOpenEdit}   // Pass edit handler to table
-          onDelete={handleDelete}    // Pass delete handler to table
+          onDelete={handleDeactivate}
         />
       )}
 
-      {/* Dialog component for add/edit contact form */}
-      <ContactFormDialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        contact={selectedContact}
-        onSubmit={handleSave}
-      />
     </Box>
   );
 
-  
+
 };
+
 
 
 export default ContactsPage;

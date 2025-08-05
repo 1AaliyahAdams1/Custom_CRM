@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const dbConfig = require("../dbConfig");
+const { dbConfig } = require("../dbConfig");
 
 // =======================
 // Get all persons
@@ -24,30 +24,43 @@ async function getPersonById(personId) {
 // =======================
 // Create a person
 // =======================
-async function createPerson(personData) {
-  const {
-    CityID,
-    Title,
-    first_name,
-    middle_name,
-    surname,
-    linkedin_link,
-    personal_email,
-    personal_mobile,
-  } = personData;
+async function createPerson(data) {
+  try {
+    const {
+      CityID,
+      Title,
+      first_name,
+      middle_name,
+      surname,
+      linkedin_link,
+      personal_email,
+      personal_mobile,
+    } = data;
 
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("CityID", sql.Int, CityID)
-    .input("Title", sql.NVarChar(255), Title)
-    .input("first_name", sql.NVarChar(255), first_name)
-    .input("middle_name", sql.NVarChar(255), middle_name)
-    .input("surname", sql.NVarChar(255), surname)
-    .input("linkedin_link", sql.VarChar(255), linkedin_link)
-    .input("personal_email", sql.VarChar(255), personal_email)
-    .input("personal_mobile", sql.VarChar(63), personal_mobile)
-    .execute("createPerson");
-  return true;
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("CityID", sql.Int, CityID)
+      .input("Title", sql.NVarChar(255), Title)
+      .input("first_name", sql.NVarChar(255), first_name)
+      .input("middle_name", sql.NVarChar(255), middle_name)
+      .input("surname", sql.NVarChar(255), surname)
+      .input("linkedin_link", sql.VarChar(255), linkedin_link)
+      .input("personal_email", sql.VarChar(255), personal_email)
+      .input("personal_mobile", sql.VarChar(63), personal_mobile)
+      .execute("createPerson");
+
+    console.log("createPerson raw result:", result);
+
+    const personId = result.recordset?.[0]?.PersonID;
+    if (!personId) {
+      throw new Error("No PersonID returned from stored procedure");
+    }
+
+    return { PersonID: parseInt(personId) };
+  } catch (error) {
+    console.error("Person Repository Error [createPerson]:", error);
+    throw error;
+  }
 }
 
 // =======================
