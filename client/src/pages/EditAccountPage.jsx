@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { fetchAccountById, updateAccount } from "../services/accountService";
 
 // Monochrome theme for MUI components
 const theme = createTheme({
@@ -113,32 +114,29 @@ const EditAccount = () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data - replace with actual API call
-        const mockAccountData = {
-          AccountName: "Sample Account",
-          CityID: "1",
-          street_address1: "123 Main St",
-          street_address2: "Suite 100",
-          street_address3: "",
-          postal_code: "12345",
-          PrimaryPhone: "(555) 123-4567",
-          IndustryID: "2",
-          Website: "https://example.com",
-          fax: "(555) 123-4568",
-          email: "contact@example.com",
-          number_of_employees: "50",
-          annual_revenue: "1000000",
-          number_of_venues: "3",
-          number_of_releases: "12",
-          number_of_events_anually: "24",
-          ParentAccount: "",
-        };
-        
-        setFormData(mockAccountData);
+        const response= await fetchAccountById(id);
+
+        // Populate form with fetched data
+        const accountData = response.data;
+        setFormData({
+          AccountName: accountData.AccountName || "",
+          CityID: accountData.CityID || "",
+          street_address1: accountData.street_address1 || "",
+          // street_address2: accountData.street_address2 || "",
+          // street_address3: accountData.street_address3 || "",
+          postal_code: accountData.postal_code || "",
+          PrimaryPhone: accountData.PrimaryPhone || "",
+          IndustryID: accountData.IndustryID || "",
+          Website: accountData.Website || "",
+          fax: accountData.fax || "",
+          email: accountData.email || "",
+          number_of_employees: accountData.number_of_employees || "",
+          annual_revenue: accountData.annual_revenue || "",
+          number_of_venues: accountData.number_of_venues || "",
+          number_of_releases: accountData.number_of_releases || "",
+          number_of_events_anually: accountData.number_of_events_anually || "",
+          ParentAccount: accountData.ParentAccount || "",
+        });
       } catch (error) {
         console.error("Failed to fetch account:", error);
         setError("Failed to load account data. Please try again.");
@@ -146,6 +144,37 @@ const EditAccount = () => {
         setLoading(false);
       }
     };
+
+        
+    //     // Mock data - replace with actual API call
+    //     const mockAccountData = {
+    //       AccountName: "Sample Account",
+    //       CityID: "1",
+    //       street_address1: "123 Main St",
+    //       street_address2: "Suite 100",
+    //       street_address3: "",
+    //       postal_code: "12345",
+    //       PrimaryPhone: "(555) 123-4567",
+    //       IndustryID: "2",
+    //       Website: "https://example.com",
+    //       fax: "(555) 123-4568",
+    //       email: "contact@example.com",
+    //       number_of_employees: "50",
+    //       annual_revenue: "1000000",
+    //       number_of_venues: "3",
+    //       number_of_releases: "12",
+    //       number_of_events_anually: "24",
+    //       ParentAccount: "",
+    //     };
+        
+    //     setFormData(mockAccountData);
+    //   } catch (error) {
+    //     console.error("Failed to fetch account:", error);
+    //     setError("Failed to load account data. Please try again.");
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
 
     loadAccount();
   }, [id]);
@@ -345,7 +374,7 @@ const EditAccount = () => {
                   />
                 </Grid>
 
-                {/* Street Address 2 */}
+                {/* Street Address 2
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -358,7 +387,7 @@ const EditAccount = () => {
                 </Grid>
 
                 {/* Street Address 3 */}
-                <Grid item xs={12}>
+                {/* <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Street Address 3"
@@ -367,7 +396,7 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Grid> */} 
 
                 {/* Postal Code */}
                 <Grid item xs={12} sm={6}>
