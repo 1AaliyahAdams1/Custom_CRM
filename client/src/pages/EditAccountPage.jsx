@@ -311,9 +311,9 @@ const EditAccount = () => {
           {/* Form */}
           <Paper elevation={0} sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
-              <Grid container spacing={3}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
                 {/* Account Name - Required */}
-                <Grid item xs={12} sm={6}>
+                <Box sx={{ gridColumn: '1 / -1' }}>
                   <TextField
                     fullWidth
                     label="Account Name"
@@ -323,7 +323,7 @@ const EditAccount = () => {
                     required
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
 
                 {/* City ID */}
                 <Grid item xs={12} sm={6}>
@@ -374,7 +374,7 @@ const EditAccount = () => {
                   />
                 </Grid>
 
-                {/* Street Address 2
+                {/* Street Address 2*/}
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -387,7 +387,7 @@ const EditAccount = () => {
                 </Grid>
 
                 {/* Street Address 3 */}
-                {/* <Grid item xs={12}>
+                {<Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Street Address 3"
@@ -396,7 +396,7 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid> */} 
+                </Grid> } 
 
                 {/* Postal Code */}
                 <Grid item xs={12} sm={6}>
@@ -526,32 +526,8 @@ const EditAccount = () => {
                   />
                 </Grid>
 
-                {/* Footer Action Buttons */}
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2, pt: 2, borderTop: '1px solid #e5e5e5' }}>
-                    <Button
-                      variant="outlined"
-                      onClick={handleCancel}
-                      disabled={saving}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={saving}
-                      startIcon={saving ? <CircularProgress size={20} /> : null}
-                      sx={{
-                        backgroundColor: '#050505',
-                        '&:hover': { backgroundColor: '#333333' },
-                        minWidth: 140,
-                      }}
-                    >
-                      {saving ? 'Updating...' : 'Update Account'}
-                    </Button>
-                  </Box>
-                </Grid>
-              </Grid>
+                
+              </Box>
             </form>
           </Paper>
         </Box>
