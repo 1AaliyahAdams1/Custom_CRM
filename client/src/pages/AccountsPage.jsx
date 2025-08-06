@@ -1,5 +1,5 @@
 //PAGE : Main Accounts Page
-//Combines the UI components onto one page
+//Combines the UI components onto one page using UniversalTable
 
 //IMPORTS
 import { useNavigate } from "react-router-dom";
@@ -10,37 +10,23 @@ import {
   Button,
   CircularProgress,
   Alert,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
-  Checkbox,
   TextField,
   InputAdornment,
-  IconButton,
   Chip,
-  Menu,
-  MenuItem,
   FormControl,
   InputLabel,
   Select,
   Toolbar,
-  Tooltip,
+  MenuItem,
 } from "@mui/material";
 import {
   Search,
   Add,
-  MoreVert,
-  Edit,
-  Delete,
-  Info,
   Clear,
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import AccountsTable from '../components/AccountsTable';
+import UniversalTable from '../components/TableView';
 
 import {
   getAllAccounts,
@@ -103,6 +89,31 @@ const theme = createTheme({
   },
 });
 
+// Table configuration for accounts
+const accountsTableConfig = {
+  idField: 'AccountID',
+  columns: [
+    { field: 'AccountID', headerName: 'ID' },
+    { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
+    { field: 'CityID', headerName: 'City ID' },
+    { field: 'street_address', headerName: 'Street Address', type: 'truncated', maxWidth: 200 },
+    { field: 'postal_code', headerName: 'Postal Code' },
+    { field: 'PrimaryPhone', headerName: 'Phone' },
+    { field: 'email', headerName: 'Email' },
+    { field: 'Website', headerName: 'Website', type: 'link' },
+    { field: 'number_of_employees', headerName: '# Employees' },
+    { field: 'annual_revenue', headerName: 'Annual Revenue' },
+    { field: 'CreatedAt', headerName: 'Created' },
+    {
+      field: 'Active',
+      headerName: 'Status',
+      type: 'chip',
+      chipLabels: { true: 'Active', false: 'Inactive' },
+      chipColors: { true: '#000000', false: '#999999' }
+    },
+  ]
+};
+
 const AccountsPage = () => {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
@@ -112,8 +123,6 @@ const AccountsPage = () => {
   const [selected, setSelected] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [menuRowId, setMenuRowId] = useState(null);
 
   // Function to fetch accounts data from backend API
   const fetchAccounts = async () => {
@@ -201,18 +210,6 @@ const AccountsPage = () => {
     setSelected(newSelected);
   };
 
-  // Menu handlers
-  const handleMenuClick = (event, account) => {
-    event.stopPropagation();
-    setAnchorEl(event.currentTarget);
-    setMenuRowId(account);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setMenuRowId(null);
-  };
-
   // Navigate to create account page
   const handleOpenCreate = () => {
     navigate("/accounts/create");
@@ -234,18 +231,15 @@ const AccountsPage = () => {
       console.error("Delete failed:", error);
       setError("Failed to delete account. Please try again.");
     }
-    handleMenuClose();
   };
 
   const handleEdit = (account) => {
     // Pass the full account object like in your original onEdit
     navigate(`/accounts/edit/${account.AccountID}`, { state: { account } });
-    handleMenuClose();
   };
 
   const handleView = (accountId) => {
     navigate(`/accounts/${accountId}`);
-    handleMenuClose();
   };
 
   const clearFilters = () => {
@@ -253,29 +247,24 @@ const AccountsPage = () => {
     setStatusFilter('');
   };
 
-  const getStatusColor = (isActive) => {
-    return isActive ? '#000000' : '#999999';
-  };
-
-  const isSelected = (id) => selected.indexOf(id) !== -1;
-
-  const formatAddress = (account) => {
-    const fullAddress = [account.street_address1, account.street_address2, account.street_address3]
-      .filter(Boolean)
-      .join(" ");
-    return fullAddress || "-";
-  };
-
-  const formatRevenue = (revenue) => {
-    if (!revenue) return "-";
-    return new Intl.NumberFormat().format(revenue);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    if (isNaN(date)) return "-";
-    return date.toLocaleDateString();
+  // Custom formatters for the table
+  const formatters = {
+    street_address: (value, row) => {
+      const fullAddress = [row.street_address1, row.street_address2, row.street_address3]
+        .filter(Boolean)
+        .join(" ");
+      return fullAddress || "-";
+    },
+    annual_revenue: (value) => {
+      if (!value) return "-";
+      return new Intl.NumberFormat().format(value);
+    },
+    CreatedAt: (value) => {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (isNaN(date)) return "-";
+      return date.toLocaleDateString();
+    },
   };
 
   if (loading) {
@@ -424,56 +413,20 @@ const AccountsPage = () => {
             </Box>
           </Toolbar>
 
-          {/* Table */}
-          <AccountsTable
-            accounts={filteredAccounts}
+          {/* Universal Table */}
+          <UniversalTable
+            data={filteredAccounts}
+            columns={accountsTableConfig.columns}
+            idField={accountsTableConfig.idField}
             selected={selected}
             onSelectClick={handleSelectClick}
             onSelectAllClick={handleSelectAllClick}
-            isSelected={isSelected}
-            formatAddress={formatAddress}
-            formatRevenue={formatRevenue}
-            formatDate={formatDate}
-            getStatusColor={getStatusColor}
-            onMenuClick={handleMenuClick}
-            anchorEl={anchorEl}
-            menuRowId={menuRowId}
-            onMenuClose={handleMenuClose}
+            showSelection={true}
             onView={handleView}
             onEdit={handleEdit}
-            onDeactivate={handleDeactivate}
+            onDelete={handleDeactivate}
+            formatters={formatters}
           />
-
-
-          {/* Action Menu */}
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            PaperProps={{
-              sx: {
-                border: '1px solid #e5e5e5',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-              }
-            }}
-          >
-            <MenuItem onClick={() => handleView(menuRowId?.AccountID)} sx={{ color: '#050505' }}>
-              <Info sx={{ mr: 2, fontSize: 18 }} />
-              View Details
-            </MenuItem>
-            <MenuItem onClick={() => handleEdit(menuRowId)} sx={{ color: '#050505' }}>
-              <Edit sx={{ mr: 2, fontSize: 18 }} />
-              Edit Account
-            </MenuItem>
-            <MenuItem
-              onClick={() => handleDeactivate(menuRowId?.AccountID)}
-              sx={{ color: '#dc2626' }}
-              disabled={!menuRowId?.Active}
-            >
-              <Delete sx={{ mr: 2, fontSize: 18 }} />
-              {menuRowId?.Active ? 'Delete Account' : 'Account Inactive'}
-            </MenuItem>
-          </Menu>
 
           {/* Results footer */}
           <Box sx={{
