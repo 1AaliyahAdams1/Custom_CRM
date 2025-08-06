@@ -11,7 +11,7 @@ import {
   Paper,
   Grid,
 } from "@mui/material";
-import { getContactDetails, updateContact } from "../services/contactService";
+import { getContactDetails, updateContact ,getContactsByAccountId} from "../services/contactService";
 
 const EditContactPage = () => {
   const navigate = useNavigate();
@@ -55,7 +55,7 @@ const EditContactPage = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getContactDetails(id);
+        const response = await getContactsByAccountId(id);
         
         // Populate form with fetched data
         const contactData = response.data;
@@ -180,6 +180,64 @@ const EditContactPage = () => {
 
       <Paper elevation={3} sx={{ p: 3 }}>
         <form onSubmit={handleSubmit}>
+           {/* Contact ID */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="ContactID"
+                name="ContactID"
+                value={formData.ContactID}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
+          {/* Account ID */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Account ID"
+                name="AccountID"
+                value={formData.AccountID}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
+
+            {/* Person ID */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Person ID"
+                name="PersonID"
+                value={formData.PersonID}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
+
+            {/* Person City ID */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Person City ID"
+                name="PersonCityID"
+                value={formData.PersonCityID}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
+
+            {/* Person State/Province ID */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Person State/Province ID"
+                name="PersonStateProvinceID"
+                value={formData.PersonStateProvinceID}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
           <Grid container spacing={3}>
             {/* Title */}
             <Grid item xs={12} sm={6}>
@@ -255,13 +313,13 @@ const EditContactPage = () => {
               />
             </Grid>
 
-            {/* Primary Email */}
+            {/* Work Email */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Primary Email"
-                name="PrimaryEmail"
-                value={formData.PrimaryEmail}
+                label="Email"
+                name="Work Email"
+                value={formData.WorkEmail}
                 onChange={handleInputChange}
                 variant="outlined"
                 type="email"
@@ -318,53 +376,7 @@ const EditContactPage = () => {
               />
             </Grid>
 
-            {/* Account ID */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Account ID"
-                name="AccountID"
-                value={formData.AccountID}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Person ID */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Person ID"
-                name="PersonID"
-                value={formData.PersonID}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Person City ID */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Person City ID"
-                name="PersonCityID"
-                value={formData.PersonCityID}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Person State/Province ID */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Person State/Province ID"
-                name="PersonStateProvinceID"
-                value={formData.PersonStateProvinceID}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
+            
 
             {/* Still Employed Checkbox */}
             <Grid item xs={12}>
