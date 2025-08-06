@@ -1,20 +1,25 @@
-const sql = require("mssql");
-const dbConfig = require("../dbConfig");
+const { sql, poolPromise } = require("../../dbConfig");
 
 // =======================
 // Get Sales Pipeline Report
 // =======================
 async function getSalesPipeline(startDate = null, endDate = null) {
-  const pool = await sql.connect(dbConfig);
-  const request = pool.request();
-  if (startDate) request.input("StartDate", sql.Date, startDate);
-  if (endDate) request.input("EndDate", sql.Date, endDate);
-  const result = await request.execute("GetSalesPipeline");
-  return result.recordset;
+  try {
+    const pool = await poolPromise;
+    const request = pool.request();
+    
+    if (startDate) request.input("StartDate", sql.Date, startDate);
+    if (endDate) request.input("EndDate", sql.Date, endDate);
+    
+    const result = await request.execute("GetSalesPipeline");
+    return result.recordset;
+  } catch (error) {
+    console.error("Database error in getSalesPipeline:", error);
+    throw error;
+  }
 }
 
 module.exports = {
   getSalesPipeline,
 };
-
 //GetSalesPipeline
