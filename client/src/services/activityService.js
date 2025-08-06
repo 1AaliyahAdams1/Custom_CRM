@@ -22,7 +22,7 @@ export async function getAllActivities(onlyActive = true) {
 // ===========================
 // Get activity by ID
 // ===========================
-export async function getActivityDetails(activityId) {
+export async function fetchActivityById(activityId) {
   try {
     const response = await axios.get(`${ACTIVITIES_API}/${activityId}`);
     return response.data;

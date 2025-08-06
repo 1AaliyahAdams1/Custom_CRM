@@ -51,6 +51,10 @@ const DealsPage = () => {
   const handleOpenCreate = () => {
     navigate("/deals/create");
   };
+  // Handle edit action
+  const handleEdit = (deal) => {
+  navigate(`/deals/edit/${deal.DealID}`);
+  };
 
   // Delete a deal after user confirmation and refresh list
   const handleDeactivate = async (id) => {
@@ -107,6 +111,8 @@ const DealsPage = () => {
       ) : (
         <DealsTable
           deals={deals}
+          loading={loading}
+          onEdit={handleEdit} 
           onDelete={handleDeactivate}
         />
       )}

@@ -83,6 +83,7 @@ const ContactsTable = ({ contacts, loading, onEdit, onDelete }) => {
         disableSelectionOnClick
       />
     </div>
+    
   );
 };
 
