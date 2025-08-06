@@ -31,6 +31,7 @@ const poolPromise = new sql.ConnectionPool(dbConfig)
     console.error("Database Connection Failed! ", err);
     throw err;
   });
+  
 
 module.exports = {
   sql,
