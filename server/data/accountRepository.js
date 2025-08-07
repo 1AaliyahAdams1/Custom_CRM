@@ -335,8 +335,6 @@ async function deleteAccount(id, changedBy) {
 // =======================
 module.exports = {
   getAllAccounts,
-  getActiveAccounts,
-  getInactiveAccounts,
   createAccount,
   updateAccount,
   deactivateAccount, 
