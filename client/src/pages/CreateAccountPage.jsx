@@ -8,21 +8,19 @@ import {
   Paper,
   Alert,
   CircularProgress,
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
+  Grid
+ 
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { createAccount } from '../services/accountService'; 
+import { createAccount,getAllAccounts } from '../services/accountService'; 
 import { 
   cityService, 
   industryService, 
   countryService, 
   stateProvinceService 
 } from '../services/dropdownServices';
-
+import SmartDropdown from '../components/SmartDropdown';
 
 
 
@@ -89,10 +87,7 @@ const CreateAccount = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
-  const [cities, setCities] = useState([]);
-  const [industries, setIndustries] = useState([]);
-  const [countries, setCountries] = useState([]);
-  const [stateProvinces, setStateProvinces] = useState([]);
+  
 
 
   const [formData, setFormData] = useState({
@@ -119,28 +114,7 @@ const CreateAccount = () => {
     
   });
   
-  useEffect(() => {
-    const loadDropdownData = async () => {
-      try {
-        const [citiesData, industriesData, countriesData, stateProvincesData] = await Promise.all([
-          cityService.getAll(),
-          industryService.getAll(),
-          countryService.getAll(),
-          stateProvinceService.getAll()
-        ]);
-        
-        
-        setCities(citiesData);
-        setIndustries(industriesData);
-        setCountries(countriesData);
-        setStateProvinces(stateProvincesData);
-      } catch (error) {
-        console.error('Error loading dropdown data:', error);
-      }
-    };
-
-    loadDropdownData();
-  }, []);
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -273,97 +247,92 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
-
-                {/* City ID */}
-                <Box>
-                  <FormControl fullWidth disabled={isSubmitting}>
-                  <InputLabel id="cityID-label">City ID</InputLabel>
-                  <Select 
-                    labelId="cityID-label" 
-                    name="CityID" 
-                    value={formData.CityID} 
-                    onChange={handleInputChange} 
-                    disabled={isSubmitting}>
-                    <MenuItem value="">Select a city</MenuItem>
-                    {cities
-                      .filter(city => !formData.StateProvinceID || city.stateProvinceId === parseInt(formData.StateProvinceID))
-                      .map((city) => (
-                        <MenuItem key={city.id} value={city.id}>
-                    {city.name}
-                  </MenuItem>
-                    ))} 
-
-                  </Select>
-                  </FormControl>
-
-                </Box>
-
-                {/* Industry ID */}
-                <Box>
-                  <FormControl fullWidth disabled={isSubmitting}>
-                    <InputLabel id="industryID-label">Industry</InputLabel>
-                    <Select
-                      labelId="industryID-label"
-                      name="IndustryID"
-                      value={formData.IndustryID}
+                {/* Parent Account Dropdown */}
+                  <Box sx={{ gridColumn: '1 / -1' }}>
+                    <SmartDropdown
+                      label="Parent Account"
+                      name="ParentAccount"
+                      value={formData.ParentAccount}
                       onChange={handleInputChange}
+                      service={{
+                        getAll: async () => {
+                          const response = await getAllAccounts();
+                         
+                           return response.data || response;
+                        }
+                      }}
+                      displayField="AccountName"
+                      valueField=""
                       disabled={isSubmitting}
-                    >
-                      <MenuItem value="">Select an industry</MenuItem>
-                      {industries.map((industry) => (
-                        <MenuItem key={industry.id} value={industry.id}>
-                          {industry.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
+                    />
+                    </Box>
+
+
+               
                 {/* Country ID */}
                 <Box>
-                  <FormControl fullWidth disabled={isSubmitting}>
-                    <InputLabel id="countryID-label">Country</InputLabel>
-                    <Select
-                      labelId="countryID-label"
-                      name="CountryID"
-                      value={formData.CountryID}
-                      onChange={handleInputChange}
-                      disabled={isSubmitting}
-                    >
-                      <MenuItem value="">Select a country</MenuItem>
-                      {countries.map((country) => (
-                        <MenuItem key={country.id} value={country.id}>
-                          {country.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <SmartDropdown
+                    label="Country"
+                    name="CountryID"
+                    value={formData.CountryID}
+                    onChange={handleInputChange}
+                    service={countryService}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
+                  />
                 </Box>
                 {/* State Province ID */}
                 <Box>
-                  <FormControl fullWidth disabled={isSubmitting}>
-                    <InputLabel id="stateProvinceID-label">State/Province</InputLabel>
-                    <Select
-                      labelId="stateProvinceID-label"
-                      name="StateProvinceID"
-                      value={formData.StateProvinceID}
-                      onChange={handleInputChange}
-                      disabled={isSubmitting}
-                    >
-                      <MenuItem value="">Select a state/province</MenuItem>
-                      {stateProvinces
-                        .filter(sp => !formData.CountryID || sp.countryId === parseInt(formData.CountryID)) 
-                        .map((stateProvince) => (
-                          <MenuItem key={stateProvince.id} value={stateProvince.id}>
-                            {stateProvince.name}
-                          </MenuItem>
-                        ))}
-                    </Select>
-                  </FormControl>
+                    <SmartDropdown
+                    label="State/Province"
+                    name="StateProvinceID"
+                    value={formData.StateProvinceID}
+                    onChange={handleInputChange}
+                    service={{
+                      getAll: async () => {
+                        const allStates = await stateProvinceService.getAll();
+                        // Filter by selected country if one is selected
+                        return formData.CountryID 
+                          ? allStates.filter(state => state.countryId === parseInt(formData.CountryID))
+                          : allStates;
+                      }
+                    }}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* City Dropdown */}
+                <Box>
+                  <SmartDropdown
+                    label="City"
+                    name="CityID"
+                    value={formData.CityID}
+                    onChange={handleInputChange}
+                    service={cityService}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* Industry Dropdown */}
+                <Box>
+                  <SmartDropdown
+                    label="Industry"
+                    name="IndustryID"
+                    value={formData.IndustryID}
+                    onChange={handleInputChange}
+                    service={industryService}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
+                  />
                 </Box>
 
                 
                 {/* Street Address  */}
-                <Box /*sx={{ gridColumn: '1 / -1' }}*/>
+                <Box >
                   <TextField
                     fullWidth
                     label="Street Address 1 "
@@ -458,7 +427,18 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
-                
+                {/* Annual Revenue */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Annual Revenue"
+                    name="annual_revenue"
+                    
+                    value={formData.annual_revenue}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
                 
                 {/* #Employees */}
                 <Box>
@@ -472,18 +452,7 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
-                {/* Annual Revenue */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Annual Revenue"
-                    name="annual_revenue"
-                    
-                    value={formData.annual_revenue}
-                    onChange={handleInputChange}
-                    disabled={isSubmitting}
-                  />
-                </Box>
+
                 {/* # of Releases */}
                 <Box>
                   <TextField
@@ -508,6 +477,18 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
+                {/* Number of Venues */}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Number of Venues"
+                    name="number_of_venues"
+                    type="number"
+                    value={formData.number_of_venues}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Grid>
                 
                 
                 
