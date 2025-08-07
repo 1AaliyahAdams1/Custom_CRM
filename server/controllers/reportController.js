@@ -21,6 +21,32 @@ async function getSalesPipelineReport(req, res) {
   }
 }
 
+// Get Revenue Forecast Report
+async function getRevenueForecastReport(req, res) {
+  try {
+    const { startDate, endDate, stageName } = req.query;
+    
+    // Validate date format if provided
+    if (startDate && !isValidDate(startDate)) {
+      return res.status(400).json({ error: "Invalid startDate format. Use YYYY-MM-DD" });
+    }
+    if (endDate && !isValidDate(endDate)) {
+      return res.status(400).json({ error: "Invalid endDate format. Use YYYY-MM-DD" });
+    }
+    
+    // Use 'Closed Won' as default stageName if not provided
+    const stageNameToUse = stageName || 'Closed Won';
+    
+    const forecastData = await reportService.getRevenueForecastReport(startDate, endDate, stageNameToUse);
+    res.json(forecastData);
+    
+  } catch (err) {
+    console.error("Error getting revenue forecast report:", err.message, err.stack);
+    res.status(500).json({ error: "Failed to get revenue forecast report" });
+  }
+}
+
+
 // Helper function to validate date format
 function isValidDate(dateString) {
   const regex = /^\d{4}-\d{2}-\d{2}$/;
@@ -30,6 +56,8 @@ function isValidDate(dateString) {
   return date instanceof Date && !isNaN(date) && dateString === date.toISOString().split('T')[0];
 }
 
+
 module.exports = {
   getSalesPipelineReport,
+  getRevenueForecastReport,
 };
