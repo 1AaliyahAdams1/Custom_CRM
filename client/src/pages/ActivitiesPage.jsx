@@ -54,6 +54,10 @@ const ActivitiesPage = () => {
   const handleOpenCreate = () => {
     navigate("/activities/create");
   };
+  // Handle edit action
+  const handleEdit = (activity) => {
+  navigate(`/activities/edit/${activity.ActivityID}`);
+  };
 
   // Handle deleting an activity
   const handleDeactivate = async (id) => {
@@ -111,6 +115,8 @@ const ActivitiesPage = () => {
       ) : (
         <ActivitiesTable
           activities={activities}
+          loading={loading}
+          onEdit={handleEdit} 
           onDelete={handleDeactivate}
         />
       )}

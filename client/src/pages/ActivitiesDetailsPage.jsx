@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 
 
-import { getActivityDetails } from "../services/activityService"; // Make sure this function exists
+import { fetchActivityById } from "../services/activityService"; // Make sure this function exists
 
 function ActivitiesDetailsPage() {
   const { id } = useParams(); // Get activity ID from route params
@@ -32,7 +32,7 @@ function ActivitiesDetailsPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await getActivityDetails(id);  // API call returns array or object
+        const data = await fetchActivityById(id);  // API call returns array or object
         const activity = Array.isArray(data) ? data[0] : data;
         if (!activity) throw new Error("Activity not found");
         setActivity(activity);

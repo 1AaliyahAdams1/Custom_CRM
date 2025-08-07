@@ -13,7 +13,7 @@ import {
   Button,
   Box,
 } from "@mui/material";
-import { getDealDetails } from "../services/dealService"; // API call to get deal details
+import { fetchDealById, getDealDetails } from "../services/dealService"; // API call to get deal details
 
 function DealsDetailsPage() {
   const { id } = useParams();       // Get deal ID from URL params
@@ -34,7 +34,7 @@ function DealsDetailsPage() {
       setLoading(true);   // Show loading spinner
       setError(null);     // Clear previous errors
       try {
-        const data = await getDealDetails(id);      // Fetch deal by ID
+        const data = await fetchDealById(id);      // Fetch deal by ID
         const deal = Array.isArray(data) ? data[0] : data;  // Handle if data is array
         if (!deal) throw new Error("Deal not found");        // Throw if no deal
         setDeal(deal);                        // Save deal data to state

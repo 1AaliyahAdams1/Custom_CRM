@@ -1,54 +1,50 @@
-//PAGE: Login Page
-//NOTE : There is no functionality yet
-
-//IMPORTS
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, TextField, Button, Typography } from "@mui/material";
+import { login } from "../services/authService";
 
 const LoginPage = () => {
-  const navigate = useNavigate(); // Hook to programmatically navigate between routes
+  const [identifier, setIdentifier] = useState(""); // username or email
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  // Handles form submission for login
-  const handleLogin = (e) => {
-    e.preventDefault();           // Prevents default form submit behavior (page reload)
-    navigate("/dashboard");       // Redirect user to dashboard on login (no actual auth here)
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  try {
+    const response = await login(identifier, password);
+
+    // Log user info here:
+    console.log("Logged in user:", response.user || response);
+
+    localStorage.setItem("user", JSON.stringify(response.user || response));
+    navigate("/dashboard");
+  } catch (err) {
+    setError("Invalid username/email or password.");
+  }
+};
+
 
   return (
-    // Container Box to center the form and set width and margin
-    <Box sx={{ width: 300, mx: "auto", mt: 20 }}>
-      {/* Page title */}
-      <Typography variant="h5" mb={2}>Login</Typography>
-
-      {/* Login form */}
-      <form onSubmit={handleLogin}>
-        {/* Email input field */}
-        <TextField
-          label="Email"
-          name="email"
-          fullWidth               // Input takes full container width
-          margin="normal"         // Adds vertical margin
-        />
-        {/* Password input field */}
-        <TextField
-          label="Password"
-          name="password"
-          type="password"         // Masks input characters
-          fullWidth
-          margin="normal"
-        />
-        {/* Submit button */}
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth               // Button takes full container width
-          sx={{ mt: 2 }}          // Adds top margin
-        >
-          Login
-        </Button>
-      </form>
-    </Box>
+    <form onSubmit={handleSubmit}>
+      <h2>Login</h2>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      <input
+        type="text"
+        value={identifier}
+        onChange={(e) => setIdentifier(e.target.value)}
+        placeholder="Email or Username"
+        required
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+        required
+      />
+      <button type="submit">Login</button>
+    </form>
   );
 };
 

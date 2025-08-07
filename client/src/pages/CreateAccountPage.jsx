@@ -1,34 +1,100 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Button,
-  Grid,
   Box,
+  Typography,
   TextField,
-  Typography
+  Button,
+  Paper,
+  Alert,
+  CircularProgress,
+  Grid
+ 
 } from '@mui/material';
-import { createAccount, getAllAccounts } from '../services/accountService';
+import { ArrowBack, Save, Clear } from '@mui/icons-material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { createAccount,getAllAccounts } from '../services/accountService'; 
+import { 
+  cityService, 
+  industryService, 
+  countryService, 
+  stateProvinceService 
+} from '../services/dropdownServices';
 import SmartDropdown from '../components/SmartDropdown';
-import { cityService, industryService } from '../services/dropdownServices';
 
-const parentAccountService = {
-  getAll: async () => {
-    try {
-      const response = await getAllAccounts();
-      return response.data || [];
-    } catch (error) {
-      console.error('Error loading parent accounts:', error);
-      return [];
-    }
+
+
+// Monochrome theme for MUI components
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#050505',
+      contrastText: '#fafafa',
+    },
+    secondary: {
+      main: '#666666',
+      contrastText: '#ffffff',
+    },
+    background: {
+      default: '#fafafa',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#050505',
+      secondary: '#666666',
+    },
+    divider: '#e5e5e5',
   },
-};
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          border: '1px solid #e5e5e5',
+          borderRadius: '8px',
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            backgroundColor: '#ffffff',
+            '& fieldset': { borderColor: '#e5e5e5' },
+            '&:hover fieldset': { borderColor: '#cccccc' },
+            '&.Mui-focused fieldset': { borderColor: '#050505' },
+          },
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        outlined: {
+          borderColor: '#e5e5e5',
+          color: '#050505',
+          '&:hover': {
+            borderColor: '#cccccc',
+            backgroundColor: '#f5f5f5',
+          },
+        },
+      },
+    },
+  },
+});
 
-const CreateAccountPage = () => {
+const CreateAccount = () => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  
+
 
   const [formData, setFormData] = useState({
     AccountName: "",
     CityID: "",
+    CountryID: "",
+    StateProvinceID: "",
     street_address1: "",
     street_address2: "",
     street_address3: "",
@@ -43,8 +109,12 @@ const CreateAccountPage = () => {
     number_of_venues: "",
     number_of_releases: "",
     number_of_events_anually: "",
-    ParentAccount: null,
+    ParentAccount: "",
+    
+    
   });
+  
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -56,27 +126,45 @@ const CreateAccountPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.AccountName.trim()) {
+      setError("Account name is required");
+      return;
+    }
 
-    const cleanedData = {
-      ...formData,
-      CityID: formData.CityID === "" ? null : parseInt(formData.CityID),
-      IndustryID: formData.IndustryID === "" ? null : parseInt(formData.IndustryID),
-      number_of_employees: formData.number_of_employees === "" ? null : parseInt(formData.number_of_employees),
-      annual_revenue: formData.annual_revenue === "" ? null : parseFloat(formData.annual_revenue),
-      number_of_venues: formData.number_of_venues === "" ? null : parseInt(formData.number_of_venues),
-      number_of_releases: formData.number_of_releases === "" ? null : parseInt(formData.number_of_releases),
-      number_of_events_anually: formData.number_of_events_anually === "" ? null : parseInt(formData.number_of_events_anually),
-      ParentAccount: formData.ParentAccount || null,
-    };
-
+    setIsSubmitting(true);
+    setError(null);
 
     try {
-      console.log('Creating account:', formData);
-      await createAccount(cleanedData);
-      navigate('/accounts');
+      const cleanedData = {
+        ...formData,
+        CityID: formData.CityID === "" ? null : parseInt(formData.CityID),
+        IndustryID: formData.IndustryID === "" ? null : parseInt(formData.IndustryID),
+        number_of_employees: formData.number_of_employees === "" ? null : parseInt(formData.number_of_employees),
+        annual_revenue: formData.annual_revenue === "" ? null : parseFloat(formData.annual_revenue),
+        number_of_venues: formData.number_of_venues === "" ? null : parseInt(formData.number_of_venues),
+        number_of_releases: formData.number_of_releases === "" ? null : parseInt(formData.number_of_releases),
+        number_of_events_anually: formData.number_of_events_anually === "" ? null : parseInt(formData.number_of_events_anually),
+        ParentAccount: formData.ParentAccount || null,
+      };
+
+      console.log('Creating account:', cleanedData);
+      
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setSuccessMessage("Account created successfully!");
+      
+      // Navigate after a short delay
+      setTimeout(() => {
+        navigate('/accounts');
+      }, 1500);
+      
     } catch (error) {
       console.error('Error creating account:', error);
-      alert('Failed to create account. Please try again.');
+      setError('Failed to create account. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -85,184 +173,335 @@ const CreateAccountPage = () => {
   };
 
   return (
-    <Box p={4} maxWidth={900} mx="auto">
-      {/* Page Title */}
-      <Typography variant="h4" gutterBottom>
-        Create New Account
-      </Typography>
-      {/* Buttons at the top */}
-      <Box mb={3} display="flex" justifyContent="flex-end" gap={2}>
-        <Button variant="outlined" onClick={() => navigate(-1)}>
-          Back
-        </Button>
-        <Button variant="outlined" onClick={handleCancel}>
-          Cancel
-        </Button>
-        <Button variant="contained" color="primary" onClick={handleSubmit}>
-          Save Account
-        </Button>
+    <ThemeProvider theme={theme}>
+      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
+        <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+          {/* Header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              
+              <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
+                Create New Account
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<ArrowBack />}
+                onClick={() => navigate(-1)}
+                sx={{ minWidth: 'auto' }}
+              >
+                Back
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<Clear />}
+                onClick={handleCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                sx={{
+                  backgroundColor: '#050505',
+                  '&:hover': { backgroundColor: '#333333' },
+                }}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Account'}
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+
+          {/* Success Alert */}
+          {successMessage && (
+            <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+              {successMessage}
+            </Alert>
+          )}
+
+          {/* Form */}
+          <Paper elevation={0} sx={{ p: 3 }}>
+            <form onSubmit={handleSubmit}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+                {/* Account Name - Required */}
+                <Box sx={{ gridColumn: '1 / -1' }}>
+                  <TextField
+                    fullWidth
+                    label="Account Name"
+                    name="AccountName"
+                    value={formData.AccountName}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* Parent Account Dropdown */}
+                  <Box sx={{ gridColumn: '1 / -1' }}>
+                    <SmartDropdown
+                      label="Parent Account"
+                      name="ParentAccount"
+                      value={formData.ParentAccount}
+                      onChange={handleInputChange}
+                      service={{
+                        getAll: async () => {
+                          const response = await getAllAccounts();
+                         
+                           return response.data || response;
+                        }
+                      }}
+                      displayField="AccountName"
+                      valueField=""
+                      disabled={isSubmitting}
+                    />
+                    </Box>
+
+
+               
+                {/* Country ID */}
+                <Box>
+                  <SmartDropdown
+                    label="Country"
+                    name="CountryID"
+                    value={formData.CountryID}
+                    onChange={handleInputChange}
+                    service={countryService}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* State Province ID */}
+                <Box>
+                    <SmartDropdown
+                    label="State/Province"
+                    name="StateProvinceID"
+                    value={formData.StateProvinceID}
+                    onChange={handleInputChange}
+                    service={{
+                      getAll: async () => {
+                        const allStates = await stateProvinceService.getAll();
+                        // Filter by selected country if one is selected
+                        return formData.CountryID 
+                          ? allStates.filter(state => state.countryId === parseInt(formData.CountryID))
+                          : allStates;
+                      }
+                    }}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* City Dropdown */}
+                <Box>
+                  <SmartDropdown
+                    label="City"
+                    name="CityID"
+                    value={formData.CityID}
+                    onChange={handleInputChange}
+                    service={cityService}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* Industry Dropdown */}
+                <Box>
+                  <SmartDropdown
+                    label="Industry"
+                    name="IndustryID"
+                    value={formData.IndustryID}
+                    onChange={handleInputChange}
+                    service={industryService}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+
+                
+                {/* Street Address  */}
+                <Box >
+                  <TextField
+                    fullWidth
+                    label="Street Address 1 "
+                    name="street_address1"
+                    value={formData.street_address1}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                <Box >
+                  <TextField
+                    fullWidth
+                    label="Street Address 2 "
+                    name="street_address2"
+                    value={formData.street_address2}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                <Box >
+                  <TextField
+                    fullWidth
+                    label="Street Address 3 "
+                    name="street_address3"
+                    value={formData.street_address3}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+
+                {/* Postal code */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Postal Code"
+                    name="PostalCode"
+                    
+                    value={formData.postal_code}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* Primary Phone */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Primary Phone"
+                    name="PrimaryPhone"
+                    type="tel"
+                    value={formData.PrimaryPhone}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+
+                
+                {/* Email */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* Fax */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Fax"
+                    name="fax"
+                    
+                    value={formData.fax}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                
+
+                {/* Website */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Website"
+                    name="Website"
+                    type="url"
+                    value={formData.Website}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* Annual Revenue */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Annual Revenue"
+                    name="annual_revenue"
+                    
+                    value={formData.annual_revenue}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                
+                {/* #Employees */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Number of Employees"
+                    name="number_of_employees"
+                    
+                    value={formData.number_of_employees}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+
+                {/* # of Releases */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Number of Releases"
+                    name="number_of_releases"
+                    
+                    value={formData.number_of_releases}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* # of Events Annually */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Number of Events Annually"
+                    name="number_of_events_anually"
+                    
+                    value={formData.number_of_events_anually}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* Number of Venues */}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Number of Venues"
+                    name="number_of_venues"
+                    type="number"
+                    value={formData.number_of_venues}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Grid>
+                
+                
+                
+                
+
+                
+              </Box>
+            </form>
+          </Paper>
+        </Box>
       </Box>
-
-      <Grid item xs={20} sm={10}>
-        <TextField
-          label="Account Name"
-          name="AccountName"
-          value={formData.AccountName}
-          onChange={handleInputChange}
-          required
-          fullWidth
-        />
-
-        <SmartDropdown
-          label="City"
-          name="CityID"
-          value={formData.CityID}
-          onChange={handleInputChange}
-          service={cityService}
-          displayField="CityName"
-          valueField="CityID"
-          //Make a create page for city and link it to the command below
-          // onCreateNewClick={() => setOpenCreateCityDialog(true)}
-          fullWidth
-        />
-
-        <SmartDropdown
-          label="Industry"
-          name="IndustryID"
-          value={formData.IndustryID}
-          onChange={handleInputChange}
-          service={industryService}
-          displayField="IndustryName"
-          valueField="IndustryID"
-          //Make a create page for industry and link it to the command below
-          // onCreateNewClick={() => setOpenCreateIndustryDialog(true)}
-          fullWidth
-        />
-
-        <TextField
-          label="Street Address 1"
-          name="street_address1"
-          value={formData.street_address1}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Street Address 2"
-          name="street_address2"
-          value={formData.street_address2}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Street Address 3"
-          name="street_address3"
-          value={formData.street_address3}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Postal Code"
-          name="postal_code"
-          value={formData.postal_code}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Primary Phone"
-          name="PrimaryPhone"
-          value={formData.PrimaryPhone}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Fax"
-          name="fax"
-          value={formData.fax}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Email"
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Website"
-          name="Website"
-          value={formData.Website}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Number of Employees"
-          name="number_of_employees"
-          type="number"
-          value={formData.number_of_employees}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Annual Revenue"
-          name="annual_revenue"
-          type="number"
-          value={formData.annual_revenue}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Number of Venues"
-          name="number_of_venues"
-          type="number"
-          value={formData.number_of_venues}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Number of Releases"
-          name="number_of_releases"
-          type="number"
-          value={formData.number_of_releases}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Number of Events Annually"
-          name="number_of_events_anually"
-          type="number"
-          value={formData.number_of_events_anually}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <SmartDropdown
-          label="Parent Account"
-          name="ParentAccount"
-          value={formData.ParentAccount}
-          onChange={handleInputChange}
-          service={parentAccountService}
-          displayField="AccountName"
-          valueField="AccountID"
-          fullWidth
-        />
-
-      </Grid>
-    </Box>
+    </ThemeProvider>
   );
 };
 
-export default CreateAccountPage;
+export default CreateAccount;
