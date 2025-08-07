@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -9,20 +9,18 @@ import {
   Alert,
   CircularProgress,
   Grid
- 
+
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { createAccount,getAllAccounts } from '../services/accountService'; 
-import { 
-  cityService, 
-  industryService, 
-  countryService, 
-  stateProvinceService 
+import { createAccount, getAllAccounts } from '../services/accountService';
+import {
+  cityService,
+  industryService,
+  countryService,
+  stateProvinceService
 } from '../services/dropdownServices';
 import SmartDropdown from '../components/SmartDropdown';
-
-
 
 // Monochrome theme for MUI components
 const theme = createTheme({
@@ -87,8 +85,6 @@ const CreateAccount = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
-  
-
 
   const [formData, setFormData] = useState({
     AccountName: "",
@@ -109,12 +105,8 @@ const CreateAccount = () => {
     number_of_venues: "",
     number_of_releases: "",
     number_of_events_anually: "",
-    ParentAccount: "",
-    
-    
+    ParentAccount: ""
   });
-  
-  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -126,7 +118,7 @@ const CreateAccount = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.AccountName.trim()) {
       setError("Account name is required");
       return;
@@ -149,17 +141,16 @@ const CreateAccount = () => {
       };
 
       console.log('Creating account:', cleanedData);
-      
-      
+
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       setSuccessMessage("Account created successfully!");
-      
+
       // Navigate after a short delay
       setTimeout(() => {
         navigate('/accounts');
       }, 1500);
-      
+
     } catch (error) {
       console.error('Error creating account:', error);
       setError('Failed to create account. Please try again.');
@@ -179,12 +170,12 @@ const CreateAccount = () => {
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              
+
               <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
                 Create New Account
               </Typography>
             </Box>
-            
+
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
@@ -248,27 +239,24 @@ const CreateAccount = () => {
                   />
                 </Box>
                 {/* Parent Account Dropdown */}
-                  <Box sx={{ gridColumn: '1 / -1' }}>
-                    <SmartDropdown
-                      label="Parent Account"
-                      name="ParentAccount"
-                      value={formData.ParentAccount}
-                      onChange={handleInputChange}
-                      service={{
-                        getAll: async () => {
-                          const response = await getAllAccounts();
-                         
-                           return response.data || response;
-                        }
-                      }}
-                      displayField="AccountName"
-                      valueField=""
-                      disabled={isSubmitting}
-                    />
-                    </Box>
+                <Box sx={{ gridColumn: '1 / -1' }}>
+                  <SmartDropdown
+                    label="Parent Account"
+                    name="ParentAccount"
+                    value={formData.ParentAccount}
+                    onChange={handleInputChange}
+                    service={{
+                      getAll: async () => {
+                        const response = await getAllAccounts();
 
-
-               
+                        return response.data || response;
+                      }
+                    }}
+                    displayField="AccountName"
+                    valueField=""
+                    disabled={isSubmitting}
+                  />
+                </Box>
                 {/* Country ID */}
                 <Box>
                   <SmartDropdown
@@ -277,14 +265,40 @@ const CreateAccount = () => {
                     value={formData.CountryID}
                     onChange={handleInputChange}
                     service={countryService}
-                    displayField="name"
-                    valueField="id"
+                    displayField="CountryName"
+                    valueField="CountryID"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* Country ID */}
+                <Box>
+                  <SmartDropdown
+                    label="Country"
+                    name="CountryID"
+                    value={formData.CountryID}
+                    onChange={handleInputChange}
+                    service={countryService}
+                    displayField="CountryName"
+                    valueField="CountryID"
                     disabled={isSubmitting}
                   />
                 </Box>
                 {/* State Province ID */}
                 <Box>
-                    <SmartDropdown
+                  <SmartDropdown
+                    label="State/Province"
+                    name="StateProvinceID"
+                    value={formData.StateProvinceID}
+                    onChange={handleInputChange}
+                    service={countryService}
+                    displayField="StateProvinceID"
+                    valueField="StateProvinceID"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* State Province ID */}
+                <Box>
+                  <SmartDropdown
                     label="State/Province"
                     name="StateProvinceID"
                     value={formData.StateProvinceID}
@@ -293,13 +307,13 @@ const CreateAccount = () => {
                       getAll: async () => {
                         const allStates = await stateProvinceService.getAll();
                         // Filter by selected country if one is selected
-                        return formData.CountryID 
+                        return formData.CountryID
                           ? allStates.filter(state => state.countryId === parseInt(formData.CountryID))
                           : allStates;
                       }
                     }}
-                    displayField="name"
-                    valueField="id"
+                    displayField="StateProvinceID"
+                    valueField="StateProvinceID"
                     disabled={isSubmitting}
                   />
                 </Box>
@@ -311,8 +325,8 @@ const CreateAccount = () => {
                     value={formData.CityID}
                     onChange={handleInputChange}
                     service={cityService}
-                    displayField="name"
-                    valueField="id"
+                    displayField="CityName"
+                    valueField="CityID"
                     disabled={isSubmitting}
                   />
                 </Box>
@@ -324,18 +338,16 @@ const CreateAccount = () => {
                     value={formData.IndustryID}
                     onChange={handleInputChange}
                     service={industryService}
-                    displayField="name"
-                    valueField="id"
+                    displayField="IndustryName"
+                    valueField="IndustryID"
                     disabled={isSubmitting}
                   />
                 </Box>
-
-                
                 {/* Street Address  */}
                 <Box >
                   <TextField
                     fullWidth
-                    label="Street Address 1 "
+                    label="Street Address 1"
                     name="street_address1"
                     value={formData.street_address1}
                     onChange={handleInputChange}
@@ -345,7 +357,7 @@ const CreateAccount = () => {
                 <Box >
                   <TextField
                     fullWidth
-                    label="Street Address 2 "
+                    label="Street Address 2"
                     name="street_address2"
                     value={formData.street_address2}
                     onChange={handleInputChange}
@@ -355,21 +367,19 @@ const CreateAccount = () => {
                 <Box >
                   <TextField
                     fullWidth
-                    label="Street Address 3 "
+                    label="Street Address 3"
                     name="street_address3"
                     value={formData.street_address3}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
                 </Box>
-
                 {/* Postal code */}
                 <Box>
                   <TextField
                     fullWidth
                     label="Postal Code"
                     name="PostalCode"
-                    
                     value={formData.postal_code}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
@@ -387,8 +397,6 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
-
-                
                 {/* Email */}
                 <Box>
                   <TextField
@@ -407,14 +415,11 @@ const CreateAccount = () => {
                     fullWidth
                     label="Fax"
                     name="fax"
-                    
                     value={formData.fax}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
                 </Box>
-                
-
                 {/* Website */}
                 <Box>
                   <TextField
@@ -433,33 +438,31 @@ const CreateAccount = () => {
                     fullWidth
                     label="Annual Revenue"
                     name="annual_revenue"
-                    
+                    type="number"
                     value={formData.annual_revenue}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
                 </Box>
-                
                 {/* #Employees */}
                 <Box>
                   <TextField
                     fullWidth
                     label="Number of Employees"
                     name="number_of_employees"
-                    
+
                     value={formData.number_of_employees}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
                 </Box>
-
                 {/* # of Releases */}
                 <Box>
                   <TextField
                     fullWidth
                     label="Number of Releases"
                     name="number_of_releases"
-                    
+                    type="number"
                     value={formData.number_of_releases}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
@@ -471,7 +474,7 @@ const CreateAccount = () => {
                     fullWidth
                     label="Number of Events Annually"
                     name="number_of_events_anually"
-                    
+                    type="number"
                     value={formData.number_of_events_anually}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
@@ -489,12 +492,6 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Grid>
-                
-                
-                
-                
-
-                
               </Box>
             </form>
           </Paper>

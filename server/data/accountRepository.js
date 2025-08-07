@@ -41,7 +41,9 @@ async function createAccount(accountData, changedBy) {
       number_of_releases = null,
       number_of_events_anually = null,
       ParentAccount = null,
-      Active = true
+      Active = true,
+      StateProvinceID = null,
+      CountryID = null
     } = accountData;
 
     // Call your CreateAccount stored procedure
@@ -65,6 +67,8 @@ async function createAccount(accountData, changedBy) {
       .input("ParentAccount", sql.Int, ParentAccount)
       .input("Active", sql.Bit, Active)
       .input("ChangedBy", sql.Int, changedBy)
+      .input("StateProvinceID", sql.Int, StateProvinceID)
+      .input("CountryID", sql.Int, CountryID)
       .input("ActionTypeID", sql.Int, 1) // 1 = Create action type id
       .execute("CreateAccount");
 
