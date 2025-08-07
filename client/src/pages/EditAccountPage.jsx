@@ -10,9 +10,21 @@ import {
   CircularProgress,
   Skeleton,
   Grid,
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem, 
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { fetchAccountById, updateAccount,getAllAccounts } from "../services/accountService";
+import { 
+  cityService, 
+  industryService, 
+  countryService, 
+  stateProvinceService 
+} from '../services/dropdownServices';
+import SmartDropdown from '../components/SmartDropdown';
 
 // Monochrome theme for MUI components
 const theme = createTheme({
@@ -75,10 +87,19 @@ const theme = createTheme({
 const EditAccount = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [cities, setCities] = useState([]);
+  const [industries, setIndustries] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [stateProvinces, setStateProvinces] = useState([]);
   
   const [formData, setFormData] = useState({
     AccountName: "",
     CityID: "",
+    CountryID: "",
+    StateProvinceID: "",
     street_address1: "",
     street_address2: "",
     street_address3: "",
@@ -98,8 +119,29 @@ const EditAccount = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+      const loadDropdownData = async () => {
+        try {
+          const [citiesData, industriesData, countriesData, stateProvincesData] = await Promise.all([
+            cityService.getAll(),
+            industryService.getAll(),
+            countryService.getAll(),
+            stateProvinceService.getAll()
+          ]);
+          
+          
+          setCities(citiesData);
+          setIndustries(industriesData);
+          setCountries(countriesData);
+          setStateProvinces(stateProvincesData);
+        } catch (error) {
+          console.error('Error loading dropdown data:', error);
+        }
+      };
+  
+      loadDropdownData();
+    }, []);
 
   // Fetch account data when component mounts
   useEffect(() => {
@@ -113,32 +155,29 @@ const EditAccount = () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data - replace with actual API call
-        const mockAccountData = {
-          AccountName: "Sample Account",
-          CityID: "1",
-          street_address1: "123 Main St",
-          street_address2: "Suite 100",
-          street_address3: "",
-          postal_code: "12345",
-          PrimaryPhone: "(555) 123-4567",
-          IndustryID: "2",
-          Website: "https://example.com",
-          fax: "(555) 123-4568",
-          email: "contact@example.com",
-          number_of_employees: "50",
-          annual_revenue: "1000000",
-          number_of_venues: "3",
-          number_of_releases: "12",
-          number_of_events_anually: "24",
-          ParentAccount: "",
-        };
-        
-        setFormData(mockAccountData);
+        const response= await fetchAccountById(id);
+
+        // Populate form with fetched data
+        const accountData = response.data;
+        setFormData({
+          AccountName: accountData.AccountName || "",
+          CityID: accountData.CityID || "",
+          street_address1: accountData.street_address1 || "",
+          street_address2: accountData.street_address2 || "",
+          street_address3: accountData.street_address3 || "",
+          postal_code: accountData.postal_code || "",
+          PrimaryPhone: accountData.PrimaryPhone || "",
+          IndustryID: accountData.IndustryID || "",
+          Website: accountData.Website || "",
+          fax: accountData.fax || "",
+          email: accountData.email || "",
+          number_of_employees: accountData.number_of_employees || "",
+          annual_revenue: accountData.annual_revenue || "",
+          number_of_venues: accountData.number_of_venues || "",
+          number_of_releases: accountData.number_of_releases || "",
+          number_of_events_anually: accountData.number_of_events_anually || "",
+          ParentAccount: accountData.ParentAccount || "",
+        });
       } catch (error) {
         console.error("Failed to fetch account:", error);
         setError("Failed to load account data. Please try again.");
@@ -147,6 +186,7 @@ const EditAccount = () => {
       }
     };
 
+        
     loadAccount();
   }, [id]);
 
@@ -282,9 +322,9 @@ const EditAccount = () => {
           {/* Form */}
           <Paper elevation={0} sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
-              <Grid container spacing={3}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
                 {/* Account Name - Required */}
-                <Grid item xs={12} sm={6}>
+                <Box sx={{ gridColumn: '1 / -1' }}>
                   <TextField
                     fullWidth
                     label="Account Name"
@@ -294,58 +334,106 @@ const EditAccount = () => {
                     required
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
+                {/* Parent Account Dropdown */}
+                  <Box sx={{ gridColumn: '1 / -1' }}>
+                    <SmartDropdown
+                      label="Parent Account"
+                      name="ParentAccount"
+                      value={formData.ParentAccount}
+                      onChange={handleInputChange}
+                      service={{
+                        getAll: async () => {
+                          const response = await getAllAccounts();
+                         
+                           return response.data || response;
+                        }
+                      }}
+                      displayField="AccountName"
+                      valueField=""
+                      disabled={isSubmitting}
+                    />
+                    </Box>
 
-                {/* City ID */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="City ID"
-                    name="CityID"
-                    value={formData.CityID}
+               {/* Country ID */}
+                <Box>
+                  <SmartDropdown
+                    label="Country"
+                    name="CountryID"
+                    value={formData.CountryID}
                     onChange={handleInputChange}
-                    disabled={saving}
+                    service={countryService}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
                   />
-                </Grid>
+                </Box>
+                {/* State Province ID */}
+                  <Box>
+                    <SmartDropdown
+                      label="State/Province"
+                      name="StateProvinceID"
+                      value={formData.StateProvinceID}
+                      onChange={handleInputChange}
+                      service={{
+                      getAll: async () => {
+                      const allStates = await stateProvinceService.getAll();
+                      // Filter by selected country if one is selected
+                      return formData.CountryID 
+                          ? allStates.filter(state => state.countryId === parseInt(formData.CountryID))
+                            : allStates;
+                      }
+                    }}
+                      displayField="name"
+                      valueField="id"
+                      disabled={isSubmitting}
+                    />
+                  </Box>
+                {/* City Dropdown */}
+                  <Box>
+                    <SmartDropdown
+                      label="City"
+                      name="CityID"
+                      value={formData.CityID}
+                      onChange={handleInputChange}
+                      service={cityService}
+                      displayField="name"
+                      valueField="id"
+                      disabled={isSubmitting}
+                    />
+                    </Box>
+                {/* Industry Dropdown */}
+                  <Box>
+                    <SmartDropdown
+                      label="Industry"
+                      name="IndustryID"
+                      value={formData.IndustryID}
+                      onChange={handleInputChange}
+                      service={industryService}
+                      displayField="name"
+                      valueField="id"
+                      disabled={isSubmitting}
+                    />
+                    </Box>
+               
+                               
+                {/* Street Address1  */}
+                  <Box >
+                    <TextField
+                      fullWidth
+                      label="Street Address 1 "
+                      name="street_address1"
+                      value={formData.street_address1}
+                      onChange={handleInputChange}
+                      disabled={isSubmitting}
+                    />
+                  </Box>
 
-                {/* Industry ID */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Industry ID"
-                    name="IndustryID"
-                    value={formData.IndustryID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Grid>
+                
 
-                {/* Primary Phone */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Primary Phone"
-                    name="PrimaryPhone"
-                    type="tel"
-                    value={formData.PrimaryPhone}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Grid>
+                
 
-                {/* Street Address 1 */}
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Street Address 1"
-                    name="street_address1"
-                    value={formData.street_address1}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Grid>
-
-                {/* Street Address 2 */}
+                {/* Street Address 2*/}
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -358,7 +446,7 @@ const EditAccount = () => {
                 </Grid>
 
                 {/* Street Address 3 */}
-                <Grid item xs={12}>
+                {<Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Street Address 3"
@@ -367,7 +455,7 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Grid> } 
 
                 {/* Postal Code */}
                 <Grid item xs={12} sm={6}>
@@ -376,6 +464,30 @@ const EditAccount = () => {
                     label="Postal Code"
                     name="postal_code"
                     value={formData.postal_code}
+                    onChange={handleInputChange}
+                    disabled={saving}
+                  />
+                </Grid>
+                {/* Primary Phone */}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Primary Phone"
+                    name="PrimaryPhone"
+                    type="tel"
+                    value={formData.PrimaryPhone}
+                    onChange={handleInputChange}
+                    disabled={saving}
+                  />
+                </Grid>
+                {/* Email */}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
                     onChange={handleInputChange}
                     disabled={saving}
                   />
@@ -394,18 +506,7 @@ const EditAccount = () => {
                   />
                 </Grid>
 
-                {/* Email */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Grid>
+                
 
                 {/* Website */}
                 <Grid item xs={12} sm={6}>
@@ -420,18 +521,7 @@ const EditAccount = () => {
                   />
                 </Grid>
 
-                {/* Number of Employees */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Number of Employees"
-                    name="number_of_employees"
-                    type="number"
-                    value={formData.number_of_employees}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Grid>
+                
 
                 {/* Annual Revenue */}
                 <Grid item xs={12} sm={6}>
@@ -445,19 +535,20 @@ const EditAccount = () => {
                     disabled={saving}
                   />
                 </Grid>
-
-                {/* Number of Venues */}
+                {/* Number of Employees */}
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Number of Venues"
-                    name="number_of_venues"
+                    label="Number of Employees"
+                    name="number_of_employees"
                     type="number"
-                    value={formData.number_of_venues}
+                    value={formData.number_of_employees}
                     onChange={handleInputChange}
                     disabled={saving}
                   />
                 </Grid>
+
+                
 
                 {/* Number of Releases */}
                 <Grid item xs={12} sm={6}>
@@ -484,45 +575,25 @@ const EditAccount = () => {
                     disabled={saving}
                   />
                 </Grid>
-
-                {/* Parent Account */}
+                {/* Number of Venues */}
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Parent Account"
-                    name="ParentAccount"
-                    value={formData.ParentAccount}
+                    label="Number of Venues"
+                    name="number_of_venues"
+                    type="number"
+                    value={formData.number_of_venues}
                     onChange={handleInputChange}
                     disabled={saving}
                   />
                 </Grid>
+                
+               
 
-                {/* Footer Action Buttons */}
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2, pt: 2, borderTop: '1px solid #e5e5e5' }}>
-                    <Button
-                      variant="outlined"
-                      onClick={handleCancel}
-                      disabled={saving}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={saving}
-                      startIcon={saving ? <CircularProgress size={20} /> : null}
-                      sx={{
-                        backgroundColor: '#050505',
-                        '&:hover': { backgroundColor: '#333333' },
-                        minWidth: 140,
-                      }}
-                    >
-                      {saving ? 'Updating...' : 'Update Account'}
-                    </Button>
-                  </Box>
-                </Grid>
-              </Grid>
+                
+
+                
+              </Box>
             </form>
           </Paper>
         </Box>

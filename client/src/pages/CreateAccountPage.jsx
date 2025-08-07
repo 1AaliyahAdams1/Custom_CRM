@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -8,10 +8,21 @@ import {
   Paper,
   Alert,
   CircularProgress,
-  Grid,
+  Grid
+ 
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { createAccount,getAllAccounts } from '../services/accountService'; 
+import { 
+  cityService, 
+  industryService, 
+  countryService, 
+  stateProvinceService 
+} from '../services/dropdownServices';
+import SmartDropdown from '../components/SmartDropdown';
+
+
 
 // Monochrome theme for MUI components
 const theme = createTheme({
@@ -76,10 +87,14 @@ const CreateAccount = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  
+
 
   const [formData, setFormData] = useState({
     AccountName: "",
     CityID: "",
+    CountryID: "",
+    StateProvinceID: "",
     street_address1: "",
     street_address2: "",
     street_address3: "",
@@ -95,7 +110,11 @@ const CreateAccount = () => {
     number_of_releases: "",
     number_of_events_anually: "",
     ParentAccount: "",
+    
+    
   });
+  
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -131,7 +150,7 @@ const CreateAccount = () => {
 
       console.log('Creating account:', cleanedData);
       
-      // Simulate API call
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setSuccessMessage("Account created successfully!");
@@ -160,20 +179,21 @@ const CreateAccount = () => {
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {/* <Button
-                variant="outlined"
-                startIcon={<ArrowBack />}
-                onClick={() => navigate(-1)}
-                sx={{ minWidth: 'auto' }}
-              >
-                Back
-              </Button> */}
+              
               <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
                 Create New Account
               </Typography>
             </Box>
             
             <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<ArrowBack />}
+                onClick={() => navigate(-1)}
+                sx={{ minWidth: 'auto' }}
+              >
+                Back
+              </Button>
               <Button
                 variant="outlined"
                 startIcon={<Clear />}
@@ -216,7 +236,7 @@ const CreateAccount = () => {
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
                 {/* Account Name - Required */}
-                <Box>
+                <Box sx={{ gridColumn: '1 / -1' }}>
                   <TextField
                     fullWidth
                     label="Account Name"
@@ -227,50 +247,117 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
+                {/* Parent Account Dropdown */}
+                  <Box sx={{ gridColumn: '1 / -1' }}>
+                    <SmartDropdown
+                      label="Parent Account"
+                      name="ParentAccount"
+                      value={formData.ParentAccount}
+                      onChange={handleInputChange}
+                      service={{
+                        getAll: async () => {
+                          const response = await getAllAccounts();
+                         
+                           return response.data || response;
+                        }
+                      }}
+                      displayField="AccountName"
+                      valueField=""
+                      disabled={isSubmitting}
+                    />
+                    </Box>
 
-                {/* City ID */}
+
+               
+                {/* Country ID */}
                 <Box>
-                  <TextField
-                    fullWidth
-                    label="City ID"
+                  <SmartDropdown
+                    label="Country"
+                    name="CountryID"
+                    value={formData.CountryID}
+                    onChange={handleInputChange}
+                    service={countryService}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* State Province ID */}
+                <Box>
+                    <SmartDropdown
+                    label="State/Province"
+                    name="StateProvinceID"
+                    value={formData.StateProvinceID}
+                    onChange={handleInputChange}
+                    service={{
+                      getAll: async () => {
+                        const allStates = await stateProvinceService.getAll();
+                        // Filter by selected country if one is selected
+                        return formData.CountryID 
+                          ? allStates.filter(state => state.countryId === parseInt(formData.CountryID))
+                          : allStates;
+                      }
+                    }}
+                    displayField="name"
+                    valueField="id"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* City Dropdown */}
+                <Box>
+                  <SmartDropdown
+                    label="City"
                     name="CityID"
                     value={formData.CityID}
                     onChange={handleInputChange}
+                    service={cityService}
+                    displayField="name"
+                    valueField="id"
                     disabled={isSubmitting}
                   />
                 </Box>
-
-                {/* Industry ID */}
+                {/* Industry Dropdown */}
                 <Box>
-                  <TextField
-                    fullWidth
-                    label="Industry ID"
+                  <SmartDropdown
+                    label="Industry"
                     name="IndustryID"
                     value={formData.IndustryID}
                     onChange={handleInputChange}
+                    service={industryService}
+                    displayField="name"
+                    valueField="id"
                     disabled={isSubmitting}
                   />
                 </Box>
 
-                {/* Primary Phone */}
-                <Box>
+                
+                {/* Street Address  */}
+                <Box >
                   <TextField
                     fullWidth
-                    label="Primary Phone"
-                    name="PrimaryPhone"
-                    type="tel"
-                    value={formData.PrimaryPhone}
+                    label="Street Address 1 "
+                    name="street_address1"
+                    value={formData.street_address1}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
                 </Box>
-                {/* Street Address  */}
-                <Box /*sx={{ gridColumn: '1 / -1' }}*/>
+                <Box >
                   <TextField
                     fullWidth
-                    label="Street Address "
-                    name="street_address1"
-                    value={formData.street_address1}
+                    label="Street Address 2 "
+                    name="street_address2"
+                    value={formData.street_address2}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                <Box >
+                  <TextField
+                    fullWidth
+                    label="Street Address 3 "
+                    name="street_address3"
+                    value={formData.street_address3}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
@@ -284,6 +371,18 @@ const CreateAccount = () => {
                     name="PostalCode"
                     
                     value={formData.postal_code}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* Primary Phone */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Primary Phone"
+                    name="PrimaryPhone"
+                    type="tel"
+                    value={formData.PrimaryPhone}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
@@ -302,6 +401,19 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
+                {/* Fax */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Fax"
+                    name="fax"
+                    
+                    value={formData.fax}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                
 
                 {/* Website */}
                 <Box>
@@ -311,18 +423,6 @@ const CreateAccount = () => {
                     name="Website"
                     type="url"
                     value={formData.Website}
-                    onChange={handleInputChange}
-                    disabled={isSubmitting}
-                  />
-                </Box>
-                {/* #Employees */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Number of Employees"
-                    name="number_of_employees"
-                    
-                    value={formData.number_of_employees}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
@@ -339,32 +439,62 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
-
-                {/* Footer Action Buttons */}
-                <Box sx={{ gridColumn: '1 / -1' }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2, pt: 2, borderTop: '1px solid #e5e5e5' }}>
-                    <Button
-                      variant="outlined"
-                      onClick={handleCancel}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={isSubmitting}
-                      startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
-                      sx={{
-                        backgroundColor: '#050505',
-                        '&:hover': { backgroundColor: '#333333' },
-                        minWidth: 140,
-                      }}
-                    >
-                      {isSubmitting ? 'Creating...' : 'Create Account'}
-                    </Button>
-                  </Box>
+                
+                {/* #Employees */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Number of Employees"
+                    name="number_of_employees"
+                    
+                    value={formData.number_of_employees}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
                 </Box>
+
+                {/* # of Releases */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Number of Releases"
+                    name="number_of_releases"
+                    
+                    value={formData.number_of_releases}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* # of Events Annually */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Number of Events Annually"
+                    name="number_of_events_anually"
+                    
+                    value={formData.number_of_events_anually}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+                {/* Number of Venues */}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Number of Venues"
+                    name="number_of_venues"
+                    type="number"
+                    value={formData.number_of_venues}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Grid>
+                
+                
+                
+                
+
+                
               </Box>
             </form>
           </Paper>
