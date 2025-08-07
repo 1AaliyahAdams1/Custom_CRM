@@ -1,3 +1,5 @@
+// controllers/activityController.js
+
 const activityService = require("../services/activityService");
 
 const getAllActivities = async (req, res) => {

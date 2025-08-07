@@ -4,6 +4,7 @@ const stateController = require("../controllers/stateProvinceController");
 
 router.get("/", stateController.getAllStates);
 router.get("/:id", stateController.getStateById);
+router.get("/name/:name", stateController.getIDByStateProvince);
 router.post("/", stateController.createState);
 router.put("/:id", stateController.updateState);
 router.patch("/deactivate/:id", stateController.deactivateState);
