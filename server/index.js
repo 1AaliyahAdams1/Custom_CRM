@@ -39,6 +39,8 @@ const stateProvinceRoutes = require("./routes/stateProvinceRoutes");
 const productRoutes = require("./routes/productRoutes");
 const personRoutes = require('./routes/personRoutes');
 const reportRoutes = require("./routes/reportRoutes");
+const authRoutes = require("./routes/authRoutes");
+
 
 
 // Test route
@@ -61,7 +63,7 @@ app.use("/states", stateProvinceRoutes);
 app.use("/products", productRoutes);
 app.use('/persons', personRoutes);
 app.use("/reports", reportRoutes);
-
+app.use("/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 const HOST = "0.0.0.0";
