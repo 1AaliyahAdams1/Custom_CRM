@@ -177,7 +177,7 @@ export function UniversalDetailView({
               {value}
             </MuiLink>
           ) : field.type === "currency" && value ? (
-            `$${parseFloat(value).toLocaleString()}`
+            `${parseFloat(value).toLocaleString()}`
           ) : field.type === "date" && value ? (
             new Date(value).toLocaleDateString()
           ) : field.type === "datetime" && value ? (
@@ -386,21 +386,7 @@ export function UniversalDetailView({
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Button
-                variant="outlined"
-                onClick={onBack}
-                startIcon={<ArrowBack />}
-                sx={{
-                  borderColor: '#e5e5e5',
-                  color: '#666666',
-                  '&:hover': {
-                    borderColor: '#cccccc',
-                    backgroundColor: '#f5f5f5',
-                  },
-                }}
-              >
-                Back
-              </Button>
+             
               <Box>
                 <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600, mb: 0.5 }}>
                   {title}
@@ -426,7 +412,9 @@ export function UniversalDetailView({
                   </Box>
                 )}
               </Box>
+               
             </Box>
+            
             
             {!readOnly && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -451,6 +439,21 @@ export function UniversalDetailView({
                   </>
                 ) : (
                   <>
+                  <Button
+                variant="outlined"
+                onClick={onBack}
+                startIcon={<ArrowBack />}
+                sx={{
+                  borderColor: '#e5e5e5',
+                  color: '#666666',
+                  '&:hover': {
+                    borderColor: '#cccccc',
+                    backgroundColor: '#f5f5f5',
+                  },
+                }}
+              >
+                Back
+              </Button>
                     {onSave && (
                       <Button
                         variant="contained"
@@ -474,9 +477,12 @@ export function UniversalDetailView({
                   </>
                 )}
               </Box>
+              
             )}
           </Box>
+          
         </Box>
+        
 
         {/* Main Entity Details */}
         {mainFields.length > 0 && (
