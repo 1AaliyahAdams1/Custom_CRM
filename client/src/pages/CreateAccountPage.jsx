@@ -13,14 +13,16 @@ import {
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { createAccount, getAllAccounts } from '../services/accountService';
-import {
-  cityService,
-  industryService,
-  countryService,
-  stateProvinceService
+import { createAccount,getAllAccounts } from '../services/accountService'; 
+import { 
+  cityService, 
+  industryService, 
+  countryService, 
+  stateProvinceService 
 } from '../services/dropdownServices';
 import SmartDropdown from '../components/SmartDropdown';
+
+
 
 // Monochrome theme for MUI components
 const theme = createTheme({
@@ -85,6 +87,8 @@ const CreateAccount = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  
+
 
   const [formData, setFormData] = useState({
     AccountName: "",
@@ -105,8 +109,12 @@ const CreateAccount = () => {
     number_of_venues: "",
     number_of_releases: "",
     number_of_events_anually: "",
-    ParentAccount: ""
+    ParentAccount: "",
+    
+    
   });
+  
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -331,7 +339,7 @@ const CreateAccount = () => {
                 <Box >
                   <TextField
                     fullWidth
-                    label="Street Address 2"
+                    label="Street Address 2 "
                     name="street_address2"
                     value={formData.street_address2}
                     onChange={handleInputChange}
@@ -341,7 +349,7 @@ const CreateAccount = () => {
                 <Box >
                   <TextField
                     fullWidth
-                    label="Street Address 3"
+                    label="Street Address 3 "
                     name="street_address3"
                     value={formData.street_address3}
                     onChange={handleInputChange}
@@ -418,6 +426,7 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
+                
                 {/* #Employees */}
                 <Box>
                   <TextField
@@ -430,6 +439,7 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
+
                 {/* # of Releases */}
                 <Box>
                   <TextField
@@ -466,6 +476,12 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Grid>
+                
+                
+                
+                
+
+                
               </Box>
             </form>
           </Paper>

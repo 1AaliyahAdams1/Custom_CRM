@@ -40,6 +40,8 @@ const productRoutes = require("./routes/productRoutes");
 const personRoutes = require('./routes/personRoutes');
 const reportRoutes = require("./routes/reportRoutes");
 const countryRoutes = require("./routes/countryRoutes")
+const authRoutes = require("./routes/authRoutes");
+
 
 
 // Test route
@@ -63,7 +65,7 @@ app.use("/products", productRoutes);
 app.use('/persons', personRoutes);
 app.use("/reports", reportRoutes);
 app.use("/countries", countryRoutes)
-
+app.use("/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 const HOST = "0.0.0.0";

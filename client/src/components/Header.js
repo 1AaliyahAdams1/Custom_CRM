@@ -1,34 +1,55 @@
-//COMPONENT : Header bar
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { logout } from "../services/authService";
+import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
 
-//IMPORTS
-import React from "react";
-
-// Simple header component displaying the app title with styling
 const Header = () => {
-  return (
-    // Semantic header element with inline styles applied
-    <header style={styles.header}>
-      {/* Main title of the CRM app */}
-      <h1 style={styles.title}>Entertainment.FM CRM</h1>
-    </header>
-  );
-};
+  const navigate = useNavigate();
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
-// Inline styles object to style the header and title elements
-const styles = {
-  header: {
-    height: "60px",                 // Fixed height for the header bar
-    // backgroundColor: "#0d47a1", 
-    backgroundColor: "black",    // Dark blue background color
-    color: "#fff",                 // White text color
-    display: "flex",               // Flexbox to align content
-    alignItems: "center",          // Vertically center the text
-    padding: "0 20px",             // Horizontal padding inside header
-  },
-  title: {
-    margin: 0,                    // Remove default margin on h1
-    fontSize: "20px",             // Font size for the title text
-  },
+  const handleLogout = () => {
+    logout();
+    setUser(null);
+    navigate("/login");
+  };
+
+  useEffect(() => {
+    const onStorageChange = () => {
+      const savedUser = localStorage.getItem("user");
+      setUser(savedUser ? JSON.parse(savedUser) : null);
+    };
+
+    window.addEventListener("storage", onStorageChange);
+    return () => window.removeEventListener("storage", onStorageChange);
+  }, []);
+
+  return (
+    <AppBar position="static" sx={{ backgroundColor: "#000" }}>
+      <Toolbar sx={{ display: "flex", justifyContent: "space-between", color: "#fff" }}>
+        <Typography variant="h6" sx={{ color: "#fff" }}>
+          Entertainment.FM CRM
+        </Typography>
+
+        <Box display="flex" alignItems="center" gap={2}>
+          {user ? (
+            <>
+              <Typography sx={{ color: "#fff" }}>
+                {user.FirstName} {user.LastName}
+              </Typography>
+              <Button onClick={handleLogout} sx={{ color: "#fff" }}>
+                Logout
+              </Button>
+            </>
+          ) : (
+            <Typography sx={{ color: "#fff" }}>Not logged in</Typography>
+          )}
+        </Box>
+      </Toolbar>
+    </AppBar>
+  );
 };
 
 export default Header;

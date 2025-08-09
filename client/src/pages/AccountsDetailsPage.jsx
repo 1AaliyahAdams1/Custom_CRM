@@ -1,14 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Box, Grid, Typography, Link as MuiLink, Alert } from "@mui/material";
+import { Box, Grid, Typography, Link as MuiLink, Alert, Button } from "@mui/material";
 import { UniversalDetailView } from "../components/DetailsView";
 import { fetchAccountById } from "../services/accountService";
 
 // Main fields configuration for accounts
 const accountMainFields = [
-  { key: "AccountName", label: "Account Name", required: true },
-  { key: "AccountID", label: "Account ID", readOnly: true },
-  { key: "IndustryName", label: "Industry", type: "select", options: [
+  // { 
+  //   key: "AccountID",
+  //    label: "Account ID", 
+  //    readOnly: true ,
+  //   width: { xs: 12, md: 4, lg: 6 }
+  // },
+  { 
+    key: "AccountName",
+    label: "Account Name",
+    required: true,
+    width: { xs: 12, md: 12, lg: 12 }
+    
+    },
+  
+  { 
+    key: "IndustryName", 
+    label: "Industry", 
+    type: "select",
+     options: [
     "Technology", "Healthcare", "Finance", "Education", "Manufacturing", 
     "Retail", "Consulting", "Real Estate", "Non-profit"
   ]},
@@ -18,8 +34,30 @@ const accountMainFields = [
   { key: "street_address2", label: "Street Address 2" },
   { key: "street_address3", label: "Street Address 3" },
   { key: "postal_code", label: "Postal Code" },
-  { key: "CityName", label: "City" },
-  { key: "CountryName", label: "Country" },
+
+  { 
+    key: "CityName", 
+    label: "City",
+    type: "select",
+    options: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose"]
+   },
+  {
+     key: "CountryName",
+      label: "Country",
+      type: "select",
+      options: ["USA", "Canada", "UK", "Australia", "Germany", "France", "India"] 
+     },
+   {
+     key: "StateProvinceName",
+      label: "State/Province",
+      type: "select",
+      options: ["California", "Texas", "Florida", "New York", "Illinois", "Pennsylvania", "Ohio", "Georgia", "North Carolina", "Michigan"]
+    },
+   { key: "annual_revenue", label: "Annual Revenue", type: "currency" },
+  { key: "number_of_employees", label: "Number of Employees", type: "number" },
+  { key: "number_of_releases", label: "Number of Releases", type: "number" },
+  { key: "number_of_events_anually", label: "Number of Events Annually", type: "number" },
+  { key: "number_of_venues", label: "Number of Venues", type: "number" },
   { key: "Active", label: "Status", type: "boolean" },
 ];
 
@@ -62,26 +100,45 @@ export default function AccountDetailView() {
   const handleSave = async (formData) => {
     try {
       console.log("Saving account:", formData);
-      // Here you would typically update the account in your backend
-      // await updateAccount(id, formData);
+      
       setAccount(formData);
-      // Optionally show success message
+      
     } catch (error) {
       console.error("Failed to save account:", error);
-      // Handle error - maybe set error state or show notification
+      
     }
   };
 
   const handleDelete = async () => {
     try {
       console.log("Deleting account:", account.AccountID);
-      // Here you would typically delete the account from your backend
-      // await deleteAccount(account.AccountID);
+      
       navigate('/accounts');
     } catch (error) {
       console.error("Failed to delete account:", error);
-      // Handle error - maybe set error state or show notification
+     
     }
+  };
+
+  // Navigation handlers 
+  const handleContactClick = (contactId) => {
+    navigate(`/contacts/${contactId}`);
+  };
+
+  const handleDealClick = (dealId) => {
+    navigate(`/deals/${dealId}`);
+  };
+
+  const handleActivityClick = (activityId) => {
+    navigate(`/activities/${activityId}`);
+  };
+
+  const handleAttachmentClick = (attachmentId) => {
+    navigate(`/attachments/${attachmentId}`);
+  };
+
+  const handleNoteClick = (noteId) => {
+    navigate(`/notes/${noteId}`);
   };
 
   // Helper functions
@@ -103,7 +160,7 @@ export default function AccountDetailView() {
     return addressParts.length > 0 ? addressParts.join(", ") : "-";
   };
 
-  // Create related tabs content using your existing logic
+  // Create related tabs 
   const relatedTabs = [
     {
       id: "contacts",
@@ -114,12 +171,22 @@ export default function AccountDetailView() {
             <Grid container spacing={2}>
               {account.contacts.map((contact) => (
                 <Grid item xs={12} md={6} key={contact.ContactID}>
-                  <Box sx={{ 
-                    border: '1px solid #e5e5e5', 
-                    borderRadius: 2, 
-                    p: 2, 
-                    backgroundColor: '#ffffff'
-                  }}>
+                  <Box 
+                    sx={{ 
+                      border: '1px solid #e5e5e5', 
+                      borderRadius: 2, 
+                      p: 2, 
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        transform: 'translateY(-2px)',
+                        borderColor: '#cccccc'
+                      }
+                    }}
+                    onClick={() => handleContactClick(contact.ContactID)}
+                  >
                     <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, mb: 1 }}>
                       {[contact.Title, contact.first_name, contact.middle_name, contact.surname]
                         .filter(Boolean).join(' ')}
@@ -136,7 +203,10 @@ export default function AccountDetailView() {
                         </Typography>
                         <Typography variant="body2">
                           {contact.email ? (
-                            <MuiLink href={`mailto:${contact.email}`}>
+                            <MuiLink 
+                              href={`mailto:${contact.email}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               {contact.email}
                             </MuiLink>
                           ) : "-"}
@@ -148,7 +218,10 @@ export default function AccountDetailView() {
                         </Typography>
                         <Typography variant="body2">
                           {contact.phone ? (
-                            <MuiLink href={`tel:${contact.phone}`}>
+                            <MuiLink 
+                              href={`tel:${contact.phone}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               {contact.phone}
                             </MuiLink>
                           ) : "-"}
@@ -167,12 +240,205 @@ export default function AccountDetailView() {
                         <Typography variant="body2">{contact.status || "-"}</Typography>
                       </Box>
                     </Box>
+                    
+                    {/* Action buttons at bottom */}
+                    <Box sx={{ display: 'flex', gap: 1, mt: 2, pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ 
+                          borderColor: '#e5e5e5', 
+                          color: '#666666',
+                          '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleContactClick(contact.ContactID);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      {contact.email && (
+                        <Button 
+                          size="small"
+                          variant="text" 
+                          href={`mailto:${contact.email}`}
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{ color: '#666666' }}
+                        >
+                          Email
+                        </Button>
+                      )}
+                    </Box>
                   </Box>
                 </Grid>
               ))}
             </Grid>
           ) : (
             <Alert severity="info">No contacts found for this account.</Alert>
+          )}
+        </Box>
+      ),
+    },
+    {
+      id: "deals",
+      label: "Deals",
+      content: (
+        <Box>
+          {account?.deals && account.deals.length > 0 ? (
+            <Grid container spacing={2}>
+              {account.deals.map((deal) => (
+                <Grid item xs={12} md={6} key={deal.DealID}>
+                  <Box 
+                    sx={{ 
+                      border: '1px solid #e5e5e5', 
+                      borderRadius: 2, 
+                      p: 2, 
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        transform: 'translateY(-2px)',
+                        borderColor: '#cccccc'
+                      }
+                    }}
+                    onClick={() => handleDealClick(deal.DealID)}
+                  >
+                    <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, mb: 1 }}>
+                      {deal.DealName || 'Unnamed Deal'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Value:
+                        </Typography>
+                        <Typography variant="body2">
+                          ${deal.DealValue?.toLocaleString() || '-'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Stage:
+                        </Typography>
+                        <Typography variant="body2">{deal.Stage || "-"}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Close Date:
+                        </Typography>
+                        <Typography variant="body2">{formatDate(deal.CloseDate)}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Probability:
+                        </Typography>
+                        <Typography variant="body2">{deal.Probability ? `${deal.Probability}%` : "-"}</Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ 
+                          borderColor: '#e5e5e5', 
+                          color: '#666666',
+                          '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDealClick(deal.DealID);
+                        }}
+                      >
+                        View Deal
+                      </Button>
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Alert severity="info">No deals found for this account.</Alert>
+          )}
+        </Box>
+      ),
+    },
+    {
+      id: "activities",
+      label: "Activities",
+      content: (
+        <Box>
+          {account?.activities && account.activities.length > 0 ? (
+            <Grid container spacing={2}>
+              {account.activities.map((activity) => (
+                <Grid item xs={12} key={activity.ActivityID}>
+                  <Box 
+                    sx={{ 
+                      border: '1px solid #e5e5e5', 
+                      borderRadius: 2, 
+                      p: 2, 
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        transform: 'translateY(-2px)',
+                        borderColor: '#cccccc'
+                      }
+                    }}
+                    onClick={() => handleActivityClick(activity.ActivityID)}
+                  >
+                    <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, mb: 1 }}>
+                      {activity.ActivityType || 'Activity'}: {activity.Subject || 'No Subject'}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#666666', mb: 2 }}>
+                      {activity.Description || 'No description available'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '100px' }}>
+                          Date:
+                        </Typography>
+                        <Typography variant="body2">{formatDate(activity.ActivityDate)}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '100px' }}>
+                          Status:
+                        </Typography>
+                        <Typography variant="body2">{activity.Status || "-"}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '100px' }}>
+                          Priority:
+                        </Typography>
+                        <Typography variant="body2">{activity.Priority || "-"}</Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ 
+                          borderColor: '#e5e5e5', 
+                          color: '#666666',
+                          '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleActivityClick(activity.ActivityID);
+                        }}
+                      >
+                        View Activity
+                      </Button>
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Alert severity="info">No activities found for this account.</Alert>
           )}
         </Box>
       ),
@@ -186,25 +452,59 @@ export default function AccountDetailView() {
             <Grid container spacing={2}>
               {account.attachments.map((attachment) => (
                 <Grid item xs={12} md={6} key={attachment.AttachmentID}>
-                  <Box sx={{ 
-                    border: '1px solid #e5e5e5', 
-                    borderRadius: 2, 
-                    p: 2, 
-                    backgroundColor: '#ffffff'
-                  }}>
-                    <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }}>
-                      <MuiLink 
-                        href={attachment.FilePath} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        sx={{ color: '#050505', '&:hover': { color: '#333333' } }}
-                      >
-                        {attachment.FileName}
-                      </MuiLink>
+                  <Box 
+                    sx={{ 
+                      border: '1px solid #e5e5e5', 
+                      borderRadius: 2, 
+                      p: 2, 
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        transform: 'translateY(-2px)',
+                        borderColor: '#cccccc'
+                      }
+                    }}
+                    onClick={() => handleAttachmentClick(attachment.AttachmentID)}
+                  >
+                    <Typography variant="body1" sx={{ fontWeight: 600, mb: 1, color: '#050505' }}>
+                      {attachment.FileName}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#666666' }}>
+                    <Typography variant="body2" sx={{ color: '#666666', mb: 2 }}>
                       <strong>Uploaded:</strong> {formatDate(attachment.UploadedAt)}
                     </Typography>
+
+                    <Box sx={{ display: 'flex', gap: 1, pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ 
+                          borderColor: '#e5e5e5', 
+                          color: '#666666',
+                          '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAttachmentClick(attachment.AttachmentID);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      {attachment.FilePath && (
+                        <Button 
+                          size="small"
+                          variant="text"
+                          href={attachment.FilePath}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{ color: '#666666' }}
+                        >
+                          Download
+                        </Button>
+                      )}
+                    </Box>
                   </Box>
                 </Grid>
               ))}
@@ -223,18 +523,47 @@ export default function AccountDetailView() {
           {account?.notes && account.notes.length > 0 ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {account.notes.map((note) => (
-                <Box key={note.NoteID} sx={{ 
-                  border: '1px solid #e5e5e5', 
-                  borderRadius: 2, 
-                  p: 2, 
-                  backgroundColor: '#ffffff'
-                }}>
+                <Box 
+                  key={note.NoteID}
+                  sx={{ 
+                    border: '1px solid #e5e5e5', 
+                    borderRadius: 2, 
+                    p: 2, 
+                    backgroundColor: '#ffffff',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                      transform: 'translateY(-2px)',
+                      borderColor: '#cccccc'
+                    }
+                  }}
+                  onClick={() => handleNoteClick(note.NoteID)}
+                >
                   <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6 }}>
                     {note.Content}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#666666' }}>
+                  <Typography variant="body2" sx={{ color: '#666666', mb: 2 }}>
                     <strong>Created:</strong> {formatDate(note.CreatedAt)}
                   </Typography>
+
+                  <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                    <Button 
+                      size="small" 
+                      variant="outlined"
+                      sx={{ 
+                        borderColor: '#e5e5e5', 
+                        color: '#666666',
+                        '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNoteClick(note.NoteID);
+                      }}
+                    >
+                      View Note
+                    </Button>
+                  </Box>
                 </Box>
               ))}
             </Box>
