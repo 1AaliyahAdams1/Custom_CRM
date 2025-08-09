@@ -268,6 +268,13 @@ const EditAccount = () => {
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              
+              <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
+                Edit Account
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
                 startIcon={<ArrowBack />}
@@ -276,12 +283,6 @@ const EditAccount = () => {
               >
                 Back
               </Button>
-              <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
-                Edit Account
-              </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
                 startIcon={<Clear />}
@@ -434,7 +435,7 @@ const EditAccount = () => {
                 
 
                 {/* Street Address 2*/}
-                <Grid item xs={12}>
+                <Box item xs={12}>
                   <TextField
                     fullWidth
                     label="Street Address 2"
@@ -443,10 +444,10 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
 
                 {/* Street Address 3 */}
-                {<Grid item xs={12}>
+                {<Box item xs={12}>
                   <TextField
                     fullWidth
                     label="Street Address 3"
@@ -455,10 +456,10 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid> } 
+                </Box> } 
 
                 {/* Postal Code */}
-                <Grid item xs={12} sm={6}>
+                <Box item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Postal Code"
@@ -467,9 +468,9 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
                 {/* Primary Phone */}
-                <Grid item xs={12} sm={6}>
+                <Box item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Primary Phone"
@@ -479,9 +480,9 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
                 {/* Email */}
-                <Grid item xs={12} sm={6}>
+                <Box item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Email"
@@ -491,10 +492,10 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
 
                 {/* Fax */}
-                <Grid item xs={12} sm={6}>
+                <Box item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Fax"
@@ -504,12 +505,12 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
 
                 
 
                 {/* Website */}
-                <Grid item xs={12} sm={6}>
+                <Box item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Website"
@@ -519,12 +520,12 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
 
                 
 
                 {/* Annual Revenue */}
-                <Grid item xs={12} sm={6}>
+                <Box item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Annual Revenue"
@@ -534,9 +535,9 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
                 {/* Number of Employees */}
-                <Grid item xs={12} sm={6}>
+                <Box item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Number of Employees"
@@ -546,12 +547,12 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
 
                 
 
                 {/* Number of Releases */}
-                <Grid item xs={12} sm={6}>
+                <Box item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Number of Releases"
@@ -561,10 +562,10 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
 
                 {/* Number of Events Annually */}
-                <Grid item xs={12} sm={6}>
+                <Box item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Number of Events Annually"
@@ -574,9 +575,9 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
                 {/* Number of Venues */}
-                <Grid item xs={12} sm={6}>
+                <Box item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Number of Venues"
@@ -586,7 +587,7 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Grid>
+                </Box>
                 
                
 

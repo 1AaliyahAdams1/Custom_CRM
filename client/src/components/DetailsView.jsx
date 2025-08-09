@@ -177,7 +177,7 @@ export function UniversalDetailView({
               {value}
             </MuiLink>
           ) : field.type === "currency" && value ? (
-            `$${parseFloat(value).toLocaleString()}`
+            `${parseFloat(value).toLocaleString()}`
           ) : field.type === "date" && value ? (
             new Date(value).toLocaleDateString()
           ) : field.type === "datetime" && value ? (
@@ -386,21 +386,7 @@ export function UniversalDetailView({
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Button
-                variant="outlined"
-                onClick={onBack}
-                startIcon={<ArrowBack />}
-                sx={{
-                  borderColor: '#e5e5e5',
-                  color: '#666666',
-                  '&:hover': {
-                    borderColor: '#cccccc',
-                    backgroundColor: '#f5f5f5',
-                  },
-                }}
-              >
-                Back
-              </Button>
+             
               <Box>
                 <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600, mb: 0.5 }}>
                   {title}
@@ -426,7 +412,9 @@ export function UniversalDetailView({
                   </Box>
                 )}
               </Box>
+               
             </Box>
+            
             
             {!readOnly && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -451,6 +439,21 @@ export function UniversalDetailView({
                   </>
                 ) : (
                   <>
+                  <Button
+                variant="outlined"
+                onClick={onBack}
+                startIcon={<ArrowBack />}
+                sx={{
+                  borderColor: '#e5e5e5',
+                  color: '#666666',
+                  '&:hover': {
+                    borderColor: '#cccccc',
+                    backgroundColor: '#f5f5f5',
+                  },
+                }}
+              >
+                Back
+              </Button>
                     {onSave && (
                       <Button
                         variant="contained"
@@ -474,12 +477,15 @@ export function UniversalDetailView({
                   </>
                 )}
               </Box>
+              
             )}
           </Box>
+          
         </Box>
+        
 
         {/* Main Entity Details */}
-        {mainFields.length > 0 && (
+        {/* {mainFields.length > 0 && (
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ color: '#050505', fontWeight: 600 }}>
@@ -492,6 +498,8 @@ export function UniversalDetailView({
                     xs={12} 
                     md={field.width?.md || 6} 
                     lg={field.width?.lg || 4} 
+                    key={field.key}
+                    {...(field.width || { xs: 12 })}
                     key={field.key}
                   >
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -508,7 +516,66 @@ export function UniversalDetailView({
               </Grid>
             </CardContent>
           </Card>
-        )}
+        )} */}
+        {mainFields.length > 0 && (
+  <Card sx={{ mb: 3 }}>
+    <CardContent>
+      <Typography variant="h6" gutterBottom sx={{ color: '#050505', fontWeight: 600 }}>
+        Details
+      </Typography>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
+        {mainFields.map((field) => {
+          // Determine grid column span based on field configuration
+          const getGridColumn = (field) => {
+            // If fullWidth is specified, span all columns
+            if (field.fullWidth) {
+              return '1 / -1';
+            }
+            
+            // Check legacy width configuration
+            if (field.width) {
+              // If xs: 12, span full width
+              if (field.width.xs === 12 && (!field.width.sm || field.width.sm === 12)) {
+                return '1 / -1';
+              }
+              // If md: 8 or lg: 8, span 2 columns on larger screens  
+              if (field.width.md === 8 || field.width.lg === 8) {
+                return { xs: '1 / -1', md: '1 / 3' };
+              }
+              // If md: 6 or lg: 6, span 2 columns on 3-column grid
+              if (field.width.md === 6 || field.width.lg === 6) {
+                return { xs: '1 / -1', sm: '1 / 3' };
+              }
+            }
+            
+            // Default: single column
+            return 'auto';
+          };
+
+          return (
+            <Box 
+              key={field.key}
+              sx={{ 
+                gridColumn: getGridColumn(field),
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 1 
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 500, color: '#050505' }}>
+                {field.label}
+                {field.required && isEditing && (
+                  <span style={{ color: '#d32f2f', marginLeft: '4px' }}>*</span>
+                )}
+              </Typography>
+              {renderField(field)}
+            </Box>
+          );
+        })}
+      </Box>
+    </CardContent>
+  </Card>
+)}
 
         {/* Related Information Tabs */}
         {relatedTabs.length > 0 && (
