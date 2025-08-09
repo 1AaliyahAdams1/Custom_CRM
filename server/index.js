@@ -39,7 +39,7 @@ const stateProvinceRoutes = require("./routes/stateProvinceRoutes");
 const productRoutes = require("./routes/productRoutes");
 const personRoutes = require('./routes/personRoutes');
 const reportRoutes = require("./routes/reportRoutes");
-const authRoutes = require("./routes/authRoutes");
+const authRoutes = require("./routes/auth/authRoutes");
 
 
 
@@ -47,6 +47,7 @@ const authRoutes = require("./routes/authRoutes");
 app.get("/", (req, res) => {
   res.send("Backend server is running!");
 });
+
 
 // Mount the route onto a directory
 app.use("/accounts", accountRoutes);
