@@ -270,32 +270,6 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
-                {/* Country ID */}
-                <Box>
-                  <SmartDropdown
-                    label="Country"
-                    name="CountryID"
-                    value={formData.CountryID}
-                    onChange={handleInputChange}
-                    service={countryService}
-                    displayField="CountryName"
-                    valueField="CountryID"
-                    disabled={isSubmitting}
-                  />
-                </Box>
-                {/* State Province ID */}
-                <Box>
-                  <SmartDropdown
-                    label="State/Province"
-                    name="StateProvinceID"
-                    value={formData.StateProvinceID}
-                    onChange={handleInputChange}
-                    service={countryService}
-                    displayField="StateProvinceID"
-                    valueField="StateProvinceID"
-                    disabled={isSubmitting}
-                  />
-                </Box>
                 {/* State Province ID */}
                 <Box>
                   <SmartDropdown
@@ -312,7 +286,7 @@ const CreateAccount = () => {
                           : allStates;
                       }
                     }}
-                    displayField="StateProvinceID"
+                    displayField="StateProvince_Name"
                     valueField="StateProvinceID"
                     disabled={isSubmitting}
                   />
