@@ -10,19 +10,19 @@ import {
   CircularProgress,
   Skeleton,
   Grid,
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { fetchAccountById, updateAccount,getAllAccounts } from "../services/accountService";
-import { 
-  cityService, 
-  industryService, 
-  countryService, 
-  stateProvinceService 
+import { fetchAccountById, updateAccount, getAllAccounts } from "../services/accountService";
+import {
+  cityService,
+  industryService,
+  countryService,
+  stateProvinceService
 } from '../services/dropdownServices';
 import SmartDropdown from '../components/SmartDropdown';
 
@@ -94,7 +94,7 @@ const EditAccount = () => {
   const [industries, setIndustries] = useState([]);
   const [countries, setCountries] = useState([]);
   const [stateProvinces, setStateProvinces] = useState([]);
-  
+
   const [formData, setFormData] = useState({
     AccountName: "",
     CityID: "",
@@ -121,27 +121,27 @@ const EditAccount = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-      const loadDropdownData = async () => {
-        try {
-          const [citiesData, industriesData, countriesData, stateProvincesData] = await Promise.all([
-            cityService.getAll(),
-            industryService.getAll(),
-            countryService.getAll(),
-            stateProvinceService.getAll()
-          ]);
-          
-          
-          setCities(citiesData);
-          setIndustries(industriesData);
-          setCountries(countriesData);
-          setStateProvinces(stateProvincesData);
-        } catch (error) {
-          console.error('Error loading dropdown data:', error);
-        }
-      };
-  
-      loadDropdownData();
-    }, []);
+    const loadDropdownData = async () => {
+      try {
+        const [citiesData, industriesData, countriesData, stateProvincesData] = await Promise.all([
+          cityService.getAll(),
+          industryService.getAll(),
+          countryService.getAll(),
+          stateProvinceService.getAll()
+        ]);
+
+
+        setCities(citiesData);
+        setIndustries(industriesData);
+        setCountries(countriesData);
+        setStateProvinces(stateProvincesData);
+      } catch (error) {
+        console.error('Error loading dropdown data:', error);
+      }
+    };
+
+    loadDropdownData();
+  }, []);
 
   // Fetch account data when component mounts
   useEffect(() => {
@@ -155,13 +155,15 @@ const EditAccount = () => {
       try {
         setLoading(true);
         setError(null);
-        const response= await fetchAccountById(id);
+        const response = await fetchAccountById(id);
 
         // Populate form with fetched data
         const accountData = response.data;
         setFormData({
           AccountName: accountData.AccountName || "",
           CityID: accountData.CityID || "",
+          CountryID: accountData.CountryID || "",
+          StateProvinceID: accountData.StateProvinceID || "",
           street_address1: accountData.street_address1 || "",
           street_address2: accountData.street_address2 || "",
           street_address3: accountData.street_address3 || "",
@@ -185,8 +187,6 @@ const EditAccount = () => {
         setLoading(false);
       }
     };
-
-        
     loadAccount();
   }, [id]);
 
@@ -202,7 +202,7 @@ const EditAccount = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!formData.AccountName.trim()) {
       setError("Account name is required");
@@ -212,17 +212,14 @@ const EditAccount = () => {
     try {
       setSaving(true);
       setError(null);
-      
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSuccessMessage("Account updated successfully!");
-      
       // Navigate back to accounts page after a short delay
       setTimeout(() => {
         navigate("/accounts");
       }, 1500);
-      
+      await updateAccount(id, formData)
+      setSuccessMessage("Account updated successfully!");
     } catch (error) {
       console.error("Failed to update account:", error);
       setError("Failed to update account. Please try again.");
@@ -268,12 +265,12 @@ const EditAccount = () => {
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              
+
               <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
                 Edit Account
               </Typography>
             </Box>
-            
+
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
@@ -337,26 +334,26 @@ const EditAccount = () => {
                   />
                 </Box>
                 {/* Parent Account Dropdown */}
-                  <Box sx={{ gridColumn: '1 / -1' }}>
-                    <SmartDropdown
-                      label="Parent Account"
-                      name="ParentAccount"
-                      value={formData.ParentAccount}
-                      onChange={handleInputChange}
-                      service={{
-                        getAll: async () => {
-                          const response = await getAllAccounts();
-                         
-                           return response.data || response;
-                        }
-                      }}
-                      displayField="AccountName"
-                      valueField=""
-                      disabled={isSubmitting}
-                    />
-                    </Box>
+                <Box sx={{ gridColumn: '1 / -1' }}>
+                  <SmartDropdown
+                    label="Parent Account"
+                    name="ParentAccount"
+                    value={formData.ParentAccount}
+                    onChange={handleInputChange}
+                    service={{
+                      getAll: async () => {
+                        const response = await getAllAccounts();
 
-               {/* Country ID */}
+                        return response.data || response;
+                      }
+                    }}
+                    displayField="AccountName"
+                    valueField="AccountID"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+
+                {/* Country ID */}
                 <Box>
                   <SmartDropdown
                     label="Country"
@@ -364,76 +361,69 @@ const EditAccount = () => {
                     value={formData.CountryID}
                     onChange={handleInputChange}
                     service={countryService}
-                    displayField="name"
-                    valueField="id"
+                    displayField="CountryName"
+                    valueField="CountryID"
                     disabled={isSubmitting}
                   />
                 </Box>
                 {/* State Province ID */}
-                  <Box>
-                    <SmartDropdown
-                      label="State/Province"
-                      name="StateProvinceID"
-                      value={formData.StateProvinceID}
-                      onChange={handleInputChange}
-                      service={{
+                <Box>
+                  <SmartDropdown
+                    label="State/Province"
+                    name="StateProvinceID"
+                    value={formData.StateProvinceID}
+                    onChange={handleInputChange}
+                    service={{
                       getAll: async () => {
-                      const allStates = await stateProvinceService.getAll();
-                      // Filter by selected country if one is selected
-                      return formData.CountryID 
+                        const allStates = await stateProvinceService.getAll();
+                        // Filter by selected country if one is selected
+                        return formData.CountryID
                           ? allStates.filter(state => state.countryId === parseInt(formData.CountryID))
-                            : allStates;
+                          : allStates;
                       }
                     }}
-                      displayField="name"
-                      valueField="id"
-                      disabled={isSubmitting}
-                    />
-                  </Box>
+                    displayField="StateProvince_Name"
+                    valueField="StateProvinceID"
+                    disabled={isSubmitting}
+                  />
+                </Box>
                 {/* City Dropdown */}
-                  <Box>
-                    <SmartDropdown
-                      label="City"
-                      name="CityID"
-                      value={formData.CityID}
-                      onChange={handleInputChange}
-                      service={cityService}
-                      displayField="name"
-                      valueField="id"
-                      disabled={isSubmitting}
-                    />
-                    </Box>
+                <Box>
+                  <SmartDropdown
+                    label="City"
+                    name="CityID"
+                    value={formData.CityID}
+                    onChange={handleInputChange}
+                    service={cityService}
+                    displayField="CityName"
+                    valueField="CityID"
+                    disabled={isSubmitting}
+                  />
+                </Box>
                 {/* Industry Dropdown */}
-                  <Box>
-                    <SmartDropdown
-                      label="Industry"
-                      name="IndustryID"
-                      value={formData.IndustryID}
-                      onChange={handleInputChange}
-                      service={industryService}
-                      displayField="name"
-                      valueField="id"
-                      disabled={isSubmitting}
-                    />
-                    </Box>
-               
-                               
+                <Box>
+                  <SmartDropdown
+                    label="Industry"
+                    name="IndustryID"
+                    value={formData.IndustryID}
+                    onChange={handleInputChange}
+                    service={industryService}
+                    displayField="IndustryName"
+                    valueField="IndustryID"
+                    disabled={isSubmitting}
+                  />
+                </Box>
                 {/* Street Address1  */}
-                  <Box >
-                    <TextField
-                      fullWidth
-                      label="Street Address 1 "
-                      name="street_address1"
-                      value={formData.street_address1}
-                      onChange={handleInputChange}
-                      disabled={isSubmitting}
-                    />
-                  </Box>
-
-                
-
-                
-
+                <Box >
+                  <TextField
+                    fullWidth
+                    label="Street Address 1 "
+                    name="street_address1"
+                    value={formData.street_address1}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
                 {/* Street Address 2*/}
                 <Box item xs={12}>
                   <TextField
@@ -445,7 +435,6 @@ const EditAccount = () => {
                     disabled={saving}
                   />
                 </Box>
-
                 {/* Street Address 3 */}
                 {<Box item xs={12}>
                   <TextField
@@ -456,8 +445,7 @@ const EditAccount = () => {
                     onChange={handleInputChange}
                     disabled={saving}
                   />
-                </Box> } 
-
+                </Box>}
                 {/* Postal Code */}
                 <Box item xs={12} sm={6}>
                   <TextField
@@ -493,7 +481,6 @@ const EditAccount = () => {
                     disabled={saving}
                   />
                 </Box>
-
                 {/* Fax */}
                 <Box item xs={12} sm={6}>
                   <TextField
@@ -506,9 +493,6 @@ const EditAccount = () => {
                     disabled={saving}
                   />
                 </Box>
-
-                
-
                 {/* Website */}
                 <Box item xs={12} sm={6}>
                   <TextField
@@ -521,9 +505,6 @@ const EditAccount = () => {
                     disabled={saving}
                   />
                 </Box>
-
-                
-
                 {/* Annual Revenue */}
                 <Box item xs={12} sm={6}>
                   <TextField
@@ -548,9 +529,6 @@ const EditAccount = () => {
                     disabled={saving}
                   />
                 </Box>
-
-                
-
                 {/* Number of Releases */}
                 <Box item xs={12} sm={6}>
                   <TextField
@@ -563,7 +541,6 @@ const EditAccount = () => {
                     disabled={saving}
                   />
                 </Box>
-
                 {/* Number of Events Annually */}
                 <Box item xs={12} sm={6}>
                   <TextField
@@ -588,12 +565,6 @@ const EditAccount = () => {
                     disabled={saving}
                   />
                 </Box>
-                
-               
-
-                
-
-                
               </Box>
             </form>
           </Paper>
