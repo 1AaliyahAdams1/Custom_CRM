@@ -606,18 +606,10 @@ const EditAccount = () => {
                     value={formData.StateProvinceID}
                     onChange={handleInputChange}
                     service={{
-                <Box>
-                  <SmartDropdown
-                    label="State/Province"
-                    name="StateProvinceID"
-                    value={formData.StateProvinceID}
-                    onChange={handleInputChange}
-                    service={{
                       getAll: async () => {
                         const allStates = await stateProvinceService.getAll();
                         return formData.CountryID 
                           ? allStates.filter(state => state.countryId === parseInt(formData.CountryID))
-                          : allStates;
                           : allStates;
                       }
                     }}
