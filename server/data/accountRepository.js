@@ -118,7 +118,9 @@ async function updateAccount(id, accountData, changedBy = 1) {
       number_of_venues = existing.number_of_venues,
       number_of_releases = existing.number_of_releases,
       number_of_events_anually = existing.number_of_events_anually,
-      ParentAccount = existing.ParentAccount
+      ParentAccount = existing.ParentAccount,
+      StateProvinceID = existing.StateProvinceID,
+      CountryID = existing.CountryID
     } = accountData;
 
     // Use the UpdateAccount stored procedure
@@ -145,6 +147,8 @@ async function updateAccount(id, accountData, changedBy = 1) {
       .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
       .input("UpdatedAt", sql.SmallDateTime, new Date())
       .input("ChangedBy", sql.Int, changedBy)
+      .input("StateProvinceID", sql.Int, StateProvinceID)
+      .input("CountryID", sql.Int, CountryID)
       .input("ActionTypeID", sql.Int, 2)
       .execute('UpdateAccount');
 
@@ -191,6 +195,8 @@ async function deactivateAccount(account, changedBy, actionTypeId) {
       .input('CreatedAt', sql.SmallDateTime, account.CreatedAt)
       .input('UpdatedAt', sql.SmallDateTime, new Date())
       .input('ChangedBy', sql.Int, changedBy)
+      .input("StateProvinceID", sql.Int, account.StateProvinceID)
+      .input("CountryID", sql.Int, account.CountryID)
       .input('ActionTypeID', sql.Int, actionTypeId)
       .execute('DeactivateAccount');
       
@@ -252,6 +258,8 @@ async function reactivateAccount(id, changedBy) {
       .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
       .input("UpdatedAt", sql.SmallDateTime, new Date())
       .input("ChangedBy", sql.Int, changedBy)
+      .input("StateProvinceID", sql.Int, StateProvinceID)
+      .input("CountryID", sql.Int, CountryID)
       .input("ActionTypeID", sql.Int, 8) 
       .execute('ReactivateAccount');
 
@@ -324,6 +332,8 @@ async function deleteAccount(id, changedBy) {
       .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
       .input("UpdatedAt", sql.SmallDateTime, new Date())
       .input("ChangedBy", sql.Int, changedBy)
+      .input("StateProvinceID", sql.Int, StateProvinceID)
+      .input("CountryID", sql.Int, CountryID)
       .input("ActionTypeID", sql.Int, 3) 
       .execute('DeleteAccount');
 

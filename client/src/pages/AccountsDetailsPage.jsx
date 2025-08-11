@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Grid, Typography, Link as MuiLink, Alert, Button } from "@mui/material";
 import { UniversalDetailView } from "../components/DetailsView";
-import { fetchAccountById } from "../services/accountService";
+import { fetchAccountById, updateAccount, getAllAccounts, deactivateAccount } from "../services/accountService";
 
 // Main fields configuration for accounts
 const accountMainFields = [
@@ -12,48 +12,46 @@ const accountMainFields = [
   //    readOnly: true ,
   //   width: { xs: 12, md: 4, lg: 6 }
   // },
-  { 
+  {
     key: "AccountName",
     label: "Account Name",
     required: true,
     width: { xs: 12, md: 12, lg: 12 }
-    
-    },
-  
-  { 
-    key: "IndustryName", 
-    label: "Industry", 
+  },
+  {
+    key: "IndustryName",
+    label: "Industry",
     type: "select",
-     options: [
-    "Technology", "Healthcare", "Finance", "Education", "Manufacturing", 
-    "Retail", "Consulting", "Real Estate", "Non-profit"
-  ]},
+    options: [
+      "Technology", "Healthcare", "Finance", "Education", "Manufacturing",
+      "Retail", "Consulting", "Real Estate", "Non-profit"
+    ]
+  },
   { key: "PrimaryPhone", label: "Phone", type: "tel" },
   { key: "Website", label: "Website", type: "url" },
   { key: "street_address1", label: "Street Address", type: "textarea", rows: 2 },
   { key: "street_address2", label: "Street Address 2" },
   { key: "street_address3", label: "Street Address 3" },
   { key: "postal_code", label: "Postal Code" },
-
-  { 
-    key: "CityName", 
+  {
+    key: "CityName",
     label: "City",
     type: "select",
     options: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose"]
-   },
+  },
   {
-     key: "CountryName",
-      label: "Country",
-      type: "select",
-      options: ["USA", "Canada", "UK", "Australia", "Germany", "France", "India"] 
-     },
-   {
-     key: "StateProvinceName",
-      label: "State/Province",
-      type: "select",
-      options: ["California", "Texas", "Florida", "New York", "Illinois", "Pennsylvania", "Ohio", "Georgia", "North Carolina", "Michigan"]
-    },
-   { key: "annual_revenue", label: "Annual Revenue", type: "currency" },
+    key: "CountryName",
+    label: "Country",
+    type: "select",
+    options: ["USA", "Canada", "UK", "Australia", "Germany", "France", "India"]
+  },
+  {
+    key: "StateProvinceName",
+    label: "State/Province",
+    type: "select",
+    options: ["California", "Texas", "Florida", "New York", "Illinois", "Pennsylvania", "Ohio", "Georgia", "North Carolina", "Michigan"]
+  },
+  { key: "annual_revenue", label: "Annual Revenue", type: "currency" },
   { key: "number_of_employees", label: "Number of Employees", type: "number" },
   { key: "number_of_releases", label: "Number of Releases", type: "number" },
   { key: "number_of_events_anually", label: "Number of Events Annually", type: "number" },
@@ -67,6 +65,7 @@ export default function AccountDetailView() {
   const [account, setAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -100,23 +99,21 @@ export default function AccountDetailView() {
   const handleSave = async (formData) => {
     try {
       console.log("Saving account:", formData);
-      
       setAccount(formData);
-      
+      await updateAccount(id, formData)
+      setSuccessMessage("Account updated successfully!");
     } catch (error) {
       console.error("Failed to save account:", error);
-      
     }
   };
 
   const handleDelete = async () => {
     try {
-      console.log("Deleting account:", account.AccountID);
-      
+      console.log("Deactivating (soft deleting) account with ID:", id);
+      await deactivateAccount(id);
       navigate('/accounts');
     } catch (error) {
       console.error("Failed to delete account:", error);
-     
     }
   };
 
@@ -171,11 +168,11 @@ export default function AccountDetailView() {
             <Grid container spacing={2}>
               {account.contacts.map((contact) => (
                 <Grid item xs={12} md={6} key={contact.ContactID}>
-                  <Box 
-                    sx={{ 
-                      border: '1px solid #e5e5e5', 
-                      borderRadius: 2, 
-                      p: 2, 
+                  <Box
+                    sx={{
+                      border: '1px solid #e5e5e5',
+                      borderRadius: 2,
+                      p: 2,
                       backgroundColor: '#ffffff',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease-in-out',
@@ -203,7 +200,7 @@ export default function AccountDetailView() {
                         </Typography>
                         <Typography variant="body2">
                           {contact.email ? (
-                            <MuiLink 
+                            <MuiLink
                               href={`mailto:${contact.email}`}
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -218,7 +215,7 @@ export default function AccountDetailView() {
                         </Typography>
                         <Typography variant="body2">
                           {contact.phone ? (
-                            <MuiLink 
+                            <MuiLink
                               href={`tel:${contact.phone}`}
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -240,14 +237,14 @@ export default function AccountDetailView() {
                         <Typography variant="body2">{contact.status || "-"}</Typography>
                       </Box>
                     </Box>
-                    
+
                     {/* Action buttons at bottom */}
                     <Box sx={{ display: 'flex', gap: 1, mt: 2, pt: 2, borderTop: '1px solid #f0f0f0' }}>
-                      <Button 
-                        size="small" 
+                      <Button
+                        size="small"
                         variant="outlined"
-                        sx={{ 
-                          borderColor: '#e5e5e5', 
+                        sx={{
+                          borderColor: '#e5e5e5',
                           color: '#666666',
                           '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
                         }}
@@ -259,9 +256,9 @@ export default function AccountDetailView() {
                         View Details
                       </Button>
                       {contact.email && (
-                        <Button 
+                        <Button
                           size="small"
-                          variant="text" 
+                          variant="text"
                           href={`mailto:${contact.email}`}
                           onClick={(e) => e.stopPropagation()}
                           sx={{ color: '#666666' }}
@@ -289,11 +286,11 @@ export default function AccountDetailView() {
             <Grid container spacing={2}>
               {account.deals.map((deal) => (
                 <Grid item xs={12} md={6} key={deal.DealID}>
-                  <Box 
-                    sx={{ 
-                      border: '1px solid #e5e5e5', 
-                      borderRadius: 2, 
-                      p: 2, 
+                  <Box
+                    sx={{
+                      border: '1px solid #e5e5e5',
+                      borderRadius: 2,
+                      p: 2,
                       backgroundColor: '#ffffff',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease-in-out',
@@ -338,11 +335,11 @@ export default function AccountDetailView() {
                     </Box>
 
                     <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
-                      <Button 
-                        size="small" 
+                      <Button
+                        size="small"
                         variant="outlined"
-                        sx={{ 
-                          borderColor: '#e5e5e5', 
+                        sx={{
+                          borderColor: '#e5e5e5',
                           color: '#666666',
                           '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
                         }}
@@ -373,11 +370,11 @@ export default function AccountDetailView() {
             <Grid container spacing={2}>
               {account.activities.map((activity) => (
                 <Grid item xs={12} key={activity.ActivityID}>
-                  <Box 
-                    sx={{ 
-                      border: '1px solid #e5e5e5', 
-                      borderRadius: 2, 
-                      p: 2, 
+                  <Box
+                    sx={{
+                      border: '1px solid #e5e5e5',
+                      borderRadius: 2,
+                      p: 2,
                       backgroundColor: '#ffffff',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease-in-out',
@@ -417,11 +414,11 @@ export default function AccountDetailView() {
                     </Box>
 
                     <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
-                      <Button 
-                        size="small" 
+                      <Button
+                        size="small"
                         variant="outlined"
-                        sx={{ 
-                          borderColor: '#e5e5e5', 
+                        sx={{
+                          borderColor: '#e5e5e5',
                           color: '#666666',
                           '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
                         }}
@@ -452,11 +449,11 @@ export default function AccountDetailView() {
             <Grid container spacing={2}>
               {account.attachments.map((attachment) => (
                 <Grid item xs={12} md={6} key={attachment.AttachmentID}>
-                  <Box 
-                    sx={{ 
-                      border: '1px solid #e5e5e5', 
-                      borderRadius: 2, 
-                      p: 2, 
+                  <Box
+                    sx={{
+                      border: '1px solid #e5e5e5',
+                      borderRadius: 2,
+                      p: 2,
                       backgroundColor: '#ffffff',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease-in-out',
@@ -476,11 +473,11 @@ export default function AccountDetailView() {
                     </Typography>
 
                     <Box sx={{ display: 'flex', gap: 1, pt: 2, borderTop: '1px solid #f0f0f0' }}>
-                      <Button 
-                        size="small" 
+                      <Button
+                        size="small"
                         variant="outlined"
-                        sx={{ 
-                          borderColor: '#e5e5e5', 
+                        sx={{
+                          borderColor: '#e5e5e5',
                           color: '#666666',
                           '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
                         }}
@@ -492,7 +489,7 @@ export default function AccountDetailView() {
                         View Details
                       </Button>
                       {attachment.FilePath && (
-                        <Button 
+                        <Button
                           size="small"
                           variant="text"
                           href={attachment.FilePath}
@@ -523,12 +520,12 @@ export default function AccountDetailView() {
           {account?.notes && account.notes.length > 0 ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {account.notes.map((note) => (
-                <Box 
+                <Box
                   key={note.NoteID}
-                  sx={{ 
-                    border: '1px solid #e5e5e5', 
-                    borderRadius: 2, 
-                    p: 2, 
+                  sx={{
+                    border: '1px solid #e5e5e5',
+                    borderRadius: 2,
+                    p: 2,
                     backgroundColor: '#ffffff',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease-in-out',
@@ -548,11 +545,11 @@ export default function AccountDetailView() {
                   </Typography>
 
                   <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
-                    <Button 
-                      size="small" 
+                    <Button
+                      size="small"
                       variant="outlined"
-                      sx={{ 
-                        borderColor: '#e5e5e5', 
+                      sx={{
+                        borderColor: '#e5e5e5',
                         color: '#666666',
                         '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
                       }}
@@ -594,6 +591,15 @@ export default function AccountDetailView() {
       });
     }
 
+    {/* Success Alert */ }
+    {
+      successMessage && (
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+          {successMessage}
+        </Alert>
+      )
+    }
+
     // Location chip
     if (account.CityName || account.CountryName) {
       headerChips.push({
@@ -619,5 +625,7 @@ export default function AccountDetailView() {
       entityType="account"
       headerChips={headerChips}
     />
+
+
   );
 }

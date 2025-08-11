@@ -9,20 +9,17 @@ import {
   Alert,
   CircularProgress,
   Grid
-
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { createAccount,getAllAccounts } from '../services/accountService'; 
-import { 
-  cityService, 
-  industryService, 
-  countryService, 
-  stateProvinceService 
+import { createAccount, getAllAccounts } from '../services/accountService';
+import {
+  cityService,
+  industryService,
+  countryService,
+  stateProvinceService
 } from '../services/dropdownServices';
 import SmartDropdown from '../components/SmartDropdown';
-
-
 
 // Monochrome theme for MUI components
 const theme = createTheme({
@@ -87,9 +84,6 @@ const CreateAccount = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
-  
-
-
   const [formData, setFormData] = useState({
     AccountName: "",
     CityID: "",
@@ -109,12 +103,8 @@ const CreateAccount = () => {
     number_of_venues: "",
     number_of_releases: "",
     number_of_events_anually: "",
-    ParentAccount: "",
-    
-    
+    ParentAccount: ""
   });
-  
-  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -149,9 +139,8 @@ const CreateAccount = () => {
       };
 
       console.log('Creating account:', cleanedData);
-
+      await createAccount(cleanedData);
       await new Promise(resolve => setTimeout(resolve, 1000));
-
       setSuccessMessage("Account created successfully!");
 
       // Navigate after a short delay
@@ -261,7 +250,7 @@ const CreateAccount = () => {
                       }
                     }}
                     displayField="AccountName"
-                    valueField=""
+                    valueField="AccountID"
                     disabled={isSubmitting}
                   />
                 </Box>
@@ -325,7 +314,7 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
-                {/* Street Address  */}
+                {/* Street Address*/}
                 <Box >
                   <TextField
                     fullWidth
@@ -349,7 +338,7 @@ const CreateAccount = () => {
                 <Box >
                   <TextField
                     fullWidth
-                    label="Street Address 3 "
+                    label="Street Address 3"
                     name="street_address3"
                     value={formData.street_address3}
                     onChange={handleInputChange}
@@ -361,7 +350,7 @@ const CreateAccount = () => {
                   <TextField
                     fullWidth
                     label="Postal Code"
-                    name="PostalCode"
+                    name="postal_code"
                     value={formData.postal_code}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
@@ -426,20 +415,18 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Box>
-                
                 {/* #Employees */}
                 <Box>
                   <TextField
                     fullWidth
                     label="Number of Employees"
                     name="number_of_employees"
-
+                    type="number"
                     value={formData.number_of_employees}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
                 </Box>
-
                 {/* # of Releases */}
                 <Box>
                   <TextField
@@ -476,12 +463,6 @@ const CreateAccount = () => {
                     disabled={isSubmitting}
                   />
                 </Grid>
-                
-                
-                
-                
-
-                
               </Box>
             </form>
           </Paper>
