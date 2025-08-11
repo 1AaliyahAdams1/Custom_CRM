@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../services/authService";
+import { logout } from "../services/auth/authService";
 import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
 
 const Header = () => {
