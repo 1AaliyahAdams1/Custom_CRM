@@ -14,7 +14,8 @@ export async function getAllContacts(onlyActive = true) {
 
 export async function getContactDetails(contactId) {
   try {
-    return await api.get(`${RESOURCE}/${contactId}`);
+    const response = await api.get(`${RESOURCE}/${contactId}`);
+    return response.data;
   } catch (error) {
     console.error(`Error fetching contact ${contactId}:`, error);
     throw error;
@@ -23,7 +24,8 @@ export async function getContactDetails(contactId) {
 
 export async function getContactsByAccountId(accountName) {
   try {
-    return await api.get(`${RESOURCE}/account/${accountName}`);
+    const response = await api.get(`${RESOURCE}/account/${accountName}`);
+    return response.data;
   } catch (error) {
     console.error(`Error fetching contacts for account ${accountName}:`, error);
     throw error;
@@ -32,7 +34,8 @@ export async function getContactsByAccountId(accountName) {
 
 export async function createContact(contactData) {
   try {
-    return await api.post(RESOURCE, contactData);
+    const response = await api.post(RESOURCE, contactData);
+    return response.data;
   } catch (error) {
     console.error('Error creating contact:', error);
     throw error;
@@ -41,7 +44,8 @@ export async function createContact(contactData) {
 
 export async function updateContact(contactId, contactData) {
   try {
-    return await api.put(`${RESOURCE}/${contactId}`, contactData);
+    const response = await api.put(`${RESOURCE}/${contactId}`, contactData);
+    return response.data;
   } catch (error) {
     console.error(`Error updating contact ${contactId}:`, error);
     throw error;
