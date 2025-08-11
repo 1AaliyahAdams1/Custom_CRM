@@ -184,6 +184,51 @@ async function getClosedDealsByProductReport(req, res) {
   }
 }
 
+// ==============================
+// CUSTOMER SEGMENTATION REPORT CONTROLLERS
+// ==============================
+
+// Get Customer Segmentation Report
+async function getCustomerSegmentationReport(req, res) {
+  try {
+    const { segmentType } = req.query;
+    
+    // Validate segmentType if provided
+    const validSegmentTypes = ['Industry', 'Size', 'Country', 'StateProvince', 'City'];
+    if (segmentType && !validSegmentTypes.includes(segmentType)) {
+      return res.status(400).json({ 
+        error: `Invalid segmentType. Valid options are: ${validSegmentTypes.join(', ')}` 
+      });
+    }
+    
+    // Use 'Industry' as default segmentType if not provided
+    const segmentTypeToUse = segmentType || 'Industry';
+    
+    const segmentationData = await reportService.getCustomerSegmentationReport(segmentTypeToUse);
+    res.json(segmentationData);
+    
+  } catch (err) {
+    console.error("Error getting customer segmentation report:", err.message, err.stack);
+    res.status(500).json({ error: "Failed to get customer segmentation report" });
+  }
+}
+
+// ==============================
+// ACTIVITIES VS OUTCOMES REPORT CONTROLLERS
+// ==============================
+
+// Get Activities vs Outcomes Report
+async function getActivitiesVsOutcomesReport(req, res) {
+  try {
+    const activitiesData = await reportService.getActivitiesVsOutcomesReport();
+    res.json(activitiesData);
+    
+  } catch (err) {
+    console.error("Error getting activities vs outcomes report:", err.message, err.stack);
+    res.status(500).json({ error: "Failed to get activities vs outcomes report" });
+  }
+}
+
 // Helper function to validate date format
 function isValidDate(dateString) {
   const regex = /^\d{4}-\d{2}-\d{2}$/;
@@ -202,4 +247,6 @@ module.exports = {
   getClosedDealsByRoleReport,
   getClosedDealsByTeamReport,
   getClosedDealsByProductReport,
+  getCustomerSegmentationReport,
+  getActivitiesVsOutcomesReport,
 };
