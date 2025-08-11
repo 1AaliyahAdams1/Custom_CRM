@@ -36,4 +36,18 @@ router.get("/closed-deals/by-team", reportController.getClosedDealsByTeamReport)
 // Closed Deals Report by Product route
 router.get("/closed-deals/by-product", reportController.getClosedDealsByProductReport);
 
+// ==============================
+// CUSTOMER SEGMENTATION REPORT ROUTE
+// ==============================
+
+// Customer Segmentation Report route
+router.get("/customer-segmentation", reportController.getCustomerSegmentationReport);
+
+// ==============================
+// ACTIVITIES VS OUTCOMES REPORT ROUTE
+// ==============================
+
+// Activities vs Outcomes Report route
+router.get("/activities-vs-outcomes", reportController.getActivitiesVsOutcomesReport);
+
 module.exports = router;

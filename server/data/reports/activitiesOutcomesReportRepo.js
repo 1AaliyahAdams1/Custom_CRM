@@ -1,14 +1,20 @@
 // data/reports/activitiesOutcomesReportRepo.js
-const sql = require("mssql");
-const dbConfig = require("../../dbConfig");
+const { sql, poolPromise } = require("../../dbConfig");
 
 // =======================
 // Activities vs. Outcomes Report
 // =======================
 async function getActivitiesVsOutcomes() {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request().execute("GetActivitiesVsOutcomes");
-  return result.recordset;
+try {
+    const pool = await poolPromise;
+    
+    // FIX: Use pool.request() instead of request variable
+    const result = await pool.request().execute("GetActivitiesVsOutcomes");
+    return result.recordset;
+} catch (error) {
+    console.error("Database error in getCustomerSegmentation:", error);
+    throw error;
+  }
 }
 
 module.exports = {
