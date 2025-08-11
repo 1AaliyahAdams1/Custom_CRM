@@ -6,9 +6,25 @@ import { fetchAccountById } from "../services/accountService";
 
 // Main fields configuration for accounts
 const accountMainFields = [
-  { key: "AccountName", label: "Account Name", required: true },
-  { key: "AccountID", label: "Account ID", readOnly: true },
-  { key: "IndustryName", label: "Industry", type: "select", options: [
+  // { 
+  //   key: "AccountID",
+  //    label: "Account ID", 
+  //    readOnly: true ,
+  //   width: { xs: 12, md: 4, lg: 6 }
+  // },
+  { 
+    key: "AccountName",
+    label: "Account Name",
+    required: true,
+    width: { xs: 12, md: 12, lg: 12 }
+    
+    },
+  
+  { 
+    key: "IndustryName", 
+    label: "Industry", 
+    type: "select",
+     options: [
     "Technology", "Healthcare", "Finance", "Education", "Manufacturing", 
     "Retail", "Consulting", "Real Estate", "Non-profit"
   ]},
@@ -18,9 +34,25 @@ const accountMainFields = [
   { key: "street_address2", label: "Street Address 2" },
   { key: "street_address3", label: "Street Address 3" },
   { key: "postal_code", label: "Postal Code" },
-  { key: "CityName", label: "City" },
-  { key: "CountryName", label: "Country" },
-   { key: "StateProvinceName", label: "State/Province" },
+
+  { 
+    key: "CityName", 
+    label: "City",
+    type: "select",
+    options: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose"]
+   },
+  {
+     key: "CountryName",
+      label: "Country",
+      type: "select",
+      options: ["USA", "Canada", "UK", "Australia", "Germany", "France", "India"] 
+     },
+   {
+     key: "StateProvinceName",
+      label: "State/Province",
+      type: "select",
+      options: ["California", "Texas", "Florida", "New York", "Illinois", "Pennsylvania", "Ohio", "Georgia", "North Carolina", "Michigan"]
+    },
    { key: "annual_revenue", label: "Annual Revenue", type: "currency" },
   { key: "number_of_employees", label: "Number of Employees", type: "number" },
   { key: "number_of_releases", label: "Number of Releases", type: "number" },

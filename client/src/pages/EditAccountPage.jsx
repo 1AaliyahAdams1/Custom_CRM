@@ -268,6 +268,13 @@ const EditAccount = () => {
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              
+              <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
+                Edit Account
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
                 startIcon={<ArrowBack />}
@@ -276,12 +283,6 @@ const EditAccount = () => {
               >
                 Back
               </Button>
-              <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
-                Edit Account
-              </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
                 startIcon={<Clear />}
