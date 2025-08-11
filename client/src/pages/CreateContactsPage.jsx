@@ -8,17 +8,82 @@ import {
   Card,
   CardContent,
   Switch,
-  Stack,
   FormControlLabel,
+  Paper,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
+import { ArrowBack, Save, Clear } from '@mui/icons-material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import SmartDropdown from '../components/SmartDropdown';
 import { createContact } from '../services/contactService';
 import { getAllPersons, createPerson } from '../services/personService';
 import { getAllAccounts } from '../services/accountService';
 import { cityService, jobTitleService } from '../services/dropdownServices';
 
+// Monochrome theme for MUI components
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#050505',
+      contrastText: '#fafafa',
+    },
+    secondary: {
+      main: '#666666',
+      contrastText: '#ffffff',
+    },
+    background: {
+      default: '#fafafa',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#050505',
+      secondary: '#666666',
+    },
+    divider: '#e5e5e5',
+  },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          border: '1px solid #e5e5e5',
+          borderRadius: '8px',
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            backgroundColor: '#ffffff',
+            '& fieldset': { borderColor: '#e5e5e5' },
+            '&:hover fieldset': { borderColor: '#cccccc' },
+            '&.Mui-focused fieldset': { borderColor: '#050505' },
+          },
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        outlined: {
+          borderColor: '#e5e5e5',
+          color: '#050505',
+          '&:hover': {
+            borderColor: '#cccccc',
+            backgroundColor: '#f5f5f5',
+          },
+        },
+      },
+    },
+  },
+});
+
 const CreateContactsPage = () => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const [isNewPerson, setIsNewPerson] = useState(true);
 
@@ -125,6 +190,24 @@ const CreateContactsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!contactData.AccountID) {
+      setError('Account is required');
+      return;
+    }
+
+    if (isNewPerson && !personData.first_name.trim()) {
+      setError('First name is required for new person');
+      return;
+    }
+
+    if (!isNewPerson && !contactData.PersonID) {
+      setError('Please select a person');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
     try {
       let personIdToUse = contactData.PersonID;
 
@@ -138,11 +221,11 @@ const CreateContactsPage = () => {
       }
 
       if (!personIdToUse) {
-        alert('Please select or create a person.');
+        setError('Please select or create a person.');
         return;
       }
 
-      // Clean and normalize contact data like your account example
+      
       const cleanedContactData = {
         AccountID: contactData.AccountID === "" ? null : Number(contactData.AccountID),
         PersonID: Number(personIdToUse),
@@ -155,10 +238,21 @@ const CreateContactsPage = () => {
       console.log('Creating Contact:', cleanedContactData);
       await createContact(cleanedContactData);
 
-      navigate('/contacts');
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setSuccessMessage("Contact created successfully!");
+      
+      // Navigate after a short delay
+      setTimeout(() => {
+        navigate('/contacts');
+      }, 1500);
+
     } catch (error) {
       console.error('Error creating contact/person:', error);
-      alert('Failed to create contact. Please try again.');
+      setError('Failed to create contact. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -167,181 +261,277 @@ const CreateContactsPage = () => {
   };
 
   return (
-    <Box p={4} maxWidth={900} mx="auto">
-      <Typography variant="h4" gutterBottom>
-        Create New Contact
-      </Typography>
-
-      {/* Buttons */}
-      <Box mb={3} display="flex" justifyContent="flex-end" gap={2}>
-        <Button variant="outlined" onClick={() => navigate(-1)}>
-          Back
-        </Button>
-        <Button variant="outlined" onClick={handleCancel}>
-          Cancel
-        </Button>
-        <Button variant="contained" color="primary" onClick={handleSubmit}>
-          Save
-        </Button>
-      </Box>
-
-      {/* Account Dropdown */}
-      <SmartDropdown
-        label="Account"
-        name="AccountID"
-        value={contactData.AccountID}
-        onChange={handleContactChange}
-        service={accountService}
-        displayField="AccountName"
-        valueField="AccountID"
-        placeholder="Search for account..."
-        required
-        fullWidth
-      />
-
-      {/* Person Selection Toggle */}
-      <Card variant="outlined" sx={{ my: 3 }}>
-        <CardContent>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h5" fontWeight={600} color="primary.main">
-              Person Information
-            </Typography>
-            <FormControlLabel
-              control={
-                <Switch checked={isNewPerson} onChange={handlePersonToggle} color="primary" />
-              }
-              label={isNewPerson ? 'Create New Person' : 'Use Existing Person'}
-            />
+    <ThemeProvider theme={theme}>
+      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
+        <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+          {/* Header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
+                Create New Contact
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<ArrowBack />}
+                onClick={() => navigate(-1)}
+                sx={{ minWidth: 'auto' }}
+              >
+                Back
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<Clear />}
+                onClick={handleCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                sx={{
+                  backgroundColor: '#050505',
+                  '&:hover': { backgroundColor: '#333333' },
+                }}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Contact'}
+              </Button>
+            </Box>
           </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {isNewPerson
-              ? 'Fill in the person details below to create a new person record'
-              : 'Select an existing person from the dropdown'}
-          </Typography>
-        </CardContent>
-      </Card>
 
-      {/* Existing Person Dropdown */}
-      {!isNewPerson && (
-        <SmartDropdown
-          label="Select Person"
-          name="PersonID"
-          value={contactData.PersonID}
-          onChange={handleContactChange}
-          service={personDropdownService}
-          displayField="PersonID" // or whatever field exists, you can customize display
-          valueField="PersonID"
-          placeholder="Search for person..."
-          required
-          fullWidth
-          customDisplayFormatter={(item) =>
-            `${item.first_name || ''} ${item.surname || ''}`.trim()
-          }
-        />
-      )}
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
 
-      {/* New Person Fields */}
-      {isNewPerson && (
-        <Stack spacing={2} my={2}>
-          <TextField
-            label="Title"
-            name="Title"
-            value={personData.Title}
-            onChange={handlePersonChange}
-            fullWidth
-          />
-          <TextField
-            label="First Name"
-            name="first_name"
-            value={personData.first_name}
-            onChange={handlePersonChange}
-            fullWidth
-            required
-          />
-          <TextField
-            label="Middle Name"
-            name="middle_name"
-            value={personData.middle_name}
-            onChange={handlePersonChange}
-            fullWidth
-          />
-          <TextField
-            label="Surname"
-            name="surname"
-            value={personData.surname}
-            onChange={handlePersonChange}
-            fullWidth
-            required
-          />
-          <SmartDropdown
-            label="City"
-            name="CityID"
-            value={personData.CityID}
-            onChange={handlePersonChange}
-            service={cityService}
-            displayField="CityName"
-            valueField="CityID"
-            placeholder="Search for city..."
-            fullWidth
-          />
-          <TextField
-            label="Personal Email"
-            name="personal_email"
-            value={personData.personal_email}
-            onChange={handlePersonChange}
-            fullWidth
-            type="email"
-          />
-          <TextField
-            label="Personal Mobile"
-            name="personal_mobile"
-            value={personData.personal_mobile}
-            onChange={handlePersonChange}
-            fullWidth
-          />
-          <TextField
-            label="LinkedIn Link"
-            name="linkedin_link"
-            value={personData.linkedin_link}
-            onChange={handlePersonChange}
-            fullWidth
-          />
-        </Stack>
-      )}
+          {/* Success Alert */}
+          {successMessage && (
+            <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+              {successMessage}
+            </Alert>
+          )}
 
-      {/* Job Title Dropdown */}
-      <SmartDropdown
-        label="Job Title"
-        name="JobTitleID"
-        value={contactData.JobTitleID}
-        onChange={handleContactChange}
-        service={jobTitleService}
-        displayField="JobTitleName"
-        valueField="JobTitleID"
-        placeholder="Search for job title..."
-        fullWidth
-      />
+          {/* Form */}
+          <Paper elevation={0} sx={{ p: 3 }}>
+            <form onSubmit={handleSubmit}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+                {/* Account Dropdown - Required */}
+                <Box sx={{ gridColumn: '1 / -1' }}>
+                  <SmartDropdown
+                    label="Account"
+                    name="AccountID"
+                    value={contactData.AccountID}
+                    onChange={handleContactChange}
+                    service={accountService}
+                    displayField="AccountName"
+                    valueField="AccountID"
+                    placeholder="Search for account..."
+                    required
+                    disabled={isSubmitting}
+                  />
+                </Box>
 
-      {/* Work Email & Phone */}
-      <TextField
-        label="Work Email"
-        name="WorkEmail"
-        value={contactData.WorkEmail}
-        onChange={handleContactChange}
-        fullWidth
-        type="email"
-        sx={{ mt: 2 }}
-      />
-      <TextField
-        label="Work Phone"
-        name="WorkPhone"
-        value={contactData.WorkPhone}
-        onChange={handleContactChange}
-        fullWidth
-        sx={{ mt: 2 }}
-      />
-    </Box>
+                {/* Person Selection Toggle Card */}
+                <Box sx={{ gridColumn: '1 / -1' }}>
+                  <Card variant="outlined" sx={{ border: '1px solid #e5e5e5' }}>
+                    <CardContent>
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography variant="h6" fontWeight={600} color="#050505">
+                          Person Information
+                        </Typography>
+                        <FormControlLabel
+                          control={
+                            <Switch 
+                              checked={isNewPerson} 
+                              onChange={handlePersonToggle} 
+                              disabled={isSubmitting}
+                              sx={{
+                                '& .MuiSwitch-switchBase.Mui-checked': {
+                                  color: '#050505',
+                                },
+                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                  backgroundColor: '#050505',
+                                },
+                              }}
+                            />
+                          }
+                          label={isNewPerson ? 'Create New Person' : 'Use Existing Person'}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="#666666" sx={{ mt: 1 }}>
+                        {isNewPerson
+                          ? 'Fill in the person details below to create a new person record'
+                          : 'Select an existing person from the dropdown'}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Box>
+
+                {/* Existing Person Dropdown */}
+                {!isNewPerson && (
+                  <Box sx={{ gridColumn: '1 / -1' }}>
+                    <SmartDropdown
+                      label="Select Person"
+                      name="PersonID"
+                      value={contactData.PersonID}
+                      onChange={handleContactChange}
+                      service={personDropdownService}
+                      displayField="PersonID"
+                      valueField="PersonID"
+                      placeholder="Search for person..."
+                      required
+                      disabled={isSubmitting}
+                      customDisplayFormatter={(item) =>
+                        `${item.first_name || ''} ${item.surname || ''}`.trim()
+                      }
+                    />
+                  </Box>
+                )}
+
+                {/* New Person Fields */}
+                {isNewPerson && (
+                  <>
+                    <Box>
+                      <TextField
+                        fullWidth
+                        label="Title"
+                        name="Title"
+                        value={personData.Title}
+                        onChange={handlePersonChange}
+                        disabled={isSubmitting}
+                      />
+                    </Box>
+                    <Box>
+                      <TextField
+                        fullWidth
+                        label="First Name"
+                        name="first_name"
+                        value={personData.first_name}
+                        onChange={handlePersonChange}
+                        required
+                        disabled={isSubmitting}
+                      />
+                    </Box>
+                    <Box>
+                      <TextField
+                        fullWidth
+                        label="Middle Name"
+                        name="middle_name"
+                        value={personData.middle_name}
+                        onChange={handlePersonChange}
+                        disabled={isSubmitting}
+                      />
+                    </Box>
+                    <Box>
+                      <TextField
+                        fullWidth
+                        label="Surname"
+                        name="surname"
+                        value={personData.surname}
+                        onChange={handlePersonChange}
+                        required
+                        disabled={isSubmitting}
+                      />
+                    </Box>
+                    <Box>
+                      <SmartDropdown
+                        label="City"
+                        name="CityID"
+                        value={personData.CityID}
+                        onChange={handlePersonChange}
+                        service={cityService}
+                        displayField="CityName"
+                        valueField="CityID"
+                        placeholder="Search for city..."
+                        disabled={isSubmitting}
+                      />
+                    </Box>
+                    <Box>
+                      <TextField
+                        fullWidth
+                        label="Personal Email"
+                        name="personal_email"
+                        value={personData.personal_email}
+                        onChange={handlePersonChange}
+                        type="email"
+                        disabled={isSubmitting}
+                      />
+                    </Box>
+                    <Box>
+                      <TextField
+                        fullWidth
+                        label="Personal Mobile"
+                        name="personal_mobile"
+                        value={personData.personal_mobile}
+                        onChange={handlePersonChange}
+                        disabled={isSubmitting}
+                      />
+                    </Box>
+                    <Box>
+                      <TextField
+                        fullWidth
+                        label="LinkedIn Link"
+                        name="linkedin_link"
+                        value={personData.linkedin_link}
+                        onChange={handlePersonChange}
+                        disabled={isSubmitting}
+                      />
+                    </Box>
+                  </>
+                )}
+
+                {/* Job Title Dropdown */}
+                <Box>
+                  <SmartDropdown
+                    label="Job Title"
+                    name="JobTitleID"
+                    value={contactData.JobTitleID}
+                    onChange={handleContactChange}
+                    service={jobTitleService}
+                    displayField="JobTitleName"
+                    valueField="JobTitleID"
+                    placeholder="Search for job title..."
+                    disabled={isSubmitting}
+                  />
+                </Box>
+
+                {/* Work Email */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Work Email"
+                    name="WorkEmail"
+                    value={contactData.WorkEmail}
+                    onChange={handleContactChange}
+                    type="email"
+                    disabled={isSubmitting}
+                  />
+                </Box>
+
+                {/* Work Phone */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Work Phone"
+                    name="WorkPhone"
+                    value={contactData.WorkPhone}
+                    onChange={handleContactChange}
+                    disabled={isSubmitting}
+                  />
+                </Box>
+              </Box>
+            </form>
+          </Paper>
+        </Box>
+      </Box>
+    </ThemeProvider>
   );
 };
-
 export default CreateContactsPage;
