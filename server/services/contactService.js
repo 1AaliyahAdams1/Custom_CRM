@@ -5,6 +5,10 @@ async function getAllContacts(onlyActive = true) {
   return await contactRepo.getAllContacts(onlyActive = true);
 }
 
+async function getAllContactDetails(onlyActive = true) {
+  return await contactRepo.getAllContactDetails(onlyActive = true)
+}
+
 // Get contact details by ID
 async function getContactDetails(contactId) {
   return await contactRepo.getContactDetails(contactId);
@@ -42,6 +46,7 @@ async function getContactsByAccountId(accountName) {
 
 module.exports = {
   getAllContacts,
+  getAllContactDetails,
   getContactDetails,
   createContact,
   updateContact,
