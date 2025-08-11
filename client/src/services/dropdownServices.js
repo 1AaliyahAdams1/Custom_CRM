@@ -7,7 +7,7 @@ const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_
 export const stateProvinceService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/stateprovinces`);
+      const response = await axios.get(`${BASE_URL}/states`);
       return response.data || [];
     } catch (error) {
       console.error('Error loading state/provinces:', error);
@@ -16,7 +16,7 @@ export const stateProvinceService = {
   },
   getByCountry: async (countryId) => {
     try {
-      const response = await axios.get(`${BASE_URL}/stateprovinces?countryId=${countryId}`);
+      const response = await axios.get(`${BASE_URL}/states?countryId=${countryId}`);
       return response.data || [];
     } catch (error) {
       console.error('Error loading state/provinces by country:', error);

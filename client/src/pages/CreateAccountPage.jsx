@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -8,15 +8,16 @@ import {
   Paper,
   Alert,
   CircularProgress,
+  Grid
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { createAccount, getAllAccounts } from '../services/accountService'; 
-import { 
-  cityService, 
-  industryService, 
-  countryService, 
-  stateProvinceService 
+import { createAccount, getAllAccounts } from '../services/accountService';
+import {
+  cityService,
+  industryService,
+  countryService,
+  stateProvinceService
 } from '../services/dropdownServices';
 import SmartDropdown from '../components/SmartDropdown';
 
@@ -324,11 +325,12 @@ const CreateAccount = () => {
       await createAccount(formData);
       
       setSuccessMessage("Account created successfully!");
-      
+
+      // Navigate after a short delay
       setTimeout(() => {
         navigate('/accounts');
       }, 1500);
-      
+
     } catch (error) {
       console.error('Error creating account:', error);
       
@@ -362,7 +364,7 @@ const CreateAccount = () => {
                 Create New Account
               </Typography>
             </Box>
-            
+
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
@@ -455,8 +457,8 @@ const CreateAccount = () => {
                     value={formData.CountryID}
                     onChange={handleInputChange}
                     service={countryService}
-                    displayField="name"
-                    valueField="id"
+                    displayField="CountryName"
+                    valueField="CountryID"
                     disabled={isSubmitting}
                     error={isFieldInvalid('CountryID')}
                     helperText={getFieldError('CountryID')}
@@ -477,8 +479,8 @@ const CreateAccount = () => {
                           : allStates;
                       }
                     }}
-                    displayField="name"
-                    valueField="id"
+                    displayField="StateProvince_Name"
+                    valueField="StateProvinceID"
                     disabled={isSubmitting}
                     error={isFieldInvalid('StateProvinceID')}
                     helperText={getFieldError('StateProvinceID')}
@@ -492,8 +494,8 @@ const CreateAccount = () => {
                     value={formData.CityID}
                     onChange={handleInputChange}
                     service={cityService}
-                    displayField="name"
-                    valueField="id"
+                    displayField="CityName"
+                    valueField="CityID"
                     disabled={isSubmitting}
                     error={isFieldInvalid('CityID')}
                     helperText={getFieldError('CityID')}
@@ -507,8 +509,8 @@ const CreateAccount = () => {
                     value={formData.IndustryID}
                     onChange={handleInputChange}
                     service={industryService}
-                    displayField="name"
-                    valueField="id"
+                    displayField="IndustryName"
+                    valueField="IndustryID"
                     disabled={isSubmitting}
                     error={isFieldInvalid('IndustryID')}
                     helperText={getFieldError('IndustryID')}
@@ -518,6 +520,7 @@ const CreateAccount = () => {
                 <Box>
                   <TextField
                     fullWidth
+                    label="Street Address 1"
                     label="Street Address 1"
                     name="street_address1"
                     value={formData.street_address1}
@@ -570,6 +573,7 @@ const CreateAccount = () => {
                   <TextField
                     fullWidth
                     label="Postal Code"
+                    name="postal_code"
                     name="postal_code"
                     value={formData.postal_code}
                     onChange={handleInputChange}
@@ -661,6 +665,7 @@ const CreateAccount = () => {
                     label="Annual Revenue"
                     name="annual_revenue"
                     type="number"
+                    type="number"
                     value={formData.annual_revenue}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
@@ -678,6 +683,7 @@ const CreateAccount = () => {
                     fullWidth
                     label="Number of Employees"
                     name="number_of_employees"
+                    type="number"
                     type="number"
                     value={formData.number_of_employees}
                     onChange={handleInputChange}
@@ -697,6 +703,7 @@ const CreateAccount = () => {
                     label="Number of Releases"
                     name="number_of_releases"
                     type="number"
+                    type="number"
                     value={formData.number_of_releases}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
@@ -714,6 +721,7 @@ const CreateAccount = () => {
                     fullWidth
                     label="Number of Events Annually"
                     name="number_of_events_anually"
+                    type="number"
                     type="number"
                     value={formData.number_of_events_anually}
                     onChange={handleInputChange}

@@ -10,10 +10,10 @@ import {
   CircularProgress,
   Skeleton,
   Grid,
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -135,7 +135,7 @@ const EditAccount = () => {
   const [industries, setIndustries] = useState([]);
   const [countries, setCountries] = useState([]);
   const [stateProvinces, setStateProvinces] = useState([]);
-  
+
   const [formData, setFormData] = useState({
     AccountName: "",
     CityID: "",
@@ -308,6 +308,8 @@ const EditAccount = () => {
           CityID: accountData.CityID || "",
           CountryID: accountData.CountryID || "",
           StateProvinceID: accountData.StateProvinceID || "",
+          CountryID: accountData.CountryID || "",
+          StateProvinceID: accountData.StateProvinceID || "",
           street_address1: accountData.street_address1 || "",
           street_address2: accountData.street_address2 || "",
           street_address3: accountData.street_address3 || "",
@@ -424,7 +426,8 @@ const EditAccount = () => {
       setTimeout(() => {
         navigate("/accounts");
       }, 1500);
-      
+      await updateAccount(id, formData)
+      setSuccessMessage("Account updated successfully!");
     } catch (error) {
       console.error("Failed to update account:", error);
       
@@ -482,12 +485,12 @@ const EditAccount = () => {
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              
+
               <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
                 Edit Account
               </Typography>
             </Box>
-            
+
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
@@ -579,6 +582,7 @@ const EditAccount = () => {
                 </Box>
 
                 {/* Country ID */}
+                {/* Country ID */}
                 <Box>
                   <SmartDropdown
                     label="Country"
@@ -602,10 +606,18 @@ const EditAccount = () => {
                     value={formData.StateProvinceID}
                     onChange={handleInputChange}
                     service={{
+                <Box>
+                  <SmartDropdown
+                    label="State/Province"
+                    name="StateProvinceID"
+                    value={formData.StateProvinceID}
+                    onChange={handleInputChange}
+                    service={{
                       getAll: async () => {
                         const allStates = await stateProvinceService.getAll();
                         return formData.CountryID 
                           ? allStates.filter(state => state.countryId === parseInt(formData.CountryID))
+                          : allStates;
                           : allStates;
                       }
                     }}
@@ -684,7 +696,6 @@ const EditAccount = () => {
                     }}
                   />
                 </Box>
-
                 {/* Street Address 3 */}
                 <Box>
                   <TextField
@@ -758,7 +769,6 @@ const EditAccount = () => {
                     }}
                   />
                 </Box>
-
                 {/* Fax */}
                 <Box>
                   <TextField
@@ -853,7 +863,6 @@ const EditAccount = () => {
                     }}
                   />
                 </Box>
-
                 {/* Number of Events Annually */}
                 <Box>
                   <TextField
