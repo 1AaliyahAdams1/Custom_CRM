@@ -1,4 +1,5 @@
 const authService = require("../../services/auth/authService");
+const roleService = require("../../services/auth/roleService");
 
 async function login(req, res) {
   try {
@@ -8,15 +9,23 @@ async function login(req, res) {
       return res.status(400).json({ message: "Email/Username and password are required." });
     }
 
-    const user = await authService.login(identifier, password);
+    console.log("=== Auth Controller Login Debug ===");
+    console.log("Login attempt for identifier:", identifier);
 
-    // user is already safe (no PasswordHash or Salt)
+    // Use the authService.login which already handles everything
+    const loginResult = await authService.login(identifier, password);
+    
+    console.log("Auth service result:", loginResult);
+    console.log("Token from auth service:", loginResult.token);
+
+   
     res.json({
       message: "Login successful",
-      user,
+      token: loginResult.token,
+      user: loginResult.user,
     });
   } catch (error) {
-    // Return error for invalid credentials or other issues
+    console.error("Login error:", error);
     res.status(401).json({ message: error.message || "Authentication failed" });
   }
 }

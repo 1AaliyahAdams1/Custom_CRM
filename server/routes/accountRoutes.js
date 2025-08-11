@@ -1,16 +1,85 @@
 const express = require("express");
 const router = express.Router();
 const accountController = require("../controllers/accountController");
-const { authenticateJWT } = require("../middleware/authMiddleware");
-const requireRoles = require("../middleware/requireRoles");
-
-// Protect routes with JWT and role-based authorization
-router.get("/", authenticateJWT, requireRoles("C-level", "Sales Manager"), accountController.getAllAccounts);
-router.get("/:id", authenticateJWT, requireRoles("C-level", "Sales Manager"), accountController.getAccountById);
-router.post("/", authenticateJWT, requireRoles("C-level"), accountController.createAccount);
-router.put("/:id", authenticateJWT, requireRoles("C-level"), accountController.updateAccount);
-router.patch("/:id/deactivate", authenticateJWT, requireRoles("C-level"), accountController.deactivateAccount);
-router.patch("/:id/reactivate", authenticateJWT, requireRoles("C-level"), accountController.reactivateAccount);
-router.delete("/:id/delete", authenticateJWT, requireRoles("C-level"), accountController.deleteAccount);
+router.get("/", accountController.getAllAccounts);
+router.get("/:id", accountController.getAccountById);
+router.post("/", accountController.createAccount);
+router.put("/:id", accountController.updateAccount);
+router.patch("/:id/deactivate", accountController.deactivateAccount);
+router.patch("/:id/reactivate", accountController.reactivateAccount);
+router.delete("/:id/delete", accountController.deleteAccount);
 
 module.exports = router;
+
+
+
+
+
+
+
+
+
+//ROLE ACCESS FOR BACKEND
+// const express = require("express");
+// const router = express.Router();
+// const accountController = require("../controllers/accountController");
+// const { authenticateJWT } = require("../middleware/authMiddleware");
+// const { authorizeRoleDynamic } = require("../middleware/authorizeRoleMiddleware");
+
+// // Get all accounts - restricted to C-level, Sales Manager, Sales Rep
+// router.get(
+//   "/",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level", "Sales Manager", "Sales Representative"], "account"),
+//   accountController.getAllAccounts
+// );
+
+// // Get specific account by ID
+// router.get(
+//   "/:id",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level", "Sales Manager", "Sales Representative"], "account"),
+//   accountController.getAccountById
+// );
+
+// // Create new account - only C-level
+// router.post(
+//   "/",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level"], "account"),
+//   accountController.createAccount
+// );
+
+// // Update account - only C-level
+// router.put(
+//   "/:id",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level"], "account"),
+//   accountController.updateAccount
+// );
+
+// // Deactivate account (soft delete) - only C-level
+// router.patch(
+//   "/:id/deactivate",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level"], "account"),
+//   accountController.deactivateAccount
+// );
+
+// // Reactivate account - only C-level
+// router.patch(
+//   "/:id/reactivate",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level"], "account"),
+//   accountController.reactivateAccount
+// );
+
+// // Permanently delete account (hard delete) - only C-level
+// router.delete(
+//   "/:id/delete",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level"], "account"),
+//   accountController.deleteAccount
+// );
+
+// module.exports = router;

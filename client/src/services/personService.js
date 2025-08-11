@@ -1,49 +1,39 @@
-import axios from "axios";
+import api from '../utils/api';
 
-const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
-const PERSONS_API = `${BASE_URL}/persons`;
+const RESOURCE = '/persons';
 
-// ===========================
-// Get all persons
-// ===========================
 export async function getAllPersons() {
   try {
-    const response = await axios.get(PERSONS_API);
+    const response = await api.get(RESOURCE);
     return response.data;
   } catch (error) {
-    console.error("Error fetching persons:", error);
+    console.error('Error fetching persons:', error);
     throw error;
   }
 }
 
-// ===========================
-// Get person by ID
-// ===========================
 export async function getPersonById(personId) {
   try {
-    const response = await axios.get(`${PERSONS_API}/${personId}`);
-    return response.data;
+    return await api.get(`${RESOURCE}/${personId}`);
   } catch (error) {
     console.error(`Error fetching person ${personId}:`, error);
     throw error;
   }
 }
 
-// Create new person
 export async function createPerson(personData) {
   try {
-    const response = await axios.post(PERSONS_API, personData);
-    return response.data; 
+    const response = await api.post(RESOURCE, personData);
+    return response.data;
   } catch (error) {
-    console.error("Error creating person:", error);
+    console.error('Error creating person:', error);
     throw error;
   }
 }
 
-// Update person
 export async function updatePerson(personId, personData) {
   try {
-    const response = await axios.put(`${PERSONS_API}/${personId}`, personData);
+    const response = await api.put(`${RESOURCE}/${personId}`, personData);
     return response.data;
   } catch (error) {
     console.error(`Error updating person ${personId}:`, error);
@@ -51,10 +41,9 @@ export async function updatePerson(personId, personData) {
   }
 }
 
-// Deactivate person
 export async function deactivatePerson(personId) {
   try {
-    const response = await axios.patch(`${PERSONS_API}/${personId}/deactivate`);
+    const response = await api.patch(`${RESOURCE}/${personId}/deactivate`);
     return response.data;
   } catch (error) {
     console.error(`Error deactivating person ${personId}:`, error);
@@ -62,10 +51,9 @@ export async function deactivatePerson(personId) {
   }
 }
 
-// Reactivate person
 export async function reactivatePerson(personId) {
   try {
-    const response = await axios.patch(`${PERSONS_API}/${personId}/reactivate`);
+    const response = await api.patch(`${RESOURCE}/${personId}/reactivate`);
     return response.data;
   } catch (error) {
     console.error(`Error reactivating person ${personId}:`, error);
@@ -73,10 +61,9 @@ export async function reactivatePerson(personId) {
   }
 }
 
-// Delete person
 export async function deletePerson(personId) {
   try {
-    const response = await axios.delete(`${PERSONS_API}/${personId}/delete`);
+    const response = await api.delete(`${RESOURCE}/${personId}/delete`);
     return response.data;
   } catch (error) {
     console.error(`Error deleting person ${personId}:`, error);

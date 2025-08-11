@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const userRepo = require("../../data/auth/authRepository"); 
-const roleRepo = require("../../data/roleRepository"); 
+const roleService = require("./roleService"); 
 
 async function generateToken(user, roles) {
   return jwt.sign(
@@ -29,7 +29,7 @@ async function login(identifier, password) {
   }
 
   // Fetch roles for the user
-  const roles = await roleRepo.getUserRoles(user.UserID);
+  const roles = await roleService.getUserRoles(user.UserID);
 
   // Generate JWT token with roles included
   const token = await generateToken(user, roles);
