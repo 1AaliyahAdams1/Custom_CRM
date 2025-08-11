@@ -16,6 +16,19 @@ export async function getAllContacts(onlyActive = true) {
   }
 }
 
+// Get all contact details
+export async function getAllContactDetails(onlyActive = true) {
+  try {
+    const response = await axios.get(CONTACTS_API, {
+      params: { onlyActive }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching contacts:", error);
+    throw error;
+  }
+}
+
 // Get contact details by ID
 export async function getContactDetails(contactId) {
   try {
