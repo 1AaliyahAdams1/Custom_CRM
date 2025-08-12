@@ -1,8 +1,8 @@
 const contactService = require("../services/contactService");
 
-async function getAllContacts(req, res) {
+async function getAllContactDetails(req, res) {
   try {
-    const contacts = await contactService.getAllContacts(onlyActive = true);
+    const contacts = await contactService.getAllContactDetails(onlyActive = true);
     res.json(contacts);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -73,7 +73,7 @@ async function deleteContact(req, res) {
 }
 
 module.exports = {
-  getAllContacts,
+  getAllContactDetails,
   getContactDetails,          
   getContactsByAccountId,
   createContact,

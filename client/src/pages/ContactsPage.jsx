@@ -28,11 +28,8 @@ import {
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import UniversalTable from '../components/TableView';
-
-
 import {
   getAllContacts,
-  
   deactivateContact
 } from "../services/contactService";
 
@@ -95,22 +92,15 @@ const theme = createTheme({
 const contactsTableConfig = {
   columns: [
     {
-      field: 'ContactID',
-      headerName: 'Contact ID',
-      width: 100,
-      type: 'number'
+      field: 'AccountName',
+      headerName: 'Account Name',
+      width: 120
     },
     {
-      field: 'AccountID',
-      headerName: 'Account ID',
-      width: 120,
-      type: 'number'
-    },
-    {
-      field: 'PersonID',
-      headerName: 'Person ID',
-      width: 120,
-      type: 'number'
+      field: 'PersonFullName', // This will now be a direct field, not a computed one
+      headerName: 'Person',
+      width: 300,
+      type: 'string'
     },
     {
       field: 'WorkEmail',
@@ -134,10 +124,9 @@ const contactsTableConfig = {
         params.row?.Still_employed === false ? "No" : "N/A"
     },
     {
-      field: 'JobTitleID',
-      headerName: 'Job Title ID',
-      width: 130,
-      type: 'number'
+      field: 'JobTitleName',
+      headerName: 'Job Title',
+      width: 130
     },
     {
       field: 'CreatedAt',
@@ -173,7 +162,18 @@ const ContactsPage = () => {
     setError(null);
     try {
       const data = await getAllContacts();
-      setContacts(data);
+      console.log("Fetched contacts:", data);
+
+      const processedData = data.map(contact => ({
+      ...contact,
+      PersonFullName: [
+        contact.first_name || '',
+        contact.middle_name || '',
+        contact.surname || ''
+      ].filter(part => part.trim() !== '').join(' ')
+    }));
+
+      setContacts(processedData);
     } catch (err) {
       setError("Failed to load contacts. Please try again.");
     } finally {
