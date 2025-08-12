@@ -1,7 +1,7 @@
-//PAGE : Main Accounts Page (presentational only, no data fetching)
+// PAGE : Main Accounts Page (presentational only, no data fetching) 
 
-//IMPORTS
-import React, { useMemo } from "react";
+// IMPORTS
+import React from "react";
 import {
   Box,
   Typography,
@@ -9,20 +9,10 @@ import {
   CircularProgress,
   Alert,
   Paper,
-  TextField,
-  InputAdornment,
   Chip,
-  FormControl,
-  InputLabel,
-  Select,
   Toolbar,
-  MenuItem,
 } from "@mui/material";
-import {
-  Search,
-  Add,
-  Clear,
-} from "@mui/icons-material";
+import { Add } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import UniversalTable from '../components/TableView';
 
@@ -97,13 +87,13 @@ const accountsTableConfig = {
     { field: 'annual_revenue', headerName: 'Annual Revenue' },
     { field: 'CreatedAt', headerName: 'Created' },
     {
-      field: 'Active',
-      headerName: 'Status',
+      field: 'ownerStatus',
+      headerName: 'Ownership',
       type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive' },
-      chipColors: { true: '#000000', false: '#999999' }
+      chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
+      chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' }
     },
-  ]
+  ],
 };
 
 const AccountsPage = ({
@@ -120,42 +110,8 @@ const AccountsPage = ({
   onAddAttachment,
 }) => {
   const [selected, setSelected] = React.useState([]);
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState('');
-
-  // Filter and search logic
-  const filteredAccounts = useMemo(() => {
-    return accounts.filter((account) => {
-      const fullAddress = [account.street_address1, account.street_address2, account.street_address3]
-        .filter(Boolean)
-        .join(" ");
-
-      const matchesSearch =
-        (account.AccountName && account.AccountName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (account.email && account.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (account.PrimaryPhone && account.PrimaryPhone.includes(searchTerm)) ||
-        (account.Website && account.Website.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (fullAddress && fullAddress.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (account.postal_code && account.postal_code.includes(searchTerm)) ||
-        (account.fax && account.fax.includes(searchTerm));
-
-      const matchesStatus = !statusFilter ||
-        (statusFilter === 'active' && account.Active) ||
-        (statusFilter === 'inactive' && !account.Active);
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [accounts, searchTerm, statusFilter]);
 
   // Selection handlers
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      setSelected(filteredAccounts.map(account => account.AccountID));
-    } else {
-      setSelected([]);
-    }
-  };
-
   const handleSelectClick = (id) => {
     const selectedIndex = selected.indexOf(id);
     let newSelected = [];
@@ -176,12 +132,15 @@ const AccountsPage = ({
     setSelected(newSelected);
   };
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('');
+  const handleSelectAllClick = (event) => {
+    if (event.target.checked) {
+      setSelected(accounts.map(account => account.AccountID));
+    } else {
+      setSelected([]);
+    }
   };
 
-  // Custom formatters for the table
+  // Formatters for columns
   const formatters = {
     street_address: (value, row) => {
       const fullAddress = [row.street_address1, row.street_address2, row.street_address3]
@@ -204,14 +163,12 @@ const AccountsPage = ({
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-        {/* Display error alert if any error */}
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
 
-        {/* Display success alert on successful operation */}
         {successMessage && (
           <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
             {successMessage}
@@ -228,7 +185,7 @@ const AccountsPage = ({
             overflow: 'hidden'
           }}
         >
-          {/* Toolbar with search and filters */}
+          {/* Toolbar with title and Add button */}
           <Toolbar
             sx={{
               backgroundColor: '#ffffff',
@@ -236,7 +193,7 @@ const AccountsPage = ({
               justifyContent: 'space-between',
               flexWrap: 'wrap',
               gap: 2,
-              py: 2
+              py: 2,
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
@@ -253,7 +210,6 @@ const AccountsPage = ({
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-              {/* Add Account Button */}
               <Button
                 variant="contained"
                 startIcon={<Add />}
@@ -261,88 +217,22 @@ const AccountsPage = ({
                 sx={{
                   backgroundColor: '#050505',
                   color: '#ffffff',
-                  '&:hover': {
-                    backgroundColor: '#333333',
-                  },
+                  '&:hover': { backgroundColor: '#333333' },
                 }}
               >
                 Add Account
               </Button>
-
-              {/* Search */}
-              <TextField
-                size="small"
-                placeholder="Search accounts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search sx={{ color: '#666666' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  minWidth: 250,
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#ffffff',
-                    '& fieldset': { borderColor: '#e5e5e5' },
-                    '&:hover fieldset': { borderColor: '#cccccc' },
-                    '&.Mui-focused fieldset': { borderColor: '#050505' },
-                  }
-                }}
-              />
-
-              {/* Status Filter */}
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Status"
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  sx={{
-                    backgroundColor: '#ffffff',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e5e5e5' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#cccccc' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#050505' },
-                  }}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* Clear Filters */}
-              {(searchTerm || statusFilter) && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={clearFilters}
-                  startIcon={<Clear />}
-                  sx={{
-                    borderColor: '#e5e5e5',
-                    color: '#666666',
-                    '&:hover': {
-                      borderColor: '#cccccc',
-                      backgroundColor: '#f5f5f5',
-                    },
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
             </Box>
           </Toolbar>
 
-          {/* Show loading spinner or accounts table */}
+          {/* Loading spinner or table */}
           {loading ? (
             <Box display="flex" justifyContent="center" p={8}>
               <CircularProgress />
             </Box>
           ) : (
             <UniversalTable
-              data={filteredAccounts}
+              data={accounts}
               columns={accountsTableConfig.columns}
               idField={accountsTableConfig.idField}
               selected={selected}
@@ -352,23 +242,25 @@ const AccountsPage = ({
               onView={onView}
               onEdit={onEdit}
               onDelete={onDeactivate}
-              onAddNote={onAddNote}                
-              onAddAttachment={onAddAttachment}  
+              onAddNote={onAddNote}
+              onAddAttachment={onAddAttachment}
               formatters={formatters}
             />
           )}
 
-          {/* Results footer */}
-          <Box sx={{
-            p: 2,
-            borderTop: '1px solid #e5e5e5',
-            backgroundColor: '#fafafa',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
+          {/* Footer */}
+          <Box
+            sx={{
+              p: 2,
+              borderTop: '1px solid #e5e5e5',
+              backgroundColor: '#fafafa',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
             <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {filteredAccounts.length} of {accounts.length} accounts
+              Showing {accounts.length} accounts
             </Typography>
             {selected.length > 0 && (
               <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>

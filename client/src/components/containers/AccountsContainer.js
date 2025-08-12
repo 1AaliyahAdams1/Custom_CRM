@@ -17,10 +17,9 @@ const AccountsContainer = () => {
     const [successMessage, setSuccessMessage] = useState("");
     const [refreshFlag, setRefreshFlag] = useState(false);
 
-    // Get user and roles from localStorage
     const storedUser = JSON.parse(localStorage.getItem("user")) || {};
     const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
-    const userId = storedUser.UserID || storedUser.id || null; // adjust key if needed
+    const userId = storedUser.UserID || storedUser.id || null;
 
     const isCLevel = roles.includes("C-level");
     const isSalesRep = roles.includes("Sales Representative");
@@ -38,8 +37,12 @@ const AccountsContainer = () => {
             if (isCLevel) {
                 console.log("Fetching all accounts for C-level user");
                 const response = await getAllAccounts();
-                accountsData = response.data;
-                console.log("All accounts fetched:", accountsData);
+                accountsData = response.data || [];
+
+                accountsData.forEach(acc => {
+                    acc.ownerStatus = 'n/a';
+                });
+
             } else if (isSalesRep) {
                 console.log("Fetching assigned and unassigned accounts for Sales Representative");
 
@@ -49,29 +52,33 @@ const AccountsContainer = () => {
                 const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
                 const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
 
+                assignedAccounts.forEach(acc => {
+                    acc.ownerStatus = 'owned';
+                });
+                unassignedAccounts.forEach(acc => {
+                    acc.ownerStatus = 'unowned';
+                });
 
                 const combined = [...assignedAccounts, ...unassignedAccounts];
 
                 const map = new Map();
-                combined.forEach((acc) => {
+                combined.forEach(acc => {
                     if (!acc.AccountID) {
                         console.warn("Account with missing AccountID:", acc);
-                    } else {
-                        console.log("Adding AccountID to map:", acc.AccountID);
-                        map.set(acc.AccountID, acc);
+                        return;
                     }
+                    map.set(acc.AccountID, acc);
                 });
 
                 accountsData = Array.from(map.values());
 
-                console.log("Deduplicated accountsData length:", accountsData.length);
-                console.log("Deduplicated accountsData:", accountsData);
             } else {
                 console.log("No matching role for fetching accounts");
                 accountsData = [];
             }
 
             setAccounts(accountsData);
+
         } catch (err) {
             console.error("Failed to load accounts:", err);
             setError("Failed to load accounts. Please try again.");
@@ -79,7 +86,6 @@ const AccountsContainer = () => {
             setLoading(false);
         }
     };
-
 
     useEffect(() => {
         fetchAccounts();
@@ -112,7 +118,6 @@ const AccountsContainer = () => {
         navigate(`/accounts/${accountId}`);
     };
 
-
     const handleOpenCreate = () => {
         navigate("/accounts/create");
     };
@@ -140,7 +145,6 @@ const AccountsContainer = () => {
             onAddAttachment={handleAddAttachment}
         />
     );
-
 };
 
 export default AccountsContainer;
