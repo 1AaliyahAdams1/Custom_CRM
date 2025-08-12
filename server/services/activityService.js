@@ -6,7 +6,6 @@ const getAllActivities = async (onlyActive = true) => {
 
 
 const getActivityByID = async (ActivityID) => {
-  if (!ActivityID) throw new Error("ActivityID is required");
   return await activityRepo.getActivityByID(ActivityID);
 };
 
@@ -21,23 +20,24 @@ const createActivity = async (activityData) => {
 };
 
 const updateActivity = async (ActivityID, activityData) => {
-  if (!ActivityID) throw new Error("ActivityID is required");
   return await activityRepo.updateActivity(ActivityID, activityData);
 };
 
 const deactivateActivity = async (ActivityID) => {
-  if (!ActivityID) throw new Error("ActivityID is required");
   return await activityRepo.deactivateActivity(ActivityID);
 };
 
 const reactivateActivity = async (ActivityID) => {
-  if (!ActivityID) throw new Error("ActivityID is required");
   return await activityRepo.reactivateActivity(ActivityID);
 };
 
 const deleteActivity = async (ActivityID) => {
-  if (!ActivityID) throw new Error("ActivityID is required");
   return await activityRepo.deleteActivity(ActivityID);
+};
+
+
+const getActivitiesByUser = async (UserID) => {
+  return await activityRepo.getActivitiesByUser(UserID);
 };
 
 module.exports = {
@@ -48,4 +48,5 @@ module.exports = {
   deactivateActivity,
   reactivateActivity,
   deleteActivity,
+  getActivitiesByUser
 };

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { login } from "../services/authService";
+import useLogin from "../utils/auth/useLogin";
 import {
   Box,
   CardContent,
@@ -18,47 +17,21 @@ import { Email, Lock, Visibility, VisibilityOff, Business, ArrowForward } from "
 
 
 const LoginPage = () => {
-  const [identifier, setIdentifier] = useState(""); // username or email
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({});
-  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+
+  const { login, error, setError } = useLogin();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setFieldErrors({});
-
-    let errors = {};
-    if (!identifier.trim()) {
-      errors.identifier = "Please enter your username or email.";
-    } else if (
-      identifier.includes("@") &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)
-    ) {
-      errors.identifier = "Please enter a valid email address.";
-    }
-
-    if (!password.trim()) {
-      errors.password = "Please enter your password.";
-    } else if (password.length < 6) {
-      errors.password = "Password must be at least 6 characters.";
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-
-    try {
-      const response = await login(identifier, password);
-
-      console.log("Logged in user:", response.user || response);
-      localStorage.setItem("user", JSON.stringify(response.user || response));
-      navigate("/dashboard");
-    } catch (err) {
-      setError("Invalid username/email or password.");
-    }
+    // Login function now handles the page reload internally
+    await login(identifier, password);
+  };
+  
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -155,6 +128,7 @@ const LoginPage = () => {
                 fullWidth
                 name="password"
                 label="Password"
+                type={showPassword ? "text" : "password"}
                 variant="outlined"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -180,6 +154,9 @@ const LoginPage = () => {
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
+                      <IconButton onClick={togglePasswordVisibility} edge="end" sx={{ color: "#666" }}>
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
                     </InputAdornment>
                   ),
                 }}

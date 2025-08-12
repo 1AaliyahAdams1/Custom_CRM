@@ -1,98 +1,75 @@
-import axios from "axios";
+import api from "../utils/api";
 
-const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
-const ACTIVITIES_API = `${BASE_URL}/activities`;
+const RESOURCE = "/activities";
 
-// ===========================
-// Get all activities
-// ===========================
-export async function getAllActivities(onlyActive = true) {
+export const getAllActivities = async (onlyActive = true) => {
   try {
-    const response = await axios.get(ACTIVITIES_API, {
-      params: { onlyActive }
-    });
+    const response = await api.get(RESOURCE, { params: { onlyActive } });
     return response.data;
   } catch (error) {
     console.error("Error fetching activities:", error);
     throw error;
   }
-}
+};
 
-
-// ===========================
-// Get activity by ID
-// ===========================
-export async function fetchActivityById(activityId) {
+export const fetchActivityById = async (activityId) => {
   try {
-    const response = await axios.get(`${ACTIVITIES_API}/${activityId}`);
-    return response.data;
+    return await api.get(`${RESOURCE}/${activityId}`);
   } catch (error) {
     console.error(`Error fetching activity ${activityId}:`, error);
     throw error;
   }
-}
+};
 
-// ===========================
-// Create a new activity
-// ===========================
-export async function createActivity(activityData) {
+export const createActivity = async (activityData) => {
   try {
-    const response = await axios.post(ACTIVITIES_API, activityData);
-    return response.data;
+    return await api.post(RESOURCE, activityData);
   } catch (error) {
     console.error("Error creating activity:", error);
     throw error;
   }
-}
+};
 
-// ===========================
-// Update activity
-// ===========================
-export async function updateActivity(activityId, activityData) {
+export const updateActivity = async (activityId, activityData) => {
   try {
-    const response = await axios.put(`${ACTIVITIES_API}/${activityId}`, activityData);
-    return response.data;
+    return await api.put(`${RESOURCE}/${activityId}`, activityData);
   } catch (error) {
     console.error(`Error updating activity ${activityId}:`, error);
     throw error;
   }
-}
+};
 
-// ===========================
-// Deactivate activity
-// ===========================
-export async function deactivateActivity(activityId) {
+export const deactivateActivity = async (activityId) => {
   try {
-    const response = await axios.patch(`${ACTIVITIES_API}/${activityId}/deactivate`);
+    const response = await api.patch(`${RESOURCE}/${activityId}/deactivate`);
     return response.data;
   } catch (error) {
     console.error(`Error deactivating activity ${activityId}:`, error);
     throw error;
   }
-}
+};
 
-// ===========================
-// Reactivate activity
-// ===========================
-export async function reactivateActivity(activityId) {
+export const reactivateActivity = async (activityId) => {
   try {
-    const response = await axios.patch(`${ACTIVITIES_API}/${activityId}/reactivate`);
+    const response = await api.patch(`${RESOURCE}/${activityId}/reactivate`);
     return response.data;
   } catch (error) {
     console.error(`Error reactivating activity ${activityId}:`, error);
     throw error;
   }
-}
+};
 
-// ===========================
-// Delete activity
-// ===========================
-export async function deleteActivity(activityId) {
+export const deleteActivity = async (activityId) => {
   try {
-    const response = await axios.delete(`${ACTIVITIES_API}/${activityId}`);
+    const response = await api.delete(`${RESOURCE}/${activityId}`);
     return response.data;
   } catch (error) {
     console.error(`Error deleting activity ${activityId}:`, error);
     throw error;
   }
+};
+
+export async function fetchActivitiesByUser(userId) {
+  const response = await axios.get(`${API_BASE}/activities/user/${userId}`);
+  return response.data;
 }

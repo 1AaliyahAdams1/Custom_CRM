@@ -33,6 +33,8 @@ import {
   Phone,
   Language,
   LocationOn,
+  Note,
+  AttachFile,
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
@@ -89,6 +91,8 @@ const theme = createTheme({
  * @param {Function} props.onBack - Callback for back button
  * @param {Function} props.onSave - Callback for save action (optional)
  * @param {Function} props.onDelete - Callback for delete action (optional)
+ * * @param {Function} props.onAddNote - Callback for add note action (optional)
+ * @param {Function} props.onAddAttachment - Callback for add attachment action (optional)
  * @param {boolean} props.loading - Loading state
  * @param {string} props.error - Error message
  * @param {string} props.subtitle - Optional subtitle (e.g., "ID: 12345")
@@ -105,6 +109,8 @@ export function UniversalDetailView({
   onBack,
   onSave,
   onDelete,
+  onAddNote,
+  onAddAttachment,
   loading = false,
   error = null,
   subtitle,
@@ -148,6 +154,20 @@ export function UniversalDetailView({
       onDelete();
     }
     console.log(`Deleting ${entityType}:`, item);
+  };
+
+  const handleAddNote = () => {
+    if (onAddNote) {
+      onAddNote(item);
+    }
+    console.log(`Adding note to ${entityType}:`, item);
+  };
+
+  const handleAddAttachment = () => {
+    if (onAddAttachment) {
+      onAddAttachment(item);
+    }
+    console.log(`Adding attachment to ${entityType}:`, item);
   };
 
   const updateField = (key, value) => {
@@ -418,8 +438,45 @@ export function UniversalDetailView({
             
             {!readOnly && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {/* Add Notes and Attachments buttons - always visible */}
+                
                 {isEditing ? (
                   <>
+                  {onAddNote && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleAddNote}
+                    startIcon={<Note />}
+                    sx={{
+                      borderColor: '#2563eb',
+                      color: '#2563eb',
+                      '&:hover': {
+                        borderColor: '#1d4ed8',
+                        backgroundColor: '#dbeafe',
+                      },
+                    }}
+                  >
+                    Add Notes
+                  </Button>
+                )}
+                
+                {onAddAttachment && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleAddAttachment}
+                    startIcon={<AttachFile />}
+                    sx={{
+                      borderColor: '#059669',
+                      color: '#059669',
+                      '&:hover': {
+                        borderColor: '#047857',
+                        backgroundColor: '#d1fae5',
+                      },
+                    }}
+                  >
+                    Add Attachments
+                  </Button>
+                )}
                     <Button
                       variant="outlined"
                       onClick={handleCancel}
@@ -464,6 +521,41 @@ export function UniversalDetailView({
                         Edit
                       </Button>
                     )}
+                    {onAddNote && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleAddNote}
+                    startIcon={<Note />}
+                    sx={{
+                      borderColor: '#2563eb',
+                      color: '#2563eb',
+                      '&:hover': {
+                        borderColor: '#1d4ed8',
+                        backgroundColor: '#dbeafe',
+                      },
+                    }}
+                  >
+                    Add Notes
+                  </Button>
+                )}
+                
+                {onAddAttachment && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleAddAttachment}
+                    startIcon={<AttachFile />}
+                    sx={{
+                      borderColor: '#059669',
+                      color: '#059669',
+                      '&:hover': {
+                        borderColor: '#047857',
+                        backgroundColor: '#d1fae5',
+                      },
+                    }}
+                  >
+                    Add Attachments
+                  </Button>
+                )}
                     {onDelete && (
                       <Button
                         variant="outlined"
@@ -483,40 +575,7 @@ export function UniversalDetailView({
           
         </Box>
         
-
-        {/* Main Entity Details */}
-        {/* {mainFields.length > 0 && (
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ color: '#050505', fontWeight: 600 }}>
-                Details
-              </Typography>
-              <Grid container spacing={3}>
-                {mainFields.map((field) => (
-                  <Grid 
-                    item 
-                    xs={12} 
-                    md={field.width?.md || 6} 
-                    lg={field.width?.lg || 4} 
-                    key={field.key}
-                    {...(field.width || { xs: 12 })}
-                    key={field.key}
-                  >
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#050505' }}>
-                        {field.label}
-                        {field.required && isEditing && (
-                          <span style={{ color: '#d32f2f', marginLeft: '4px' }}>*</span>
-                        )}
-                      </Typography>
-                      {renderField(field)}
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </CardContent>
-          </Card>
-        )} */}
+        {/* Main Details Section */}
         {mainFields.length > 0 && (
   <Card sx={{ mb: 3 }}>
     <CardContent>

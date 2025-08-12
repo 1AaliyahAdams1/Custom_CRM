@@ -8,7 +8,7 @@ async function generateHash() {
   } catch (err) {
     console.error("Error generating hash:", err);
   } finally {
-    process.exit();  // ensure node exits after running
+    process.exit(); 
   }
 }
 

@@ -119,14 +119,10 @@ async function getAllAccounts(req, res) {
 }
 
 // Get account by ID
-async function getAccountById(req, res) {
+async function getAccountDetails(req, res) {
   try {
     const id = req.params.id;
-    
-    // Validate ID
-    validateId(id);
-    
-    const account = await accountService.getAccountById(id);
+    const account = await accountService.getAccountDetails(id);
     if (!account) return res.status(404).json({ error: "Account not found" });
     res.json(account);
   } catch (err) {
@@ -299,12 +295,43 @@ async function deleteAccount(req, res) {
   }
 }
 
+async function getActiveAccountsByUser(req, res) {
+  try {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid userId" });
+    }
+
+    const accounts = await accountService.getActiveAccountsByUser(userId);
+    res.json(accounts);
+  } catch (err) {
+    console.error("Error getting active accounts by user:", err);
+    res.status(500).json({ error: "Failed to get active accounts by user" });
+  }
+}
+
+
+async function getActiveUnassignedAccounts(req, res) {
+  try {
+    const accounts = await accountService.getActiveUnassignedAccounts();
+    res.json(accounts);
+  } catch (err) {
+    console.error("Error getting active unassigned accounts:", err);
+    res.status(500).json({ error: "Failed to get active unassigned accounts" });
+  }
+}
+
+
+
+
 module.exports = {
   getAllAccounts,
-  getAccountById,
+  getAccountDetails,
   createAccount,
   updateAccount,
   deactivateAccount,
   reactivateAccount,
   deleteAccount,
+  getActiveAccountsByUser,
+  getActiveUnassignedAccounts
 };

@@ -1,9 +1,7 @@
-//PAGE : Main Accounts Page
-//Combines the UI components onto one page using UniversalTable
+//PAGE : Main Accounts Page (presentational only, no data fetching)
 
 //IMPORTS
-import { useNavigate } from "react-router-dom";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   Typography,
@@ -27,11 +25,6 @@ import {
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import UniversalTable from '../components/TableView';
-
-import {
-  getAllAccounts,
-  deactivateAccount,
-} from "../services/accountService";
 
 // Monochrome theme for MUI components
 const theme = createTheme({
@@ -89,13 +82,12 @@ const theme = createTheme({
   },
 });
 
-// Table configuration for accounts
+// Table config for accounts
 const accountsTableConfig = {
   idField: 'AccountID',
   columns: [
-    { field: 'AccountID', headerName: 'ID' },
     { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
-    { field: 'CityID', headerName: 'City ID' },
+    { field: 'CityName', headerName: 'City Name' },
     { field: 'street_address', headerName: 'Street Address', type: 'truncated', maxWidth: 200 },
     { field: 'postal_code', headerName: 'Postal Code' },
     { field: 'PrimaryPhone', headerName: 'Phone' },
@@ -114,48 +106,22 @@ const accountsTableConfig = {
   ]
 };
 
-const AccountsPage = () => {
-  const navigate = useNavigate();
-  const [accounts, setAccounts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [selected, setSelected] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-
-  // Function to fetch accounts data from backend API
-  const fetchAccounts = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await getAllAccounts();
-      console.log("Fetched accounts:", response.data);
-      setAccounts(response.data);
-    } catch (error) {
-      console.error("Failed to fetch accounts:", error);
-      setError("Failed to load accounts. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch accounts once when component mounts
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  // Automatically clear success message after 3 seconds
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
-
-      // Cleanup timer if component unmounts or successMessage changes
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
+const AccountsPage = ({
+  accounts,
+  loading,
+  error,
+  successMessage,
+  setSuccessMessage,
+  onDeactivate,
+  onEdit,
+  onView,
+  onCreate,
+  onAddNote,
+  onAddAttachment,
+}) => {
+  const [selected, setSelected] = React.useState([]);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState('');
 
   // Filter and search logic
   const filteredAccounts = useMemo(() => {
@@ -210,38 +176,6 @@ const AccountsPage = () => {
     setSelected(newSelected);
   };
 
-  // Navigate to create account page
-  const handleOpenCreate = () => {
-    navigate("/accounts/create");
-  };
-
-  // Deactivates an account 
-  const handleDeactivate = async (id) => {
-    const confirm = window.confirm("Are you sure you want to delete this account? This will deactivate it.");
-    if (!confirm) return;
-
-    setError(null);
-    try {
-      console.log("Deactivating (soft deleting) account with ID:", id);
-      await deactivateAccount(id);
-      setSuccessMessage("Account deleted successfully.");
-      await fetchAccounts();
-    } catch (error) {
-      console.log("Deactivating (soft deleting) account with ID:", id);
-      console.error("Delete failed:", error);
-      setError("Failed to delete account. Please try again.");
-    }
-  };
-
-  const handleEdit = (account) => {
-    // Pass the full account object like in your original onEdit
-    navigate(`/accounts/edit/${account.AccountID}`, { state: { account } });
-  };
-
-  const handleView = (accountId) => {
-    navigate(`/accounts/${accountId}`);
-  };
-
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('');
@@ -267,24 +201,12 @@ const AccountsPage = () => {
     },
   };
 
-  if (loading) {
-    return (
-      <ThemeProvider theme={theme}>
-        <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-          <Box display="flex" justifyContent="center" mt={4}>
-            <CircularProgress />
-          </Box>
-        </Box>
-      </ThemeProvider>
-    );
-  }
-
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
         {/* Display error alert if any error */}
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
@@ -301,7 +223,7 @@ const AccountsPage = () => {
           sx={{
             width: '100%',
             mb: 2,
-            border: '1px solid #e5e5e5',
+            border: '0px solid #e5e5e5',
             borderRadius: '8px',
             overflow: 'hidden'
           }}
@@ -335,7 +257,7 @@ const AccountsPage = () => {
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={handleOpenCreate}
+                onClick={onCreate}
                 sx={{
                   backgroundColor: '#050505',
                   color: '#ffffff',
@@ -413,20 +335,28 @@ const AccountsPage = () => {
             </Box>
           </Toolbar>
 
-          {/* Universal Table */}
-          <UniversalTable
-            data={filteredAccounts}
-            columns={accountsTableConfig.columns}
-            idField={accountsTableConfig.idField}
-            selected={selected}
-            onSelectClick={handleSelectClick}
-            onSelectAllClick={handleSelectAllClick}
-            showSelection={true}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDeactivate}
-            formatters={formatters}
-          />
+          {/* Show loading spinner or accounts table */}
+          {loading ? (
+            <Box display="flex" justifyContent="center" p={8}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <UniversalTable
+              data={filteredAccounts}
+              columns={accountsTableConfig.columns}
+              idField={accountsTableConfig.idField}
+              selected={selected}
+              onSelectClick={handleSelectClick}
+              onSelectAllClick={handleSelectAllClick}
+              showSelection={true}
+              onView={onView}
+              onEdit={onEdit}
+              onDelete={onDeactivate}
+              onAddNote={onAddNote}                
+              onAddAttachment={onAddAttachment}  
+              formatters={formatters}
+            />
+          )}
 
           {/* Results footer */}
           <Box sx={{
