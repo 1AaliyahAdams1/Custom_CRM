@@ -8,6 +8,7 @@ async function getAllContactDetails(onlyActive = true) {
   return await contactRepo.getAllContactDetails(onlyActive = true)
 }
 
+// Get contact details by ID
 async function getContactDetails(contactId) {
   return await contactRepo.getContactDetails(contactId);
 }
