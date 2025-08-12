@@ -230,6 +230,7 @@ const ContactsPage = ({
               formatters={formatters}
             />
           )}
+          )}
 
           <Box sx={{
             p: 2,
@@ -262,5 +263,14 @@ const formatters = {
     return date.toLocaleDateString();
   },
 };
+const formatters = {
+  CreatedAt: (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (isNaN(date)) return "-";
+    return date.toLocaleDateString();
+  },
+};
 
 export default ContactsPage;
+

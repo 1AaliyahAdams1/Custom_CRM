@@ -248,6 +248,14 @@ const TableView = ({
       sx: { color: '#dc2626' },
       disabled: (row) => row?.Active === false,
     },
+    {
+      label: 'Delete',
+      icon: <Delete sx={{ mr: 2 }} />,
+      onClick: handleDelete,
+      show: !!onDelete,
+      sx: { color: '#dc2626' },
+      disabled: (row) => row?.Active === false, // Can be customized per table
+    }
   ];
 
   const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;

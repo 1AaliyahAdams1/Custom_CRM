@@ -73,6 +73,7 @@ const theme = createTheme({
 });
 
 // Table config for accounts
+// Table config for accounts
 const accountsTableConfig = {
   idField: 'AccountID',
   columns: [
@@ -165,6 +166,7 @@ const AccountsPage = ({
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
@@ -213,6 +215,7 @@ const AccountsPage = ({
               <Button
                 variant="contained"
                 startIcon={<Add />}
+                onClick={onCreate}
                 onClick={onCreate}
                 sx={{
                   backgroundColor: '#050505',
