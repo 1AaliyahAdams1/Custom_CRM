@@ -28,6 +28,10 @@ async function deleteDeal(id, data, changedBy = 1) {
   return await dealRepo.deleteDeal(id, data, changedBy);
 }
 
+async function getDealsByUser(userId) {
+  return await dealRepo.getDealsByUser(userId);
+}
+
 module.exports = {
   getAllDeals,
   getDealById,
@@ -36,4 +40,5 @@ module.exports = {
   deactivateDeal,
   reactivateDeal,
   deleteDeal,
+  getDealsByUser
 };

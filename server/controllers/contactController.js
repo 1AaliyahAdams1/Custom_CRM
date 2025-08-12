@@ -72,6 +72,21 @@ async function deleteContact(req, res) {
   }
 }
 
+async function getContactsByUser(req, res) {
+  try {
+    const userID = parseInt(req.params.userId, 10);
+    if (isNaN(userID)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    const contacts = await contactService.getContactsByUser(userID);
+    res.json(contacts);
+  } catch (err) {
+    console.error("Error fetching contacts by user:", err);
+    res.status(500).json({ error: "Failed to get contacts" });
+  }
+}
+
 module.exports = {
   getAllContactDetails,
   getContactDetails,          
@@ -81,4 +96,5 @@ module.exports = {
   deactivateContact,
   reactivateContact,
   deleteContact,
+  getContactsByUser
 };

@@ -81,3 +81,13 @@ export async function deleteContact(contactId) {
     throw error;
   }
 }
+
+export async function fetchContactsByUser(userId) {
+  try {
+    const response = await api.get(`/contacts/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching contacts by user ${userId}:`, error);
+    throw error;
+  }
+}

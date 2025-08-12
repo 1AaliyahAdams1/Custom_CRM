@@ -10,7 +10,7 @@ async function getAllAccounts() {
 }
 
 
-async function getAccountById(id) {
+async function getAccountDetails(id) {
   return await accountRepo.getAccountDetails(id);
 }
 
@@ -39,22 +39,33 @@ async function deactivateAccount(id) {
   return await accountRepo.deactivateAccount(account, userId, 7);
 }
 
-// Reactivate an account
+
 async function reactivateAccount(id) {
   return await accountRepo.reactivateAccount(id, userId);
 }
 
-// Hard delete an account
 async function deleteAccount(id) {
   return await accountRepo.deleteAccount(id, userId);
 }
 
+
+async function getActiveAccountsByUser(userId) {
+  return await accountRepo.getActiveAccountsByUser(userId);
+}
+
+async function getActiveUnassignedAccounts() {
+  return await accountRepo.getActiveUnassignedAccounts();
+}
+
+
 module.exports = {
   getAllAccounts,
-  getAccountById,
+  getAccountDetails,
   createAccount,
   updateAccount,
   deactivateAccount,
   reactivateAccount,
   deleteAccount,
+  getActiveAccountsByUser,
+  getActiveUnassignedAccounts
 };
