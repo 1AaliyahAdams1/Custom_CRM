@@ -1,6 +1,5 @@
 const contactRepo = require("../data/contactRepository");
 
-// Get all contacts
 async function getAllContacts(onlyActive = true) {
   return await contactRepo.getAllContacts(onlyActive = true);
 }
@@ -14,35 +13,37 @@ async function getContactDetails(contactId) {
   return await contactRepo.getContactDetails(contactId);
 }
 
-// Create a new contact
 async function createContact(data, changedBy = 1) {
   return await contactRepo.createContact(data, changedBy, 1);
 }
 
-// Update contact
 async function updateContact(contactId, data, changedBy = 1) {
   return await contactRepo.updateContact(contactId, data, changedBy);
 }
 
-// Deactivate contact (soft delete)
+
 async function deactivateContact(contactId, changedBy = 1) {
   return await contactRepo.deactivateContact(contactId, changedBy);
 }
 
-// Reactivate contact
+
 async function reactivateContact(contactId, changedBy = 1) {
   return await contactRepo.reactivateContact(contactId, changedBy);
 }
 
-// Hard delete contact (permanent delete)
 async function deleteContact(contactId, changedBy = 1) {
   return await contactRepo.deleteContact(contactId, changedBy);
 }
 
-// Get contacts by account name
+
 async function getContactsByAccountId(accountName) {
   return await contactRepo.getContactsByAccountId(accountName);
 }
+
+async function getContactsByUser(userID) {
+  return await contactRepo.getContactsByUser(userID);
+}
+
 
 module.exports = {
   getAllContacts,
@@ -54,4 +55,5 @@ module.exports = {
   reactivateContact,
   deleteContact,
   getContactsByAccountId,
+  getContactsByUser,
 };

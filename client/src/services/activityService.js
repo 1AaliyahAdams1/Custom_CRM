@@ -68,3 +68,8 @@ export const deleteActivity = async (activityId) => {
     throw error;
   }
 };
+
+export async function fetchActivitiesByUser(userId) {
+  const response = await axios.get(`${API_BASE}/activities/user/${userId}`);
+  return response.data;
+}
