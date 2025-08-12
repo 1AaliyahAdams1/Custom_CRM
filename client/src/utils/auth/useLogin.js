@@ -39,13 +39,17 @@ export default function useLogin() {
       // Trigger storage event for Header component and other listeners
       window.dispatchEvent(new Event('storage'));
 
-      console.log("Navigating to dashboard...");
-      navigate("/dashboard");
+      console.log("Login successful, reloading page...");
+      
+      // Instead of navigating, reload the entire page to ensure fresh context
+      window.location.href = "/dashboard";
+      
+      return true;
     } catch (err) {
       console.error("Login error:", err);
       console.error("Error response:", err.response?.data);
       setError("Invalid username/email or password.");
-      throw err;
+      return false;
     }
   };
 
