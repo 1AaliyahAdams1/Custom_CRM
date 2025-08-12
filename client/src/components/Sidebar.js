@@ -27,46 +27,46 @@ import {
   BarChart as BarChartIcon,
 } from "@mui/icons-material";
 
-// Assume you have a useAuth hook or similar:
-import { useAuth } from "../context/auth/authContext"; // Adjust path accordingly
+import { useAuth } from "../hooks/auth/useAuth";
+import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
 
-// Navigation items configuration with allowedRoles
+// Navigation items configuration using centralized route access
 const navigation = [
   {
     name: "Dashboard",
     href: "/dashboard",
     icon: BarChartIcon,
-    allowedRoles: ["C-level", "Sales Manager", "Sales Representative", "Admin"],
+    accessKey: "dashboard",
   },
   {
     name: "Accounts",
     href: "/accounts",
     icon: BusinessIcon,
-    allowedRoles: ["C-level", "Sales Manager", "Sales Representative"],
+    accessKey: "accounts",
   },
   {
     name: "Deals",
     href: "/deals",
     icon: HandshakeIcon,
-    allowedRoles: ["C-level","Sales Manager", "Sales Representative"],
+    accessKey: "deals",
   },
   {
     name: "Contacts",
     href: "/contacts",
     icon: PeopleIcon,
-    allowedRoles: ["C-level", "Sales Manager", "Sales Representative", "Support"],
+    accessKey: "contacts",
   },
   {
     name: "Activities",
     href: "/activities",
     icon: EventIcon,
-    allowedRoles: ["C-level", "Sales Manager", "Sales Representative", "Support"],
+    accessKey: "activities",
   },
   {
     name: "Settings",
     href: "/settings",
     icon: SettingsIcon,
-    allowedRoles: ["Admin"],
+    allowedRoles: ["Admin"], // Keep this one as is since it's not in routesAccess
   },
 ];
 
@@ -89,26 +89,38 @@ export function AppSidebar() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/login", { replace: true });
   };
 
-  // Check if user has any role in allowedRoles
-  const hasAccess = (allowedRoles) =>
-    allowedRoles.length === 0 || allowedRoles.some((role) => roles.includes(role));
+  // Check if user has access to a route
+  const hasAccess = (item) => {
+    // If item has accessKey, use ROUTE_ACCESS configuration
+    if (item.accessKey && ROUTE_ACCESS[item.accessKey]) {
+      const allowedRoles = ROUTE_ACCESS[item.accessKey];
+      return allowedRoles.length === 0 || allowedRoles.some((role) => roles.includes(role));
+    }
+    
+    // Fallback to direct allowedRoles (for items like Settings)
+    if (item.allowedRoles) {
+      return item.allowedRoles.length === 0 || item.allowedRoles.some((role) => roles.includes(role));
+    }
+    
+    // If no access control defined, allow access
+    return true;
+  };
 
   const renderNavigationItem = (item, isLogout = false) => {
     // Skip items the user does not have access to
-    if (!hasAccess(item.allowedRoles)) return null;
-
-    // rest of your rendering logic unchanged...
+    if (!hasAccess(item)) return null;
 
     const isActive = location.pathname === item.href;
     const IconComponent = item.icon;
 
     if (isLogout) {
-      // ...logout button render logic unchanged
-      // (same as your original code)
+      // Handle logout button if needed
+      return null; // You can implement logout button logic here if needed
     }
 
     const listItemContent = (

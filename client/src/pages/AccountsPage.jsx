@@ -240,6 +240,21 @@ const AccountsPage = () => {
   const handleView = (accountId) => {
     navigate(`/accounts/${accountId}`);
   };
+  //  Handle adding notes
+  const handleAddNote = (account) => {
+    console.log("Adding note for account:", account);
+    // Navigate to notes page or open modal
+    navigate(`/accounts/${account.AccountID}/notes`);
+    
+  };
+
+  // Handle adding attachments
+  const handleAddAttachment = (account) => {
+    console.log("Adding attachment for account:", account);
+    // Navigate to attachments page or open file picker
+    navigate(`/accounts/${account.AccountID}/attachments`);
+    
+  };
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -424,6 +439,8 @@ const AccountsPage = () => {
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDeactivate}
+            onAddNote={handleAddNote}
+            onAddAttachment={handleAddAttachment}
             formatters={formatters}
           />
 

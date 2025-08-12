@@ -14,7 +14,14 @@ import {
   Tooltip,
   Link,
 } from '@mui/material';
-import { MoreVert, Info, Edit, Delete } from '@mui/icons-material';
+import { 
+  MoreVert,
+   Info, 
+   Edit, 
+   Delete,
+   Note, 
+  AttachFile, 
+  Visibility  } from '@mui/icons-material';
 
 const TableView = ({
   data = [],
@@ -28,6 +35,8 @@ const TableView = ({
   onView,
   onEdit,
   onDelete,
+  onAddNote,
+  onAddAttachment,
   menuItems = [],
   formatters = {},
 }) => {
@@ -64,6 +73,19 @@ const TableView = ({
   const handleDelete = () => {
     if (onDelete && menuRowId) {
       onDelete(menuRowId[idField]);
+    }
+    handleMenuClose();
+  };
+  const handleAddNote = () => {
+    if (onAddNote && menuRowId) {
+      onAddNote(menuRowId);
+    }
+    handleMenuClose();
+  };
+
+  const handleAddAttachment = () => {
+    if (onAddAttachment && menuRowId) {
+      onAddAttachment(menuRowId);
     }
     handleMenuClose();
   };
@@ -167,6 +189,20 @@ const TableView = ({
       show: !!onDelete,
       sx: { color: '#dc2626' },
       disabled: (row) => row?.Active === false, // Can be customized per table
+    },
+    {
+      label: 'Add Notes',
+      icon: <Note sx={{ mr: 2 }} />,
+      onClick: handleAddNote,
+      show: !!onAddNote,
+      sx: { color: '#2563eb' }, // Blue color for notes
+    },
+    {
+      label: 'Add Attachments',
+      icon: <AttachFile sx={{ mr: 2 }} />,
+      onClick: handleAddAttachment,
+      show: !!onAddAttachment,
+      sx: { color: '#059669' }, // Green color for attachments
     },
   ];
 
