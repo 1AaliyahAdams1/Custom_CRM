@@ -26,7 +26,7 @@ module.exports = router;
 //   "/",
 //   authenticateJWT,
 //   authorizeRoleDynamic(["C-level", "Sales Manager"], "contact"),
-//   contactController.getAllContacts
+//   contactController.getAllContactDetails
 // );
 
 // // Get specific contact by ID - C-level, Sales Manager, Salesperson (not Sales Representative)
