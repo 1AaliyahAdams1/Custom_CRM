@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Box,
   Table,
   TableBody,
   TableCell,
@@ -13,15 +14,31 @@ import {
   MenuItem,
   Tooltip,
   Link,
+  TextField,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem as MuiMenuItem,
 } from '@mui/material';
-import { 
+import {
   MoreVert,
-   Info, 
-   Edit, 
-   Delete,
-   Note, 
-  AttachFile, 
-  Visibility  } from '@mui/icons-material';
+  Info,
+  Edit,
+  Delete,
+  Note,
+  AttachFile,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  ViewColumn as ColumnsIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
+
+import ColumnsDialog from './ColumnsDialog';
 
 const TableView = ({
   data = [],
@@ -40,65 +57,113 @@ const TableView = ({
   menuItems = [],
   formatters = {},
 }) => {
+  // State for action menu
   const [anchorEl, setAnchorEl] = useState(null);
-  const [menuRowId, setMenuRowId] = useState(null);
+  const [menuRow, setMenuRow] = useState(null);
 
-  const isSelected = (id) => selected.indexOf(id) !== -1;
+  // Search and filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({});
 
+  // Column visibility state
+  const [visibleColumns, setVisibleColumns] = useState(
+    columns.reduce((acc, col) => ({ ...acc, [col.field]: true }), {})
+  );
+
+  // Dialog open states
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [columnsDialogOpen, setColumnsDialogOpen] = useState(false);
+
+  // Helpers
+  const isSelected = (id) => selected.includes(id);
+
+  // Menu handlers
   const handleMenuClick = (event, row) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
-    setMenuRowId(row);
+    setMenuRow(row);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    setMenuRowId(null);
+    setMenuRow(null);
   };
 
+  // Action handlers
   const handleView = () => {
-    if (onView && menuRowId) {
-      onView(menuRowId[idField]);
-    }
+    if (onView && menuRow) onView(menuRow[idField]);
     handleMenuClose();
   };
-
   const handleEdit = () => {
-    if (onEdit && menuRowId) {
-      onEdit(menuRowId);
-    }
+    if (onEdit && menuRow) onEdit(menuRow);
     handleMenuClose();
   };
-
   const handleDelete = () => {
-    if (onDelete && menuRowId) {
-      onDelete(menuRowId[idField]);
-    }
+    if (onDelete && menuRow) onDelete(menuRow[idField]);
     handleMenuClose();
   };
   const handleAddNote = () => {
-    if (onAddNote && menuRowId) {
-      onAddNote(menuRowId);
-    }
+    if (onAddNote && menuRow) onAddNote(menuRow);
     handleMenuClose();
   };
-
   const handleAddAttachment = () => {
-    if (onAddAttachment && menuRowId) {
-      onAddAttachment(menuRowId);
-    }
+    if (onAddAttachment && menuRow) onAddAttachment(menuRow);
     handleMenuClose();
   };
 
+  // Unique values for filters
+  const getUniqueValues = (field) =>
+    [...new Set(data.map((item) => item[field]).filter(Boolean))].sort();
+
+  // Filterable columns (chip, boolean, or limited unique values)
+  const filterableColumns = columns.filter(
+    (col) =>
+      col.type === 'chip' ||
+      col.type === 'boolean' ||
+      ((col.type === 'tooltip' || col.type === 'truncated' || !col.type) &&
+        getUniqueValues(col.field).length <= 20)
+  );
+
+  // Filter data by search term and filters
+  const filteredData = data.filter((item) => {
+    if (searchTerm) {
+      const searchableFields = columns.map((c) => c.field);
+      const found = searchableFields.some((field) => {
+        const val = item[field];
+        return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
+      });
+      if (!found) return false;
+    }
+    for (const [filterField, filterValue] of Object.entries(filters)) {
+      if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
+        const itemVal = item[filterField];
+        if (typeof filterValue === 'boolean') {
+          if (itemVal !== filterValue) return false;
+        } else {
+          if (itemVal?.toString() !== filterValue.toString()) return false;
+        }
+      }
+    }
+    return true;
+  });
+
+  // Columns to display based on visibility
+  const displayedColumns = columns.filter((col) => visibleColumns[col.field]);
+
+  // Selection handlers
+  const handleSelectAll = (event) => {
+    onSelectAllClick && onSelectAllClick(event);
+  };
+  const handleSelectRow = (id) => {
+    onSelectClick && onSelectClick(id);
+  };
+
+  // Render cell content with formatting
   const renderCellContent = (row, column) => {
     const value = row[column.field];
-    
-    // Apply custom formatter if provided
     if (formatters[column.field]) {
       return formatters[column.field](value, row);
     }
-
-    // Handle different column types
     switch (column.type) {
       case 'chip':
         return (
@@ -112,7 +177,6 @@ const TableView = ({
             size="small"
           />
         );
-      
       case 'boolean':
         return (
           <Chip
@@ -125,7 +189,6 @@ const TableView = ({
             size="small"
           />
         );
-      
       case 'link':
         if (!value) return '-';
         const href = value.startsWith('http') ? value : `https://${value}`;
@@ -134,41 +197,115 @@ const TableView = ({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             sx={{ textDecoration: 'none', color: 'inherit' }}
           >
             {value}
           </Link>
         );
-      
       case 'truncated':
         if (!value) return '-';
         return (
           <Tooltip title={value}>
-            <span style={{
-              display: 'block',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: column.maxWidth || 200,
-            }}>
+            <span
+              style={{
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: column.maxWidth || 200,
+              }}
+            >
               {value}
             </span>
           </Tooltip>
         );
-      
       case 'tooltip':
         return (
           <Tooltip title={value || ''}>
             <span>{value || '-'}</span>
           </Tooltip>
         );
-      
       default:
         return value || '-';
     }
   };
 
+  // Filter dialog UI
+  const FilterDialog = () => (
+    <Dialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)}>
+      <DialogTitle>Filters</DialogTitle>
+      <DialogContent dividers>
+        {filterableColumns.length === 0 && <Box>No filterable columns</Box>}
+        {filterableColumns.map((col) => (
+          <FormControl fullWidth key={col.field} sx={{ mt: 2 }} size="small">
+            <InputLabel>{col.headerName}</InputLabel>
+            <Select
+              value={filters[col.field] !== undefined ? filters[col.field] : ''}
+              label={col.headerName}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFilters((prev) => {
+                  const newFilters = { ...prev };
+                  if (val === '') {
+                    delete newFilters[col.field];
+                  } else {
+                    let parsedVal = val;
+                    if (col.type === 'boolean') {
+                      parsedVal = val === 'true';
+                    }
+                    newFilters[col.field] = parsedVal;
+                  }
+                  return newFilters;
+                });
+              }}
+            >
+              <MuiMenuItem value="">All</MuiMenuItem>
+              {getUniqueValues(col.field).map((value) => (
+                <MuiMenuItem key={value} value={value.toString()}>
+                  {col.chipLabels ? col.chipLabels[value] || value : value}
+                </MuiMenuItem>
+              ))}
+              {col.type === 'boolean' && (
+                <>
+                  <MuiMenuItem value="true">Yes</MuiMenuItem>
+                  <MuiMenuItem value="false">No</MuiMenuItem>
+                </>
+              )}
+            </Select>
+          </FormControl>
+        ))}
+      </DialogContent>
+      <DialogActions>
+        <Button
+          onClick={() => {
+            setFilters({});
+            setFilterDialogOpen(false);
+          }}
+          color="secondary"
+          startIcon={<CloseIcon />}
+        >
+          Clear Filters
+        </Button>
+        <Button onClick={() => setFilterDialogOpen(false)} variant="contained">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
+  // Open columns dialog
+  const openColumnsDialog = () => {
+    setColumnsDialogOpen(true);
+  };
+
+  // Save columns visibility from dialog
+  const handleColumnsSave = (newVisibleColumns) => {
+    setVisibleColumns(newVisibleColumns);
+    setColumnsDialogOpen(false);
+  };
+
+  // Default menu actions
   const defaultMenuItems = [
     {
       label: 'View Details',
@@ -187,14 +324,14 @@ const TableView = ({
       icon: <Note sx={{ mr: 2 }} />,
       onClick: handleAddNote,
       show: !!onAddNote,
-      sx: { color: '#2563eb' }, // Blue color for notes
+      sx: { color: '#2563eb' },
     },
     {
       label: 'Add Attachments',
       icon: <AttachFile sx={{ mr: 2 }} />,
       onClick: handleAddAttachment,
       show: !!onAddAttachment,
-      sx: { color: '#059669' }, // Green color for attachments
+      sx: { color: '#059669' },
     },
     {
       label: 'Delete',
@@ -202,14 +339,40 @@ const TableView = ({
       onClick: handleDelete,
       show: !!onDelete,
       sx: { color: '#dc2626' },
-      disabled: (row) => row?.Active === false, // Can be customized per table
-    }
+      disabled: (row) => row?.Active === false,
+    },
   ];
 
   const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
 
   return (
     <>
+      {/* Search + Filter + Columns */}
+      <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
+        <TextField
+          size="small"
+          variant="outlined"
+          placeholder="Search..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: <SearchIcon sx={{ mr: 1 }} />,
+          }}
+          sx={{ minWidth: 250 }}
+        />
+
+        <Button variant="outlined" startIcon={<FilterIcon />} onClick={() => setFilterDialogOpen(true)}>
+          Filters
+          {Object.keys(filters).length > 0 && (
+            <Chip label={Object.keys(filters).length} size="small" color="primary" sx={{ ml: 1 }} />
+          )}
+        </Button>
+
+        <Button variant="outlined" startIcon={<ColumnsIcon />} onClick={openColumnsDialog}>
+          Columns
+        </Button>
+      </Box>
+
       <TableContainer>
         <Table stickyHeader>
           <TableHead>
@@ -218,52 +381,44 @@ const TableView = ({
                 <TableCell padding="checkbox">
                   <Checkbox
                     color="primary"
-                    indeterminate={selected.length > 0 && selected.length < data.length}
-                    checked={data.length > 0 && selected.length === data.length}
-                    onChange={onSelectAllClick}
+                    indeterminate={selected.length > 0 && selected.length < filteredData.length}
+                    checked={filteredData.length > 0 && selected.length === filteredData.length}
+                    onChange={handleSelectAll}
+                    inputProps={{ 'aria-label': 'select all rows' }}
                   />
                 </TableCell>
               )}
-              {columns.map((column) => (
+              {displayedColumns.map((column) => (
                 <TableCell key={column.field} sx={{ fontWeight: 600 }}>
                   {column.headerName || column.field}
                 </TableCell>
               ))}
-              {showActions && (
-                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
-              )}
+              {showActions && <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>}
             </TableRow>
           </TableHead>
+
           <TableBody>
-            {data.map((row) => {
+            {filteredData.map((row) => {
               const isItemSelected = showSelection ? isSelected(row[idField]) : false;
               return (
                 <TableRow
                   key={row[idField]}
                   hover
                   selected={isItemSelected}
-                  onClick={showSelection ? () => onSelectClick(row[idField]) : undefined}
+                  onClick={showSelection ? () => handleSelectRow(row[idField]) : undefined}
                   sx={{ cursor: showSelection ? 'pointer' : 'default' }}
                 >
                   {showSelection && (
                     <TableCell padding="checkbox">
-                      <Checkbox
-                        color="primary"
-                        checked={isItemSelected}
-                      />
+                      <Checkbox color="primary" checked={isItemSelected} />
                     </TableCell>
                   )}
-                  {columns.map((column) => (
-                    <TableCell key={column.field}>
-                      {renderCellContent(row, column)}
-                    </TableCell>
+                  {displayedColumns.map((column) => (
+                    <TableCell key={column.field}>{renderCellContent(row, column)}</TableCell>
                   ))}
                   {showActions && (
                     <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleMenuClick(e, row)}
-                      >
+                      <IconButton size="small" onClick={(e) => handleMenuClick(e, row)}>
                         <MoreVert />
                       </IconButton>
                     </TableCell>
@@ -275,19 +430,15 @@ const TableView = ({
         </Table>
       </TableContainer>
 
-      {/* Action Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
+      {/* Menus */}
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         {allMenuItems
-          .filter(item => item.show !== false)
+          .filter((item) => item.show !== false)
           .map((item, index) => (
             <MenuItem
               key={index}
               onClick={item.onClick}
-              disabled={typeof item.disabled === 'function' ? item.disabled(menuRowId) : item.disabled}
+              disabled={typeof item.disabled === 'function' ? item.disabled(menuRow) : item.disabled}
               sx={item.sx}
             >
               {item.icon}
@@ -295,6 +446,16 @@ const TableView = ({
             </MenuItem>
           ))}
       </Menu>
+
+      {/* Dialogs */}
+      <FilterDialog />
+      <ColumnsDialog
+        open={columnsDialogOpen}
+        visibleColumns={visibleColumns}
+        onClose={() => setColumnsDialogOpen(false)}
+        onSave={handleColumnsSave}
+        columns={columns}
+      />
     </>
   );
 };

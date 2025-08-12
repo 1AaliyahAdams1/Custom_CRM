@@ -75,8 +75,6 @@ const ContactsContainer = () => {
     }
   }, [successMessage]);
 
-  // ... (keep your existing filteredContacts, handlers, etc. unchanged) 
-
   // filteredContacts and handlers from your original code remain here
 
   const filteredContacts = useMemo(() => {
