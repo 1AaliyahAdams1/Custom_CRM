@@ -116,6 +116,8 @@ const AccountsPage = ({
   onEdit,
   onView,
   onCreate,
+  onAddNote,
+  onAddAttachment,
 }) => {
   const [selected, setSelected] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -350,6 +352,8 @@ const AccountsPage = ({
               onView={onView}
               onEdit={onEdit}
               onDelete={onDeactivate}
+              onAddNote={onAddNote}                
+              onAddAttachment={onAddAttachment}  
               formatters={formatters}
             />
           )}

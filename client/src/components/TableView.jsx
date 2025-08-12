@@ -183,14 +183,6 @@ const TableView = ({
       show: !!onEdit,
     },
     {
-      label: 'Delete',
-      icon: <Delete sx={{ mr: 2 }} />,
-      onClick: handleDelete,
-      show: !!onDelete,
-      sx: { color: '#dc2626' },
-      disabled: (row) => row?.Active === false, // Can be customized per table
-    },
-    {
       label: 'Add Notes',
       icon: <Note sx={{ mr: 2 }} />,
       onClick: handleAddNote,
@@ -204,6 +196,14 @@ const TableView = ({
       show: !!onAddAttachment,
       sx: { color: '#059669' }, // Green color for attachments
     },
+    {
+      label: 'Delete',
+      icon: <Delete sx={{ mr: 2 }} />,
+      onClick: handleDelete,
+      show: !!onDelete,
+      sx: { color: '#dc2626' },
+      disabled: (row) => row?.Active === false, // Can be customized per table
+    }
   ];
 
   const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;

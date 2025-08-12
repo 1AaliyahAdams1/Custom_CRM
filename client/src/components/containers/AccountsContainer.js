@@ -117,6 +117,14 @@ const AccountsContainer = () => {
         navigate("/accounts/create");
     };
 
+    const handleAddNote = (account) => {
+        //navigate(`/accounts/${account.AccountID}/notes/create`);
+    };
+
+    const handleAddAttachment = (account) => {
+        //navigate(`/accounts/${account.AccountID}/attachments/create`);
+    };
+
     return (
         <AccountsPage
             accounts={accounts}
@@ -128,8 +136,11 @@ const AccountsContainer = () => {
             onEdit={handleEdit}
             onView={handleView}
             onCreate={handleOpenCreate}
+            onAddNote={handleAddNote}
+            onAddAttachment={handleAddAttachment}
         />
     );
+
 };
 
 export default AccountsContainer;

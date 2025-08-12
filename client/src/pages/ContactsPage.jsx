@@ -100,6 +100,8 @@ const ContactsPage = ({
   setSearchTerm,
   setEmploymentStatusFilter,
   formatters,
+  onAddNote,
+  onAddAttachment,
 }) => {
 
   return (
@@ -309,6 +311,8 @@ const ContactsPage = ({
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDeactivate}
+              onAddNote={onAddNote}               
+              onAddAttachment={onAddAttachment} 
               formatters={formatters}
             />
           )}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import ContactsPage from "../../pages/ContactsPage"; 
+import ContactsPage from "../../pages/ContactsPage";
 import {
   getAllContacts,
   fetchContactsByUser,
@@ -127,6 +127,15 @@ const ContactsContainer = () => {
     // ... your existing logic
   };
 
+  const handleAddNote = (contact) => {
+    //navigate(`/contacts/${contact.ContactID}/add-note`);
+  };
+
+  const handleAddAttachment = (contact) => {
+    //navigate(`/contacts/${contact.ContactID}/add-attachment`);
+  };
+
+
   const formatters = {
     CreatedAt: (value) => {
       if (!value) return "-";
@@ -156,7 +165,10 @@ const ContactsContainer = () => {
       setSearchTerm={setSearchTerm}
       setEmploymentStatusFilter={setEmploymentStatusFilter}
       formatters={formatters}
+      onAddNote={handleAddNote}             
+      onAddAttachment={handleAddAttachment} 
     />
+
   );
 };
 
