@@ -117,6 +117,22 @@ export default function AccountDetailView() {
     }
   };
 
+  //  Handle adding notes
+  const handleAddNote = (account) => {
+    console.log("Adding note for account:", account);
+    // Navigate to notes page 
+    navigate(`/accounts/${account.AccountID}/notes/create`);
+    
+  };
+
+  //  Handle adding attachments
+  const handleAddAttachment = (account) => {
+    console.log("Adding attachment for account:", account);
+    // Navigate to attachments page 
+    navigate(`/accounts/${account.AccountID}/attachments/upload`);
+    
+  };
+
   // Navigation handlers 
   const handleContactClick = (contactId) => {
     navigate(`/contacts/${contactId}`);
@@ -620,6 +636,8 @@ export default function AccountDetailView() {
       onBack={handleBack}
       onSave={handleSave}
       onDelete={handleDelete}
+      onAddAttachment={handleAddAttachment}
+      onAddNote={handleAddNote}
       loading={loading}
       error={error}
       entityType="account"
