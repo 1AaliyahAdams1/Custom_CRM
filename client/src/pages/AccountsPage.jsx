@@ -176,52 +176,6 @@ const AccountsPage = ({
     setSelected(newSelected);
   };
 
-  // Navigate to create account page
-  const handleOpenCreate = () => {
-    navigate("/accounts/create");
-  };
-
-  // Deactivates an account 
-  const handleDeactivate = async (id) => {
-    const confirm = window.confirm("Are you sure you want to delete this account? This will deactivate it.");
-    if (!confirm) return;
-
-    setError(null);
-    try {
-      console.log("Deactivating (soft deleting) account with ID:", id);
-      await deactivateAccount(id);
-      setSuccessMessage("Account deleted successfully.");
-      await fetchAccounts();
-    } catch (error) {
-      console.log("Deactivating (soft deleting) account with ID:", id);
-      console.error("Delete failed:", error);
-      setError("Failed to delete account. Please try again.");
-    }
-  };
-
-  const handleEdit = (account) => {
-    // Pass the full account object like in your original onEdit
-    navigate(`/accounts/edit/${account.AccountID}`, { state: { account } });
-  };
-
-  const handleView = (accountId) => {
-    navigate(`/accounts/${accountId}`);
-  };
-
-  //  Handle adding notes
-  const handleAddNote = (account) => {
-    console.log("Adding note for account:", account);
-    // Navigate to notes page or open modal
-    navigate(`/accounts/${account.AccountID}/notes`);
-  };
-
-  // Handle adding attachments
-  const handleAddAttachment = (account) => {
-    console.log("Adding attachment for account:", account);
-    // Navigate to attachments page or open file picker
-    navigate(`/accounts/${account.AccountID}/attachments`);
-  };
-
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('');

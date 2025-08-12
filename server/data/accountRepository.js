@@ -373,8 +373,12 @@ async function getActiveAccountsByUser(userId) {
           a.[CreatedAt],
           a.[UpdatedAt],
           a.[StateProvinceID],
-          a.[CountryID]
+          a.[CountryID],
+          co.[CountryName],
+          c.CityName
         FROM [CRM].[dbo].[Account] a
+        LEFT JOIN [CRM].[dbo].[City] c ON a.CityID = c.CityID
+        LEFT JOIN Country co ON a.CountryID = co.CountryID
         JOIN [CRM].[dbo].[AssignedUser] au ON a.AccountID = au.AccountID AND au.Active = 1
         WHERE a.Active = 1
           AND au.UserID = @UserID
@@ -415,8 +419,12 @@ async function getActiveUnassignedAccounts() {
           a.[CreatedAt],
           a.[UpdatedAt],
           a.[StateProvinceID],
-          a.[CountryID]
+          a.[CountryID],
+          co.[CountryName],
+          c.CityName
         FROM [CRM].[dbo].[Account] a
+        LEFT JOIN [CRM].[dbo].[City] c ON a.CityID = c.CityID
+        LEFT JOIN Country co ON a.CountryID = co.CountryID
         LEFT JOIN [CRM].[dbo].[AssignedUser] au ON a.AccountID = au.AccountID AND au.Active = 1
         WHERE a.Active = 1
           AND au.UserID IS NULL
