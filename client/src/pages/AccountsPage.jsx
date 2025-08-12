@@ -93,9 +93,8 @@ const theme = createTheme({
 const accountsTableConfig = {
   idField: 'AccountID',
   columns: [
-    { field: 'AccountID', headerName: 'ID' },
     { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
-    { field: 'CityID', headerName: 'City ID' },
+    { field: 'CityName', headerName: 'City Name' },
     { field: 'street_address', headerName: 'Street Address', type: 'truncated', maxWidth: 200 },
     { field: 'postal_code', headerName: 'Postal Code' },
     { field: 'PrimaryPhone', headerName: 'Phone' },
@@ -301,7 +300,7 @@ const AccountsPage = () => {
           sx={{
             width: '100%',
             mb: 2,
-            border: '1px solid #e5e5e5',
+            border: '0px solid #e5e5e5',
             borderRadius: '8px',
             overflow: 'hidden'
           }}

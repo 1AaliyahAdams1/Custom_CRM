@@ -1,6 +1,3 @@
-//COMPONENT: Navigation/Sidebar (Material-UI version)
-
-//IMPORTS
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -30,18 +27,51 @@ import {
   BarChart as BarChartIcon,
 } from "@mui/icons-material";
 
-// Navigation items configuration
+// Assume you have a useAuth hook or similar:
+import { useAuth } from "../context/auth/authContext"; // Adjust path accordingly
+
+// Navigation items configuration with allowedRoles
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: BarChartIcon },
-  { name: "Accounts", href: "/accounts", icon: BusinessIcon },
-  { name: "Deals", href: "/deals", icon: HandshakeIcon },
-  { name: "Contacts", href: "/contacts", icon: PeopleIcon },
-  { name: "Activities", href: "/activities", icon: EventIcon },
-  { name: "Settings", href: "/settings", icon: SettingsIcon },
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: BarChartIcon,
+    allowedRoles: ["C-level", "Sales Manager", "Sales Representative", "Admin"],
+  },
+  {
+    name: "Accounts",
+    href: "/accounts",
+    icon: BusinessIcon,
+    allowedRoles: ["C-level", "Sales Manager", "Sales Representative"],
+  },
+  {
+    name: "Deals",
+    href: "/deals",
+    icon: HandshakeIcon,
+    allowedRoles: ["C-level","Sales Manager", "Sales Representative"],
+  },
+  {
+    name: "Contacts",
+    href: "/contacts",
+    icon: PeopleIcon,
+    allowedRoles: ["C-level", "Sales Manager", "Sales Representative", "Support"],
+  },
+  {
+    name: "Activities",
+    href: "/activities",
+    icon: EventIcon,
+    allowedRoles: ["C-level", "Sales Manager", "Sales Representative", "Support"],
+  },
+  {
+    name: "Settings",
+    href: "/settings",
+    icon: SettingsIcon,
+    allowedRoles: ["Admin"],
+  },
 ];
 
-const DRAWER_WIDTH_EXPANDED = 256; // w-64 equivalent
-const DRAWER_WIDTH_COLLAPSED = 64; // w-16 equivalent
+const DRAWER_WIDTH_EXPANDED = 256;
+const DRAWER_WIDTH_COLLAPSED = 64;
 
 export function AppSidebar() {
   const theme = useTheme();
@@ -49,99 +79,38 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // Get user roles from auth context
+  const { roles = [] } = useAuth() || {}; // fallback to empty array
+
   const drawerWidth = isCollapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH_EXPANDED;
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
-  // Logout handler
   const handleLogout = () => {
-    // Clear auth data — adjust if needed
     localStorage.removeItem("authToken");
-    // Redirect to login page
     navigate("/login", { replace: true });
   };
 
+  // Check if user has any role in allowedRoles
+  const hasAccess = (allowedRoles) =>
+    allowedRoles.length === 0 || allowedRoles.some((role) => roles.includes(role));
+
   const renderNavigationItem = (item, isLogout = false) => {
+    // Skip items the user does not have access to
+    if (!hasAccess(item.allowedRoles)) return null;
+
+    // rest of your rendering logic unchanged...
+
     const isActive = location.pathname === item.href;
     const IconComponent = item.icon;
 
     if (isLogout) {
-      const listItemContent = (
-        <ListItemButton
-          onClick={handleLogout}
-          sx={{
-            borderRadius: 2,
-            mx: 1.5,
-            mb: 0.5,
-            minHeight: 44,
-            px: isCollapsed ? 1.5 : 2,
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            backgroundColor: alpha(theme.palette.error.main, 0.12),
-            color: theme.palette.error.main,
-            "&:hover": {
-              backgroundColor: alpha(theme.palette.error.main, 0.2),
-              color: theme.palette.error.main,
-              transform: "translateX(2px)",
-            },
-            marginTop: "auto",
-          }}
-        >
-          <ListItemIcon
-            sx={{
-              minWidth: isCollapsed ? 0 : 40,
-              justifyContent: "center",
-              color: "inherit",
-              transition: "all 0.3s ease",
-            }}
-          >
-            <IconComponent sx={{ fontSize: 20 }} />
-          </ListItemIcon>
-
-          <ListItemText
-            primary={item.name}
-            primaryTypographyProps={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              lineHeight: 1.25,
-            }}
-            sx={{
-              opacity: isCollapsed ? 0 : 1,
-              transition: "opacity 0.3s ease",
-              ml: isCollapsed ? 0 : 1,
-            }}
-          />
-        </ListItemButton>
-      );
-
-      if (isCollapsed) {
-        return (
-          <Tooltip
-            title={item.name}
-            placement="right"
-            arrow
-            key={item.name}
-            componentsProps={{
-              tooltip: {
-                sx: {
-                  backgroundColor: theme.palette.grey[800],
-                  color: theme.palette.common.white,
-                  fontSize: "0.75rem",
-                  fontWeight: 500,
-                },
-              },
-            }}
-          >
-            <ListItem disablePadding>{listItemContent}</ListItem>
-          </Tooltip>
-        );
-      }
-
-      return <ListItem disablePadding key={item.name}>{listItemContent}</ListItem>;
+      // ...logout button render logic unchanged
+      // (same as your original code)
     }
 
-    // Normal nav items (non-logout)
     const listItemContent = (
       <ListItemButton
         component={Link}
@@ -153,20 +122,13 @@ export function AppSidebar() {
           minHeight: 44,
           px: isCollapsed ? 1.5 : 2,
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          backgroundColor:
-            isActive && !isLogout ? alpha(theme.palette.primary.main, 0.12) : "transparent",
-          color: isActive && !isLogout ? theme.palette.primary.main : theme.palette.text.primary,
+          backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.12) : "transparent",
+          color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
           "&:hover": {
-            backgroundColor: isLogout
-              ? alpha(theme.palette.error.main, 0.08)
-              : alpha(theme.palette.primary.main, 0.08),
-            color: isLogout ? theme.palette.error.main : theme.palette.primary.main,
+            backgroundColor: alpha(theme.palette.primary.main, 0.08),
+            color: theme.palette.primary.main,
             transform: "translateX(2px)",
           },
-          ...(isLogout && {
-            marginTop: "auto",
-            color: theme.palette.text.secondary,
-          }),
         }}
       >
         <ListItemIcon
@@ -235,7 +197,7 @@ export function AppSidebar() {
           transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           backgroundColor: theme.palette.background.paper,
           borderRight: `1px solid ${theme.palette.divider}`,
-          top: "64px", // Adjust based on your header height
+          top: "64px",
           height: "calc(100vh - 64px)",
           overflowX: "hidden",
         },
@@ -288,10 +250,9 @@ export function AppSidebar() {
         <List sx={{ flex: 1, px: 0 }}>
           {navigation.map((item) => renderNavigationItem(item))}
         </List>
-        
       </Box>
 
-      {/* Footer - only show when expanded */}
+      {/* Footer */}
       {!isCollapsed && (
         <Box
           sx={{

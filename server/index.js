@@ -10,17 +10,17 @@ const cors = require("cors");
 const app = express();
 
 // Middleware
-app.use(cors());
+//app.use(cors());
 app.use(cors({
 
   origin: [
     process.env.SERVER_URL,
     process.env.ALT_SERVER_URL
   ],
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Allow full set of HTTP methods
-  allowedHeaders: ['Content-Type'],                      // Allow JSON headers
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], 
+  allowedHeaders: ['Content-Type', 'Authorization'],       
 }));
-app.options("*", cors()); // Handle CORS preflight for PUT/DELETE
+app.options("*", cors()); 
 
 app.use(express.json());
 
@@ -40,7 +40,7 @@ const productRoutes = require("./routes/productRoutes");
 const personRoutes = require('./routes/personRoutes');
 const reportRoutes = require("./routes/reportRoutes");
 const countryRoutes = require("./routes/countryRoutes")
-const authRoutes = require("./routes/authRoutes");
+const authRoutes = require("./routes/auth/authRoutes");
 
 
 
@@ -48,6 +48,7 @@ const authRoutes = require("./routes/authRoutes");
 app.get("/", (req, res) => {
   res.send("Backend server is running!");
 });
+
 
 // Mount the route onto a directory
 app.use("/accounts", accountRoutes);

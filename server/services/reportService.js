@@ -1,6 +1,8 @@
 const salesPipelineRepo = require("../data/reports/salesPipelineReportRepo");
 const revenueForecastRepo = require("../data/reports/revenueForecastReportRepo");
 const closedDealsRepo = require("../data/reports/closedDealsReportRepo");
+const customerSegmentationRepo = require("../data/reports/customerSegmentReportRepo");
+const activitiesOutcomesRepo = require("../data/reports/activitiesOutcomesReportRepo");
 
 // ==============================
 // SALES PIPELINE REPORT FUNCTIONS
@@ -46,10 +48,11 @@ async function getSalesPipelineReport(startDate = null, endDate = null) {
 }
 
 // ==============================
-// REVENUE FORECAST REPORT FUNCTIONS
+// REVENUE REPORT FUNCTIONS
 // ==============================
 
 // Get Revenue Forecast Report
+
 async function getRevenueForecastReport(startDate = null, endDate = null, stageName = 'Closed Won') {
   try {
     const rawData = await revenueForecastRepo.getRevenueForecast(startDate, endDate, stageName);
@@ -437,6 +440,251 @@ async function getClosedDealsByProductReport(stageName = 'Closed Won', startDate
   }
 }
 
+// ==============================
+// CUSTOMER SEGMENTATION REPORT FUNCTIONS
+// ==============================
+
+// Get Customer Segmentation Report
+async function getCustomerSegmentationReport(segmentType = 'Industry') {
+  try {
+    const rawData = await customerSegmentationRepo.getCustomerSegmentation(segmentType);
+    
+    // Transform the data for better frontend consumption
+    const transformedData = rawData.map(segment => ({
+      segment: segment.Segment || 'Unknown',
+      customerCount: parseInt(segment.CustomerCount) || 0,
+      percentage: 0 // Will be calculated below
+    }));
+    
+    // Calculate total customers for percentage calculation
+    const totalCustomers = transformedData.reduce((sum, segment) => sum + segment.customerCount, 0);
+    
+    // Add percentage calculation
+    transformedData.forEach(segment => {
+      segment.percentage = totalCustomers > 0 ? (segment.customerCount / totalCustomers) * 100 : 0;
+      segment.formattedPercentage = `${segment.percentage.toFixed(1)}%`;
+    });
+    
+    // Sort by customer count (descending)
+    transformedData.sort((a, b) => b.customerCount - a.customerCount);
+    
+    // Calculate summary statistics
+    const summary = {
+      totalCustomers: totalCustomers,
+      segmentCount: transformedData.length,
+      largestSegment: transformedData.length > 0 ? transformedData[0] : null,
+      smallestSegment: transformedData.length > 0 ? transformedData[transformedData.length - 1] : null,
+      averageCustomersPerSegment: transformedData.length > 0 ? 
+        totalCustomers / transformedData.length : 0
+    };
+    
+    return {
+      data: transformedData,
+      summary: {
+        ...summary,
+        formattedAverageCustomersPerSegment: Math.round(summary.averageCustomersPerSegment),
+        largestSegment: summary.largestSegment ? {
+          ...summary.largestSegment,
+          formattedPercentage: `${summary.largestSegment.percentage.toFixed(1)}%`
+        } : null,
+        smallestSegment: summary.smallestSegment ? {
+          ...summary.smallestSegment,
+          formattedPercentage: `${summary.smallestSegment.percentage.toFixed(1)}%`
+        } : null
+      },
+      filters: {
+        segmentType
+      },
+      chartData: {
+        labels: transformedData.map(segment => segment.segment),
+        customerCounts: transformedData.map(segment => segment.customerCount),
+        percentages: transformedData.map(segment => segment.percentage)
+      },
+      segmentTypeInfo: getSegmentTypeInfo(segmentType)
+    };
+  } catch (error) {
+    console.error("Error in getCustomerSegmentationReport service:", error);
+    throw error;
+  }
+}
+
+// Helper function to provide information about segment types
+function getSegmentTypeInfo(segmentType) {
+  const segmentTypes = {
+    'Industry': {
+      description: 'Segments customers by industry vertical',
+      useCase: 'Industry-specific marketing campaigns and product development',
+      visualization: 'Pie chart or horizontal bar chart'
+    },
+    'Size': {
+      description: 'Segments customers by company size (employee count)',
+      categories: ['Small (1-49)', 'Medium (50-250)', 'Large (251+)'],
+      useCase: 'Tailoring pricing strategies and sales approaches',
+      visualization: 'Pie chart or donut chart'
+    },
+    'Country': {
+      description: 'Segments customers by country location',
+      useCase: 'Geographic expansion planning and regional marketing',
+      visualization: 'World map heatmap or bar chart'
+    },
+    'StateProvince': {
+      description: 'Segments customers by state or province',
+      useCase: 'Regional sales territory optimization',
+      visualization: 'Regional map or bar chart'
+    },
+    'City': {
+      description: 'Segments customers by city location',
+      useCase: 'Local marketing campaigns and sales territory planning',
+      visualization: 'City-level map or top cities bar chart'
+    }
+  };
+  
+  return segmentTypes[segmentType] || {
+    description: 'Custom customer segmentation',
+    useCase: 'Targeted marketing and sales strategies',
+    visualization: 'Chart based on data distribution'
+  };
+}
+
+// Get Activities vs Outcomes Report
+async function getActivitiesVsOutcomesReport() {
+  try {
+    const rawData = await activitiesOutcomesRepo.getActivitiesVsOutcomes();
+    
+    // Transform the data for better frontend consumption
+    const transformedData = rawData.map(item => ({
+      activityType: item.ActivityType || 'Unknown',
+      outcome: item.Outcome || 'No Outcome',
+      activityCount: parseInt(item.ActivityCount) || 0
+    }));
+    
+    // Group data by activity type for summary
+    const activitySummary = transformedData.reduce((acc, item) => {
+      const activityType = item.activityType;
+      if (!acc[activityType]) {
+        acc[activityType] = {
+          activityType: activityType,
+          totalActivities: 0,
+          outcomes: {}
+        };
+      }
+      acc[activityType].totalActivities += item.activityCount;
+      acc[activityType].outcomes[item.outcome] = item.activityCount;
+      return acc;
+    }, {});
+    
+    const activitySummaryArray = Object.values(activitySummary);
+    
+    // Group data by outcome for outcome summary
+    const outcomeSummary = transformedData.reduce((acc, item) => {
+      const outcome = item.outcome;
+      if (!acc[outcome]) {
+        acc[outcome] = {
+          outcome: outcome,
+          totalActivities: 0,
+          activityTypes: {}
+        };
+      }
+      acc[outcome].totalActivities += item.activityCount;
+      acc[outcome].activityTypes[item.activityType] = item.activityCount;
+      return acc;
+    }, {});
+    
+    const outcomeSummaryArray = Object.values(outcomeSummary).sort((a, b) => b.totalActivities - a.totalActivities);
+    
+    // Calculate conversion metrics
+    const conversionMetrics = activitySummaryArray.map(activity => {
+      const outcomes = activity.outcomes;
+      const totalActivities = activity.totalActivities;
+      
+      // Calculate conversion rates for positive outcomes
+      const positiveOutcomes = ['Closed Won', 'Qualified', 'Proposal', 'Negotiation'];
+      const positiveActivityCount = positiveOutcomes.reduce((sum, outcome) => {
+        return sum + (outcomes[outcome] || 0);
+      }, 0);
+      
+      const conversionRate = totalActivities > 0 ? (positiveActivityCount / totalActivities) * 100 : 0;
+      
+      return {
+        activityType: activity.activityType,
+        totalActivities: totalActivities,
+        positiveOutcomes: positiveActivityCount,
+        conversionRate: conversionRate,
+        formattedConversionRate: `${conversionRate.toFixed(1)}%`,
+        outcomes: outcomes
+      };
+    }).sort((a, b) => b.conversionRate - a.conversionRate);
+    
+    // Get unique activity types and outcomes for chart data
+    const activityTypes = [...new Set(transformedData.map(item => item.activityType))];
+    const outcomes = [...new Set(transformedData.map(item => item.outcome))];
+    
+    // Create chart data structure
+    const chartData = {
+      labels: activityTypes,
+      datasets: outcomes.map(outcome => ({
+        label: outcome,
+        data: activityTypes.map(activityType => {
+          const item = transformedData.find(d => d.activityType === activityType && d.outcome === outcome);
+          return item ? item.activityCount : 0;
+        })
+      }))
+    };
+    
+    // Create heatmap data for activity type vs outcome
+    const heatmapData = activityTypes.map(activityType => {
+      return outcomes.map(outcome => {
+        const item = transformedData.find(d => d.activityType === activityType && d.outcome === outcome);
+        return {
+          x: activityType,
+          y: outcome,
+          value: item ? item.activityCount : 0
+        };
+      });
+    }).flat();
+    
+    // Calculate summary statistics
+    const summary = {
+      totalActivities: transformedData.reduce((sum, item) => sum + item.activityCount, 0),
+      activityTypeCount: activityTypes.length,
+      outcomeCount: outcomes.length,
+      averageActivitiesPerType: activityTypes.length > 0 ? 
+        transformedData.reduce((sum, item) => sum + item.activityCount, 0) / activityTypes.length : 0,
+      topActivityType: activitySummaryArray.length > 0 ? 
+        activitySummaryArray.reduce((prev, current) => (prev.totalActivities > current.totalActivities) ? prev : current) : null,
+      topOutcome: outcomeSummaryArray.length > 0 ? outcomeSummaryArray[0] : null,
+      bestConversionRate: conversionMetrics.length > 0 ? conversionMetrics[0] : null
+    };
+    
+    return {
+      data: transformedData,
+      activitySummary: activitySummaryArray,
+      outcomeSummary: outcomeSummaryArray,
+      conversionMetrics: conversionMetrics,
+      summary: {
+        ...summary,
+        formattedAverageActivitiesPerType: Math.round(summary.averageActivitiesPerType)
+      },
+      chartData: chartData,
+      heatmapData: heatmapData,
+      metadata: {
+        activityTypes: activityTypes,
+        outcomes: outcomes,
+        reportType: 'Activities vs Outcomes',
+        description: 'Compares sales rep activities (calls, emails, meetings) to outcomes (deals closed, conversions)',
+        visualizationSuggestions: [
+          'Stacked Bar Chart - Activities by Outcome',
+          'Grouped Bar Chart - Outcomes by Activity Type', 
+          'Heatmap - Activity Type vs Outcome',
+          'Conversion Rate Chart - Activity Types Ranked by Success Rate'
+        ]
+      }
+    };
+  } catch (error) {
+    console.error("Error in getActivitiesVsOutcomesReport service:", error);
+    throw error;
+  }
+}
 
 // Helper function to format currency
 function formatCurrency(amount, currency = 'USD') {
@@ -468,4 +716,6 @@ module.exports = {
   getClosedDealsByRoleReport,
   getClosedDealsByTeamReport,
   getClosedDealsByProductReport,
+  getCustomerSegmentationReport,
+  getActivitiesVsOutcomesReport,
 };
