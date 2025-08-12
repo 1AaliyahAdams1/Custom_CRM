@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { dbConfig } = require("../dbConfig");
+const { dbConfig } = require("../../dbConfig");
 
 // =======================
 // Get all users with active access to a specific DealRoom

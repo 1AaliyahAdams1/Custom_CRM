@@ -205,6 +205,38 @@ async function getContactsByAccountId(accountName) {
   return result.recordset;
 }
 
+async function getContactsByUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT
+          c.[ContactID],
+          c.[AccountID],
+          c.[PersonID],
+          c.[Still_employed],
+          c.[JobTitleID],
+          c.[WorkEmail],
+          c.[WorkPhone],
+          c.[Active],
+          c.[CreatedAt],
+          c.[UpdatedAt]
+        FROM [CRM].[dbo].[Contact] c
+        JOIN [CRM].[dbo].[AssignedUser] au ON c.AccountID = au.AccountID AND au.Active = 1
+        JOIN [CRM].[dbo].[Account] a ON c.AccountID = a.AccountID AND a.Active = 1
+        WHERE au.UserID = @UserID
+          AND c.Active = 1;
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Error fetching contacts for user accounts:", error);
+    throw error;
+  }
+}
+
+
 module.exports = {
   getAllContacts,
   getAllContactDetails,
@@ -215,4 +247,5 @@ module.exports = {
   reactivateContact,
   deleteContact,
   getContactsByAccountId,
+  getContactsByUser
 };
