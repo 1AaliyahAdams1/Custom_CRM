@@ -1,6 +1,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../../context/auth/authContext";
+import { useAuth } from "../../hooks/auth/useAuth";
 
 const PrivateRoute = ({ children, allowedRoles }) => {
   // Get user from localStorage first

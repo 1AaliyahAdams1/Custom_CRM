@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { Email, Lock, Visibility, VisibilityOff, Business, ArrowForward } from "@mui/icons-material";
 
+
 const LoginPage = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -25,9 +26,10 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    // Login function now handles the page reload internally
     await login(identifier, password);
   };
-
+  
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
