@@ -98,8 +98,7 @@ const dealsTableConfig = {
     { field: 'DealName', headerName: 'Deal Name', type: 'tooltip' },
     { field: "AccountName", headerName: "Account", width: 150 },
     { field: "StageName", headerName: "Stage", width: 150 },
-    //COMBINE VALUE AND CURRENCY SYMBOL
-    { field: 'Value', headerName: 'Value' },
+    { field: 'SymbolValue', headerName: 'Amount' },
     { field: 'LocalName', headerName: 'Currency symbol' }, //currency name
     { field: 'CloseDate', headerName: 'Close Date', type: 'date' },
     { field: 'Probability', headerName: 'Probability (%)', type: 'percentage' },
@@ -133,7 +132,14 @@ const DealsPage = () => {
     try {
       const data = await getAllDeals(true);
       console.log("Fetched deals:", data);
-      setDeals(data);
+      const processedData = data.map(deal => ({
+        ...deal, // keep all original deal fields
+        SymbolValue: deal.Prefix
+          ? `${deal.Symbol}${deal.Value}` // symbol before value
+          : `${deal.Value}${deal.Symbol}` // symbol after value
+      }));
+
+      setDeals(processedData);
     } catch (error) {
       console.error("Failed to fetch deals:", error);
       setError("Failed to load deals. Please try again.");
@@ -165,8 +171,7 @@ const DealsPage = () => {
       const matchesSearch =
         (deal.DealName && deal.DealName.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (deal.AccountID && deal.AccountID.toString().includes(searchTerm)) ||
-        (deal.DealStageID && deal.DealStageID.toString().includes(searchTerm)) ||
-        (deal.Value && deal.Value.toString().includes(searchTerm));
+        (deal.DealStageID && deal.DealStageID.toString().includes(searchTerm));
 
       const matchesStatus = !statusFilter ||
         (statusFilter === 'high' && deal.Probability >= 75) ||

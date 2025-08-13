@@ -18,7 +18,7 @@ const DealsTable = ({ deals, loading, onEdit, onDelete, onGetFilterColumns }) =>
     { field: "AccountName", headerName: "Account", width: 150 },
     { field: "StageName", headerName: "Stage", width: 150 },
     { field: "DealName", headerName: "Deal Name", width: 200 },
-    { field: "Value", headerName: "Value", width: 150 },
+    { field: "SymbolValue", headerName: "Value", width: 150 },
     { field: "CloseDate", headerName: "Close Date", width: 150 },
     { field: "Probability", headerName: "Probability (%)", width: 150 },
     { field: "CreatedAt", headerName: "Created At", width: 180 },
@@ -76,7 +76,7 @@ const DealsTable = ({ deals, loading, onEdit, onDelete, onGetFilterColumns }) =>
     { field: "AccountName", headerName: "Account", width: 150 },
     { field: "StageName", headerName: "Stage", width: 150 },
     { field: "DealName", headerName: "Deal Name", width: 200 },
-    { field: "Value", headerName: "Value", width: 150 },
+    { field: "SymbolValue", headerName: "Value", width: 150 },
     { field: "CloseDate", headerName: "Close Date", width: 150 },
     { field: "Probability", headerName: "Probability (%)", width: 150 },
     // Note: CreatedAt and UpdatedAt are excluded from filtering
