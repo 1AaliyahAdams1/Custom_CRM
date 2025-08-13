@@ -16,14 +16,6 @@ import {
   Link,
   TextField,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem as MuiMenuItem,
 } from '@mui/material';
 import {
   MoreVert,
@@ -35,10 +27,10 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon,
   ViewColumn as ColumnsIcon,
-  Close as CloseIcon,
 } from '@mui/icons-material';
 
 import ColumnsDialog from './ColumnsDialog';
+import FiltersDialog from './FiltersDialog';
 
 const TableView = ({
   data = [],
@@ -111,21 +103,9 @@ const TableView = ({
     handleMenuClose();
   };
 
-  // Unique values for filters
-  const getUniqueValues = (field) =>
-    [...new Set(data.map((item) => item[field]).filter(Boolean))].sort();
-
-  // Filterable columns (chip, boolean, or limited unique values)
-  const filterableColumns = columns.filter(
-    (col) =>
-      col.type === 'chip' ||
-      col.type === 'boolean' ||
-      ((col.type === 'tooltip' || col.type === 'truncated' || !col.type) &&
-        getUniqueValues(col.field).length <= 20)
-  );
-
-  // Filter data by search term and filters
+  // Get filtered data based on search term and filters
   const filteredData = data.filter((item) => {
+    // Search term filter
     if (searchTerm) {
       const searchableFields = columns.map((c) => c.field);
       const found = searchableFields.some((field) => {
@@ -134,6 +114,7 @@ const TableView = ({
       });
       if (!found) return false;
     }
+    // Filters
     for (const [filterField, filterValue] of Object.entries(filters)) {
       if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
         const itemVal = item[filterField];
@@ -147,7 +128,7 @@ const TableView = ({
     return true;
   });
 
-  // Columns to display based on visibility
+  // Columns to show based on visibility state
   const displayedColumns = columns.filter((col) => visibleColumns[col.field]);
 
   // Selection handlers
@@ -158,7 +139,7 @@ const TableView = ({
     onSelectClick && onSelectClick(id);
   };
 
-  // Render cell content with formatting
+  // Render cell content (with formatters and different column types)
   const renderCellContent = (row, column) => {
     const value = row[column.field];
     if (formatters[column.field]) {
@@ -231,81 +212,7 @@ const TableView = ({
     }
   };
 
-  // Filter dialog UI
-  const FilterDialog = () => (
-    <Dialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)}>
-      <DialogTitle>Filters</DialogTitle>
-      <DialogContent dividers>
-        {filterableColumns.length === 0 && <Box>No filterable columns</Box>}
-        {filterableColumns.map((col) => (
-          <FormControl fullWidth key={col.field} sx={{ mt: 2 }} size="small">
-            <InputLabel>{col.headerName}</InputLabel>
-            <Select
-              value={filters[col.field] !== undefined ? filters[col.field] : ''}
-              label={col.headerName}
-              onChange={(e) => {
-                const val = e.target.value;
-                setFilters((prev) => {
-                  const newFilters = { ...prev };
-                  if (val === '') {
-                    delete newFilters[col.field];
-                  } else {
-                    let parsedVal = val;
-                    if (col.type === 'boolean') {
-                      parsedVal = val === 'true';
-                    }
-                    newFilters[col.field] = parsedVal;
-                  }
-                  return newFilters;
-                });
-              }}
-            >
-              <MuiMenuItem value="">All</MuiMenuItem>
-              {getUniqueValues(col.field).map((value) => (
-                <MuiMenuItem key={value} value={value.toString()}>
-                  {col.chipLabels ? col.chipLabels[value] || value : value}
-                </MuiMenuItem>
-              ))}
-              {col.type === 'boolean' && (
-                <>
-                  <MuiMenuItem value="true">Yes</MuiMenuItem>
-                  <MuiMenuItem value="false">No</MuiMenuItem>
-                </>
-              )}
-            </Select>
-          </FormControl>
-        ))}
-      </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={() => {
-            setFilters({});
-            setFilterDialogOpen(false);
-          }}
-          color="secondary"
-          startIcon={<CloseIcon />}
-        >
-          Clear Filters
-        </Button>
-        <Button onClick={() => setFilterDialogOpen(false)} variant="contained">
-          Close
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-
-  // Open columns dialog
-  const openColumnsDialog = () => {
-    setColumnsDialogOpen(true);
-  };
-
-  // Save columns visibility from dialog
-  const handleColumnsSave = (newVisibleColumns) => {
-    setVisibleColumns(newVisibleColumns);
-    setColumnsDialogOpen(false);
-  };
-
-  // Default menu actions
+  // Default menu actions if none provided
   const defaultMenuItems = [
     {
       label: 'View Details',
@@ -353,9 +260,15 @@ const TableView = ({
 
   const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
 
+  // Columns dialog save handler
+  const handleColumnsSave = (newVisibleColumns) => {
+    setVisibleColumns(newVisibleColumns);
+    setColumnsDialogOpen(false);
+  };
+
   return (
     <>
-      {/* Search + Filter + Columns */}
+      {/* Search + Filter + Columns controls */}
       <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
         <TextField
           size="small"
@@ -376,11 +289,12 @@ const TableView = ({
           )}
         </Button>
 
-        <Button variant="outlined" startIcon={<ColumnsIcon />} onClick={openColumnsDialog}>
+        <Button variant="outlined" startIcon={<ColumnsIcon />} onClick={() => setColumnsDialogOpen(true)}>
           Columns
         </Button>
       </Box>
 
+      {/* Table */}
       <TableContainer>
         <Table stickyHeader>
           <TableHead>
@@ -438,7 +352,7 @@ const TableView = ({
         </Table>
       </TableContainer>
 
-      {/* Menus */}
+      {/* Action Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         {allMenuItems
           .filter((item) => item.show !== false)
@@ -456,7 +370,15 @@ const TableView = ({
       </Menu>
 
       {/* Dialogs */}
-      <FilterDialog />
+      <FiltersDialog
+        open={filterDialogOpen}
+        onClose={() => setFilterDialogOpen(false)}
+        onSave={setFilters}
+        columns={columns}
+        data={data}
+        currentFilters={filters}
+      />
+
       <ColumnsDialog
         open={columnsDialogOpen}
         visibleColumns={visibleColumns}
