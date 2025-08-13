@@ -14,8 +14,6 @@ import {
   deactivateActivity,
 } from "../services/activityService";
 
-
-
 const ActivitiesPage = () => {
   const navigate = useNavigate();
   const [activities, setActivities] = useState([]);
