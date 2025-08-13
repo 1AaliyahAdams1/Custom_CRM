@@ -26,6 +26,7 @@ import {
   Clear,
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { formatters} from '../utils/formatters';
 import UniversalTable from '../components/TableView';
 
 import {
@@ -95,20 +96,26 @@ const activitiesTableConfig = {
   columns: [
     { field: 'ActivityType', headerName: 'Activity Type', type: 'tooltip' },
     { field: 'AccountName', headerName: 'Account Name', type: 'tooltip' },
-    { field: 'PriorityLevelID', headerName: 'Priority' },
-    { field: 'DueToStart', headerName: 'Due To Start', type: 'date' },
-    { field: 'DueToEnd', headerName: 'Due To End', type: 'date' },
-    { 
-      field: 'Completed', 
-      headerName: 'Status',
-      type: 'chip',
-      chipLabels: { true: 'Completed', false: 'Pending' },
-      chipColors: { true: '#000000', false: '#999999' }
-    },
-    { field: 'CreatedAt', headerName: 'Created', type: 'date' },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'date' },
+    { field: 'PriorityLevelID', headerName: 'Priority' }, //change to name
     { field: 'note', headerName: 'Notes', type: 'truncated', maxWidth: 150 },
     { field: 'attachment', headerName: 'Attachments' },
+    { field: 'DueToStart', headerName: 'Due To Start', type: 'date' },
+    { field: 'DueToEnd', headerName: 'Due To End', type: 'date' },
+    {
+      field: 'CreatedAt',
+      headerName: 'Created',
+      type: 'dateTime',
+    },
+    {
+      field: 'UpdatedAt',
+      headerName: 'Updated',
+      type: 'date',
+    },
+    {
+      field: 'Completed',
+      headerName: 'Status',
+      type: 'boolean',
+    },
   ]
 };
 
@@ -257,42 +264,6 @@ const ActivitiesPage = () => {
     setPriorityFilter('');
   };
 
-  // Custom formatters for the table
-  const formatters = {
-    DueToStart: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
-    DueToEnd: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
-    CreatedAt: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
-    UpdatedAt: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
-    PriorityLevelID: (value) => {
-      const priorities = {
-        1: 'Low',
-        2: 'Medium',
-        3: 'High',
-        4: 'Critical'
-      };
-      return priorities[value] || value || "-";
-    },
-  };
 
   if (loading) {
     return (

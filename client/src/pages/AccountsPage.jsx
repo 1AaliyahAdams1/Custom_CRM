@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { formatters } from '../utils/formatters';
 import UniversalTable from '../components/TableView';
 
 // Monochrome theme for MUI components
@@ -93,11 +94,8 @@ const accountsTableConfig = {
     { field: 'number_of_events_anually', headerName: '# Events Anually' },
     { field: 'annual_revenue', headerName: 'Annual Revenue' },
     { field: 'ParentAccount', headerName: 'Parent Account' },
-
-
-
-
-    { field: 'CreatedAt', headerName: 'Created' },
+    { field: 'CreatedAt', headerName: 'Created'},
+    { field: 'UpdatedAt', headerName: 'Updated'},
     {
       field: 'ownerStatus',
       headerName: 'Ownership',
@@ -150,26 +148,6 @@ const AccountsPage = ({
     } else {
       setSelected([]);
     }
-  };
-
-  // Formatters for columns
-  const formatters = {
-    street_address: (value, row) => {
-      const fullAddress = [row.street_address1, row.street_address2, row.street_address3]
-        .filter(Boolean)
-        .join(" ");
-      return fullAddress || "-";
-    },
-    annual_revenue: (value) => {
-      if (!value) return "-";
-      return new Intl.NumberFormat().format(value);
-    },
-    CreatedAt: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
   };
 
   return (
