@@ -4,19 +4,19 @@
 //IMPORTS
 import React from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import { IconButton, Box, Tooltip } from "@mui/material"; // Added Tooltip import
+import { IconButton, Box, Tooltip } from "@mui/material";
 import { Edit, Delete, Info } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom"; 
 
-const DealsTable = ({ deals, loading, onEdit, onDelete }) => {
+const DealsTable = ({ deals, loading, onEdit, onDelete, onGetFilterColumns }) => {
   // React Router's navigation hook to programmatically navigate to deal details page
   const navigate = useNavigate();
 
   // Define columns for DataGrid, including data fields and custom actions column
   const columns = [
     { field: "DealID", headerName: "Deal ID", width: 100 },
-    { field: "AccountID", headerName: "Account ID", width: 150 },
-    { field: "DealStageID", headerName: "Deal Stage ID", width: 150 },
+    { field: "AccountName", headerName: "Account", width: 150 },
+    { field: "StageName", headerName: "Stage", width: 150 },
     { field: "DealName", headerName: "Deal Name", width: 200 },
     { field: "Value", headerName: "Value", width: 150 },
     { field: "CloseDate", headerName: "Close Date", width: 150 },
@@ -29,10 +29,9 @@ const DealsTable = ({ deals, loading, onEdit, onDelete }) => {
       field: "actions",
       headerName: "Actions",
       width: 120,
-      sortable: false, // Disable sorting on action buttons column
+      sortable: false,
       renderCell: (params) => (
         <Box display="flex" alignItems="center">
-          {/* Edit button with tooltip */}
           <Tooltip title="Edit Deal" arrow>
             <IconButton
               onClick={() => onEdit(params.row)}
@@ -45,7 +44,6 @@ const DealsTable = ({ deals, loading, onEdit, onDelete }) => {
             </IconButton>
           </Tooltip>
 
-          {/* Delete button with tooltip */}
           <Tooltip title="Delete Deal" arrow>
             <IconButton
               onClick={() => onDelete(params.row.DealID)}
@@ -57,7 +55,6 @@ const DealsTable = ({ deals, loading, onEdit, onDelete }) => {
             </IconButton>
           </Tooltip>
 
-          {/* Info/details button with tooltip */}
           <Tooltip title="View Deal Details" arrow>
             <IconButton
               onClick={() => navigate(`/deals/${params.row.DealID}`)}
@@ -73,16 +70,35 @@ const DealsTable = ({ deals, loading, onEdit, onDelete }) => {
     },
   ];
 
+  // Columns available for filtering (excludes actions, timestamps, or any other fields you don't want filterable)
+  const filterColumns = [
+    { field: "DealID", headerName: "Deal ID", width: 100 },
+    { field: "AccountName", headerName: "Account", width: 150 },
+    { field: "StageName", headerName: "Stage", width: 150 },
+    { field: "DealName", headerName: "Deal Name", width: 200 },
+    { field: "Value", headerName: "Value", width: 150 },
+    { field: "CloseDate", headerName: "Close Date", width: 150 },
+    { field: "Probability", headerName: "Probability (%)", width: 150 },
+    // Note: CreatedAt and UpdatedAt are excluded from filtering
+  ];
+
+  // Expose filter columns to parent component when component mounts or updates
+  React.useEffect(() => {
+    if (onGetFilterColumns) {
+      onGetFilterColumns(filterColumns);
+    }
+  }, [onGetFilterColumns]); // Dependency array to prevent unnecessary calls
+
   // Render DataGrid with deals data, custom columns, and pagination
   return (
     <div style={{ height: 600, width: "100%" }}>
       <DataGrid
-        rows={deals}                         // Data rows to display
-        columns={columns}                    // Columns configuration
-        getRowId={(row) => row.DealID}      // Unique row id accessor
-        pageSize={10}                       // Number of rows per page
-        rowsPerPageOptions={[10]}           // Pagination options
-        loading={loading}                   // Loading indicator flag
+        rows={deals}
+        columns={columns}
+        getRowId={(row) => row.DealID}
+        pageSize={10}
+        rowsPerPageOptions={[10]}
+        loading={loading}
       />
     </div>
   );

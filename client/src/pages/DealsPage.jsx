@@ -93,14 +93,14 @@ const theme = createTheme({
 const dealsTableConfig = {
   idField: 'DealID',
   columns: [
-    { field: 'DealName', headerName: 'Deal Name', type: 'tooltip' },
-    { field: 'AccountID', headerName: 'Account ID' },
-    { field: 'DealStageID', headerName: 'Deal Stage' },
-    { field: 'Value', headerName: 'Value', type: 'currency' },
-    { field: 'CloseDate', headerName: 'Close Date', type: 'date' },
-    { field: 'Probability', headerName: 'Probability (%)', type: 'percentage' },
-    { field: 'CreatedAt', headerName: 'Created', type: 'date' },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'date' },
+    { field: "DealName", headerName: "Deal Name", width: 200 },
+    { field: "AccountName", headerName: "Account", width: 150 },
+    { field: "StageName", headerName: "Stage", width: 150 },
+    { field: "Value", headerName: "Value", width: 150 },
+    { field: "CloseDate", headerName: "Close Date", width: 150 },
+    { field: "Probability", headerName: "Probability (%)", width: 150 },
+    { field: "CreatedAt", headerName: "Created At", width: 180 },
+    { field: "UpdatedAt", headerName: "Updated At", width: 180 }
   ]
 };
 
