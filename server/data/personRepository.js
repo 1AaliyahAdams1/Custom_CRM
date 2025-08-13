@@ -93,16 +93,6 @@ async function updatePerson(personId, personData) {
   return true;
 }
 
-//All stored procedures
-//getAllPersons
-//getPersonByID
-//getIDByPerson
-//createPerson
-//updatePerson
-//deactivatePerson
-//reactivatePerson
-//deletePerson
-
 // =======================
 // Deactivate a person
 // =======================

@@ -81,16 +81,6 @@ async function deletePriorityLevel(id) {
   return { message: "Priority level deleted", PriorityLevelID: id };
 }
 
-//All stored procedures
-//getAllPriorityLevels
-//getPriorityLevelByID
-//getIDByPriorityLevel
-//createPriorityLevel
-//updatePriorityLevel
-//deactivatePriorityLevel
-//reactivatePriorityLevel
-//deletePriorityLevel
-
 // =======================
 // Exports
 // =======================

@@ -188,14 +188,3 @@ module.exports = {
   reactivateProduct,
   deleteProduct,
 };
-
-//All stored procedures
-//insertTempProduct
-//getAllProducts
-//getProductByID
-//getIDByProduct
-//createProduct
-//updateProduct
-//deactivateProduct
-//reactivateProduct
-//deleteProduct

@@ -110,15 +110,6 @@ async function deleteAttachment(attachmentId) {
     .execute("DeleteAttachment");
 }
 
-//All stored procedures
-//CreateAttachment
-// GetAttachment
-// GetAttachmentByID
-// UpdateAttachment
-// DeactivateAttachment
-// ReactivateAttachment
-// DeleteAttachment
-
 // =======================
 // Exports
 // =======================

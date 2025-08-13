@@ -62,16 +62,6 @@ async function deleteCountry(id) {
   return { message: "Country deactivated", CountryID: id };
 }
 
-//All stored procedures
-//CreateCountry
-// GetCountry
-// GetCountryByID
-// UpdateCountry
-// DeactivateCountry
-// ReactivateCountry
-// DeleteCountry
-
-
 // =======================
 // Reactivate country by ID
 // =======================

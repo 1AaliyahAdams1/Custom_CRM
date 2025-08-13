@@ -15,15 +15,6 @@ async function getAllDealStages() {
   }
 }
 
-//all stored procedures
-//CreateDealStage
-// GetDealStage
-// GetDealStageByID
-// UpdateDealStage
-// DeactivateDealStage
-// ReactivateDealStage
-// DeleteDealStage
-
 // =======================
 // Get deal stage by ID
 // =======================

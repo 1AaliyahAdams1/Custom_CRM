@@ -1,19 +1,10 @@
 const sql = require("mssql");
-<<<<<<< HEAD
-const dbConfig = require("../dbConfig");
-=======
 const { dbConfig } = require("../dbConfig");
->>>>>>> 8ee82a354bdcaa6d2d0140bdd209d79f69a41035
 
 // =======================
 // Get all venue types
 // =======================
 async function getAllVenueTypes() {
-<<<<<<< HEAD
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request().query("SELECT * FROM VenueType");
-  return result.recordset;
-=======
   try {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request().execute("getAllVenueTypes");
@@ -54,37 +45,12 @@ async function getIdByVenueType(venueTypeName) {
     console.error("VenueType Repo Error [getIdByVenueType]:", error);
     throw error;
   }
->>>>>>> 8ee82a354bdcaa6d2d0140bdd209d79f69a41035
 }
 
 // =======================
 // Create new venue type
 // =======================
 async function createVenueType(venueTypeName) {
-<<<<<<< HEAD
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("VenueTypeName", sql.NVarChar(255), venueTypeName)
-    .query("INSERT INTO VenueType (VenueTypeName) VALUES (@VenueTypeName)");
-}
-
-//All Stored Procedures
-//getAllVenueTypes
-//getIdByVenueType
-//getVenueTypeById
-//createVenueType
-//deactivateVenueType
-//reactivateVenueType
-//deleteVenueType
-//updateVenueType
-
-// =======================
-// Exports
-// =======================
-module.exports = {
-  getAllVenueTypes,
-  createVenueType
-=======
   try {
     const pool = await sql.connect(dbConfig);
     await pool.request()
@@ -167,5 +133,4 @@ module.exports = {
   deactivateVenueType,
   reactivateVenueType,
   deleteVenueType,
->>>>>>> 8ee82a354bdcaa6d2d0140bdd209d79f69a41035
 };

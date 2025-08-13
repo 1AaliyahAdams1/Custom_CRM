@@ -134,14 +134,6 @@ const deleteActivity = async (ActivityID) => {
   }
 };
 
-//All stored procedures
-//CreateActivity
-// GetActivity
-// GetActivityByID
-// UpdateActivity
-// DeactivateActivity
-// ReactivateActivity
-// DeleteActivity
 
 async function getActivitiesByUser(userId) {
   try {

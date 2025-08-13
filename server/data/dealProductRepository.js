@@ -115,15 +115,6 @@ async function deleteDealProduct(dealProductId) {
   }
 }
 
-//All stored procedures
-//CreateDealProduct
-// GetDealProduct
-// GetDealProductByID
-// UpdateDealProduct
-// DeactivateDealProduct
-// ReactivateDealProduct
-// DeleteDealProduct
-
 // =======================
 // Exports
 // =======================

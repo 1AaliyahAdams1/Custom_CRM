@@ -82,15 +82,6 @@ async function deleteCity(cityId) {
   return { message: "City deleted successfully", CityID: cityId };
 }
 
-//All stored procedures
-//CreateCity
-// GetCity
-// GetCityByID
-// UpdateCity
-// DeactivateCity
-// ReactivateCity
-// DeleteCity
-
 // =======================
 // Exports
 // =======================
