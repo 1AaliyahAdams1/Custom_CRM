@@ -1,10 +1,7 @@
-//PAGE : Main Deals Page
-//Combines the UI components onto one page using UniversalTable
+//PAGE : Main Deals Page (presentational only, no data fetching)
 
 //IMPORTS
-import { useNavigate } from "react-router-dom";
-import { formatDateTime } from '../utils/formatters';
-import React, { useEffect, useState, useMemo } from "react";
+import React from "react";
 import {
   Box,
   Typography,
@@ -29,11 +26,6 @@ import {
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../utils/formatters';
 import UniversalTable from '../components/TableView';
-
-import {
-  getAllDeals,
-  deactivateDeal,
-} from "../services/dealService";
 
 // Monochrome theme for MUI components
 const theme = createTheme({
@@ -183,14 +175,6 @@ const DealsPage = () => {
   }, [deals, searchTerm, statusFilter]);
 
   // Selection handlers
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      setSelected(filteredDeals.map(deal => deal.DealID));
-    } else {
-      setSelected([]);
-    }
-  };
-
   const handleSelectClick = (id) => {
     const selectedIndex = selected.indexOf(id);
     let newSelected = [];
@@ -211,80 +195,23 @@ const DealsPage = () => {
     setSelected(newSelected);
   };
 
-  // Navigate to create deal page
-  const handleOpenCreate = () => {
-    navigate("/deals/create");
-  };
-
-  // Deactivates a deal 
-  const handleDeactivate = async (id) => {
-    const confirm = window.confirm("Are you sure you want to delete this deal? This will deactivate it.");
-    if (!confirm) return;
-
-    setError(null);
-    try {
-      console.log("Deactivating (soft deleting) deal with ID:", id);
-      await deactivateDeal(id);
-      setSuccessMessage("Deal deleted successfully.");
-      await fetchDeals();
-    } catch (error) {
-      console.log("Deactivating (soft deleting) deal with ID:", id);
-      console.error("Delete failed:", error);
-      setError("Failed to delete deal. Please try again.");
+  const handleSelectAllClick = (event) => {
+    if (event.target.checked) {
+      setSelected(deals.map(deal => deal.DealID));
+    } else {
+      setSelected([]);
     }
   };
-
-  const handleEdit = (deal) => {
-    // Pass the full deal object like in your original onEdit
-    navigate(`/deals/edit/${deal.DealID}`, { state: { deal } });
-  };
-
-  const handleView = (dealId) => {
-    navigate(`/deals/${dealId}`);
-  };
-
-  //  Handle adding notes
-  const handleAddNote = (deal) => {
-    console.log("Adding note for deal:", deal);
-    // Navigate to notes page or open modal
-    navigate(`/deals/${deal.DealID}/notes`);
-  };
-
-  // Handle adding attachments
-  const handleAddAttachment = (deal) => {
-    console.log("Adding attachment for deal:", deal);
-    // Navigate to attachments page or open file picker
-    navigate(`/deals/${deal.DealID}/attachments`);
-  };
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('');
-  };
-
-  if (loading) {
-    return (
-      <ThemeProvider theme={theme}>
-        <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-          <Box display="flex" justifyContent="center" mt={4}>
-            <CircularProgress />
-          </Box>
-        </Box>
-      </ThemeProvider>
-    );
-  }
 
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-        {/* Display error alert if any error */}
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
 
-        {/* Display success alert on successful operation */}
         {successMessage && (
           <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
             {successMessage}
@@ -326,16 +253,18 @@ const DealsPage = () => {
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-              {/* Add Deal Button */}
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={handleOpenCreate}
+                onClick={onCreate}
+                disabled={loading}
                 sx={{
                   backgroundColor: '#050505',
                   color: '#ffffff',
-                  '&:hover': {
-                    backgroundColor: '#333333',
+                  '&:hover': { backgroundColor: '#333333' },
+                  '&:disabled': {
+                    backgroundColor: '#cccccc',
+                    color: '#666666',
                   },
                 }}
               >
@@ -409,22 +338,28 @@ const DealsPage = () => {
             </Box>
           </Toolbar>
 
-          {/* Universal Table */}
-          <UniversalTable
-            data={filteredDeals}
-            columns={dealsTableConfig.columns}
-            idField={dealsTableConfig.idField}
-            selected={selected}
-            onSelectClick={handleSelectClick}
-            onSelectAllClick={handleSelectAllClick}
-            showSelection={true}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDeactivate}
-            onAddNote={handleAddNote}
-            onAddAttachment={handleAddAttachment}
-            formatters={formatters}
-          />
+          {/* Loading spinner or table */}
+          {loading ? (
+            <Box display="flex" justifyContent="center" p={8}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <UniversalTable
+              data={deals}
+              columns={dealsTableConfig.columns}
+              idField={dealsTableConfig.idField}
+              selected={selected}
+              onSelectClick={handleSelectClick}
+              onSelectAllClick={handleSelectAllClick}
+              showSelection={true}
+              onView={onView}
+              onEdit={onEdit}
+              onDelete={onDeactivate}
+              onAddNote={onAddNote}
+              onAddAttachment={onAddAttachment}
+              formatters={formatters}
+            />
+          )}
 
           {/* Results footer */}
           <Box sx={{
@@ -436,7 +371,7 @@ const DealsPage = () => {
             alignItems: 'center'
           }}>
             <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {filteredDeals.length} of {deals.length} deals
+              Showing {deals.length} of {totalCount || deals.length} deals
             </Typography>
             {selected.length > 0 && (
               <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
