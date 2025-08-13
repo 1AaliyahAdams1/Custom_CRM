@@ -3,6 +3,7 @@
 
 //IMPORTS
 import { useNavigate } from "react-router-dom";
+import { formatDateTime } from '../utils/formatters';
 import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
@@ -26,6 +27,7 @@ import {
   Clear,
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { formatters } from '../utils/formatters';
 import UniversalTable from '../components/TableView';
 
 import {
@@ -93,14 +95,24 @@ const theme = createTheme({
 const dealsTableConfig = {
   idField: 'DealID',
   columns: [
-    { field: "DealName", headerName: "Deal Name", width: 200 },
+    { field: 'DealName', headerName: 'Deal Name', type: 'tooltip' },
     { field: "AccountName", headerName: "Account", width: 150 },
     { field: "StageName", headerName: "Stage", width: 150 },
-    { field: "Value", headerName: "Value", width: 150 },
-    { field: "CloseDate", headerName: "Close Date", width: 150 },
-    { field: "Probability", headerName: "Probability (%)", width: 150 },
-    { field: "CreatedAt", headerName: "Created At", width: 180 },
-    { field: "UpdatedAt", headerName: "Updated At", width: 180 }
+    //COMBINE VALUE AND CURRENCY SYMBOL
+    { field: 'Value', headerName: 'Value' },
+    { field: 'LocalName', headerName: 'Currency symbol' }, //currency name
+    { field: 'CloseDate', headerName: 'Close Date', type: 'date' },
+    { field: 'Probability', headerName: 'Probability (%)', type: 'percentage' },
+    {
+      field: 'CreatedAt',
+      headerName: 'Created',
+      type: 'dateTime',
+    },
+    {
+      field: 'UpdatedAt',
+      headerName: 'Updated',
+      type: 'date',
+    },
   ]
 };
 
@@ -243,39 +255,6 @@ const DealsPage = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('');
-  };
-
-  // Custom formatters for the table
-  const formatters = {
-    Value: (value) => {
-      if (!value) return "-";
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-      }).format(value);
-    },
-    Probability: (value) => {
-      if (!value && value !== 0) return "-";
-      return `${value}%`;
-    },
-    CloseDate: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
-    CreatedAt: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
-    UpdatedAt: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
   };
 
   if (loading) {
