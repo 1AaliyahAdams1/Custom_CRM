@@ -1,44 +1,81 @@
-import axios from "axios";
+import api from '../utils/api';
 
-const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
-const DEALS_URL = `${BASE_URL}/deals`;
+const RESOURCE = '/deals';
 
-// ===========================
-// Get all deals
-// ===========================
-export async function getAllDeals() {
-  const response = await axios.get(DEALS_URL);
-  return response.data;
+export async function getAllDeals(onlyActive = true) {
+  try {
+    const response = await api.get(RESOURCE, { params: { onlyActive } });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching deals:', error);
+    throw error;
+  }
 }
 
-// ===========================
-// Get deal details (with products, notes, attachments)
-// ===========================
-export async function getDealDetails(dealId) {
-  const response = await axios.get(`${DEALS_URL}/${dealId}`);
-  return response.data;
-}
+export const fetchDealById = async (id) => {
+  if (!id) throw new Error('Deal ID is required');
+  try {
+    return await api.get(`${RESOURCE}/${id}`);
+  } catch (error) {
+    console.error(`Error fetching deal ${id}:`, error);
+    throw error;
+  }
+};
 
-// ===========================
-// Create new deal
-// ===========================
 export async function createDeal(dealData) {
-  const response = await axios.post(DEALS_URL, dealData);
-  return response.data;
+  try {
+    const response = await api.post(RESOURCE, dealData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating deal:', error);
+    throw error;
+  }
 }
 
-// ===========================
-// Update existing deal
-// ===========================
 export async function updateDeal(dealId, dealData) {
-  const response = await axios.put(`${DEALS_URL}/${dealId}`, dealData);
-  return response.data;
+  try {
+    const response = await api.put(`${RESOURCE}/${dealId}`, dealData);
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating deal ${dealId}:`, error);
+    throw error;
+  }
 }
 
-// ===========================
-// Delete deal
-// ===========================
+export async function deactivateDeal(dealId) {
+  if (!dealId) throw new Error('Deal ID is required');
+  try {
+    const response = await api.patch(`${RESOURCE}/${dealId}/deactivate`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deactivating deal ${dealId}:`, error);
+    throw error;
+  }
+}
+
+export async function reactivateDeal(dealId) {
+  if (!dealId) throw new Error('Deal ID is required');
+  try {
+    const response = await api.patch(`${RESOURCE}/${dealId}/reactivate`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error reactivating deal ${dealId}:`, error);
+    throw error;
+  }
+}
+
 export async function deleteDeal(dealId) {
-  const response = await axios.delete(`${DEALS_URL}/${dealId}`);
+  if (!dealId) throw new Error('Deal ID is required');
+  try {
+    const response = await api.delete(`${RESOURCE}/${dealId}/delete`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting deal ${dealId}:`, error);
+    throw error;
+  }
+}
+
+export async function fetchDealsByUser(userId) {
+  const response = await axios.get(`${API_BASE}/deals/user/${userId}`);
   return response.data;
 }

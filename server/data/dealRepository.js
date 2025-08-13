@@ -2,236 +2,268 @@ const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
 // =======================
-// Audit log for TempDeal
+// Get all deals
 // =======================
-async function insertTempDealLog(pool, {
-  DealID,
-  AccountID = null,
-  DealStageID = null,
-  DealName = null,
-  Value = null,
-  CloseDate = null,
-  ChangedBy = "System",
-  ActionType = "UPDATE",
-  UpdatedAt = new Date(),
-}) {
-  const includeCreatedAt = ActionType === "CREATE" || ActionType === "DELETE";
-
-  const query = `
-    INSERT INTO TempDeal (
-      DealID, AccountID, DealStageID, DealName, Value, CloseDate,
-      ChangedBy, ActionType, UpdatedAt${includeCreatedAt ? ', CreatedAt' : ''}
-    ) VALUES (
-      @DealID, @AccountID, @DealStageID, @DealName, @Value, @CloseDate,
-      @ChangedBy, @ActionType, @UpdatedAt${includeCreatedAt ? ', GETDATE()' : ''}
-    )
-  `;
-
-  await pool.request()
-    .input("DealID", sql.Int, DealID)
-    .input("AccountID", sql.Int, AccountID)
-    .input("DealStageID", sql.Int, DealStageID)
-    .input("DealName", sql.VarChar, DealName)
-    .input("Value", sql.Decimal(18, 2), Value)
-    .input("CloseDate", sql.Date, CloseDate)
-    .input("ChangedBy", sql.VarChar, ChangedBy)
-    .input("ActionType", sql.VarChar, ActionType)
-    .input("UpdatedAt", sql.DateTime, UpdatedAt)
-    .query(query);
-}
-
-// =======================
-// Deal CRUD Operations
-// =======================
-async function getAllDeals() {
+async function getAllDeals(onlyActive = true) {
   try {
     const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query("SELECT * FROM Deal");
+    const result = await pool.request()
+      .input("OnlyActive", sql.Bit, onlyActive ? 1 : 0)
+      .execute("GetDeal");
     return result.recordset;
   } catch (error) {
-    console.error("Error fetching deals:", error);
+    console.error("Deal Repo Error [getAllDeals]:", error);
     throw error;
   }
 }
 
-async function createDeal(dealData, changedBy = "System") {
+
+// =======================
+// Get deal details by ID
+// =======================
+async function getDealById(dealId) {
   try {
     const pool = await sql.connect(dbConfig);
-    const { AccountID, DealStageID, DealName, Value, CloseDate } = dealData;
+    const result = await pool.request()
+      .input("DealID", sql.Int, dealId)
+      .execute("GetDealByID");
+    return result.recordset[0];
+  } catch (error) {
+    console.error("Deal Repo Error [getDealById]:", error);
+    throw error;
+  }
+}
 
-    const insertResult = await pool.request()
-      .input("AccountID", sql.Int, AccountID)
-      .input("DealStageID", sql.Int, DealStageID)
-      .input("DealName", sql.VarChar, DealName)
-      .input("Value", sql.Decimal(18, 2), Value)
-      .input("CloseDate", sql.Date, CloseDate)
-      .query(`
-        INSERT INTO Deal (AccountID, DealStageID, DealName, Value, CloseDate, CreatedAt, UpdatedAt)
-        VALUES (@AccountID, @DealStageID, @DealName, @Value, @CloseDate, GETDATE(), GETDATE());
-        SELECT SCOPE_IDENTITY() AS DealID;
-      `);
-
-    const newDealID = insertResult.recordset[0].DealID;
-
-    await insertTempDealLog(pool, {
-      DealID: newDealID,
+// =======================
+// Create a new deal 
+// =======================
+async function createDeal(data, changedBy = 1, actionTypeId = 1) {
+  try {
+    const {
       AccountID,
       DealStageID,
       DealName,
       Value,
       CloseDate,
-      ChangedBy: changedBy,
-      ActionType: "CREATE"
-    });
+      Probability = null,
+      CurrencyID = null
+    } = data;
 
-    return { DealID: newDealID };
-  } catch (error) {
-    console.error("Error creating deal:", error);
-    throw error;
-  }
-}
-
-async function updateDeal(id, dealData, changedBy = "System") {
-  try {
     const pool = await sql.connect(dbConfig);
-
-    const existingResult = await pool.request()
-      .input("DealID", sql.Int, id)
-      .query("SELECT * FROM Deal WHERE DealID = @DealID");
-
-    if (existingResult.recordset.length === 0) {
-      throw new Error("Deal not found");
-    }
-    const existing = existingResult.recordset[0];
-    const { AccountID, DealStageID, DealName, Value, CloseDate } = dealData;
-
-    await pool.request()
-      .input("DealID", sql.Int, id)
+    const result = await pool.request()
       .input("AccountID", sql.Int, AccountID)
       .input("DealStageID", sql.Int, DealStageID)
-      .input("DealName", sql.VarChar, DealName)
+      .input("DealName", sql.VarChar(100), DealName)
       .input("Value", sql.Decimal(18, 2), Value)
       .input("CloseDate", sql.Date, CloseDate)
-      .query(`
-        UPDATE Deal SET
-          AccountID = @AccountID,
-          DealStageID = @DealStageID,
-          DealName = @DealName,
-          Value = @Value,
-          CloseDate = @CloseDate,
-          UpdatedAt = GETDATE()
-        WHERE DealID = @DealID
-      `);
+      .input("Probability", sql.Int, Probability)
+      .input("CurrencyID", sql.Int, CurrencyID)
+      .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, actionTypeId)
+      .execute("CreateDeal");
 
-    const fieldsChanged = {
-      AccountID: AccountID !== existing.AccountID ? AccountID : null,
-      DealStageID: DealStageID !== existing.DealStageID ? DealStageID : null,
-      DealName: DealName !== existing.DealName ? DealName : null,
-      Value: Value !== existing.Value ? Value : null,
-      CloseDate: CloseDate !== existing.CloseDate ? CloseDate : null,
-    };
-
-    await insertTempDealLog(pool, {
-      DealID: id,
-      ...fieldsChanged,
-      ChangedBy: changedBy,
-      ActionType: "UPDATE"
-    });
-
-    return { message: "Deal updated", DealID: id };
+    return { DealID: result.recordset[0].DealID || null };
   } catch (error) {
-    console.error("Error updating deal:", error);
+    console.error("Deal Repo Error [createDeal]:", error);
     throw error;
   }
 }
 
-async function deleteDeal(id, changedBy = "System") {
+// =======================
+// Update deal by ID
+// =======================
+async function updateDeal(dealId, data, changedBy = 1, actionTypeId = 2) {
   try {
+    const {
+      AccountID,
+      DealStageID,
+      DealName,
+      Value,
+      CloseDate,
+      Probability = null,
+      CurrencyID = null
+    } = data;
+
     const pool = await sql.connect(dbConfig);
 
-    const existingResult = await pool.request()
-      .input("DealID", sql.Int, id)
-      .query("SELECT * FROM Deal WHERE DealID = @DealID");
-
-    if (existingResult.recordset.length === 0) {
+    const existing = await pool.request()
+      .input("DealID", sql.Int, dealId)
+      .execute("GetDealByID");
+    if (!existing.recordset.length) {
       throw new Error("Deal not found");
     }
 
-    const deleted = existingResult.recordset[0];
-
     await pool.request()
-      .input("DealID", sql.Int, id)
-      .query("DELETE FROM Deal WHERE DealID = @DealID");
+      .input("DealID", sql.Int, dealId)
+      .input("AccountID", sql.Int, AccountID)
+      .input("DealStageID", sql.Int, DealStageID)
+      .input("DealName", sql.VarChar(100), DealName)
+      .input("Value", sql.Decimal(18, 2), Value)
+      .input("CloseDate", sql.Date, CloseDate)
+      .input("Probability", sql.Int, Probability)
+      .input("CurrencyID", sql.Int, CurrencyID)
+      .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, actionTypeId) // 2 = Update
+      .execute("UpdateDeal");
 
-    await insertTempDealLog(pool, {
-      DealID: deleted.DealID,
-      AccountID: deleted.AccountID,
-      DealStageID: deleted.DealStageID,
-      DealName: deleted.DealName,
-      Value: deleted.Value,
-      CloseDate: deleted.CloseDate,
-      ChangedBy: changedBy,
-      ActionType: "DELETE"
-    });
-
-    return { message: "Deal deleted successfully", DealID: id };
+    return { message: "Deal updated", DealID: dealId };
   } catch (error) {
-    console.error("Error deleting deal:", error);
+    console.error("Deal Repo Error [updateDeal]:", error);
     throw error;
   }
 }
 
 // =======================
-// Basic Deal Details View
+// Deactivate deal 
 // =======================
-async function getDealDetails(dealId) {
+async function deactivateDeal(dealId, data, changedBy = 1, actionTypeId = 3) {
+  try {
+    const {
+      AccountID,
+      DealStageID,
+      DealName,
+      Value,
+      CloseDate,
+      Probability = null,
+      CurrencyID = null
+    } = data;
+
+    const pool = await sql.connect(dbConfig);
+
+    await pool.request()
+      .input("DealID", sql.Int, dealId)
+      .input("AccountID", sql.Int, AccountID)
+      .input("DealStageID", sql.Int, DealStageID)
+      .input("DealName", sql.VarChar(100), DealName)
+      .input("Value", sql.Decimal(18, 2), Value)
+      .input("CloseDate", sql.Date, CloseDate)
+      .input("Probability", sql.Int, Probability)
+      .input("CurrencyID", sql.Int, CurrencyID)
+      .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, actionTypeId)
+      .execute("DeactivateDeal");
+
+    return { message: "Deal deactivated", DealID: dealId };
+  } catch (error) {
+    console.error("Deal Repo Error [deactivateDeal]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Reactivate deal
+// =======================
+async function reactivateDeal(dealId, data, changedBy = 1, actionTypeId = 4) {
+  try {
+    const {
+      AccountID,
+      DealStageID,
+      DealName,
+      Value,
+      CloseDate,
+      Probability = null,
+      CurrencyID = null
+    } = data;
+
+    const pool = await sql.connect(dbConfig);
+
+    await pool.request()
+      .input("DealID", sql.Int, dealId)
+      .input("AccountID", sql.Int, AccountID)
+      .input("DealStageID", sql.Int, DealStageID)
+      .input("DealName", sql.VarChar(100), DealName)
+      .input("Value", sql.Decimal(18, 2), Value)
+      .input("CloseDate", sql.Date, CloseDate)
+      .input("Probability", sql.Int, Probability)
+      .input("CurrencyID", sql.Int, CurrencyID)
+      .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, actionTypeId)
+      .execute("ReactivateDeal");
+
+    return { message: "Deal reactivated", DealID: dealId };
+  } catch (error) {
+    console.error("Deal Repo Error [reactivateDeal]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// delete deal
+// =======================
+async function deleteDeal(dealId, data, changedBy = 1, actionTypeId = 5) {
+  try {
+    const {
+      AccountID,
+      DealStageID,
+      DealName,
+      Value,
+      CloseDate,
+      Probability = null,
+      CurrencyID = null
+    } = data;
+
+    const pool = await sql.connect(dbConfig);
+
+    await pool.request()
+      .input("DealID", sql.Int, dealId)
+      .input("AccountID", sql.Int, AccountID)
+      .input("DealStageID", sql.Int, DealStageID)
+      .input("DealName", sql.VarChar(100), DealName)
+      .input("Value", sql.Decimal(18, 2), Value)
+      .input("CloseDate", sql.Date, CloseDate)
+      .input("Probability", sql.Int, Probability)
+      .input("CurrencyID", sql.Int, CurrencyID)
+      .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, actionTypeId)
+      .execute("DeleteDeal");
+
+    return { message: "Deal deleted", DealID: dealId };
+  } catch (error) {
+    console.error("Deal Repo Error [deleteDeal]:", error);
+    throw error;
+  }
+}
+
+async function getDealsByUser(userId) {
   try {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
-      .input("DealID", sql.Int, dealId)
+      .input("UserID", sql.Int, userId)
       .query(`
-        SELECT 
-          d.DealID,
-          d.DealName,
-          d.Value,
-          d.CloseDate,
-          acc.AccountID,
-          acc.AccountName,
-          ds.DealStageID,
-          ds.StageName,
-          ds.Progression,
-          d.CreatedAt,
-          d.UpdatedAt
-        FROM Deal d
-        INNER JOIN Account acc ON d.AccountID = acc.AccountID
-        INNER JOIN DealStage ds ON d.DealStageID = ds.DealStageID
-        WHERE d.DealID = @DealID
+        SELECT
+          d.[DealID],
+          d.[AccountID],
+          d.[DealStageID],
+          d.[DealName],
+          d.[Value],
+          d.[CloseDate],
+          d.[Probability],
+          d.[CurrencyID],
+          d.[CreatedAt],
+          d.[UpdatedAt],
+          d.[Active]
+        FROM [CRM].[dbo].[Deal] d
+        JOIN [CRM].[dbo].[AssignedUser] au ON d.AccountID = au.AccountID AND au.Active = 1
+        JOIN [CRM].[dbo].[Account] a ON d.AccountID = a.AccountID AND a.Active = 1
+        WHERE au.UserID = @UserID
+          AND d.Active = 1;
       `);
-    return result.recordset[0] || null;
+
+    return result.recordset;
   } catch (error) {
-    console.error("Error fetching deal details:", error);
+    console.error("Error fetching deals for user accounts:", error);
     throw error;
   }
 }
 
-//All stored procedures
-//InsertTempDealLog
-// CreateDeal
-// GetDeal
-// GetDealByID
-// UpdateDeal
-// DeactivateDeal
-// ReactivateDeal
-// DeleteDeal
 
-
-// =======================
-// Exports
-// =======================
 module.exports = {
   getAllDeals,
+  getDealById,
   createDeal,
   updateDeal,
+  deactivateDeal,
+  reactivateDeal,
   deleteDeal,
-  getDealDetails,
+  getDealsByUser
 };

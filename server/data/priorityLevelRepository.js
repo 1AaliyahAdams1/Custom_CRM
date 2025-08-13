@@ -1,104 +1,84 @@
 const sql = require("mssql");
-const { dbConfig } = require("../dbConfig");
+const dbConfig = require("../dbConfig");
 
-// ==========================================
+// =======================
 // Get all priority levels ordered by PriorityLevelValue
-// ==========================================
+// =======================
 async function getAllPriorityLevels() {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query(`
-      SELECT PriorityLevelID, PriorityLevelName, PriorityLevelValue
-      FROM PriorityLevel
-      ORDER BY PriorityLevelValue
-    `);
-    return result.recordset;
-  } catch (error) {
-    console.error("PriorityLevel Repo Error [getAllPriorityLevels]:", error);
-    throw error;
-  }
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request().execute("getAllPriorityLevels");
+  return result.recordset;
 }
 
-// ==========================================
+// =======================
 // Get priority level by ID
-// ==========================================
+// =======================
 async function getPriorityLevelById(id) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("PriorityLevelID", sql.Int, id)
-      .query(`
-        SELECT PriorityLevelID, PriorityLevelName, PriorityLevelValue
-        FROM PriorityLevel
-        WHERE PriorityLevelID = @PriorityLevelID
-      `);
-    return result.recordset[0];
-  } catch (error) {
-    console.error("PriorityLevel Repo Error [getPriorityLevelById]:", error);
-    throw error;
-  }
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .input("PriorityLevelID", sql.Int, id)
+    .execute("getPriorityLevelByID");
+  return result.recordset[0];
 }
 
-// ==========================================
+// =======================
 // Create a new priority level
-// ==========================================
+// =======================
 async function createPriorityLevel(data) {
-  try {
-    const { PriorityLevelName, PriorityLevelValue } = data;
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("PriorityLevelName", sql.NVarChar(100), PriorityLevelName)
-      .input("PriorityLevelValue", sql.Int, PriorityLevelValue)
-      .query(`
-        INSERT INTO PriorityLevel (PriorityLevelName, PriorityLevelValue)
-        VALUES (@PriorityLevelName, @PriorityLevelValue);
-        SELECT SCOPE_IDENTITY() AS PriorityLevelID;
-      `);
-    return result.recordset[0];
-  } catch (error) {
-    console.error("PriorityLevel Repo Error [createPriorityLevel]:", error);
-    throw error;
-  }
+  const { PriorityLevelName, PriorityLevelValue } = data;
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("PriorityLevelName", sql.VarChar(100), PriorityLevelName)
+    .input("PriorityLevelValue", sql.TinyInt, PriorityLevelValue)
+    .execute("createPriorityLevel");
+  return { message: "Priority level created" };
 }
 
-// ==========================================
+// =======================
 // Update an existing priority level
-// ==========================================
+// =======================
 async function updatePriorityLevel(id, data) {
-  try {
-    const { PriorityLevelName, PriorityLevelValue } = data;
-    const pool = await sql.connect(dbConfig);
-    await pool.request()
-      .input("PriorityLevelID", sql.Int, id)
-      .input("PriorityLevelName", sql.NVarChar(100), PriorityLevelName)
-      .input("PriorityLevelValue", sql.Int, PriorityLevelValue)
-      .query(`
-        UPDATE PriorityLevel
-        SET PriorityLevelName = @PriorityLevelName,
-            PriorityLevelValue = @PriorityLevelValue
-        WHERE PriorityLevelID = @PriorityLevelID
-      `);
-    return { message: "Priority level updated", PriorityLevelID: id };
-  } catch (error) {
-    console.error("PriorityLevel Repo Error [updatePriorityLevel]:", error);
-    throw error;
-  }
+  const { PriorityLevelName, PriorityLevelValue } = data;
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("PriorityLevelID", sql.Int, id)
+    .input("PriorityLevelName", sql.VarChar(100), PriorityLevelName)
+    .input("PriorityLevelValue", sql.TinyInt, PriorityLevelValue)
+    .execute("updatePriorityLevel");
+  return { message: "Priority level updated", PriorityLevelID: id };
 }
 
-// ==========================================
-// Delete priority level (hard delete)
-// ==========================================
+// =======================
+// Deactivate a priority level
+// =======================
+async function deactivatePriorityLevel(id) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("PriorityLevelID", sql.Int, id)
+    .execute("deactivatePriorityLevel");
+  return { message: "Priority level deactivated", PriorityLevelID: id };
+}
+
+// =======================
+// Reactivate a priority level
+// =======================
+async function reactivatePriorityLevel(id) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("PriorityLevelID", sql.Int, id)
+    .execute("reactivatePriorityLevel");
+  return { message: "Priority level reactivated", PriorityLevelID: id };
+}
+
+// =======================
+// Delete a priority level
+// =======================
 async function deletePriorityLevel(id) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    await pool.request()
-      .input("PriorityLevelID", sql.Int, id)
-      .query("DELETE FROM PriorityLevel WHERE PriorityLevelID = @PriorityLevelID");
-    return { message: "Priority level deleted", PriorityLevelID: id };
-  } catch (error) {
-    console.error("PriorityLevel Repo Error [deletePriorityLevel]:", error);
-    throw error;
-  }
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("PriorityLevelID", sql.Int, id)
+    .execute("deletePriorityLevel");
+  return { message: "Priority level deleted", PriorityLevelID: id };
 }
 
 //All stored procedures
@@ -119,5 +99,7 @@ module.exports = {
   getPriorityLevelById,
   createPriorityLevel,
   updatePriorityLevel,
+  deactivatePriorityLevel,
+  reactivatePriorityLevel,
   deletePriorityLevel,
 };

@@ -1,113 +1,65 @@
 const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
-// ==========================================
-// Get all countries (sorted by CountryName)
-// ==========================================
+// =======================
+// Get all countries (sorted)
+// =======================
 async function getAllCountries() {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query(`
-      SELECT CountryID, CountryName, CountryCode, CurrencyID, Active
-      FROM Country
-      ORDER BY CountryName
-    `);
-    return result.recordset;
-  } catch (error) {
-    console.error("Country Repo Error [getAllCountries]:", error);
-    throw error;
-  }
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request().execute("GetCountry");
+  return result.recordset;
 }
 
-// ==========================================
+// =======================
 // Get country by ID
-// ==========================================
+// =======================
 async function getCountryById(id) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("CountryID", sql.Int, id)
-      .query(`
-        SELECT CountryID, CountryName, CountryCode, CurrencyID, Active
-        FROM Country
-        WHERE CountryID = @CountryID
-      `);
-    return result.recordset[0];
-  } catch (error) {
-    console.error("Country Repo Error [getCountryById]:", error);
-    throw error;
-  }
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .input("CountryID", sql.Int, id)
+    .execute("GetCountryByID");
+  return result.recordset[0];
 }
 
-// ==========================================
+// =======================
 // Create new country
-// ==========================================
+// =======================
 async function createCountry(data) {
-  try {
-    const { CountryName, CountryCode, CurrencyID } = data;
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("CountryName", sql.NVarChar(100), CountryName)
-      .input("CountryCode", sql.VarChar(5), CountryCode)
-      .input("CurrencyID", sql.Int, CurrencyID)
-      .query(`
-        INSERT INTO Country (CountryName, CountryCode, CurrencyID, Active)
-        VALUES (@CountryName, @CountryCode, @CurrencyID, 1);
-        SELECT SCOPE_IDENTITY() AS CountryID;
-      `);
-    return result.recordset[0];
-  } catch (error) {
-    console.error("Country Repo Error [createCountry]:", error);
-    throw error;
-  }
+  const { CountryName, CountryCode, CurrencyID } = data;
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CountryName", sql.NVarChar(100), CountryName)
+    .input("CountryCode", sql.VarChar(5), CountryCode)
+    .input("CurrencyID", sql.Int, CurrencyID)
+    .execute("CreateCountry");
+
+  return { message: "Country created" };
 }
 
-// ==========================================
-// Update existing country by ID
-// ==========================================
+// =======================
+// Update country by ID
+// =======================
 async function updateCountry(id, data) {
-  try {
-    const { CountryName, CountryCode, CurrencyID, Active = 1 } = data;
-    const pool = await sql.connect(dbConfig);
-    await pool.request()
-      .input("CountryID", sql.Int, id)
-      .input("CountryName", sql.NVarChar(100), CountryName)
-      .input("CountryCode", sql.VarChar(5), CountryCode)
-      .input("CurrencyID", sql.Int, CurrencyID)
-      .input("Active", sql.Bit, Active)
-      .query(`
-        UPDATE Country
-        SET CountryName = @CountryName,
-            CountryCode = @CountryCode,
-            CurrencyID = @CurrencyID,
-            Active = @Active
-        WHERE CountryID = @CountryID
-      `);
-    return { message: "Country updated", CountryID: id };
-  } catch (error) {
-    console.error("Country Repo Error [updateCountry]:", error);
-    throw error;
-  }
+  const { CountryName, CountryCode, CurrencyID } = data;
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CountryID", sql.Int, id)
+    .input("CountryName", sql.NVarChar(100), CountryName)
+    .input("CountryCode", sql.VarChar(5), CountryCode)
+    .input("CurrencyID", sql.Int, CurrencyID)
+    .execute("UpdateCountry");
+  return { message: "Country updated", CountryID: id };
 }
 
-// ==========================================
-// Soft delete country by ID (set Active = 0)
-// ==========================================
+// =======================
+// Deactivate country by ID
+// =======================
 async function deleteCountry(id) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    await pool.request()
-      .input("CountryID", sql.Int, id)
-      .query(`
-        UPDATE Country
-        SET Active = 0
-        WHERE CountryID = @CountryID
-      `);
-    return { message: "Country soft deleted", CountryID: id };
-  } catch (error) {
-    console.error("Country Repo Error [deleteCountry]:", error);
-    throw error;
-  }
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CountryID", sql.Int, id)
+    .execute("DeactivateCountry");
+  return { message: "Country deactivated", CountryID: id };
 }
 
 //All stored procedures
@@ -121,12 +73,33 @@ async function deleteCountry(id) {
 
 
 // =======================
-// Exports
+// Reactivate country by ID
 // =======================
+async function reactivateCountry(id) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CountryID", sql.Int, id)
+    .execute("ReactivateCountry");
+  return { message: "Country reactivated", CountryID: id };
+}
+
+// =======================
+// Hard delete country by ID 
+// =======================
+async function hardDeleteCountry(id) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CountryID", sql.Int, id)
+    .execute("DeleteCountry");
+  return { message: "Country hard deleted", CountryID: id };
+}
+
 module.exports = {
   getAllCountries,
   getCountryById,
   createCountry,
   updateCountry,
   deleteCountry,
+  reactivateCountry,
+  hardDeleteCountry,
 };

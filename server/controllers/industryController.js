@@ -1,78 +1,72 @@
 const industryService = require("../services/industryService");
 
-// Get all industries (optionally filter active only)
 async function getAllIndustries(req, res) {
   try {
-    // Validation of query parameters could go here
-
-    const activeOnly = req.query.activeOnly === "true"; // optional query param
-    const industries = await industryService.getAllIndustries(activeOnly);
+    const industries = await industryService.getAllIndustries();
     res.json(industries);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting all industries:", err);
+    res.status(500).json({ error: "Failed to get industries" });
   }
 }
 
-// Get single industry by ID
 async function getIndustryById(req, res) {
   try {
-    // Validation of req.params.id could go here
-
-    const id = parseInt(req.params.id, 10);
-    const industry = await industryService.getIndustryById(id);
-    if (!industry) {
-      return res.status(404).json({ error: "Industry not found" });
-    }
+    const industry = await industryService.getIndustryById(req.params.id);
     res.json(industry);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting industry by ID:", err);
+    res.status(500).json({ error: "Failed to get industry" });
   }
 }
 
-// Create a new industry
 async function createIndustry(req, res) {
   try {
-    // Validation of req.body fields could go here
-
-    const { industryName, active } = req.body;
-    // Get changedBy from authenticated user or fallback
-    const changedBy = req.user?.username || "System";
-
-    const newIndustry = await industryService.createIndustry(industryName, active, changedBy);
-    res.status(201).json(newIndustry);
+    await industryService.createIndustry(req.body.IndustryName);
+    res.status(201).json({ message: "Industry created" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error creating industry:", err);
+    res.status(500).json({ error: "Failed to create industry" });
   }
 }
 
-// Update industry by ID
 async function updateIndustry(req, res) {
   try {
-    // Validation of req.params.id and req.body could go here
-
-    const id = parseInt(req.params.id, 10);
-    const data = req.body;
-    const changedBy = req.user?.username || "System";
-
-    const result = await industryService.updateIndustry(id, data, changedBy);
-    res.json(result);
+    await industryService.updateIndustry(req.params.id, req.body.IndustryName);
+    res.json({ message: "Industry updated" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error updating industry:", err);
+    res.status(500).json({ error: "Failed to update industry" });
   }
 }
 
-// Delete (soft delete) industry by ID
+async function deactivateIndustry(req, res) {
+  try {
+    await industryService.deactivateIndustry(req.params.id);
+    res.json({ message: "Industry deactivated" });
+  } catch (err) {
+    console.error("Error deactivating industry:", err);
+    res.status(500).json({ error: "Failed to deactivate industry" });
+  }
+}
+
+async function reactivateIndustry(req, res) {
+  try {
+    await industryService.reactivateIndustry(req.params.id);
+    res.json({ message: "Industry reactivated" });
+  } catch (err) {
+    console.error("Error reactivating industry:", err);
+    res.status(500).json({ error: "Failed to reactivate industry" });
+  }
+}
+
 async function deleteIndustry(req, res) {
   try {
-    // Validation of req.params.id could go here
-
-    const id = parseInt(req.params.id, 10);
-    const changedBy = req.user?.username || "System";
-
-    const result = await industryService.deleteIndustry(id, changedBy);
-    res.json(result);
+    await industryService.deleteIndustry(req.params.id);
+    res.json({ message: "Industry deleted" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error deleting industry:", err);
+    res.status(500).json({ error: "Failed to delete industry" });
   }
 }
 
@@ -81,5 +75,7 @@ module.exports = {
   getIndustryById,
   createIndustry,
   updateIndustry,
+  deactivateIndustry,
+  reactivateIndustry,
   deleteIndustry,
 };

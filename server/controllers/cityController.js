@@ -1,79 +1,81 @@
 const cityService = require("../services/cityService");
 
-// Get all cities
-async function getAllCities(req, res) {
+const getAllCities = async (req, res) => {
   try {
-    // Validation can go here (e.g., query params)
     const cities = await cityService.getAllCities();
-    res.json(cities);
+    res.status(200).json(cities);
   } catch (err) {
-    console.error("City Controller Error [getAllCities]:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error getting all cities:", err);
+    res.status(500).json({ error: "Failed to get cities" });
   }
-}
+};
 
-// Get city by ID
-async function getCityById(req, res) {
-  const cityId = parseInt(req.params.id, 10);
-  // Validation for cityId can go here
-
+const getCityById = async (req, res) => {
   try {
-    const city = await cityService.getCityById(cityId);
-    if (!city) {
-      return res.status(404).json({ error: "City not found" });
-    }
-    res.json(city);
+    const city = await cityService.getCityById(req.params.id);
+    res.status(200).json(city);
   } catch (err) {
-    console.error("City Controller Error [getCityById]:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error getting city by ID:", err);
+    res.status(500).json({ error: "Failed to get city" });
   }
-}
+};
 
-// Create a new city
-async function createCity(req, res) {
-  // Validation for req.body can go here
-
+const createCity = async (req, res) => {
   try {
-    const newCity = await cityService.createCity(req.body);
-    res.status(201).json(newCity);
+    await cityService.createCity(req.body);
+    res.status(201).json({ message: "City created successfully" });
   } catch (err) {
-    console.error("City Controller Error [createCity]:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error creating city:", err);
+    res.status(500).json({ error: "Failed to create city" });
   }
-}
+};
 
-// Update city by ID
-async function updateCity(req, res) {
-  const cityId = parseInt(req.params.id, 10);
-  // Validation for cityId and req.body can go here
-
+const updateCity = async (req, res) => {
   try {
-    const updatedCity = await cityService.updateCity(cityId, req.body);
-    res.json(updatedCity);
+    await cityService.updateCity(req.params.id, req.body);
+    res.status(200).json({ message: "City updated successfully" });
   } catch (err) {
-    console.error("City Controller Error [updateCity]:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error updating city:", err);
+    res.status(500).json({ error: "Failed to update city" });
   }
-}
+};
 
-// Delete city by ID
-async function deleteCity(req, res) {
-  const cityId = parseInt(req.params.id, 10);
-  // Validation for cityId can go here
-
+const deactivateCity = async (req, res) => {
   try {
-    const deleted = await cityService.deleteCity(cityId);
-    res.json(deleted);
+    await cityService.deactivateCity(req.params.id);
+    res.status(200).json({ message: "City deactivated successfully" });
   } catch (err) {
-    console.error("City Controller Error [deleteCity]:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error deactivating city:", err);
+    res.status(500).json({ error: "Failed to deactivate city" });
   }
-}
+};
+
+const reactivateCity = async (req, res) => {
+  try {
+    await cityService.reactivateCity(req.params.id);
+    res.status(200).json({ message: "City reactivated successfully" });
+  } catch (err) {
+    console.error("Error reactivating city:", err);
+    res.status(500).json({ error: "Failed to reactivate city" });
+  }
+};
+
+const deleteCity = async (req, res) => {
+  try {
+    await cityService.deleteCity(req.params.id);
+    res.status(200).json({ message: "City deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting city:", err);
+    res.status(500).json({ error: "Failed to delete city" });
+  }
+};
 
 module.exports = {
   getAllCities,
   getCityById,
   createCity,
   updateCity,
+  deactivateCity,
+  reactivateCity,
   deleteCity,
 };

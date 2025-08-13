@@ -1,37 +1,35 @@
 const productRepo = require("../data/productRepository");
 
-// Fetch all products from repository
 async function getAllProducts() {
   return await productRepo.getAllProducts();
 }
 
-// Get a product by its ID
 async function getProductById(id) {
   return await productRepo.getProductById(id);
 }
 
-// Create a new product with a basic price check
-async function createProduct(data, changedBy) {
-  // business rule: Price must be > 0
-  if (data.Price <= 0) {
-    throw new Error("Price must be greater than zero.");
-  }
+async function createProduct(data, changedBy = 0) {
 
-  return await productRepo.createProduct(data, changedBy);
+  return await productRepo.createProduct(data, changedBy, 1);
 }
 
-// Update an existing product after checking price
-async function updateProduct(id, data, changedBy) {
-  if (data.Price <= 0) {
-    throw new Error("Price must be greater than zero.");
-  }
+async function updateProduct(id, data, changedBy = 2) {
 
-  return await productRepo.updateProduct(id, data, changedBy);
+  return await productRepo.updateProduct(id, data, changedBy, 2);
 }
 
-// Delete a product
-async function deleteProduct(id, changedBy) {
-  return await productRepo.deleteProduct(id, changedBy);
+async function deactivateProduct(data, changedBy = 0) {
+
+  return await productRepo.deactivateProduct(data, changedBy, 8);
+}
+
+async function reactivateProduct(data, changedBy = 0) {
+
+  return await productRepo.reactivateProduct(data, changedBy, 7);
+}
+
+async function deleteProduct(data, changedBy = 0) {
+  return await productRepo.deleteProduct(data, changedBy, 3);
 }
 
 module.exports = {
@@ -39,5 +37,7 @@ module.exports = {
   getProductById,
   createProduct,
   updateProduct,
+  deactivateProduct,
+  reactivateProduct,
   deleteProduct,
 };

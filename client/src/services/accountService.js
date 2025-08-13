@@ -1,53 +1,99 @@
-import axios from "axios";
+import api from "../utils/api";
 
-const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
-const RESOURCE = `${BASE_URL}/accounts`;
+const RESOURCE = "/accounts";
 
-// ===========================
-// Get all accounts
-// ===========================
-export async function getAllAccounts() {
-  const response = await axios.get(RESOURCE);
-  return response.data;
+export const getAllAccounts = async () => {
+  try {
+    return await api.get(RESOURCE);
+  } catch (error) {
+    console.error("Error fetching all accounts:", error);
+    throw error;
+  }
+};
+
+export const fetchAccountById = async (id) => {
+  if (id === undefined || id === null || id === "") {
+    throw new Error(`Invalid Account ID provided: ${id}`);
+  }
+
+  try {
+    return await api.get(`${RESOURCE}/${encodeURIComponent(id)}`);
+  } catch (error) {
+    console.error(`Error fetching account ${id}:`, error?.response || error);
+    throw error;
+  }
+};
+
+
+export const createAccount = async (data) => {
+  if (!data.AccountName) throw new Error("Account name is required");
+  try {
+    return await api.post(RESOURCE, data);
+  } catch (error) {
+    console.error("Error creating account:", error);
+    throw error;
+  }
+};
+
+export const updateAccount = async (id, data) => {
+  if (!id) throw new Error("Account ID is required");
+  if (!data.AccountName) throw new Error("Account name is required");
+  try {
+    return await api.put(`${RESOURCE}/${id}`, data);
+  } catch (error) {
+    console.error(`Error updating account ${id}:`, error);
+    throw error;
+  }
+};
+
+export const deactivateAccount = async (id) => {
+  if (!id) throw new Error("Account ID is required");
+  try {
+    const response = await api.patch(`${RESOURCE}/${id}/deactivate`);
+    return response.data;
+  } catch (error) {
+    console.error("Deactivate account error:", error);
+    throw error;
+  }
+};
+
+export const reactivateAccount = async (id) => {
+  if (!id) throw new Error("Account ID is required");
+  try {
+    return await api.patch(`${RESOURCE}/${id}/reactivate`);
+  } catch (error) {
+    console.error("Reactivate account error:", error);
+    throw error;
+  }
+};
+
+export const deleteAccount = async (id) => {
+  if (!id) throw new Error("Account ID is required");
+  try {
+    return await api.delete(`${RESOURCE}/${id}/delete`);
+  } catch (error) {
+    console.error("Delete account error:", error);
+    throw error;
+  }
+};
+
+export async function fetchActiveAccountsByUser(userId) {
+  if (!userId) throw new Error("User ID is required");
+  try {
+    const response = await api.get(`${RESOURCE}/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching active accounts by user:", error);
+    throw error;
+  }
 }
 
-// ===========================
-// Get details of a specific account (with notes & attachments)
-// ===========================
-export async function getAccountDetails(accountId) {
-  const response = await axios.get(`${RESOURCE}/${accountId}`);
-  return response.data;
+export async function fetchActiveUnassignedAccounts() {
+  try {
+    const response = await api.get(`${RESOURCE}/unassigned`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching active unassigned accounts:", error);
+    throw error;
+  }
 }
-
-// ===========================
-// Create a new account
-// ===========================
-export async function createAccount(accountData, changedBy = "System") {
-  const payload = { ...accountData, changedBy };
-  const response = await axios.post(RESOURCE, payload);
-  return response.data;
-}
-
-// ===========================
-// Update an existing account
-// ===========================
-export async function updateAccount(accountId, accountData, changedBy = "System") {
-  const payload = { ...accountData, changedBy };
-  const response = await axios.put(`${RESOURCE}/${accountId}`, payload);
-  return response.data;
-}
-
-// ===========================
-// Delete an account
-// ===========================
-export async function deleteAccount(accountId, changedBy = "System") {
-  const response = await axios.delete(`${RESOURCE}/${accountId}`, {
-    data: { changedBy },
-  });
-  return response.data;
-}
-
-
-
-
-

@@ -1,90 +1,92 @@
 const stateService = require("../services/stateProvinceService");
 
-// Get all states/provinces
 async function getAllStates(req, res) {
   try {
-    // Validation or query param parsing could go here
-
-    const states = await stateService.getAllStates();
-    res.json(states);
+    const data = await stateService.getAllStates();
+    res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting all states:", err);
+    res.status(500).json({ error: "Failed to get states" });
   }
 }
 
-// Get state/province by ID
 async function getStateById(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-
-    // Validation for id could go here
-
-    const state = await stateService.getStateById(id);
-
-    // Handle not found
-    if (!state) {
-      return res.status(404).json({ error: "State/Province not found" });
-    }
-
-    res.json(state);
+    const data = await stateService.getStateById(req.params.id);
+    res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting state by ID:", err);
+    res.status(500).json({ error: "Failed to get state" });
   }
 }
 
-// Create a new state/province
+async function getIDByStateProvince(req, res) {
+  try {
+    const id = await stateService.getIDByStateProvince(req.params.name);
+    res.json({ StateProvinceID: id });
+  } catch (err) {
+    console.error("Error getting ID by state/province name:", err);
+    res.status(500).json({ error: "Failed to get StateProvinceID" });
+  }
+}
+
 async function createState(req, res) {
   try {
-    const stateData = req.body;
-
-    // Validation for required fields (StateProvinceName, CountryID) could go here
-
-    const changedBy = req.user?.username || "System";
-
-    const newState = await stateService.createState(stateData, changedBy);
-    res.status(201).json(newState);
+    const result = await stateService.createState(req.body);
+    res.status(201).json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error creating state:", err);
+    res.status(500).json({ error: "Failed to create state" });
   }
 }
 
-// Update a state/province by ID
 async function updateState(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-    const stateData = req.body;
-
-    // Validation for id and body data could go here
-
-    const changedBy = req.user?.username || "System";
-
-    const result = await stateService.updateState(id, stateData, changedBy);
+    const result = await stateService.updateState(req.params.id, req.body);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error updating state:", err);
+    res.status(500).json({ error: "Failed to update state" });
   }
 }
 
-// Delete a state/province by ID
-async function deleteState(req, res) {
+async function deactivateState(req, res) {
   try {
-    const id = parseInt(req.params.id, 10);
-
-    // Validation for id could go here
-
-    const changedBy = req.user?.username || "System";
-
-    const result = await stateService.deleteState(id, changedBy);
+    const result = await stateService.deactivateState(req.params.id);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error deactivating state:", err);
+    res.status(500).json({ error: "Failed to deactivate state" });
+  }
+}
+
+async function reactivateState(req, res) {
+  try {
+    const result = await stateService.reactivateState(req.params.id);
+    res.json(result);
+  } catch (err) {
+    console.error("Error reactivating state:", err);
+    res.status(500).json({ error: "Failed to reactivate state" });
+  }
+}
+
+async function deleteState(req, res) {
+  try {
+    const result = await stateService.deleteState(req.params.id);
+    res.json(result);
+  } catch (err) {
+    console.error("Error deleting state:", err);
+    res.status(500).json({ error: "Failed to delete state" });
   }
 }
 
 module.exports = {
   getAllStates,
   getStateById,
+  getIDByStateProvince,
   createState,
   updateState,
+  deactivateState,
+  reactivateState,
   deleteState,
 };

@@ -1,76 +1,72 @@
 const priorityLevelService = require("../services/priorityLevelService");
 
-// Get all priority levels
 async function getAllPriorityLevels(req, res) {
   try {
-    // Validation can be added here (e.g., query params)
-
-    const levels = await priorityLevelService.getAllPriorityLevels();
-    res.json(levels);
+    const data = await priorityLevelService.getAllPriorityLevels();
+    res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting all priority levels:", err);
+    res.status(500).json({ error: "Failed to get priority levels" });
   }
 }
 
-// Get a single priority level by ID
 async function getPriorityLevelById(req, res) {
   try {
-    // Validation for req.params.id should be here
-
-    const id = parseInt(req.params.id, 10);
-    const level = await priorityLevelService.getPriorityLevelById(id);
-    if (!level) {
-      return res.status(404).json({ error: "Priority level not found" });
-    }
-    res.json(level);
+    const data = await priorityLevelService.getPriorityLevelById(req.params.id);
+    res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting priority level by ID:", err);
+    res.status(500).json({ error: "Failed to get priority level" });
   }
 }
 
-// Create a new priority level
 async function createPriorityLevel(req, res) {
   try {
-    // Validation for req.body should be here
-
-    const data = req.body;
-    const changedBy = req.user?.username || "System";
-
-    const newLevel = await priorityLevelService.createPriorityLevel(data, changedBy);
-    res.status(201).json(newLevel);
+    await priorityLevelService.createPriorityLevel(req.body);
+    res.status(201).json({ message: "Priority level created" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error creating priority level:", err);
+    res.status(500).json({ error: "Failed to create priority level" });
   }
 }
 
-// Update a priority level by ID
 async function updatePriorityLevel(req, res) {
   try {
-    // Validation for req.params.id and req.body should be here
-
-    const id = parseInt(req.params.id, 10);
-    const data = req.body;
-    const changedBy = req.user?.username || "System";
-
-    const result = await priorityLevelService.updatePriorityLevel(id, data, changedBy);
-    res.json(result);
+    await priorityLevelService.updatePriorityLevel(req.params.id, req.body);
+    res.json({ message: "Priority level updated" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error updating priority level:", err);
+    res.status(500).json({ error: "Failed to update priority level" });
   }
 }
 
-// Delete a priority level by ID
+async function deactivatePriorityLevel(req, res) {
+  try {
+    await priorityLevelService.deactivatePriorityLevel(req.params.id);
+    res.json({ message: "Priority level deactivated" });
+  } catch (err) {
+    console.error("Error deactivating priority level:", err);
+    res.status(500).json({ error: "Failed to deactivate priority level" });
+  }
+}
+
+async function reactivatePriorityLevel(req, res) {
+  try {
+    await priorityLevelService.reactivatePriorityLevel(req.params.id);
+    res.json({ message: "Priority level reactivated" });
+  } catch (err) {
+    console.error("Error reactivating priority level:", err);
+    res.status(500).json({ error: "Failed to reactivate priority level" });
+  }
+}
+
 async function deletePriorityLevel(req, res) {
   try {
-    // Validation for req.params.id should be here
-
-    const id = parseInt(req.params.id, 10);
-    const changedBy = req.user?.username || "System";
-
-    const result = await priorityLevelService.deletePriorityLevel(id, changedBy);
-    res.json(result);
+    await priorityLevelService.deletePriorityLevel(req.params.id);
+    res.json({ message: "Priority level deleted" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error deleting priority level:", err);
+    res.status(500).json({ error: "Failed to delete priority level" });
   }
 }
 
@@ -79,5 +75,7 @@ module.exports = {
   getPriorityLevelById,
   createPriorityLevel,
   updatePriorityLevel,
+  deactivatePriorityLevel,
+  reactivatePriorityLevel,
   deletePriorityLevel,
 };

@@ -1,185 +1,277 @@
-//PAGE : Main Accounts Page
-//Combines the UI components onto one page
+// PAGE : Main Accounts Page (presentational only, no data fetching) 
 
-//IMPORTS
-import React, { useEffect, useState } from "react";
-import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
-
-
-import AccountsTable from "../components/AccountsTable";
-import AccountFormDialog from "../components/AccountsFormDialog";
-
+// IMPORTS
+import React from "react";
 import {
-  getAllAccounts,
-  createAccount,
-  updateAccount,
-  deleteAccount,
-} from "../services/accountService";
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Alert,
+  Paper,
+  Chip,
+  Toolbar,
+} from "@mui/material";
+import { Add } from "@mui/icons-material";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import UniversalTable from '../components/TableView';
 
-const AccountsPage = () => {
-  // State for list of accounts fetched from backend
-  const [accounts, setAccounts] = useState([]);
-  // Loading indicator for data fetching or mutations
-  const [loading, setLoading] = useState(false);
-  // Controls whether the create/edit dialog is visible
-  const [dialogOpen, setDialogOpen] = useState(false);
-  // Holds the account data being edited, or null when creating new
-  const [selectedAccount, setSelectedAccount] = useState(null);
-  // Error message string (empty or null means no error)
-  const [error, setError] = useState(null);
-  // Success message shown after create/update/delete
-  const [successMessage, setSuccessMessage] = useState("");
+// Monochrome theme for MUI components
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#050505',
+      contrastText: '#fafafa',
+    },
+    secondary: {
+      main: '#666666',
+      contrastText: '#ffffff',
+    },
+    background: {
+      default: '#fafafa',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#050505',
+      secondary: '#666666',
+    },
+    divider: '#e5e5e5',
+  },
+  components: {
+    MuiTableHead: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#f0f0f0',
+        },
+      },
+    },
+    MuiTableRow: {
+      styleOverrides: {
+        root: {
+          '&:hover': {
+            backgroundColor: '#f5f5f5',
+          },
+          '&.Mui-selected': {
+            backgroundColor: '#e0e0e0',
+            '&:hover': {
+              backgroundColor: '#d5d5d5',
+            },
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: '4px',
+          fontWeight: 500,
+        },
+      },
+    },
+  },
+});
 
-  // Function to fetch accounts data from backend API
-  const fetchAccounts = async () => {
-    setLoading(true);      // Start loading spinner
-    setError(null);        // Clear any previous errors
-    try {
-      const data = await getAllAccounts();  // API call to get accounts
-      console.log("Fetched accounts:", data);
-      setAccounts(data);    // Save fetched data to state
-    } catch (error) {
-      console.error("Failed to fetch accounts:", error);
-      setError("Failed to load accounts. Please try again.");  // Show error alert
-    } finally {
-      setLoading(false);    // Stop loading spinner
+// Table config for accounts
+const accountsTableConfig = {
+  idField: 'AccountID',
+  columns: [
+    { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
+    { field: 'CityName', headerName: 'City Name' },
+    { field: 'street_address', headerName: 'Street Address', type: 'truncated', maxWidth: 200 },
+    { field: 'postal_code', headerName: 'Postal Code' },
+    { field: 'PrimaryPhone', headerName: 'Phone' },
+    { field: 'email', headerName: 'Email' },
+    { field: 'Website', headerName: 'Website', type: 'link' },
+    { field: 'number_of_employees', headerName: '# Employees' },
+    { field: 'annual_revenue', headerName: 'Annual Revenue' },
+    { field: 'CreatedAt', headerName: 'Created' },
+    {
+      field: 'ownerStatus',
+      headerName: 'Ownership',
+      type: 'chip',
+      chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
+      chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' }
+    },
+  ],
+};
+
+const AccountsPage = ({
+  accounts,
+  loading,
+  error,
+  successMessage,
+  setSuccessMessage,
+  onDeactivate,
+  onEdit,
+  onView,
+  onCreate,
+  onAddNote,
+  onAddAttachment,
+}) => {
+  const [selected, setSelected] = React.useState([]);
+
+  // Selection handlers
+  const handleSelectClick = (id) => {
+    const selectedIndex = selected.indexOf(id);
+    let newSelected = [];
+
+    if (selectedIndex === -1) {
+      newSelected = newSelected.concat(selected, id);
+    } else if (selectedIndex === 0) {
+      newSelected = newSelected.concat(selected.slice(1));
+    } else if (selectedIndex === selected.length - 1) {
+      newSelected = newSelected.concat(selected.slice(0, -1));
+    } else if (selectedIndex > 0) {
+      newSelected = newSelected.concat(
+        selected.slice(0, selectedIndex),
+        selected.slice(selectedIndex + 1),
+      );
+    }
+
+    setSelected(newSelected);
+  };
+
+  const handleSelectAllClick = (event) => {
+    if (event.target.checked) {
+      setSelected(accounts.map(account => account.AccountID));
+    } else {
+      setSelected([]);
     }
   };
 
-  // Fetch accounts once when component mounts
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  // Automatically clear success message after 3 seconds
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
-
-      // Cleanup timer if component unmounts or successMessage changes
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
-
-  // Open the dialog in "create" mode (no selected account)
-  const handleOpenCreate = () => {
-    setSelectedAccount(null);
-    setDialogOpen(true);
+  // Formatters for columns
+  const formatters = {
+    street_address: (value, row) => {
+      const fullAddress = [row.street_address1, row.street_address2, row.street_address3]
+        .filter(Boolean)
+        .join(" ");
+      return fullAddress || "-";
+    },
+    annual_revenue: (value) => {
+      if (!value) return "-";
+      return new Intl.NumberFormat().format(value);
+    },
+    CreatedAt: (value) => {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (isNaN(date)) return "-";
+      return date.toLocaleDateString();
+    },
   };
 
-  // Open the dialog in "edit" mode with the selected account data
-  const handleOpenEdit = (account) => {
-    console.log("Opening edit dialog for:", account);
-    setSelectedAccount(account);
-    setDialogOpen(true);
-  };
-
-  // Delete an account after user confirmation, then refresh data
-  const handleDelete = async (id) => {
-    const confirm = window.confirm("Are you sure you want to delete this account?");
-    if (!confirm) return; // Cancel delete if user says no
-
-    setError(null);
-    try {
-      console.log("Deleting account with ID:", id);
-      await deleteAccount(id);    // Call backend delete API
-      setSuccessMessage("Account deleted successfully.");
-      await fetchAccounts();      // Refresh accounts list after delete
-    } catch (error) {
-      console.error("Delete failed:", error);
-      setError("Failed to delete account. Please try again.");
-    }
-  };
-
-  // Handle form submission for both create and update operations
-  const handleSave = async (accountData) => {
-    setError(null);
-    try {
-      console.log("Saving account data:", accountData);
-
-      if (accountData.AccountID) {
-        // If AccountID exists, update the existing account
-        await updateAccount(accountData.AccountID, accountData);
-        setSuccessMessage("Account updated successfully.");
-      } else {
-        // Otherwise, create a new account
-        await createAccount(accountData);
-        setSuccessMessage("Account created successfully.");
-      }
-
-      setDialogOpen(false);  // Close the form dialog after success
-      await fetchAccounts(); // Refresh the accounts list
-    } catch (error) {
-      console.error("Save failed:", error);
-      setError("Failed to save account. Please try again.");
-    }
-  };
-
-  // Close the form dialog and clear selected account state
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedAccount(null);
-  };
-
-  
   return (
-    <Box p={4}>
-      {/* Page Title */}
-      <Typography variant="h4" gutterBottom>
-        Accounts
-      </Typography>
+    <ThemeProvider theme={theme}>
+      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-      {/* Display error alert if any error */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
+            {successMessage}
+          </Alert>
+        )}
 
-      {/* Display success alert on successful operation */}
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
-          {successMessage}
-        </Alert>
-      )}
+        <Paper
+          elevation={0}
+          sx={{
+            width: '100%',
+            mb: 2,
+            border: '0px solid #e5e5e5',
+            borderRadius: '8px',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Toolbar with title and Add button */}
+          <Toolbar
+            sx={{
+              backgroundColor: '#ffffff',
+              borderBottom: '1px solid #e5e5e5',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 2,
+              py: 2,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+              <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
+                Accounts
+              </Typography>
+              {selected.length > 0 && (
+                <Chip
+                  label={`${selected.length} selected`}
+                  size="small"
+                  sx={{ backgroundColor: '#e0e0e0', color: '#050505' }}
+                />
+              )}
+            </Box>
 
-      {/* Button to add a new account */}
-      <Button 
-        variant="contained" 
-        color="primary" 
-        onClick={handleOpenCreate} 
-        sx={{ mb: 2 }}
-        disabled={loading}  // Disable button while loading
-      >
-        Add Account
-      </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={onCreate}
+                sx={{
+                  backgroundColor: '#050505',
+                  color: '#ffffff',
+                  '&:hover': { backgroundColor: '#333333' },
+                }}
+              >
+                Add Account
+              </Button>
+            </Box>
+          </Toolbar>
 
-      {/* Show loading spinner or accounts table depending on loading state */}
-      {loading ? (
-        <Box display="flex" justifyContent="center" mt={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <AccountsTable
-          accounts={accounts}
-          onEdit={handleOpenEdit}   // Edit button callback
-          onDelete={handleDelete}    // Delete button callback
-        />
-      )}
+          {/* Loading spinner or table */}
+          {loading ? (
+            <Box display="flex" justifyContent="center" p={8}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <UniversalTable
+              data={accounts}
+              columns={accountsTableConfig.columns}
+              idField={accountsTableConfig.idField}
+              selected={selected}
+              onSelectClick={handleSelectClick}
+              onSelectAllClick={handleSelectAllClick}
+              showSelection={true}
+              onView={onView}
+              onEdit={onEdit}
+              onDelete={onDeactivate}
+              onAddNote={onAddNote}
+              onAddAttachment={onAddAttachment}
+              formatters={formatters}
+            />
+          )}
 
-      {/* Dialog for adding/editing an account */}
-      <AccountFormDialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        account={selectedAccount}
-        onSubmit={handleSave}
-      />
-    </Box>
+          {/* Footer */}
+          <Box
+            sx={{
+              p: 2,
+              borderTop: '1px solid #e5e5e5',
+              backgroundColor: '#fafafa',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body2" sx={{ color: '#666666' }}>
+              Showing {accounts.length} accounts
+            </Typography>
+            {selected.length > 0 && (
+              <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
+                {selected.length} selected
+              </Typography>
+            )}
+          </Box>
+        </Paper>
+      </Box>
+    </ThemeProvider>
   );
-  
-
 };
 
 export default AccountsPage;

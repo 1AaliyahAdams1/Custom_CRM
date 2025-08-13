@@ -1,89 +1,125 @@
 const sql = require("mssql");
-const dbConfig = require("../dbConfig");
+const { dbConfig } = require("../dbConfig");
 
 // =======================
 // Get all active departments
 // =======================
 async function getAllDepartments() {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request().query(`
-    SELECT * FROM Department
-    WHERE Active = 1
-    ORDER BY DepartmentName
-  `);
-  return result.recordset;
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().execute("GetDepartment");
+    return result.recordset.filter(dept => dept.Active === 1);
+  } catch (error) {
+    console.error("DepartmentRepo Error [getAllDepartments]:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Get department by ID
 // =======================
 async function getDepartmentById(departmentId) {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request()
-    .input("DepartmentID", sql.Int, departmentId)
-    .query("SELECT * FROM Department WHERE DepartmentID = @DepartmentID");
-  return result.recordset[0];
+  if (!departmentId) throw new Error("departmentId is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("DepartmentID", sql.Int, departmentId)
+      .execute("GetDepartmentByID");
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("DepartmentRepo Error [getDepartmentById]:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Create new department
 // =======================
 async function createDepartment(departmentName) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("DepartmentName", sql.VarChar(255), departmentName)
-    .query(`
-      INSERT INTO Department (DepartmentName)
-      VALUES (@DepartmentName)
-    `);
+  if (!departmentName) throw new Error("departmentName is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("DepartmentName", sql.VarChar(255), departmentName)
+      .execute("CreateDepartment");
+  } catch (error) {
+    console.error("DepartmentRepo Error [createDepartment]:", error);
+    throw error;
+  }
 }
 
 // =======================
 // Update department name
 // =======================
 async function updateDepartment(departmentId, departmentName) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("DepartmentID", sql.Int, departmentId)
-    .input("DepartmentName", sql.VarChar(255), departmentName)
-    .query(`
-      UPDATE Department
-      SET DepartmentName = @DepartmentName
-      WHERE DepartmentID = @DepartmentID
-    `);
+  if (!departmentId) throw new Error("departmentId is required");
+  if (!departmentName) throw new Error("departmentName is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("DepartmentID", sql.Int, departmentId)
+      .input("DepartmentName", sql.VarChar(255), departmentName)
+      .execute("UpdateDepartment");
+  } catch (error) {
+    console.error("DepartmentRepo Error [updateDepartment]:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Soft delete department
+// Deactivate department
 // =======================
 async function deactivateDepartment(departmentId) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("DepartmentID", sql.Int, departmentId)
-    .query(`
-      UPDATE Department
-      SET Active = 0
-      WHERE DepartmentID = @DepartmentID
-    `);
+  if (!departmentId) throw new Error("departmentId is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("DepartmentID", sql.Int, departmentId)
+      .execute("DeactivateDepartment");
+  } catch (error) {
+    console.error("DepartmentRepo Error [deactivateDepartment]:", error);
+    throw error;
+  }
 }
 
-//all stored procedures
-//CreateDepartment
-// GetDepartment
-// GetDepartmentByID
-// UpdateDepartment
-// DeactivateDepartment
-// ReactivateDepartment
-// DeleteDepartment
-
+// =======================
+// Reactivate department
+// =======================
+async function reactivateDepartment(departmentId) {
+  if (!departmentId) throw new Error("departmentId is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("DepartmentID", sql.Int, departmentId)
+      .execute("ReactivateDepartment");
+  } catch (error) {
+    console.error("DepartmentRepo Error [reactivateDepartment]:", error);
+    throw error;
+  }
+}
 
 // =======================
-// Exports
+// Hard delete department 
 // =======================
+async function deleteDepartment(departmentId) {
+  if (!departmentId) throw new Error("departmentId is required");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("DepartmentID", sql.Int, departmentId)
+      .execute("DeleteDepartment");
+  } catch (error) {
+    console.error("DepartmentRepo Error [deleteDepartment]:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   getAllDepartments,
   getDepartmentById,
   createDepartment,
   updateDepartment,
-  deactivateDepartment
+  deactivateDepartment,
+  reactivateDepartment,
+  deleteDepartment,
 };

@@ -1,83 +1,97 @@
 const dealService = require("../services/dealService");
 
-// Helper to get changedBy from authenticated user or default
-function getChangedBy(req) {
-  return req.user?.username || "System";
-}
-
-// Get all deals
 async function getAllDeals(req, res) {
   try {
-    // Validation for filters, pagination, permissions can go here
-
-    const deals = await dealService.getAllDeals();
+    const deals = await dealService.getAllDeals(onlyActive = true);
     res.json(deals);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error getting all deals:", err);
+    res.status(500).json({ error: "Failed to get deals" });
   }
 }
 
-// Create a new deal
-async function createDeal(req, res) {
-  // Validation of req.body should go here
-
+async function getDealById(req, res) {
   try {
-    const changedBy = getChangedBy(req);
-    const newDeal = await dealService.createDeal(req.body, changedBy);
+    const deal = await dealService.getDealById(req.params.id);
+    res.json(deal);
+  } catch (err) {
+    console.error("Error getting deal by ID:", err);
+    res.status(500).json({ error: "Failed to get deal" });
+  }
+}
+
+async function createDeal(req, res) {
+  try {
+    const newDeal = await dealService.createDeal(req.body);
     res.status(201).json(newDeal);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error creating deal:", err);
+    res.status(500).json({ error: "Failed to create deal" });
   }
 }
 
-// Update deal by ID
 async function updateDeal(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validation of id and req.body should go here
-
   try {
-    const changedBy = getChangedBy(req);
-    const updatedDeal = await dealService.updateDeal(id, req.body, changedBy);
-    res.json(updatedDeal);
+    const updated = await dealService.updateDeal(req.params.id, req.body);
+    res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error updating deal:", err);
+    res.status(500).json({ error: "Failed to update deal" });
   }
 }
 
-// Delete deal by ID
+async function deactivateDeal(req, res) {
+  try {
+    const result = await dealService.deactivateDeal(req.params.id, req.body);
+    res.json(result);
+  } catch (err) {
+    console.error("Error deactivating deal:", err);
+    res.status(500).json({ error: "Failed to deactivate deal" });
+  }
+}
+
+async function reactivateDeal(req, res) {
+  try {
+    const result = await dealService.reactivateDeal(req.params.id, req.body);
+    res.json(result);
+  } catch (err) {
+    console.error("Error reactivating deal:", err);
+    res.status(500).json({ error: "Failed to reactivate deal" });
+  }
+}
+
 async function deleteDeal(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validation of id should go here
-
   try {
-    const changedBy = getChangedBy(req);
-    const deleted = await dealService.deleteDeal(id, changedBy);
-    res.json(deleted);
+    const result = await dealService.deleteDeal(req.params.id, req.body);
+    res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error deleting deal:", err);
+    res.status(500).json({ error: "Failed to delete deal" });
   }
 }
 
-// Get deal details including products, notes, attachments
-async function getDealDetails(req, res) {
-  const id = parseInt(req.params.id, 10);
-  // Validation of id should go here
-
+async function getDealsByUser(req, res) {
   try {
-    const details = await dealService.getDealDetails(id);
-    if (!details) {
-      return res.status(404).json({ error: "Deal not found" });
+    const userId = parseInt(req.params.userId, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
     }
-    res.json(details);
+
+    const deals = await dealService.getDealsByUser(userId);
+    res.json(deals);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching deals by user:", err);
+    res.status(500).json({ error: "Failed to get deals" });
   }
 }
 
 module.exports = {
   getAllDeals,
+  getDealById,
   createDeal,
   updateDeal,
+  deactivateDeal,
+  reactivateDeal,
   deleteDeal,
-  getDealDetails,
+  getDealsByUser
 };

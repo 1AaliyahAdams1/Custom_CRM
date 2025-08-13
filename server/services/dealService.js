@@ -1,65 +1,44 @@
-const dealRepository = require("../data/dealRepository");
-const noteRepository = require("../data/noteRepository");
-const attachmentRepository = require("../data/attachmentRepository");
-const dealProductRepository = require("../data/dealProductRepository");
+const dealRepo = require("../data/dealRepository");
 
-// Helper to get changedBy, default to "System"
-function getChangedByOrDefault(changedBy) {
-  return changedBy || "System";
+async function getAllDeals(onlyActive) {
+  return await dealRepo.getAllDeals(onlyActive = true);
 }
 
-async function getAllDeals() {
-  // Business logic: filtering, sorting, pagination, permission checks
-  return await dealRepository.getAllDeals();
+async function getDealById(id) {
+  return await dealRepo.getDealById(id);
 }
 
-async function createDeal(dealData, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-
-  // Business logic: validate required fields, apply default values, enrich or transform dealData
-  return await dealRepository.createDeal(dealData, user);
+async function createDeal(data, changedBy = 1) {
+  return await dealRepo.createDeal(data, changedBy);
 }
 
-async function updateDeal(id, dealData, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-
-  // Business logic: verify deal exists, validate fields, enforce permissions
-  return await dealRepository.updateDeal(id, dealData, user);
+async function updateDeal(id, data, changedBy = 1) {
+  return await dealRepo.updateDeal(id, data, changedBy);
 }
 
-async function deleteDeal(id, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
-
-  // Business logic: prevent deletion if restricted, handle cascade deletes or archiving
-  return await dealRepository.deleteDeal(id, user);
+async function deactivateDeal(id, data, changedBy = 1) {
+  return await dealRepo.deactivateDeal(id, data, changedBy);
 }
 
-async function getDealDetails(dealId) {
-  // Business logic: enrich details with related data, enforce read permissions
+async function reactivateDeal(id, data, changedBy = 1) {
+  return await dealRepo.reactivateDeal(id, data, changedBy);
+}
 
-  const deal = await dealRepository.getDealDetails(dealId);
+async function deleteDeal(id, data, changedBy = 1) {
+  return await dealRepo.deleteDeal(id, data, changedBy);
+}
 
-  // Fetch related products (many-to-many)
-  const products = await dealProductRepository.getProductsByDealId(dealId);
-
-  // Fetch related notes
-  const notes = await noteRepository.getNotes(dealId, "Deal");
-
-  // Fetch related attachments
-  const attachments = await attachmentRepository.getAttachments(dealId, "Deal");
-
-  return {
-    ...deal,
-    products,
-    notes,
-    attachments
-  };
+async function getDealsByUser(userId) {
+  return await dealRepo.getDealsByUser(userId);
 }
 
 module.exports = {
   getAllDeals,
+  getDealById,
   createDeal,
   updateDeal,
+  deactivateDeal,
+  reactivateDeal,
   deleteDeal,
-  getDealDetails,
+  getDealsByUser
 };

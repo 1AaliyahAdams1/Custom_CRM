@@ -1,70 +1,71 @@
-const accountRepository = require("../data/accountRepository");
-const notesRepo = require("../data/noteRepository");
-const attachmentsRepo = require("../data/attachmentRepository");
-const contactsRepo = require("../data/contactRepository");
+const accountRepo = require("../data/accountRepository");
 
-// Helper to get changedBy, default to "System" if not passed
-function getChangedByOrDefault(changedBy) {
-  return changedBy || "System";
-}
+
+// Hardcoded userId for now
+const userId = 1;
+
 
 async function getAllAccounts() {
-  // Business logic for filtering, pagination, or permissions
-  // could be added here before or after fetching data
-  return await accountRepository.getAllAccounts();
-
+  return await accountRepo.getAllAccounts();
 }
+
 
 async function getAccountDetails(id) {
-  // Business logic like access control, data transformation,
-  // or enriching details could be added here
-  const account = await accountRepository.getAccountDetails(id);
-
-  const [notes, attachments, contacts] = await Promise.all([
-    notesRepo.getNotes(id, "Account"),
-    attachmentsRepo.getAttachments(id, "Account"),
-    contactsRepo.getContactsByAccountId(id)
-  ]);
-
-  return {
-    ...account,
-    notes,
-    attachments,
-    contacts,
-  };
+  return await accountRepo.getAccountDetails(id);
 }
 
-async function createAccount(accountData, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
 
-  // Business logic to validate input data, enforce rules,
-  // or modify data before creation goes here
-
-  return await accountRepository.createAccount(accountData, user);
+async function createAccount(data) {
+  return await accountRepo.createAccount(data, userId);
 }
 
-async function updateAccount(id, accountData, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
 
-  // Business logic to validate updates, check permissions,
-  // or handle side effects could be added here
-
-  return await accountRepository.updateAccount(id, accountData, user);
+async function updateAccount(id, data) {
+  return await accountRepo.updateAccount(id, data, userId);
 }
 
-async function deleteAccount(id, changedBy) {
-  const user = getChangedByOrDefault(changedBy);
+async function deactivateAccount(id) {
+  const account = await accountRepo.getAccountDetails(id);
+  if (!account) {
+    throw new Error("Account not found");
+  }
 
-  // Business logic to prevent deletion, cascade deletes,
-  // or archive data can be added here
+  if (!account.Active) {
+    throw new Error("Account is already deactivated");
+  }
 
-  return await accountRepository.deleteAccount(id, user);
+  account.Active = false;
+
+  return await accountRepo.deactivateAccount(account, userId, 7);
 }
+
+
+async function reactivateAccount(id) {
+  return await accountRepo.reactivateAccount(id, userId);
+}
+
+async function deleteAccount(id) {
+  return await accountRepo.deleteAccount(id, userId);
+}
+
+
+async function getActiveAccountsByUser(userId) {
+  return await accountRepo.getActiveAccountsByUser(userId);
+}
+
+async function getActiveUnassignedAccounts() {
+  return await accountRepo.getActiveUnassignedAccounts();
+}
+
 
 module.exports = {
   getAllAccounts,
   getAccountDetails,
   createAccount,
   updateAccount,
+  deactivateAccount,
+  reactivateAccount,
   deleteAccount,
+  getActiveAccountsByUser,
+  getActiveUnassignedAccounts
 };

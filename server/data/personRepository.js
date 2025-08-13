@@ -2,63 +2,73 @@ const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
 // =======================
-// Creates a Person
+// Get all persons
 // =======================
-async function createPerson(personData) {
+async function getAllPersons() {
   const pool = await sql.connect(dbConfig);
-  const {
-    CityID,
-    StateProvinceID,
-    Title,
-    first_name,
-    middle_name,
-    surname,
-    linkedin_link,
-    personal_email,
-    personal_mobile,
-  } = personData;
-
-  const result = await pool.request()
-    .input("CityID", sql.Int, CityID)
-    .input("StateProvinceID", sql.Int, StateProvinceID)
-    .input("Title", sql.VarChar, Title)
-    .input("first_name", sql.VarChar, first_name)
-    .input("middle_name", sql.VarChar, middle_name)
-    .input("surname", sql.VarChar, surname)
-    .input("linkedin_link", sql.VarChar, linkedin_link)
-    .input("personal_email", sql.VarChar, personal_email)
-    .input("personal_mobile", sql.VarChar, personal_mobile)
-    .query(`
-      INSERT INTO Person (
-        CityID, StateProvinceID, Title, first_name, middle_name, surname, linkedin_link, personal_email, personal_mobile
-      ) VALUES (
-        @CityID, @StateProvinceID, @Title, @first_name, @middle_name, @surname, @linkedin_link, @personal_email, @personal_mobile
-      );
-      SELECT SCOPE_IDENTITY() AS PersonID;
-    `);
-
-  return result.recordset[0].PersonID;
+  const result = await pool.request().execute("getAllPersons");
+  return result.recordset;
 }
 
 // =======================
-// Get a Person details by ID
+// Get person by ID
 // =======================
 async function getPersonById(personId) {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
     .input("PersonID", sql.Int, personId)
-    .query(`SELECT * FROM Person WHERE PersonID = @PersonID`);
+    .execute("getPersonByID");
   return result.recordset[0];
 }
 
 // =======================
-// Update an existing Person
+// Create a person
+// =======================
+async function createPerson(data) {
+  try {
+    const {
+      CityID,
+      Title,
+      first_name,
+      middle_name,
+      surname,
+      linkedin_link,
+      personal_email,
+      personal_mobile,
+    } = data;
+
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("CityID", sql.Int, CityID)
+      .input("Title", sql.NVarChar(255), Title)
+      .input("first_name", sql.NVarChar(255), first_name)
+      .input("middle_name", sql.NVarChar(255), middle_name)
+      .input("surname", sql.NVarChar(255), surname)
+      .input("linkedin_link", sql.VarChar(255), linkedin_link)
+      .input("personal_email", sql.VarChar(255), personal_email)
+      .input("personal_mobile", sql.VarChar(63), personal_mobile)
+      .execute("createPerson");
+
+    console.log("createPerson raw result:", result);
+
+    const personId = result.recordset?.[0]?.PersonID;
+    if (!personId) {
+      throw new Error("No PersonID returned from stored procedure");
+    }
+
+    return { PersonID: parseInt(personId) };
+  } catch (error) {
+    console.error("Person Repository Error [createPerson]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Update a person
 // =======================
 async function updatePerson(personId, personData) {
-  const pool = await sql.connect(dbConfig);
   const {
     CityID,
-    StateProvinceID,
     Title,
     first_name,
     middle_name,
@@ -68,30 +78,18 @@ async function updatePerson(personId, personData) {
     personal_mobile,
   } = personData;
 
+  const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("PersonID", sql.Int, personId)
     .input("CityID", sql.Int, CityID)
-    .input("StateProvinceID", sql.Int, StateProvinceID)
-    .input("Title", sql.VarChar, Title)
-    .input("first_name", sql.VarChar, first_name)
-    .input("middle_name", sql.VarChar, middle_name)
-    .input("surname", sql.VarChar, surname)
-    .input("linkedin_link", sql.VarChar, linkedin_link)
-    .input("personal_email", sql.VarChar, personal_email)
-    .input("personal_mobile", sql.VarChar, personal_mobile)
-    .query(`
-      UPDATE Person SET
-        CityID = @CityID,
-        StateProvinceID = @StateProvinceID,
-        Title = @Title,
-        first_name = @first_name,
-        middle_name = @middle_name,
-        surname = @surname,
-        linkedin_link = @linkedin_link,
-        personal_email = @personal_email,
-        personal_mobile = @personal_mobile
-      WHERE PersonID = @PersonID
-    `);
+    .input("Title", sql.NVarChar(255), Title)
+    .input("first_name", sql.NVarChar(255), first_name)
+    .input("middle_name", sql.NVarChar(255), middle_name)
+    .input("surname", sql.NVarChar(255), surname)
+    .input("linkedin_link", sql.VarChar(255), linkedin_link)
+    .input("personal_email", sql.VarChar(255), personal_email)
+    .input("personal_mobile", sql.VarChar(63), personal_mobile)
+    .execute("updatePerson");
   return true;
 }
 
@@ -106,10 +104,44 @@ async function updatePerson(personId, personData) {
 //deletePerson
 
 // =======================
+// Deactivate a person
+// =======================
+async function deactivatePerson(personId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("PersonID", sql.Int, personId)
+    .execute("deactivatePerson");
+}
+
+// =======================
+// Reactivate a person
+// =======================
+async function reactivatePerson(personId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("PersonID", sql.Int, personId)
+    .execute("reactivatePerson");
+}
+
+// =======================
+// Delete a person
+// =======================
+async function deletePerson(personId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("PersonID", sql.Int, personId)
+    .execute("deletePerson");
+}
+
+// =======================
 // Exports
 // =======================
 module.exports = {
-  createPerson,
+  getAllPersons,
   getPersonById,
+  createPerson,
   updatePerson,
+  deactivatePerson,
+  reactivatePerson,
+  deletePerson,
 };

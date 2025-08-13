@@ -2,67 +2,94 @@ const sql = require("mssql");
 const dbConfig = require("../dbConfig");
 
 // =======================
-// Get all groups
+// Get all active groups
 // =======================
 async function getAllGroups() {
-  const pool = await sql.connect(dbConfig);
-  const result = await pool.request().query(`
-    SELECT * FROM Groups ORDER BY CreatedAt DESC
-  `);
-  return result.recordset;
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().execute("getAllGroups");
+    return result.recordset;
+  } catch (error) {
+    console.error("DB error in getAllGroups:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Create a group
+// Create a new group
 // =======================
 async function createGroup(groupName) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("GroupName", sql.VarChar(255), groupName)
-    .query(`
-      INSERT INTO Groups (GroupName, Active, CreatedAt)
-      VALUES (@GroupName, 1, GETDATE())
-    `);
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("GroupName", sql.VarChar(255), groupName)
+      .execute("createGroup");
+  } catch (error) {
+    console.error("DB error in createGroup:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Update a group
+// Update a group name
 // =======================
-async function updateGroup(groupId, groupName, active) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("GroupID", sql.Int, groupId)
-    .input("GroupName", sql.VarChar(255), groupName)
-    .input("Active", sql.Bit, active)
-    .query(`
-      UPDATE Groups
-      SET GroupName = @GroupName,
-          Active = @Active,
-          UpdatedAt = GETDATE()
-      WHERE GroupID = @GroupID
-    `);
+async function updateGroup(groupId, groupName) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("GroupID", sql.Int, groupId)
+      .input("GroupName", sql.VarChar(255), groupName)
+      .execute("updateGroup");
+  } catch (error) {
+    console.error("DB error in updateGroup:", error);
+    throw error;
+  }
 }
 
 // =======================
-// Delete a group
+// Deactivate a group
+// =======================
+async function deactivateGroup(groupId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("GroupID", sql.Int, groupId)
+      .execute("deactivateGroup");
+  } catch (error) {
+    console.error("DB error in deactivateGroup:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Reactivate a group
+// =======================
+async function reactivateGroup(groupId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("GroupID", sql.Int, groupId)
+      .execute("reactivateGroup");
+  } catch (error) {
+    console.error("DB error in reactivateGroup:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Delete a group 
 // =======================
 async function deleteGroup(groupId) {
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("GroupID", sql.Int, groupId)
-    .query("DELETE FROM Groups WHERE GroupID = @GroupID");
+  try {
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input("GroupID", sql.Int, groupId)
+      .execute("deleteGroup");
+  } catch (error) {
+    console.error("DB error in deleteGroup:", error);
+    throw error;
+  }
 }
-
-//All Stored Procedures
-//getAllGroups
-//getGroupByID
-//getIDByGroup
-//createGroup
-//updateGroup
-//deactivateGroup
-//reactivateGroup
-//deleteGroup
-
 
 // =======================
 // Exports
@@ -71,5 +98,7 @@ module.exports = {
   getAllGroups,
   createGroup,
   updateGroup,
+  deactivateGroup,
+  reactivateGroup,
   deleteGroup,
 };

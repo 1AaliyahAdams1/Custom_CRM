@@ -1,110 +1,85 @@
 const sql = require("mssql");
 const dbConfig = require("../dbConfig");
 
-// ==========================================
-// Get all cities (sorted)
-// ==========================================
+// =======================
+// Get all cities
+// =======================
 async function getAllCities() {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query(`
-      SELECT c.CityID, c.CityName, sp.StateProvinceName, co.CountryName
-      FROM City c
-      LEFT JOIN StateProvince sp ON c.StateProvinceID = sp.StateProvinceID
-      LEFT JOIN Country co ON sp.CountryID = co.CountryID
-      ORDER BY c.CityName
-    `);
-    return result.recordset;
-  } catch (error) {
-    console.error("City Repository Error [getAllCities]:", error);
-    throw error;
-  }
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .execute("GetCity");
+  return result.recordset;
 }
 
-// ==========================================
+// =======================
 // Get city by ID
-// ==========================================
+// =======================
 async function getCityById(cityId) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("CityID", sql.Int, cityId)
-      .query(`
-        SELECT c.CityID, c.CityName, c.StateProvinceID, sp.StateProvinceName, co.CountryName
-        FROM City c
-        LEFT JOIN StateProvince sp ON c.StateProvinceID = sp.StateProvinceID
-        LEFT JOIN Country co ON sp.CountryID = co.CountryID
-        WHERE c.CityID = @CityID
-      `);
-    return result.recordset[0];
-  } catch (error) {
-    console.error("City Repository Error [getCityById]:", error);
-    throw error;
-  }
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .input("CityID", sql.Int, cityId)
+    .execute("GetCityByID");
+  return result.recordset[0];
 }
 
-// ==========================================
+// =======================
 // Create a new city
-// ==========================================
+// =======================
 async function createCity(cityData) {
-  try {
-    const { CityName, StateProvinceID } = cityData;
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("CityName", sql.NVarChar(100), CityName)
-      .input("StateProvinceID", sql.Int, StateProvinceID)
-      .query(`
-        INSERT INTO City (CityName, StateProvinceID)
-        VALUES (@CityName, @StateProvinceID);
-        SELECT SCOPE_IDENTITY() AS CityID;
-      `);
-    return result.recordset[0]; // returns { CityID: newId }
-  } catch (error) {
-    console.error("City Repository Error [createCity]:", error);
-    throw error;
-  }
+  const { CityName, EntertainmentCityID = null, StateProvinceID } = cityData;
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CityName", sql.VarChar(100), CityName)
+    .input("EntertainmentCityID", sql.Int, EntertainmentCityID)
+    .input("StateProvinceID", sql.Int, StateProvinceID)
+    .execute("CreateCity");
+  // No inserted ID returned by SP; you can add OUTPUT if needed
 }
 
-// ==========================================
+// =======================
 // Update city by ID
-// ==========================================
+// =======================
 async function updateCity(cityId, cityData) {
-  try {
-    const { CityName, StateProvinceID } = cityData;
-    const pool = await sql.connect(dbConfig);
-    await pool.request()
-      .input("CityID", sql.Int, cityId)
-      .input("CityName", sql.NVarChar(100), CityName)
-      .input("StateProvinceID", sql.Int, StateProvinceID)
-      .query(`
-        UPDATE City
-        SET CityName = @CityName,
-            StateProvinceID = @StateProvinceID
-        WHERE CityID = @CityID
-      `);
-    return { message: "City updated successfully", CityID: cityId };
-  } catch (error) {
-    console.error("City Repository Error [updateCity]:", error);
-    throw error;
-  }
+  const { CityName, EntertainmentCityID = null, StateProvinceID } = cityData;
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CityID", sql.Int, cityId)
+    .input("CityName", sql.VarChar(100), CityName)
+    .input("EntertainmentCityID", sql.Int, EntertainmentCityID)
+    .input("StateProvinceID", sql.Int, StateProvinceID)
+    .execute("UpdateCity");
+  return { message: "City updated successfully", CityID: cityId };
 }
 
-// ==========================================
+// =======================
+// Deactivate city by ID
+// =======================
+async function deactivateCity(cityId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CityID", sql.Int, cityId)
+    .execute("DeactivateCity");
+}
+
+// =======================
+// Reactivate city by ID
+// =======================
+async function reactivateCity(cityId) {
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CityID", sql.Int, cityId)
+    .execute("ReactivateCity");
+}
+
+// =======================
 // Delete city by ID
-// ==========================================
+// =======================
 async function deleteCity(cityId) {
-  try {
-    const pool = await sql.connect(dbConfig);
-    await pool.request()
-      .input("CityID", sql.Int, cityId)
-      .query(`
-        DELETE FROM City WHERE CityID = @CityID
-      `);
-    return { message: "City deleted successfully", CityID: cityId };
-  } catch (error) {
-    console.error("City Repository Error [deleteCity]:", error);
-    throw error;
-  }
+  const pool = await sql.connect(dbConfig);
+  await pool.request()
+    .input("CityID", sql.Int, cityId)
+    .execute("DeleteCity");
+  return { message: "City deleted successfully", CityID: cityId };
 }
 
 //All stored procedures
@@ -124,5 +99,7 @@ module.exports = {
   getCityById,
   createCity,
   updateCity,
+  deactivateCity,
+  reactivateCity,
   deleteCity,
 };

@@ -1,344 +1,633 @@
-//PAGE : Account Details
-//Shows all details related to an individual account
-
-//IMPORTS
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  CircularProgress,
-  Button,
-  Box,
-  Link as MuiLink ,
-} from "@mui/material";
-//syncfusion component imports
-import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
+import { Box, Grid, Typography, Link as MuiLink, Alert, Button } from "@mui/material";
+import { UniversalDetailView } from "../components/DetailsView";
+import { fetchAccountById, updateAccount, deactivateAccount } from "../services/accountService";
 
+// Main fields configuration for accounts
+const accountMainFields = [
+  {
+    key: "AccountName",
+    label: "Account Name",
+    required: true,
+    width: { xs: 12, md: 12, lg: 12 }
+  },
+  {
+    key: "IndustryName",
+    label: "Industry",
+    type: "select",
+    options: [
+      "Technology", "Healthcare", "Finance", "Education", "Manufacturing",
+      "Retail", "Consulting", "Real Estate", "Non-profit"
+    ]
+  },
+  { key: "PrimaryPhone", label: "Phone", type: "tel" },
+  { key: "Website", label: "Website", type: "url" },
+  { key: "street_address1", label: "Street Address", type: "textarea", rows: 2 },
+  { key: "street_address2", label: "Street Address 2" },
+  { key: "street_address3", label: "Street Address 3" },
+  { key: "postal_code", label: "Postal Code" },
+  {
+    key: "CityName",
+    label: "City",
+    type: "select",
+    options: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose"]
+  },
+  {
+    key: "CountryName",
+    label: "Country",
+    type: "select",
+    options: ["USA", "Canada", "UK", "Australia", "Germany", "France", "India"]
+  },
+  {
+    key: "StateProvinceName",
+    label: "State/Province",
+    type: "select",
+    options: ["California", "Texas", "Florida", "New York", "Illinois", "Pennsylvania", "Ohio", "Georgia", "North Carolina", "Michigan"]
+  },
+  { key: "annual_revenue", label: "Annual Revenue", type: "currency" },
+  { key: "number_of_employees", label: "Number of Employees", type: "number" },
+  { key: "number_of_releases", label: "Number of Releases", type: "number" },
+  { key: "number_of_events_anually", label: "Number of Events Annually", type: "number" },
+  { key: "number_of_venues", label: "Number of Venues", type: "number" },
+  { key: "Active", label: "Status", type: "boolean" },
+];
 
-
-// fetches account details
-import { getAccountDetails } from "../services/accountService";
-
-// Component to display detailed information about a single Account
-function AccountDetailsPage() {
-  // Get the account ID from the URL parameters
+export default function AccountDetailView() {
   const { id } = useParams();
-  // Hook for programmatic navigation
+  console.log("Account ID param:", id);
   const navigate = useNavigate();
-
-  // State to hold the fetched account details
   const [account, setAccount] = useState(null);
-  // Loading state while fetching data
   const [loading, setLoading] = useState(true);
-  // Error state to capture fetch errors
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  // Fetch account details when component mounts or when `id` changes
   useEffect(() => {
-    async function fetchAccount() {
-      setLoading(true);
-      setError(null);
+    const fetchAccount = async () => {
+      if (!id) {
+        setError("No account ID provided");
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Call service to get account details by ID
-        const data = await getAccountDetails(id);
-        // The API may return an array; take the first item if so
-        const account = Array.isArray(data) ? data[0] : data;
-        // If no account is found, throw an error to show message
-        if (!account) throw new Error("Account not found");
-        // Update state with fetched account details
-        setAccount(account);
-      } catch (err) {
-        // Capture error message for display
-        setError(err.message || "Failed to fetch account details");
+        setLoading(true);
+        setError(null);
+        const response = await fetchAccountById(id);
+        console.log("Fetched account details:", response.data);
+        setAccount(response.data);
+      } catch (error) {
+        console.error("Failed to fetch account:", error);
+        setError("Failed to load account details. Please try again.");
       } finally {
-        // Stop loading indicator regardless of success or failure
         setLoading(false);
       }
-    }
+    };
+
     fetchAccount();
   }, [id]);
 
-  // While loading, show a spinner
-  if (loading) return <CircularProgress />;
+  const handleBack = () => {
+    navigate('/accounts');
+  };
 
-  // Show error message if fetch failed
-  if (error) return <Typography color="error">{error}</Typography>;
+  const handleSave = async (formData) => {
+    try {
+      console.log("Saving account:", formData);
+      setAccount(formData);
+      await updateAccount(id, formData)
+      setSuccessMessage("Account updated successfully!");
+    } catch (error) {
+      console.error("Failed to save account:", error);
+    }
+  };
 
-  // Show fallback if no account found (should rarely happen due to error above)
-  if (!account) return <Typography>No account found.</Typography>;
+  const handleDelete = async () => {
+    try {
+      console.log("Deactivating (soft deleting) account with ID:", id);
+      await deactivateAccount(id);
+      navigate('/accounts');
+    } catch (error) {
+      console.error("Failed to delete account:", error);
+    }
+  };
+
+  //  Handle adding notes
+  const handleAddNote = (account) => {
+    console.log("Adding note for account:", account);
+    // Navigate to notes page 
+    navigate(`/accounts/${account.AccountID}/notes/create`);
+    
+  };
+
+  //  Handle adding attachments
+  const handleAddAttachment = (account) => {
+    console.log("Adding attachment for account:", account);
+    // Navigate to attachments page 
+    navigate(`/accounts/${account.AccountID}/attachments/upload`);
+    
+  };
+
+  // Navigation handlers 
+  const handleContactClick = (contactId) => {
+    navigate(`/contacts/${contactId}`);
+  };
+
+  const handleDealClick = (dealId) => {
+    navigate(`/deals/${dealId}`);
+  };
+
+  const handleActivityClick = (activityId) => {
+    navigate(`/activities/${activityId}`);
+  };
+
+  const handleAttachmentClick = (attachmentId) => {
+    navigate(`/attachments/${attachmentId}`);
+  };
+
+  const handleNoteClick = (noteId) => {
+    navigate(`/notes/${noteId}`);
+  };
+
+  // Helper functions
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString();
+  };
+
+  // Create related tabs 
+  const relatedTabs = [
+    {
+      id: "contacts",
+      label: "Contacts",
+      content: (
+        <Box>
+          {account?.contacts && account.contacts.length > 0 ? (
+            <Grid container spacing={2}>
+              {account.contacts.map((contact) => (
+                <Grid item xs={12} md={6} key={contact.ContactID}>
+                  <Box
+                    sx={{
+                      border: '1px solid #e5e5e5',
+                      borderRadius: 2,
+                      p: 2,
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        transform: 'translateY(-2px)',
+                        borderColor: '#cccccc'
+                      }
+                    }}
+                    onClick={() => handleContactClick(contact.ContactID)}
+                  >
+                    <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, mb: 1 }}>
+                      {[contact.Title, contact.first_name, contact.middle_name, contact.surname]
+                        .filter(Boolean).join(' ')}
+                    </Typography>
+                    {contact.JobTitleName && (
+                      <Typography variant="body2" sx={{ color: '#666666', mb: 2 }}>
+                        {contact.JobTitleName}
+                      </Typography>
+                    )}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Email:
+                        </Typography>
+                        <Typography variant="body2">
+                          {contact.email ? (
+                            <MuiLink
+                              href={`mailto:${contact.email}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {contact.email}
+                            </MuiLink>
+                          ) : "-"}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Phone:
+                        </Typography>
+                        <Typography variant="body2">
+                          {contact.phone ? (
+                            <MuiLink
+                              href={`tel:${contact.phone}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {contact.phone}
+                            </MuiLink>
+                          ) : "-"}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Department:
+                        </Typography>
+                        <Typography variant="body2">{contact.department || "-"}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Status:
+                        </Typography>
+                        <Typography variant="body2">{contact.status || "-"}</Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Action buttons at bottom */}
+                    <Box sx={{ display: 'flex', gap: 1, mt: 2, pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          borderColor: '#e5e5e5',
+                          color: '#666666',
+                          '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleContactClick(contact.ContactID);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      {contact.email && (
+                        <Button
+                          size="small"
+                          variant="text"
+                          href={`mailto:${contact.email}`}
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{ color: '#666666' }}
+                        >
+                          Email
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Alert severity="info">No contacts found for this account.</Alert>
+          )}
+        </Box>
+      ),
+    },
+    {
+      id: "deals",
+      label: "Deals",
+      content: (
+        <Box>
+          {account?.deals && account.deals.length > 0 ? (
+            <Grid container spacing={2}>
+              {account.deals.map((deal) => (
+                <Grid item xs={12} md={6} key={deal.DealID}>
+                  <Box
+                    sx={{
+                      border: '1px solid #e5e5e5',
+                      borderRadius: 2,
+                      p: 2,
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        transform: 'translateY(-2px)',
+                        borderColor: '#cccccc'
+                      }
+                    }}
+                    onClick={() => handleDealClick(deal.DealID)}
+                  >
+                    <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, mb: 1 }}>
+                      {deal.DealName || 'Unnamed Deal'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Value:
+                        </Typography>
+                        <Typography variant="body2">
+                          ${deal.DealValue?.toLocaleString() || '-'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Stage:
+                        </Typography>
+                        <Typography variant="body2">{deal.Stage || "-"}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Close Date:
+                        </Typography>
+                        <Typography variant="body2">{formatDate(deal.CloseDate)}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Probability:
+                        </Typography>
+                        <Typography variant="body2">{deal.Probability ? `${deal.Probability}%` : "-"}</Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          borderColor: '#e5e5e5',
+                          color: '#666666',
+                          '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDealClick(deal.DealID);
+                        }}
+                      >
+                        View Deal
+                      </Button>
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Alert severity="info">No deals found for this account.</Alert>
+          )}
+        </Box>
+      ),
+    },
+    {
+      id: "activities",
+      label: "Activities",
+      content: (
+        <Box>
+          {account?.activities && account.activities.length > 0 ? (
+            <Grid container spacing={2}>
+              {account.activities.map((activity) => (
+                <Grid item xs={12} key={activity.ActivityID}>
+                  <Box
+                    sx={{
+                      border: '1px solid #e5e5e5',
+                      borderRadius: 2,
+                      p: 2,
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        transform: 'translateY(-2px)',
+                        borderColor: '#cccccc'
+                      }
+                    }}
+                    onClick={() => handleActivityClick(activity.ActivityID)}
+                  >
+                    <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, mb: 1 }}>
+                      {activity.ActivityType || 'Activity'}: {activity.Subject || 'No Subject'}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#666666', mb: 2 }}>
+                      {activity.Description || 'No description available'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '100px' }}>
+                          Date:
+                        </Typography>
+                        <Typography variant="body2">{formatDate(activity.ActivityDate)}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '100px' }}>
+                          Status:
+                        </Typography>
+                        <Typography variant="body2">{activity.Status || "-"}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '100px' }}>
+                          Priority:
+                        </Typography>
+                        <Typography variant="body2">{activity.Priority || "-"}</Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          borderColor: '#e5e5e5',
+                          color: '#666666',
+                          '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleActivityClick(activity.ActivityID);
+                        }}
+                      >
+                        View Activity
+                      </Button>
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Alert severity="info">No activities found for this account.</Alert>
+          )}
+        </Box>
+      ),
+    },
+    {
+      id: "attachments",
+      label: "Attachments",
+      content: (
+        <Box>
+          {account?.attachments && account.attachments.length > 0 ? (
+            <Grid container spacing={2}>
+              {account.attachments.map((attachment) => (
+                <Grid item xs={12} md={6} key={attachment.AttachmentID}>
+                  <Box
+                    sx={{
+                      border: '1px solid #e5e5e5',
+                      borderRadius: 2,
+                      p: 2,
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        transform: 'translateY(-2px)',
+                        borderColor: '#cccccc'
+                      }
+                    }}
+                    onClick={() => handleAttachmentClick(attachment.AttachmentID)}
+                  >
+                    <Typography variant="body1" sx={{ fontWeight: 600, mb: 1, color: '#050505' }}>
+                      {attachment.FileName}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#666666', mb: 2 }}>
+                      <strong>Uploaded:</strong> {formatDate(attachment.UploadedAt)}
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', gap: 1, pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          borderColor: '#e5e5e5',
+                          color: '#666666',
+                          '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAttachmentClick(attachment.AttachmentID);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      {attachment.FilePath && (
+                        <Button
+                          size="small"
+                          variant="text"
+                          href={attachment.FilePath}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{ color: '#666666' }}
+                        >
+                          Download
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Alert severity="info">No attachments found for this account.</Alert>
+          )}
+        </Box>
+      ),
+    },
+    {
+      id: "notes",
+      label: "Notes",
+      content: (
+        <Box>
+          {account?.notes && account.notes.length > 0 ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {account.notes.map((note) => (
+                <Box
+                  key={note.NoteID}
+                  sx={{
+                    border: '1px solid #e5e5e5',
+                    borderRadius: 2,
+                    p: 2,
+                    backgroundColor: '#ffffff',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                      transform: 'translateY(-2px)',
+                      borderColor: '#cccccc'
+                    }
+                  }}
+                  onClick={() => handleNoteClick(note.NoteID)}
+                >
+                  <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6 }}>
+                    {note.Content}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#666666', mb: 2 }}>
+                    <strong>Created:</strong> {formatDate(note.CreatedAt)}
+                  </Typography>
+
+                  <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        borderColor: '#e5e5e5',
+                        color: '#666666',
+                        '&:hover': { borderColor: '#cccccc', backgroundColor: '#f5f5f5' }
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNoteClick(note.NoteID);
+                      }}
+                    >
+                      View Note
+                    </Button>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Alert severity="info">No notes found for this account.</Alert>
+          )}
+        </Box>
+      ),
+    },
+  ];
+
+  // Generate header chips based on account data
+  const headerChips = [];
+  if (account) {
+    // Status chip
+    headerChips.push({
+      label: account.Active ? 'Active' : 'Inactive',
+      color: account.Active ? '#10b981' : '#6b7280',
+      textColor: '#ffffff'
+    });
+
+    // Industry chip
+    if (account.IndustryName) {
+      headerChips.push({
+        label: account.IndustryName,
+        color: '#3b82f6',
+        textColor: '#ffffff'
+      });
+    }
+
+    {/* Success Alert */ }
+    {
+      successMessage && (
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+          {successMessage}
+        </Alert>
+      )
+    }
+
+    // Location chip
+    if (account.CityName || account.CountryName) {
+      headerChips.push({
+        label: [account.CityName, account.CountryName].filter(Boolean).join(', '),
+        color: '#6b7280',
+        textColor: '#ffffff'
+      });
+    }
+  }
 
   return (
-    <Box p={4}>
-      {/* Button to navigate back to the accounts list */}
-      <Button variant="outlined" onClick={() => navigate(-1)} sx={{ mb: 3 }}>
-        &larr; Back to Accounts
-      </Button>
+    <UniversalDetailView
+      title={account?.AccountName || 'Account Details'}
+      subtitle={account?.AccountID ? `ID: ${account.AccountID}` : undefined}
+      item={account}
+      mainFields={accountMainFields}
+      relatedTabs={relatedTabs}
+      onBack={handleBack}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      onAddAttachment={handleAddAttachment}
+      onAddNote={handleAddNote}
+      loading={loading}
+      error={error}
+      entityType="account"
+      headerChips={headerChips}
+    />
 
-      {/* Card to display account details */}
-      <Card elevation={3}>
-        <CardContent>
-          {/* Account name as the card title */}
-          <Typography variant="h5" gutterBottom>{account.AccountName}</Typography>
 
-          {/* Grid layout to neatly organize details in two columns */}
-          <Grid container spacing={2}>
-            {/* Left column with some basic info */}
-            <Grid item xs={6}>
-              <Typography><strong>ID:</strong> {account.AccountID}</Typography>
-              <Typography><strong>Industry:</strong> {account.IndustryName || "-"}</Typography>
-              <Typography><strong>City:</strong> {account.CityName || "-"}</Typography>
-              <Typography><strong>Country:</strong> {account.CountryName || "-"}</Typography>
-            </Grid>
-            {/* Right column with contact info */}
-            <Grid item xs={6}>
-              <Typography><strong>Phone:</strong> {account.PrimaryPhone || "-"}</Typography>
-              <Typography><strong>Website:</strong> {account.Website || "-"}</Typography>
-              <Box mt={1}>
-                <Typography variant="body2" lineHeight={1.5}>
-                  <strong>Address:</strong>{" "}
-                  {[
-                    account.street_address1,
-                    account.street_address2,
-                    account.street_address3,
-                    account.postal_code,
-                  ]
-                    .filter(Boolean)
-                    .join(", ") || "-"}
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-
-          {/* ADDED MISSING FIELDS */}
-
-          {/* Contacts */}
-          <Box mt={3}>
-            <Typography variant="h6" gutterBottom>Contacts</Typography>
-            {account.contacts?.length > 0 ? (
-              account.contacts.map((contact) => (
-                <Box key={contact.ContactID} mb={2}>
-                  <Typography variant="body1" fontWeight="bold">
-                    {contact.Title} {contact.first_name} {contact.middle_name} {contact.surname}
-                  </Typography>
-                  {contact.JobTitleName && (
-                    <Typography variant="body2">{contact.JobTitleName}</Typography>
-                  )}
-                </Box>
-              ))
-            ) : (
-              <Typography variant="body2">No contacts found for this account.</Typography>
-            )}
-          </Box>
-
-          {/* Attachments */}
-          <Box mt={3}>
-            <Typography variant="h6" gutterBottom>Attachments</Typography>
-            {account.attachments?.length > 0 ? (
-              account.attachments.map((att) => (
-                <Box key={att.AttachmentID} mb={2}>
-                  <Typography variant="body2" lineHeight={1.5}>
-                    <strong>File:</strong>{" "}
-                    <MuiLink href={att.FilePath} target="_blank" rel="noopener noreferrer">
-                      {att.FileName}
-                    </MuiLink>
-                    <br />
-                    <small>Uploaded: {new Date(att.UploadedAt).toLocaleString()}</small>
-                  </Typography>
-                </Box>
-              ))
-            ) : (
-              <Typography variant="body2">No attachments found for this account.</Typography>
-            )}
-          </Box>
-
-          {/* Notes */}
-          <Box mt={3}>
-            <Typography variant="h6" gutterBottom>Notes</Typography>
-            {account.notes?.length > 0 ? (
-              account.notes.map((note) => (
-                <Box key={note.NoteID} mb={2}>
-                  <Typography variant="body2" lineHeight={1.5}>
-                    <strong>Note:</strong> {note.Content}
-                    <br />
-                    <small>Created: {new Date(note.CreatedAt).toLocaleString()}</small>
-                  </Typography>
-                </Box>
-              ))
-            ) : (
-              <Typography variant="body2">No notes found for this account.</Typography>
-            )}
-          </Box>
-
-        </CardContent>
-      </Card>
-    </Box>
   );
-  // // While loading, show a spinner
-  // if (loading) {
-  //   return (
-  //     <div id="spinner-container" style={{
-  //       display: 'flex',
-  //       justifyContent: 'center',
-  //       alignItems: 'center',
-  //       height: '200px',
-  //       position: 'relative'
-  //     }}>
-  //       <div className="e-spinner-pane">
-  //         <div className="e-spinner-inner">
-  //           <div className="e-spin-material"></div>
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  // // Show error message if fetch failed
-  // if (error) {
-  //   return (
-  //     <div style={{ padding: '20px' }}>
-  //       <span style={{ color: '#d32f2f', fontSize: '16px' }}>{error}</span>
-  //     </div>
-  //   );
-  // }
-
-  // // Show fallback if no account found (should rarely happen due to error above)
-  // if (!account) {
-  //   return (
-  //     <div style={{ padding: '20px' }}>
-  //       <span style={{ fontSize: '16px' }}>No account found.</span>
-  //     </div>
-  //   );
-  // }
-
-  // return (
-  //   <div style={{ padding: '32px' }}>
-  //     {/* Button to navigate back to the accounts list */}
-  //     <ButtonComponent
-  //       cssClass="e-outline"
-  //       content="← Back to Accounts"
-  //       onClick={() => navigate(-1)}
-  //       style={{ marginBottom: '24px' }}
-  //     />
-
-  //     {/* Card-style container using Syncfusion's design patterns */}
-  //     <div className="e-card" style={{ padding: '24px', backgroundColor: '#fff', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}>
-  //       {/* Account name as the title */}
-  //       <div className="e-card-header">
-  //         <div className="e-card-header-title" style={{
-  //           fontSize: '1.5rem',
-  //           fontWeight: '500',
-  //           marginBottom: '24px',
-  //           color: '#333'
-  //         }}>
-  //           {account.AccountName}
-  //         </div>
-  //       </div>
-
-  //       {/* Card content */}
-  //       <div className="e-card-content">
-  //         {/* Grid layout using CSS Grid to organize details in two columns */}
-  //         <div style={{
-  //           display: 'grid',
-  //           gridTemplateColumns: 'repeat(2, 1fr)',
-  //           gap: '24px'
-  //         }}>
-  //           {/* Left column with some basic info */}
-  //           <div>
-  //             <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-  //               <strong>ID:</strong> {account.AccountID}
-  //             </div>
-  //             <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-  //               <strong>Industry:</strong> {account.IndustryName || "-"}
-  //             </div>
-  //             <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-  //               <strong>City:</strong> {account.CityName || "-"}
-  //             </div>
-  //             <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-  //               <strong>Country:</strong> {account.CountryName || "-"}
-  //             </div>
-  //           </div>
-
-  //           {/* Right column with contact info */}
-  //           <div>
-  //             <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-  //               <strong>Phone:</strong> {account.PrimaryPhone || "-"}
-  //             </div>
-  //             <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-  //               <strong>Website:</strong> {account.Website || "-"}
-  //             </div>
-
-
-  //             <div style={{ marginBottom: '12px', fontSize: '14px', lineHeight: '1.5' }}>
-  //               <strong>Address:</strong>{" "}
-  //               {[
-  //                 account.street_address1,
-  //                 account.street_address2,
-  //                 account.street_address3,
-  //                 account.postal_code,
-  //               ]
-  //                 .filter(Boolean)
-  //                 .join(", ") || "-"}
-  //             </div>
-
-
-
-  //             {/* FOR CONTACTS */}
-  //           </div>
-  //           <div style={{ marginTop: "20px" }}>
-  //             <h3>Contacts</h3>
-  //             {account.contacts?.length > 0 ? (
-  //               account.contacts.map((contact) => (
-  //                 <div key={contact.ContactID} style={{ marginBottom: "12px" }}>
-  //                   <strong>{contact.Title} {contact.first_name} {contact.middle_name} {contact.surname}</strong><br />
-  //                   {contact.JobTitleName && <span>{contact.JobTitleName}<br /></span>}
-  //                 </div>
-  //               ))
-  //             ) : (
-  //               <div>No contacts found for this account.</div>
-  //             )}
-  //           </div>
-
-  //           {/* FOR ATTACHMENTS */}
-  //           <div style={{ marginTop: "20px" }}>
-  //             <h3>Attachments</h3>
-  //             {account.attachments?.length > 0 ? (
-  //               account.attachments.map((att) => (
-  //                 <div key={att.AttachmentID} style={{ marginBottom: "12px", fontSize: "14px", lineHeight: "1.5" }}>
-  //                   <strong>File:</strong>{" "}
-  //                   <a href={att.FilePath} target="_blank" rel="noopener noreferrer">
-  //                     {att.FileName}
-  //                   </a><br />
-  //                   <small>Uploaded: {new Date(att.UploadedAt).toLocaleString()}</small>
-  //                 </div>
-  //               ))
-  //             ) : (
-  //               <div style={{ fontSize: "14px" }}>No attachments found for this account.</div>
-  //             )}
-  //           </div>
-
-  //           {/* FOR NOTES*/}
-  //           <div style={{ marginTop: "20px" }}>
-  //             <h3>Notes</h3>
-  //             {account.notes?.length > 0 ? (
-  //               account.notes.map((note) => (
-  //                 <div key={note.NoteID} style={{ marginBottom: "12px", fontSize: "14px", lineHeight: "1.5" }}>
-  //                   <strong>Note:</strong> {note.Content}<br />
-  //                   <small>Created: {new Date(note.CreatedAt).toLocaleString()}</small>
-  //                 </div>
-  //               ))
-  //             ) : (
-  //               <div style={{ fontSize: "14px" }}>No notes found for this account.</div>
-  //             )}
-  //           </div>
-
-  //         </div>
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
 }
-
-export default AccountDetailsPage;
