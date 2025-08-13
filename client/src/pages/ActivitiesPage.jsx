@@ -1,9 +1,7 @@
-//PAGE : Main Activities Page
-//Combines the UI components onto one page using UniversalTable
+//PAGE : Main Activities Page (presentational only, no data fetching)
 
 //IMPORTS
-import { useNavigate } from "react-router-dom";
-import React, { useEffect, useState, useMemo } from "react";
+import React from "react";
 import {
   Box,
   Typography,
@@ -26,13 +24,8 @@ import {
   Clear,
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { formatters} from '../utils/formatters';
+import { formatters } from '../utils/formatters';
 import UniversalTable from '../components/TableView';
-
-import {
-  getAllActivities,
-  deactivateActivity,
-} from "../services/activityService";
 
 // Monochrome theme for MUI components
 const theme = createTheme({
@@ -96,7 +89,7 @@ const activitiesTableConfig = {
   columns: [
     { field: 'ActivityType', headerName: 'Activity Type', type: 'tooltip' },
     { field: 'AccountName', headerName: 'Account Name', type: 'tooltip' },
-    { field: 'PriorityLevelName', headerName: 'Priority' }, //change to name
+    { field: 'PriorityLevelName', headerName: 'Priority' },
     { field: 'note', headerName: 'Notes', type: 'truncated', maxWidth: 150 },
     { field: 'attachment', headerName: 'Attachments' },
     { field: 'DueToStart', headerName: 'Due To Start', type: 'date' },
@@ -119,79 +112,30 @@ const activitiesTableConfig = {
   ]
 };
 
-const ActivitiesPage = () => {
-  const navigate = useNavigate();
-  const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [selected, setSelected] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState('');
-
-  // Function to fetch activities data from backend API
-  const fetchActivities = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getAllActivities(true);
-      console.log("Fetched activities:", data);
-      setActivities(data);
-    } catch (error) {
-      console.error("Failed to fetch activities:", error);
-      setError("Failed to load activities. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch activities once when component mounts
-  useEffect(() => {
-    fetchActivities();
-  }, []);
-
-  // Automatically clear success message after 3 seconds
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
-
-      // Cleanup timer if component unmounts or successMessage changes
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
-
-  // Filter and search logic
-  const filteredActivities = useMemo(() => {
-    return activities.filter((activity) => {
-      const matchesSearch =
-        (activity.ActivityType && activity.ActivityType.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (activity.AccountName && activity.AccountName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (activity.note && activity.note.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (activity.attachment && activity.attachment.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      const matchesStatus = !statusFilter ||
-        (statusFilter === 'completed' && activity.Completed) ||
-        (statusFilter === 'pending' && !activity.Completed);
-
-      const matchesPriority = !priorityFilter ||
-        (activity.PriorityLevelID && activity.PriorityLevelID.toString() === priorityFilter);
-
-      return matchesSearch && matchesStatus && matchesPriority;
-    });
-  }, [activities, searchTerm, statusFilter, priorityFilter]);
+const ActivitiesPage = ({
+  activities,
+  loading,
+  error,
+  successMessage,
+  searchTerm,
+  statusFilter,
+  priorityFilter,
+  setSuccessMessage,
+  setSearchTerm,
+  setStatusFilter,
+  setPriorityFilter,
+  onDeactivate,
+  onEdit,
+  onView,
+  onCreate,
+  onAddNote,
+  onAddAttachment,
+  clearFilters,
+  totalCount,
+}) => {
+  const [selected, setSelected] = React.useState([]);
 
   // Selection handlers
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      setSelected(filteredActivities.map(activity => activity.ActivityID));
-    } else {
-      setSelected([]);
-    }
-  };
-
   const handleSelectClick = (id) => {
     const selectedIndex = selected.indexOf(id);
     let newSelected = [];
@@ -212,82 +156,23 @@ const ActivitiesPage = () => {
     setSelected(newSelected);
   };
 
-  // Navigate to create activity page
-  const handleOpenCreate = () => {
-    navigate("/activities/create");
-  };
-
-  // Deactivates an activity 
-  const handleDeactivate = async (id) => {
-    const confirm = window.confirm("Are you sure you want to delete this activity? This will deactivate it.");
-    if (!confirm) return;
-
-    setError(null);
-    try {
-      console.log("Deactivating (soft deleting) activity with ID:", id);
-      await deactivateActivity(id);
-      setSuccessMessage("Activity deleted successfully.");
-      await fetchActivities();
-    } catch (error) {
-      console.log("Deactivating (soft deleting) activity with ID:", id);
-      console.error("Delete failed:", error);
-      setError("Failed to delete activity. Please try again.");
+  const handleSelectAllClick = (event) => {
+    if (event.target.checked) {
+      setSelected(activities.map(activity => activity.ActivityID));
+    } else {
+      setSelected([]);
     }
   };
-
-  const handleEdit = (activity) => {
-    // Pass the full activity object
-    navigate(`/activities/edit/${activity.ActivityID}`, { state: { activity } });
-  };
-
-  const handleView = (activityId) => {
-    navigate(`/activities/${activityId}`);
-  };
-
-  //  Handle adding notes
-  const handleAddNote = (activity) => {
-    console.log("Adding note for activity:", activity);
-    // Navigate to notes page or open modal
-    navigate(`/activities/${activity.ActivityID}/notes`);
-  };
-
-  // Handle adding attachments
-  const handleAddAttachment = (activity) => {
-    console.log("Adding attachment for activity:", activity);
-    // Navigate to attachments page or open file picker
-    navigate(`/activities/${activity.ActivityID}/attachments`);
-  };
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('');
-    setPriorityFilter('');
-  };
-
-
-  if (loading) {
-    return (
-      <ThemeProvider theme={theme}>
-        <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-          <Box display="flex" justifyContent="center" mt={4}>
-            <CircularProgress />
-          </Box>
-        </Box>
-      </ThemeProvider>
-    );
-  }
 
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-        {/* Display error alert if any error */}
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
 
-        {/* Display success alert on successful operation */}
         {successMessage && (
           <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
             {successMessage}
@@ -329,16 +214,18 @@ const ActivitiesPage = () => {
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-              {/* Add Activity Button */}
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={handleOpenCreate}
+                onClick={onCreate}
+                disabled={loading}
                 sx={{
                   backgroundColor: '#050505',
                   color: '#ffffff',
-                  '&:hover': {
-                    backgroundColor: '#333333',
+                  '&:hover': { backgroundColor: '#333333' },
+                  '&:disabled': {
+                    backgroundColor: '#cccccc',
+                    color: '#666666',
                   },
                 }}
               >
@@ -433,22 +320,28 @@ const ActivitiesPage = () => {
             </Box>
           </Toolbar>
 
-          {/* Universal Table */}
-          <UniversalTable
-            data={filteredActivities}
-            columns={activitiesTableConfig.columns}
-            idField={activitiesTableConfig.idField}
-            selected={selected}
-            onSelectClick={handleSelectClick}
-            onSelectAllClick={handleSelectAllClick}
-            showSelection={true}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDeactivate}
-            onAddNote={handleAddNote}
-            onAddAttachment={handleAddAttachment}
-            formatters={formatters}
-          />
+          {/* Loading spinner or table */}
+          {loading ? (
+            <Box display="flex" justifyContent="center" p={8}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <UniversalTable
+              data={activities}
+              columns={activitiesTableConfig.columns}
+              idField={activitiesTableConfig.idField}
+              selected={selected}
+              onSelectClick={handleSelectClick}
+              onSelectAllClick={handleSelectAllClick}
+              showSelection={true}
+              onView={onView}
+              onEdit={onEdit}
+              onDelete={onDeactivate}
+              onAddNote={onAddNote}
+              onAddAttachment={onAddAttachment}
+              formatters={formatters}
+            />
+          )}
 
           {/* Results footer */}
           <Box sx={{
@@ -460,7 +353,7 @@ const ActivitiesPage = () => {
             alignItems: 'center'
           }}>
             <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {filteredActivities.length} of {activities.length} activities
+              Showing {activities.length} of {totalCount || activities.length} activities
             </Typography>
             {selected.length > 0 && (
               <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
