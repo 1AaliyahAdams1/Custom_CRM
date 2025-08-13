@@ -3,21 +3,21 @@ export const ROUTE_ACCESS = {
 
   accounts: ["C-level", "Sales Manager", "Sales Representative"], 
   accountsDetails: ["C-level", "Sales Manager", "Sales Representative"],
-  accountsCreate: ["C-level", "Sales Manager"], 
-  accountsEdit: ["C-level", "Sales Manager"],
+  accountsCreate: ["C-level", "Sales Manager", "Sales Representative"], 
+  accountsEdit: ["C-level", "Sales Manager", "Sales Representative"],
 
   contacts: ["C-level", "Sales Manager", "Sales Representative"], 
   contactsDetails: ["C-level", "Sales Manager", "Sales Representative"],
-  contactsCreate: ["C-level", "Sales Manager"],
-  contactsEdit: ["C-level", "Sales Manager"],
+  contactsCreate: ["C-level", "Sales Manager", "Sales Representative"],
+  contactsEdit: ["C-level", "Sales Manager", "Sales Representative"],
 
   deals: ["C-level", "Sales Manager", "Sales Representative"], 
   dealsDetails: ["C-level", "Sales Manager", "Sales Representative"],
-  dealsCreate: ["C-level", "Sales Manager"],
-  dealsEdit: ["C-level", "Sales Manager"],
+  dealsCreate: ["C-level", "Sales Manager", "Sales Representative"],
+  dealsEdit: ["C-level", "Sales Manager", "Sales Representative"],
 
   activities: ["C-level", "Sales Manager", "Sales Representative"], 
   activitiesDetails: ["C-level", "Sales Manager", "Sales Representative"],
-  activitiesCreate: ["C-level", "Sales Manager"],
-  activitiesEdit: ["C-level", "Sales Manager"],
+  activitiesCreate: ["C-level", "Sales Manager", "Sales Representative"],
+  activitiesEdit: ["C-level", "Sales Manager", "Sales Representative"],
 };

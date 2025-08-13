@@ -9,6 +9,7 @@ router.patch("/:id/deactivate", contactController.deactivateContact);
 router.patch("/:id/reactivate", contactController.reactivateContact);
 router.delete("/:id/delete", contactController.deleteContact);
 router.get("/account/:accountName", contactController.getContactsByAccountId);
+router.get("/user/:userId", contactController.getContactsByUser); 
 
 module.exports = router;
 

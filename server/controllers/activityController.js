@@ -67,6 +67,12 @@ const deleteActivity = async (req, res) => {
   }
 };
 
+
+const getActivitiesByUser = async (userId) => {
+  if (!userId) throw new Error("UserID is required");
+  return await activityRepo.getActivitiesByUser(userId);
+};
+
 module.exports = {
   getAllActivities,
   getActivityByID,
@@ -75,4 +81,5 @@ module.exports = {
   deactivateActivity,
   reactivateActivity,
   deleteActivity,
+  getActivitiesByUser
 };

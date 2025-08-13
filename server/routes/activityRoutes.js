@@ -8,6 +8,7 @@ router.put("/:id", activityController.updateActivity);
 router.patch("/:id/deactivate", activityController.deactivateActivity);
 router.patch("/:id/reactivate", activityController.reactivateActivity);
 router.delete("/:id/delete", activityController.deleteActivity);
+router.get("/user/:userId", activityController.getActivitiesByUser); 
 
 module.exports = router;
 

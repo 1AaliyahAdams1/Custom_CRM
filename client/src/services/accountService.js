@@ -12,14 +12,18 @@ export const getAllAccounts = async () => {
 };
 
 export const fetchAccountById = async (id) => {
-  if (!id) throw new Error("Account ID is required");
+  if (id === undefined || id === null || id === "") {
+    throw new Error(`Invalid Account ID provided: ${id}`);
+  }
+
   try {
-    return await api.get(`${RESOURCE}/${id}`);
+    return await api.get(`${RESOURCE}/${encodeURIComponent(id)}`);
   } catch (error) {
-    console.error(`Error fetching account ${id}:`, error);
+    console.error(`Error fetching account ${id}:`, error?.response || error);
     throw error;
   }
 };
+
 
 export const createAccount = async (data) => {
   if (!data.AccountName) throw new Error("Account name is required");
@@ -72,3 +76,24 @@ export const deleteAccount = async (id) => {
     throw error;
   }
 };
+
+export async function fetchActiveAccountsByUser(userId) {
+  if (!userId) throw new Error("User ID is required");
+  try {
+    const response = await api.get(`${RESOURCE}/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching active accounts by user:", error);
+    throw error;
+  }
+}
+
+export async function fetchActiveUnassignedAccounts() {
+  try {
+    const response = await api.get(`${RESOURCE}/unassigned`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching active unassigned accounts:", error);
+    throw error;
+  }
+}
