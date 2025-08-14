@@ -30,7 +30,7 @@ import {
 } from '@mui/icons-material';
 
 import ColumnsDialog from './ColumnsDialog';
-import FiltersDialog from './FiltersDialog';
+import FilterDialog from './FiltersDialog';
 
 const TableView = ({
   data = [],
@@ -62,8 +62,7 @@ const TableView = ({
     columns.reduce((acc, col) => ({ ...acc, [col.field]: true }), {})
   );
 
-  // Dialog open states
-  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  // Dialog open states - removed filterDialogOpen since we're not using a dialog anymore
   const [columnsDialogOpen, setColumnsDialogOpen] = useState(false);
 
   // Helpers
@@ -103,6 +102,11 @@ const TableView = ({
     handleMenuClose();
   };
 
+  // Filter handler for the new FilterComponent
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+  };
+
   // Get filtered data based on search term and filters
   const filteredData = data.filter((item) => {
     // Search term filter
@@ -114,14 +118,18 @@ const TableView = ({
       });
       if (!found) return false;
     }
-    // Filters
+    
+    // Apply filters from FilterComponent
     for (const [filterField, filterValue] of Object.entries(filters)) {
       if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
         const itemVal = item[filterField];
         if (typeof filterValue === 'boolean') {
           if (itemVal !== filterValue) return false;
         } else {
-          if (itemVal?.toString() !== filterValue.toString()) return false;
+          // Use includes for partial matching (like the old implementation)
+          if (!itemVal?.toString().toLowerCase().includes(filterValue.toString().toLowerCase())) {
+            return false;
+          }
         }
       }
     }
@@ -268,7 +276,7 @@ const TableView = ({
 
   return (
     <>
-      {/* Search + Filter + Columns controls */}
+      {/* Search + Columns controls */}
       <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
         <TextField
           size="small"
@@ -282,17 +290,17 @@ const TableView = ({
           sx={{ minWidth: 250 }}
         />
 
-        <Button variant="outlined" startIcon={<FilterIcon />} onClick={() => setFilterDialogOpen(true)}>
-          Filters
-          {Object.keys(filters).length > 0 && (
-            <Chip label={Object.keys(filters).length} size="small" color="primary" sx={{ ml: 1 }} />
-          )}
-        </Button>
-
         <Button variant="outlined" startIcon={<ColumnsIcon />} onClick={() => setColumnsDialogOpen(true)}>
           Columns
         </Button>
       </Box>
+
+      {/* New FilterComponent - replaces the old filter dialog */}
+      <FilterDialog 
+        columns={columns}
+        onApplyFilters={handleApplyFilters}
+        deals={data}
+      />
 
       {/* Table */}
       <TableContainer>
@@ -369,16 +377,7 @@ const TableView = ({
           ))}
       </Menu>
 
-      {/* Dialogs */}
-      <FiltersDialog
-        open={filterDialogOpen}
-        onClose={() => setFilterDialogOpen(false)}
-        onSave={setFilters}
-        columns={columns}
-        data={data}
-        currentFilters={filters}
-      />
-
+      {/* Columns Dialog - kept as is */}
       <ColumnsDialog
         open={columnsDialogOpen}
         visibleColumns={visibleColumns}

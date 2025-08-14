@@ -232,30 +232,6 @@ const ActivitiesPage = ({
                 Add Activity
               </Button>
 
-              {/* Search */}
-              <TextField
-                size="small"
-                placeholder="Search activities..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search sx={{ color: '#666666' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  minWidth: 250,
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#ffffff',
-                    '& fieldset': { borderColor: '#e5e5e5' },
-                    '&:hover fieldset': { borderColor: '#cccccc' },
-                    '&.Mui-focused fieldset': { borderColor: '#050505' },
-                  }
-                }}
-              />
-
               {/* Status Filter */}
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <InputLabel>Status</InputLabel>

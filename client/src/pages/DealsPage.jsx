@@ -1,7 +1,8 @@
 //PAGE : Main Deals Page (presentational only, no data fetching)
 
 //IMPORTS
-import React from "react";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -26,6 +27,9 @@ import {
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../utils/formatters';
 import UniversalTable from '../components/TableView';
+
+// Add this import for your API function
+import { getAllDeals } from '../services/dealService'; // Adjust the path as needed
 
 // Monochrome theme for MUI components
 const theme = createTheme({
@@ -138,6 +142,43 @@ const DealsPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Action handlers - implement these based on your needs
+  const onCreate = () => {
+    navigate('/deals/create');
+  };
+
+  const onView = (dealId) => {
+    navigate(`/deals/${dealId}`);
+  };
+
+  const onEdit = (deal) => {
+    navigate(`/deals/${deal.DealID}/edit`);
+  };
+
+  const onDeactivate = (dealId) => {
+    // Implement delete/deactivate logic
+    console.log('Deactivate deal:', dealId);
+    // Example:
+    // if (window.confirm('Are you sure you want to delete this deal?')) {
+    //   // Call your delete API
+    // }
+  };
+
+  const onAddNote = (deal) => {
+    // Implement add note logic
+    console.log('Add note to deal:', deal.DealID);
+  };
+
+  const onAddAttachment = (deal) => {
+    // Implement add attachment logic
+    console.log('Add attachment to deal:', deal.DealID);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
   };
 
   // Fetch deals once when component mounts
@@ -271,30 +312,6 @@ const DealsPage = () => {
                 Add Deal
               </Button>
 
-              {/* Search */}
-              <TextField
-                size="small"
-                placeholder="Search deals..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search sx={{ color: '#666666' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  minWidth: 250,
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#ffffff',
-                    '& fieldset': { borderColor: '#e5e5e5' },
-                    '&:hover fieldset': { borderColor: '#cccccc' },
-                    '&.Mui-focused fieldset': { borderColor: '#050505' },
-                  }
-                }}
-              />
-
               {/* Probability Filter */}
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <InputLabel>Probability</InputLabel>
@@ -371,7 +388,7 @@ const DealsPage = () => {
             alignItems: 'center'
           }}>
             <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {deals.length} of {totalCount || deals.length} deals
+              Showing {deals.length} of {deals.length} deals
             </Typography>
             {selected.length > 0 && (
               <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
