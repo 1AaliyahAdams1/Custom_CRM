@@ -79,12 +79,12 @@ const accountsTableConfig = {
   columns: [
     { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
     { field: 'CityName', headerName: 'City Name' },
-    { field: 'StateProvinceID', headerName: 'State Province Name' },//change to name
-    { field: 'CountryID', headerName: 'Country Name' },//change to name
+    { field: 'StateProvince_Name', headerName: 'State Province Name' },
+    { field: 'CountryName', headerName: 'Country Name' },
     { field: 'street_address', headerName: 'Street Address', type: 'truncated', maxWidth: 200 },
     { field: 'postal_code', headerName: 'Postal Code' },
     { field: 'PrimaryPhone', headerName: 'Phone' },
-    { field: 'IndustryID', headerName: 'Industry Name' }, //change to name
+    { field: 'IndustryName', headerName: 'Industry Name' },
     { field: 'fax', headerName: 'Fax' },
     { field: 'email', headerName: 'Email' },
     { field: 'Website', headerName: 'Website', type: 'link' },
@@ -93,7 +93,7 @@ const accountsTableConfig = {
     { field: 'number_of_releases', headerName: '# Releases' },
     { field: 'number_of_events_anually', headerName: '# Events Anually' },
     { field: 'annual_revenue', headerName: 'Annual Revenue' },
-    { field: 'ParentAccount', headerName: 'Parent Account' },
+    { field: 'ParentAccountName', headerName: 'Parent Account' },
     { field: 'CreatedAt', headerName: 'Created' },
     { field: 'UpdatedAt', headerName: 'Updated' },
     {
