@@ -94,8 +94,8 @@ const accountsTableConfig = {
     { field: 'number_of_events_anually', headerName: '# Events Anually' },
     { field: 'annual_revenue', headerName: 'Annual Revenue' },
     { field: 'ParentAccount', headerName: 'Parent Account' },
-    { field: 'CreatedAt', headerName: 'Created'},
-    { field: 'UpdatedAt', headerName: 'Updated'},
+    { field: 'CreatedAt', headerName: 'Created' },
+    { field: 'UpdatedAt', headerName: 'Updated' },
     {
       field: 'ownerStatus',
       headerName: 'Ownership',

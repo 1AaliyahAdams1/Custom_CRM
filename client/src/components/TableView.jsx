@@ -64,6 +64,7 @@ const TableView = ({
 
   // Dialog open states - removed filterDialogOpen since we're not using a dialog anymore
   const [columnsDialogOpen, setColumnsDialogOpen] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Helpers
   const isSelected = (id) => selected.includes(id);
@@ -118,7 +119,7 @@ const TableView = ({
       });
       if (!found) return false;
     }
-    
+
     // Apply filters from FilterComponent
     for (const [filterField, filterValue] of Object.entries(filters)) {
       if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
@@ -278,6 +279,30 @@ const TableView = ({
     <>
       {/* Search + Columns controls */}
       <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
+        <Button
+          variant="outlined"
+          startIcon={<FilterIcon />}
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
+          sx={{
+            backgroundColor: filtersExpanded ? 'primary.main' : 'transparent',
+            color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
+            '&:hover': {
+              backgroundColor: filtersExpanded ? 'primary.dark' : 'primary.light',
+              color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
+            }
+          }}
+        >
+          {filtersExpanded ? 'Hide Filters' : 'Show Filters'}
+          {Object.keys(filters).length > 0 && (
+            <Chip
+              label={Object.keys(filters).length}
+              size="small"
+              color={filtersExpanded ? "secondary" : "primary"}
+              sx={{ ml: 1 }}
+            />
+          )}
+        </Button>
+
         <TextField
           size="small"
           variant="outlined"
@@ -295,12 +320,14 @@ const TableView = ({
         </Button>
       </Box>
 
-      {/* New FilterComponent - replaces the old filter dialog */}
-      <FilterDialog 
-        columns={columns}
-        onApplyFilters={handleApplyFilters}
-        deals={data}
-      />
+      {/* Collapsible FilterComponent */}
+      {filtersExpanded && (
+        <FilterDialog
+          columns={columns}
+          onApplyFilters={handleApplyFilters}
+          deals={data}
+        />
+      )}
 
       {/* Table */}
       <TableContainer>
@@ -376,15 +403,6 @@ const TableView = ({
             </MenuItem>
           ))}
       </Menu>
-
-      {/* Columns Dialog - kept as is */}
-      <ColumnsDialog
-        open={columnsDialogOpen}
-        visibleColumns={visibleColumns}
-        onClose={() => setColumnsDialogOpen(false)}
-        onSave={handleColumnsSave}
-        columns={columns}
-      />
     </>
   );
 };
