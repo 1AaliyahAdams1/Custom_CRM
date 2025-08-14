@@ -74,3 +74,8 @@ export async function deleteDeal(dealId) {
     throw error;
   }
 }
+
+export async function fetchDealsByUser(userId) {
+  const response = await axios.get(`${API_BASE}/deals/user/${userId}`);
+  return response.data;
+}

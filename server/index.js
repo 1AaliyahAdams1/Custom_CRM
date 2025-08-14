@@ -10,7 +10,7 @@ const cors = require("cors");
 const app = express();
 
 // Middleware
-//app.use(cors());
+app.use(cors());
 app.use(cors({
 
   origin: [
@@ -33,7 +33,7 @@ const contactRoutes = require("./routes/contactRoutes");
 const dealRoutes = require("./routes/dealRoutes");
 const dealStageRoutes = require("./routes/dealStageRoutes");
 const industryRoutes = require("./routes/industryRoutes");
-const jobTitleRoutes = require("./routes/jobtitleRoutes");
+const jobTitleRoutes = require("./routes/jobTitleRoutes");
 const priorityLevelRoutes = require("./routes/priorityLevelRoutes");
 const stateProvinceRoutes = require("./routes/stateProvinceRoutes");
 const productRoutes = require("./routes/productRoutes");
@@ -59,7 +59,7 @@ app.use("/contacts", contactRoutes);
 app.use("/deals", dealRoutes);
 app.use("/dealstages", dealStageRoutes);
 app.use("/industries", industryRoutes);
-app.use("/jobtitles", jobTitleRoutes);
+app.use("/jobTitles", jobTitleRoutes);
 app.use("/prioritylevels", priorityLevelRoutes);
 app.use("/states", stateProvinceRoutes);
 app.use("/products", productRoutes);

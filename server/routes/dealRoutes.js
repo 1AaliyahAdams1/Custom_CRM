@@ -8,6 +8,7 @@ router.put("/:id", dealController.updateDeal);
 router.patch("/:id/deactivate", dealController.deactivateDeal);
 router.patch("/:id/reactivate", dealController.reactivateDeal);
 router.delete("/:id/delete", dealController.deleteDeal);
+router.get("/user/:userId", dealController.getDealsByUser); 
 
 module.exports = router;
 

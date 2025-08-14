@@ -45,16 +45,16 @@ const navigation = [
     accessKey: "accounts",
   },
   {
-    name: "Deals",
-    href: "/deals",
-    icon: HandshakeIcon,
-    accessKey: "deals",
-  },
-  {
     name: "Contacts",
     href: "/contacts",
     icon: PeopleIcon,
     accessKey: "contacts",
+  },
+  {
+    name: "Deals",
+    href: "/deals",
+    icon: HandshakeIcon,
+    accessKey: "deals",
   },
   {
     name: "Activities",
@@ -101,12 +101,12 @@ export function AppSidebar() {
       const allowedRoles = ROUTE_ACCESS[item.accessKey];
       return allowedRoles.length === 0 || allowedRoles.some((role) => roles.includes(role));
     }
-    
+
     // Fallback to direct allowedRoles (for items like Settings)
     if (item.allowedRoles) {
       return item.allowedRoles.length === 0 || item.allowedRoles.some((role) => roles.includes(role));
     }
-    
+
     // If no access control defined, allow access
     return true;
   };

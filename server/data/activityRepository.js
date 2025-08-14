@@ -134,6 +134,40 @@ const deleteActivity = async (ActivityID) => {
   }
 };
 
+
+async function getActivitiesByUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT
+          act.[ActivityID],
+          act.[AccountID],
+          act.[TypeID],
+          act.[PriorityLevelID],
+          act.[DueToStart],
+          act.[DueToEnd],
+          act.[Completed],
+          act.[CreatedAt],
+          act.[UpdatedAt],
+          act.[Active],
+          act.[SequenceItemID]
+        FROM [CRM].[dbo].[Activity] act
+        JOIN [CRM].[dbo].[AssignedUser] au ON act.AccountID = au.AccountID AND au.Active = 1
+        JOIN [CRM].[dbo].[Account] a ON act.AccountID = a.AccountID AND a.Active = 1
+        WHERE au.UserID = @UserID
+          AND act.Active = 1;
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Error fetching activities for user accounts:", error);
+    throw error;
+  }
+}
+
+
 //======================================
 // Exports
 //======================================
@@ -145,4 +179,5 @@ module.exports = {
   deactivateActivity,
   reactivateActivity,
   deleteActivity,
+  getActivitiesByUser,
 };

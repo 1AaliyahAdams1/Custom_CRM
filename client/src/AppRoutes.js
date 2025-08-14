@@ -10,8 +10,8 @@ import Unauthorized from "./pages/Unauthorized";
 
 // Lazy load pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Accounts = lazy(() => import("./pages/AccountsPage"));
-const Contacts = lazy(() => import("./pages/ContactsPage"));
+const Accounts = lazy(() => import("./components/containers/AccountsContainer"));
+const Contacts = lazy(() => import("./components/containers/ContactsContainer"));
 const Deals = lazy(() => import("./pages/DealsPage"));
 const Activities = lazy(() => import("./pages/ActivitiesPage"));
 
@@ -53,6 +53,7 @@ const AppRoutes = () => {
         }
       />
 
+      {/* --- Accounts Routes --- */}
       <Route
         path="/accounts"
         element={
@@ -60,7 +61,17 @@ const AppRoutes = () => {
             <Accounts />
           </PrivateRoute>
         }
+
       />
+      <Route
+        path="/accounts/unassigned"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.accounts}>
+            <Accounts />
+          </PrivateRoute>
+        }
+      />
+
       <Route
         path="/accounts/:id"
         element={
@@ -69,6 +80,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+
       <Route
         path="/accounts/create"
         element={
@@ -84,8 +96,9 @@ const AppRoutes = () => {
             <EditAccountPage />
           </PrivateRoute>
         }
+        
       />
-
+      {/* --- Contacts Routes --- */}
       <Route
         path="/contacts"
         element={
@@ -118,7 +131,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-
+        {/* --- Deal Routes --- */}
       <Route
         path="/deals"
         element={
@@ -151,7 +164,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-
+        {/* --- Activity Routes --- */}
       <Route
         path="/activities"
         element={
