@@ -10,19 +10,11 @@ import {
   CircularProgress,
   Alert,
   Paper,
-  TextField,
-  InputAdornment,
   Chip,
-  FormControl,
-  InputLabel,
-  Select,
   Toolbar,
-  MenuItem,
 } from "@mui/material";
 import {
-  Search,
   Add,
-  Clear,
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../utils/formatters';
@@ -269,7 +261,7 @@ const DealsPage = () => {
             overflow: 'hidden'
           }}
         >
-          {/* Toolbar with search and filters */}
+          {/* Toolbar*/}
           <Toolbar
             sx={{
               backgroundColor: '#ffffff',
@@ -311,47 +303,6 @@ const DealsPage = () => {
               >
                 Add Deal
               </Button>
-
-              {/* Probability Filter */}
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Probability</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Probability"
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  sx={{
-                    backgroundColor: '#ffffff',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e5e5e5' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#cccccc' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#050505' },
-                  }}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="high">High (75%+)</MenuItem>
-                  <MenuItem value="medium">Medium (50-74%)</MenuItem>
-                  <MenuItem value="low">Low (&lt;50%)</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* Clear Filters */}
-              {(searchTerm || statusFilter) && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={clearFilters}
-                  startIcon={<Clear />}
-                  sx={{
-                    borderColor: '#e5e5e5',
-                    color: '#666666',
-                    '&:hover': {
-                      borderColor: '#cccccc',
-                      backgroundColor: '#f5f5f5',
-                    },
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
             </Box>
           </Toolbar>
 
