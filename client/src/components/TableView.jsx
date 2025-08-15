@@ -395,6 +395,15 @@ const TableView = ({
             </MenuItem>
           ))}
       </Menu>
+
+      {/* Columns Dialog - kept as is */}
+      <ColumnsDialog
+        open={columnsDialogOpen}
+        visibleColumns={visibleColumns}
+        onClose={() => setColumnsDialogOpen(false)}
+        onSave={handleColumnsSave}
+        columns={columns}
+      />
     </>
   );
 };
