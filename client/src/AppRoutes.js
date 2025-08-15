@@ -12,8 +12,8 @@ import Unauthorized from "./pages/Unauthorized";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Accounts = lazy(() => import("./components/containers/AccountsContainer"));
 const Contacts = lazy(() => import("./components/containers/ContactsContainer"));
-const Deals = lazy(() => import("./pages/DealsPage"));
-const Activities = lazy(() => import("./pages/ActivitiesPage"));
+const Deals = lazy(() => import("./components/containers/DealsContainer"));
+const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
 // const Roles= lazy(() =>import("./pages/RoleManagementPage"));
 
 
@@ -199,7 +199,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      {/* --- Role Management Routes --- */}
+      {/* --- Role Management Routes ---
       
       <Route
         path="/roleManagement"
@@ -208,7 +208,7 @@ const AppRoutes = () => {
             <Roles />
           </PrivateRoute>
         }
-      />
+      /> */}
 
 
       {/* Catch all */}

@@ -125,8 +125,7 @@ const EditContactPage = () => {
               countryService.getAll(),
               stateProvinceService.getAll()
             ]);
-            
-            
+
             setCities(citiesData);
             setIndustries(industriesData);
             setCountries(countriesData);
@@ -427,10 +426,6 @@ const EditContactPage = () => {
                   />
                 </Box>
 
-                
-
-               
-
                 {/* Job Title ID */}
                 <Box>
                   <TextField
@@ -501,8 +496,6 @@ const EditContactPage = () => {
                   />
                 </Box>
 
-                
-
                 {/* Primary Phone */}
                 <Box>
                   <TextField
@@ -540,12 +533,6 @@ const EditContactPage = () => {
                     disabled={saving}
                   />
                 </Box>
-
-                
-
-                
-
-                
 
                 {/* Still Employed Checkbox - Full Width */}
                 <Box sx={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', mt: 1 }}>
