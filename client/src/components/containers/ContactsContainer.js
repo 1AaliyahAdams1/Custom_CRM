@@ -16,12 +16,13 @@ const ContactsContainer = () => {
   const [selected, setSelected] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [employmentStatusFilter, setEmploymentStatusFilter] = useState('');
+  const [refreshFlag, setRefreshFlag] = useState(false);
 
   // Get user and roles from localStorage
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
   const userId = storedUser.UserID || storedUser.id || null;
-
+  
   const isCLevel = roles.includes("C-level");
   const isSalesRep = roles.includes("Sales Representative");
 
@@ -121,8 +122,26 @@ const ContactsContainer = () => {
     setEmploymentStatusFilter('');
   };
 
+  useEffect(() => {
+    fetchContacts();
+  }, [refreshFlag]);
+
+
   const handleDeactivate = async (id) => {
-    // ... your existing logic
+    const confirm = window.confirm(
+      "Are you sure you want to delete this contact? This will deactivate it."
+    );
+    if (!confirm) return;
+
+    setError(null);
+    try {
+      await deactivateContact(id);
+      setSuccessMessage("Contact deleted successfully.");
+      setRefreshFlag((flag) => !flag);
+    } catch (error) {
+      console.error("Failed to delete account:", error);
+      setError("Failed to delete account. Please try again.");
+    }
   };
 
   const handleAddNote = (contact) => {
@@ -163,8 +182,8 @@ const ContactsContainer = () => {
       setSearchTerm={setSearchTerm}
       setEmploymentStatusFilter={setEmploymentStatusFilter}
       formatters={formatters}
-      onAddNote={handleAddNote}             
-      onAddAttachment={handleAddAttachment} 
+      onAddNote={handleAddNote}
+      onAddAttachment={handleAddAttachment}
     />
 
   );

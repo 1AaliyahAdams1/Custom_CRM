@@ -4,7 +4,7 @@ import api from '../utils/api';
 export const stateProvinceService = {
   getAll: async () => {
     try {
-      const response = await api.get('/stateprovinces');
+      const response = await api.get('/states');
       return response.data || [];
     } catch (error) {
       console.error('Error loading state/provinces:', error);
@@ -13,7 +13,7 @@ export const stateProvinceService = {
   },
   getByCountry: async (countryId) => {
     try {
-      const response = await api.get('/stateprovinces', {
+      const response = await api.get('/states', {
         params: { countryId },
       });
       return response.data || [];

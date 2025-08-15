@@ -442,7 +442,7 @@ const CreateAccount = () => {
                       }
                     }}
                     displayField="AccountName"
-                    valueField="id"
+                    valueField="AccountID"
                     disabled={isSubmitting}
                     error={isFieldInvalid('ParentAccount')}
                     helperText={getFieldError('ParentAccount')}
