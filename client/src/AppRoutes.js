@@ -14,6 +14,8 @@ const Accounts = lazy(() => import("./components/containers/AccountsContainer"))
 const Contacts = lazy(() => import("./components/containers/ContactsContainer"));
 const Deals = lazy(() => import("./pages/DealsPage"));
 const Activities = lazy(() => import("./pages/ActivitiesPage"));
+// const Roles= lazy(() =>import("./pages/RoleManagementPage"));
+
 
 const AccountsDetailsPage = lazy(() => import("./pages/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
@@ -197,6 +199,17 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      {/* --- Role Management Routes --- */}
+      
+      <Route
+        path="/roleManagement"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.roleManagement}>
+            <Roles />
+          </PrivateRoute>
+        }
+      />
+
 
       {/* Catch all */}
       <Route path="*" element={<NotFoundPage />} />

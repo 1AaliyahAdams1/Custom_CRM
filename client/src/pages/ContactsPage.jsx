@@ -87,6 +87,11 @@ const ContactsPage = ({
   onAddNote,
   onAddAttachment,
 }) => {
+  const handleAssignUser = (account) => {
+  console.log("Assigning user to account:", account);
+  // Add  assign user logic here
+  
+};
 
   const columns = [
     {
@@ -227,6 +232,7 @@ const ContactsPage = ({
               onDelete={handleDeactivate}
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
+              onAssignUser={handleAssignUser}
               formatters={formatters}
             />
           )}

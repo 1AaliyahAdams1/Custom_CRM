@@ -111,6 +111,17 @@ const AccountsPage = ({
 }) => {
   const [selected, setSelected] = React.useState([]);
 
+  const handleClaimAccount = (account) => {
+  console.log("Claiming account:", account);
+  // Add claim logic here
+  
+};
+const handleAssignUser = (account) => {
+  console.log("Assigning user to account:", account);
+  // Add  assign user logic here
+  
+};
+
   // Selection handlers
   const handleSelectClick = (id) => {
     const selectedIndex = selected.indexOf(id);
@@ -245,6 +256,9 @@ const AccountsPage = ({
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
               formatters={formatters}
+              entityType="account"  
+              onClaimAccount={handleClaimAccount} 
+              onAssignUser={handleAssignUser}
             />
           )}
 
