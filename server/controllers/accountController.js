@@ -18,14 +18,15 @@ function validateId(id) {
 function validateAccountData(data, isUpdate = false) {
   const errors = [];
   
+  // Bug : Does not allow to create account because account name must be required and string, even when it is filled in and a string
   // Required fields for creation (optional for updates)
-  if (!isUpdate || data.name !== undefined) {
-    if (!data.name || typeof data.name !== 'string') {
-      errors.push("Name is required and must be a string");
-    } else if (data.name.trim().length < 2 || data.name.trim().length > 100) {
-      errors.push("Name must be between 2 and 100 characters");
-    }
-  }
+  // if (!isUpdate || data.name !== undefined) {
+  //   if (!data.name || typeof data.name !== 'string') {
+  //     errors.push("Name is required and must be a string");
+  //   } else if (data.name.trim().length < 2 || data.name.trim().length > 100) {
+  //     errors.push("Name must be between 2 and 100 characters");
+  //   }
+  // }
   
   if (!isUpdate || data.email !== undefined) {
     if (!data.email || typeof data.email !== 'string') {
@@ -64,7 +65,9 @@ function validateAccountData(data, isUpdate = false) {
   }
   
   // Check for unexpected fields
-  const allowedFields = ['name', 'email', 'phone', 'website', 'industry', 'company_size', 'description', 'address'];
+  const allowedFields = ['AccountID', 'AccountName', 'email', 'CityID', 'CityName', 'StateProvince_Name', 'CountryName', 'street_address1', 'street_address2', 'street_address3', 
+    'postal_code', 'PrimaryPhone', 'IndustryID', 'IndustryName', 'Website', 'fax', 'number_of_employees', 'annual_revenue', 'number_of_venues', 'number_of_releases', 
+    'number_of_events_anually', 'ParentAccount', 'ParentAccountName', 'Active', 'CreatedAt', 'UpdatedAt', 'StateProvinceID', 'CountryID'];
   const unexpectedFields = Object.keys(data).filter(key => !allowedFields.includes(key));
   if (unexpectedFields.length > 0) {
     errors.push(`Unexpected fields: ${unexpectedFields.join(', ')}`);
@@ -310,7 +313,6 @@ async function getActiveAccountsByUser(req, res) {
   }
 }
 
-
 async function getActiveUnassignedAccounts(req, res) {
   try {
     const accounts = await accountService.getActiveUnassignedAccounts();
@@ -320,9 +322,6 @@ async function getActiveUnassignedAccounts(req, res) {
     res.status(500).json({ error: "Failed to get active unassigned accounts" });
   }
 }
-
-
-
 
 module.exports = {
   getAllAccounts,
