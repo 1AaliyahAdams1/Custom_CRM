@@ -443,7 +443,7 @@ const CreateAccount = () => {
                       }
                     }}
                     displayField="AccountName"
-                    valueField="id"
+                    valueField="AccountID"
                     disabled={isSubmitting}
                     error={isFieldInvalid('ParentAccount')}
                     helperText={getFieldError('ParentAccount')}
@@ -521,7 +521,6 @@ const CreateAccount = () => {
                   <TextField
                     fullWidth
                     label="Street Address 1"
-                    label="Street Address 1"
                     name="street_address1"
                     value={formData.street_address1}
                     onChange={handleInputChange}
@@ -573,7 +572,6 @@ const CreateAccount = () => {
                   <TextField
                     fullWidth
                     label="Postal Code"
-                    name="postal_code"
                     name="postal_code"
                     value={formData.postal_code}
                     onChange={handleInputChange}
@@ -665,7 +663,6 @@ const CreateAccount = () => {
                     label="Annual Revenue"
                     name="annual_revenue"
                     type="number"
-                    type="number"
                     value={formData.annual_revenue}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
@@ -683,7 +680,6 @@ const CreateAccount = () => {
                     fullWidth
                     label="Number of Employees"
                     name="number_of_employees"
-                    type="number"
                     type="number"
                     value={formData.number_of_employees}
                     onChange={handleInputChange}
@@ -703,7 +699,6 @@ const CreateAccount = () => {
                     label="Number of Releases"
                     name="number_of_releases"
                     type="number"
-                    type="number"
                     value={formData.number_of_releases}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
@@ -721,7 +716,6 @@ const CreateAccount = () => {
                     fullWidth
                     label="Number of Events Annually"
                     name="number_of_events_anually"
-                    type="number"
                     type="number"
                     value={formData.number_of_events_anually}
                     onChange={handleInputChange}
