@@ -199,7 +199,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      {/* --- Role Management Routes --- */}
+      {/* --- Role Management Routes ---
       
       <Route
         path="/roleManagement"
@@ -208,7 +208,7 @@ const AppRoutes = () => {
             <Roles />
           </PrivateRoute>
         }
-      />
+      /> */}
 
 
       {/* Catch all */}
