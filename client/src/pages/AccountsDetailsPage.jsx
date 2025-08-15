@@ -61,6 +61,7 @@ export default function AccountDetailView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -127,6 +128,7 @@ export default function AccountDetailView() {
     navigate(`/accounts/${account.AccountID}/attachments/upload`);
     
   };
+  
 
   // Navigation handlers 
   const handleContactClick = (contactId) => {

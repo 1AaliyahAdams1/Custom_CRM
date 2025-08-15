@@ -28,6 +28,7 @@ import {
   Delete,
   Note,
   AttachFile,
+   PersonAdd,
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import theme from "../components/Theme";
@@ -52,6 +53,7 @@ import theme from "../components/Theme";
  * @param {Object} props.customTheme - Optional custom theme override
  * @param {boolean} props.readOnly - If true, hides edit/delete buttons
  * @param {string} props.entityType - Type of entity for logging/analytics
+ *  
  */
 export function UniversalDetailView({
   title,
@@ -121,6 +123,11 @@ export function UniversalDetailView({
     }
     console.log(`Adding attachment to ${entityType}:`, item);
   };
+  const handleAssignUser = () => {
+  console.log(`Assigning user to ${entityType}:`, item);
+  // Add  assign user logic here
+  
+};
 
   const updateField = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -128,6 +135,8 @@ export function UniversalDetailView({
 
   const renderField = (field) => {
     const value = formData[field.key] || "";
+  
+
 
     if (!isEditing) {
       // Read-only display
@@ -390,6 +399,7 @@ export function UniversalDetailView({
             
             {!readOnly && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+               
                 {/* Add Notes and Attachments buttons - always visible */}
                 
                 {isEditing ? (
@@ -405,6 +415,7 @@ export function UniversalDetailView({
                       '&:hover': {
                         borderColor: '#1d4ed8',
                         backgroundColor: '#dbeafe',
+                      
                       },
                     }}
                   >
@@ -463,6 +474,38 @@ export function UniversalDetailView({
               >
                 Back
               </Button>
+            
+              <Button
+                variant="outlined"
+                onClick={handleAssignUser}
+                startIcon={<PersonAdd />}
+                sx={{
+                 borderColor: '#7c3aed',
+                 color: '#7c3aed',
+                  '&:hover': {
+                     borderColor: '#6d28d9',
+                      backgroundColor: '#f3e8ff',
+                    },
+                }}
+              >
+              Assign User
+            </Button>
+              {entityType === "account" && (
+              <Button
+                variant="outlined"
+                // onClick={handleClaimAccount} need to have claim account logic
+                sx={{
+                  borderColor: '#f59e0b',
+                  color: '#f59e0b',
+                  '&:hover': {
+                  borderColor: '#d97706',
+                  backgroundColor: '#fef3c7',
+                  },
+               }}
+              >
+              Claim Account
+            </Button>
+          )}
                     {onSave && (
                       <Button
                         variant="contained"
