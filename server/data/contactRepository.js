@@ -18,9 +18,9 @@ async function getAllContacts(onlyActive = true) {
 // =======================
 // Get all contacts
 // =======================
-async function getAllContactDetails() {
+async function getAllContactDetails(onlyActive = true) {
   const pool = await sql.connect(dbConfig);
-  const result = await pool.request().execute("GetContactDetails");
+  const result = await pool.request().input("OnlyActive", sql.Bit, onlyActive ? 1 : 0).execute("GetContactDetails");
   return result.recordset;
 }
 

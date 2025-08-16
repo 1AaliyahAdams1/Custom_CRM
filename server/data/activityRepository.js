@@ -17,7 +17,6 @@ const getAllActivities = async (onlyActive = true) => {
   }
 };
 
-
 //======================================
 // Get activity by ID
 //======================================

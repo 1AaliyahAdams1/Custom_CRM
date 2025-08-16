@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   Link as MuiLink,
   Tabs,
   Tab,
@@ -13,12 +12,10 @@ import {
   Button,
   Paper,
   Chip,
-  Divider,
   TextField,
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
   Checkbox,
   FormControlLabel,
   Switch,
@@ -29,57 +26,12 @@ import {
   Save,
   Close,
   Delete,
-  Business,
-  Phone,
-  Language,
-  LocationOn,
   Note,
   AttachFile,
    PersonAdd,
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-  },
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          border: '1px solid #e5e5e5',
-          boxShadow: 'none',
-          borderRadius: '8px',
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: '4px',
-          fontWeight: 500,
-        },
-      },
-    },
-  },
-});
+import theme from "../components/Theme";
 
 /**
  * Universal DetailView Component

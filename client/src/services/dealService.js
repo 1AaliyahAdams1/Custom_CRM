@@ -76,6 +76,12 @@ export async function deleteDeal(dealId) {
 }
 
 export async function fetchDealsByUser(userId) {
-  const response = await axios.get(`${API_BASE}/deals/user/${userId}`);
-  return response.data;
+  if (!userId) throw new Error('User ID is required');
+  try {
+    const response = await api.get(`${RESOURCE}/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching deals for user ${userId}:`, error);
+    throw error;
+  }
 }

@@ -69,7 +69,13 @@ export const deleteActivity = async (activityId) => {
   }
 };
 
-export async function fetchActivitiesByUser(userId) {
-  const response = await axios.get(`${API_BASE}/activities/user/${userId}`);
-  return response.data;
-}
+export const fetchActivitiesByUser = async (userId) => {
+  if (!userId) throw new Error("User ID is required");
+  try {
+    const response = await api.get(`${RESOURCE}/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching activities for user ${userId}:`, error);
+    throw error;
+  }
+};
