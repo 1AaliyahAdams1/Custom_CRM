@@ -1,13 +1,10 @@
-// services/dropdownServices.js
-import axios from "axios";
-
-const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
+import api from '../utils/api';
 
 // State/Province Service
 export const stateProvinceService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/states`);
+      const response = await api.get('/states');
       return response.data || [];
     } catch (error) {
       console.error('Error loading state/provinces:', error);
@@ -16,7 +13,9 @@ export const stateProvinceService = {
   },
   getByCountry: async (countryId) => {
     try {
-      const response = await axios.get(`${BASE_URL}/states?countryId=${countryId}`);
+      const response = await api.get('/states', {
+        params: { countryId },
+      });
       return response.data || [];
     } catch (error) {
       console.error('Error loading state/provinces by country:', error);
@@ -29,7 +28,7 @@ export const stateProvinceService = {
 export const countryService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/countries`);
+      const response = await api.get('/countries');
       return response.data || [];
     } catch (error) {
       console.error('Error loading countries:', error);
@@ -42,7 +41,7 @@ export const countryService = {
 export const cityService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/cities`);
+      const response = await api.get('/cities');
       return response.data || [];
     } catch (error) {
       console.error('Error loading cities:', error);
@@ -55,7 +54,7 @@ export const cityService = {
 export const industryService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/industries`);
+      const response = await api.get('/industries');
       return response.data || [];
     } catch (error) {
       console.error('Error loading industries:', error);
@@ -68,7 +67,7 @@ export const industryService = {
 export const jobTitleService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/jobtitles`);
+      const response = await api.get('/jobtitles');
       return response.data || [];
     } catch (error) {
       console.error('Error loading job titles:', error);
@@ -81,7 +80,7 @@ export const jobTitleService = {
 export const activityTypeService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/activitytypes`);
+      const response = await api.get('/activitytypes');
       return response.data || [];
     } catch (error) {
       console.error('Error loading activity types:', error);
@@ -94,7 +93,7 @@ export const activityTypeService = {
 export const dealStageService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/dealstages`);
+      const response = await api.get('/dealstages');
       return response.data || [];
     } catch (error) {
       console.error('Error loading deal stages:', error);
@@ -107,8 +106,8 @@ export const dealStageService = {
 export const priorityLevelService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/prioritylevels`);
-      console.log('Priority levels response:', response.data); 
+      const response = await api.get('/prioritylevels');
+      console.log('Priority levels response:', response.data);
       return response.data || [];
     } catch (error) {
       console.error('Error loading priority levels:', error);
@@ -121,7 +120,7 @@ export const priorityLevelService = {
 export const productService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/products`);
+      const response = await api.get('/products');
       return response.data || [];
     } catch (error) {
       console.error('Error loading products:', error);

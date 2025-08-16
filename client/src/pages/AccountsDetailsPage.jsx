@@ -2,16 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Grid, Typography, Link as MuiLink, Alert, Button } from "@mui/material";
 import { UniversalDetailView } from "../components/DetailsView";
-import { fetchAccountById, updateAccount, getAllAccounts, deactivateAccount } from "../services/accountService";
+import { fetchAccountById, updateAccount, deactivateAccount } from "../services/accountService";
 
 // Main fields configuration for accounts
 const accountMainFields = [
-  // { 
-  //   key: "AccountID",
-  //    label: "Account ID", 
-  //    readOnly: true ,
-  //   width: { xs: 12, md: 4, lg: 6 }
-  // },
   {
     key: "AccountName",
     label: "Account Name",
@@ -61,11 +55,13 @@ const accountMainFields = [
 
 export default function AccountDetailView() {
   const { id } = useParams();
+  console.log("Account ID param:", id);
   const navigate = useNavigate();
   const [account, setAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -117,6 +113,23 @@ export default function AccountDetailView() {
     }
   };
 
+  //  Handle adding notes
+  const handleAddNote = (account) => {
+    console.log("Adding note for account:", account);
+    // Navigate to notes page 
+    navigate(`/accounts/${account.AccountID}/notes/create`);
+    
+  };
+
+  //  Handle adding attachments
+  const handleAddAttachment = (account) => {
+    console.log("Adding attachment for account:", account);
+    // Navigate to attachments page 
+    navigate(`/accounts/${account.AccountID}/attachments/upload`);
+    
+  };
+  
+
   // Navigation handlers 
   const handleContactClick = (contactId) => {
     navigate(`/contacts/${contactId}`);
@@ -144,17 +157,6 @@ export default function AccountDetailView() {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "-";
     return date.toLocaleDateString();
-  };
-
-  const formatAddress = (account) => {
-    if (!account) return "-";
-    const addressParts = [
-      account.street_address1,
-      account.street_address2,
-      account.street_address3,
-      account.postal_code
-    ].filter(Boolean);
-    return addressParts.length > 0 ? addressParts.join(", ") : "-";
   };
 
   // Create related tabs 
@@ -620,6 +622,8 @@ export default function AccountDetailView() {
       onBack={handleBack}
       onSave={handleSave}
       onDelete={handleDelete}
+      onAddAttachment={handleAddAttachment}
+      onAddNote={handleAddNote}
       loading={loading}
       error={error}
       entityType="account"

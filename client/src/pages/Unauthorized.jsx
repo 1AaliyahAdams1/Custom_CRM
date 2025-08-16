@@ -1,11 +1,10 @@
 // pages/Unauthorized.jsx
 import React from "react";
-import { Button, Typography, Box } from "@mui/material";
+import {Typography, Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 const Unauthorized = () => {
-  const navigate = useNavigate();
-
+  
   console.log("Unauthorized component is rendering");
 
   return (

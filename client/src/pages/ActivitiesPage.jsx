@@ -1,130 +1,215 @@
-//PAGE : Main Activity Page
-//Combines the UI components onto one page
+//PAGE : Main Activities Page (presentational only, no data fetching)
 
 //IMPORTS
-import React, { useEffect, useState } from "react";
-import { Box, Typography, Button, CircularProgress, Alert } from "@mui/material";
-
-
-import { useNavigate } from "react-router-dom";
-import ActivitiesTable from "../components/ActivitiesTable";
-
+import React from "react";
 import {
-  getAllActivities,
-  deactivateActivity,
-} from "../services/activityService";
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Alert,
+  Paper,
+  Chip,
+  Toolbar,
+} from "@mui/material";
+import {
+  Add,
+} from "@mui/icons-material";
+import { ThemeProvider } from "@mui/material/styles";
+import { formatters } from '../utils/formatters';
+import UniversalTable from '../components/TableView';
+import theme from "../components/Theme";
 
-const ActivitiesPage = () => {
-  const navigate = useNavigate();
-  const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
+// Table configuration for activities
+const activitiesTableConfig = {
+  idField: 'ActivityID',
+  columns: [
+    { field: 'ActivityType', headerName: 'Activity Type', type: 'tooltip' },
+    { field: 'AccountName', headerName: 'Account Name', type: 'tooltip' },
+    { field: 'PriorityLevelName', headerName: 'Priority' },
+    { field: 'note', headerName: 'Notes', type: 'truncated', maxWidth: 150 },
+    { field: 'attachment', headerName: 'Attachments' },
+    { field: 'DueToStart', headerName: 'Due To Start', type: 'date' },
+    { field: 'DueToEnd', headerName: 'Due To End', type: 'date' },
+    {
+      field: 'CreatedAt',
+      headerName: 'Created',
+      type: 'dateTime',
+    },
+    {
+      field: 'UpdatedAt',
+      headerName: 'Updated',
+      type: 'date',
+    },
+    {
+      field: 'Completed',
+      headerName: 'Status',
+      type: 'boolean',
+    },
+  ]
+};
 
-  // Fetch activities from backend API
-  const fetchActivities = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getAllActivities(true);
-      setActivities(data);
-    } catch (err) {
-      setError("Failed to load activities. Please try again.");
-    } finally {
-      setLoading(false);
+const ActivitiesPage = ({
+  activities,
+  loading,
+  error,
+  successMessage,
+  setSuccessMessage,
+  onDeactivate,
+  onEdit,
+  onView,
+  onCreate,
+  onAddNote,
+  onAddAttachment,
+  totalCount,
+}) => {
+  const [selected, setSelected] = React.useState([]);
+
+  // Selection handlers
+  const handleSelectClick = (id) => {
+    const selectedIndex = selected.indexOf(id);
+    let newSelected = [];
+
+    if (selectedIndex === -1) {
+      newSelected = newSelected.concat(selected, id);
+    } else if (selectedIndex === 0) {
+      newSelected = newSelected.concat(selected.slice(1));
+    } else if (selectedIndex === selected.length - 1) {
+      newSelected = newSelected.concat(selected.slice(0, -1));
+    } else if (selectedIndex > 0) {
+      newSelected = newSelected.concat(
+        selected.slice(0, selectedIndex),
+        selected.slice(selectedIndex + 1),
+      );
     }
+
+    setSelected(newSelected);
   };
 
-  // Load activities once when component mounts
-  useEffect(() => {
-    fetchActivities();
-  }, []);
-
-  // Auto-clear success message after 3 seconds
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
-
-  // Navigate to create acctivity page
-  const handleOpenCreate = () => {
-    navigate("/activities/create");
-  };
-  // Handle edit action
-  const handleEdit = (activity) => {
-  navigate(`/activities/edit/${activity.ActivityID}`);
-  };
-
-  // Handle deleting an activity
-  const handleDeactivate = async (id) => {
-    // Confirm before deleting
-    const confirmDelete = window.confirm("Are you sure you want to delete this activity?");
-    if (!confirmDelete) return;
-
-    setError(null);
-    try {
-      await deactivateActivity(id);
-      setSuccessMessage("Activity deleted successfully.");
-      await fetchActivities(); 
-    } catch (err) {
-      setError("Failed to delete activity. Please try again.");
+  const handleSelectAllClick = (event) => {
+    if (event.target.checked) {
+      setSelected(activities.map(activity => activity.ActivityID));
+    } else {
+      setSelected([]);
     }
   };
 
   return (
-    <Box p={4}>
-      {/* Page Title */}
-      <Typography variant="h4" gutterBottom>
-        Activities
-      </Typography>
+    <ThemeProvider theme={theme}>
+      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-      {/* Show error alert if any */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
+            {successMessage}
+          </Alert>
+        )}
 
-      {/* Show success alert if any */}
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
-          {successMessage}
-        </Alert>
-      )}
+        <Paper
+          elevation={0}
+          sx={{
+            width: '100%',
+            mb: 2,
+            border: '0px solid #e5e5e5',
+            borderRadius: '8px',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Toolbar*/}
+          <Toolbar
+            sx={{
+              backgroundColor: '#ffffff',
+              borderBottom: '1px solid #e5e5e5',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 2,
+              py: 2
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+              <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
+                Activities
+              </Typography>
+              {selected.length > 0 && (
+                <Chip
+                  label={`${selected.length} selected`}
+                  size="small"
+                  sx={{ backgroundColor: '#e0e0e0', color: '#050505' }}
+                />
+              )}
+            </Box>
 
-      {/* Button to add a new activity */}
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleOpenCreate}
-        sx={{ mb: 2 }}
-        disabled={loading}
-      >
-        Add Activity
-      </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={onCreate}
+                disabled={loading}
+                sx={{
+                  backgroundColor: '#050505',
+                  color: '#ffffff',
+                  '&:hover': { backgroundColor: '#333333' },
+                  '&:disabled': {
+                    backgroundColor: '#cccccc',
+                    color: '#666666',
+                  },
+                }}
+              >
+                Add Activity
+              </Button>
 
-      {/* Show loading spinner or the activities table */}
-      {loading ? (
-        <Box display="flex" justifyContent="center" mt={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <ActivitiesTable
-          activities={activities}
-          loading={loading}
-          onEdit={handleEdit} 
-          onDelete={handleDeactivate}
-        />
-      )}
-    </Box>
+            </Box>
+          </Toolbar>
+
+          {/* Loading spinner or table */}
+          {loading ? (
+            <Box display="flex" justifyContent="center" p={8}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <UniversalTable
+              data={activities}
+              columns={activitiesTableConfig.columns}
+              idField={activitiesTableConfig.idField}
+              selected={selected}
+              onSelectClick={handleSelectClick}
+              onSelectAllClick={handleSelectAllClick}
+              showSelection={true}
+              onView={onView}
+              onEdit={onEdit}
+              onDelete={onDeactivate}
+              onAddNote={onAddNote}
+              onAddAttachment={onAddAttachment}
+              formatters={formatters}
+            />
+          )}
+
+          {/* Results footer */}
+          <Box sx={{
+            p: 2,
+            borderTop: '1px solid #e5e5e5',
+            backgroundColor: '#fafafa',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <Typography variant="body2" sx={{ color: '#666666' }}>
+              Showing {activities.length} of {totalCount || activities.length} activities
+            </Typography>
+            {selected.length > 0 && (
+              <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
+                {selected.length} selected
+              </Typography>
+            )}
+          </Box>
+        </Paper>
+      </Box>
+    </ThemeProvider>
   );
-
-
-
 };
 
 export default ActivitiesPage;

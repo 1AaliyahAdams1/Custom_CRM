@@ -9,7 +9,7 @@ async function getAllAccounts() {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
       .execute('GetAllAccounts');
-    
+
     return result.recordset;
   } catch (err) {
     console.error("Database error in getAllAccounts:", err);
@@ -89,7 +89,7 @@ async function createAccount(accountData, changedBy) {
 async function updateAccount(id, accountData, changedBy = 1) {
   try {
     const pool = await sql.connect(dbConfig);
-    
+
     // First get the existing account details
     const existingResult = await pool.request()
       .input("AccountID", sql.Int, id)
@@ -98,7 +98,7 @@ async function updateAccount(id, accountData, changedBy = 1) {
     if (existingResult.recordset.length === 0) {
       throw new Error("Account not found");
     }
-    
+
     const existing = existingResult.recordset[0];
 
     const {
@@ -165,12 +165,12 @@ async function updateAccount(id, accountData, changedBy = 1) {
 async function deactivateAccount(account, changedBy, actionTypeId) {
   try {
     const pool = await sql.connect(dbConfig);
-    
+
     // First update the account status in the main table
     await pool.request()
       .input('AccountID', sql.Int, account.AccountID)
       .query('UPDATE Account SET Active = 0, UpdatedAt = GETDATE() WHERE AccountID = @AccountID');
-    
+
     // Then log the deactivation
     await pool.request()
       .input('AccountID', sql.Int, account.AccountID)
@@ -199,7 +199,7 @@ async function deactivateAccount(account, changedBy, actionTypeId) {
       .input("CountryID", sql.Int, account.CountryID)
       .input('ActionTypeID', sql.Int, actionTypeId)
       .execute('DeactivateAccount');
-      
+
     return { message: "Account deactivated", AccountID: account.AccountID };
   } catch (err) {
     console.error("Database error in deactivateAccount:", err);
@@ -254,13 +254,13 @@ async function reactivateAccount(id, changedBy) {
       .input("number_of_releases", sql.SmallInt, existing.number_of_releases)
       .input("number_of_events_anually", sql.SmallInt, existing.number_of_events_anually)
       .input("ParentAccount", sql.Int, existing.ParentAccount)
-      .input("Active", sql.Bit, true) 
+      .input("Active", sql.Bit, true)
       .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
       .input("UpdatedAt", sql.SmallDateTime, new Date())
       .input("ChangedBy", sql.Int, changedBy)
       .input("StateProvinceID", sql.Int, StateProvinceID)
       .input("CountryID", sql.Int, CountryID)
-      .input("ActionTypeID", sql.Int, 8) 
+      .input("ActionTypeID", sql.Int, 8)
       .execute('ReactivateAccount');
 
     return { message: "Account reactivated", AccountID: id };
@@ -334,13 +334,106 @@ async function deleteAccount(id, changedBy) {
       .input("ChangedBy", sql.Int, changedBy)
       .input("StateProvinceID", sql.Int, StateProvinceID)
       .input("CountryID", sql.Int, CountryID)
-      .input("ActionTypeID", sql.Int, 3) 
+      .input("ActionTypeID", sql.Int, 3)
       .execute('DeleteAccount');
 
     return { message: "Account permanently deleted", AccountID: id };
   } catch (err) {
     console.error("Database error in deleteAccount:", err);
     throw err;
+  }
+}
+
+async function getActiveAccountsByUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT 
+          a.[AccountID],
+          a.[AccountName],
+          a.[CityID],
+          a.[street_address1],
+          a.[street_address2],
+          a.[street_address3],
+          a.[postal_code],
+          a.[PrimaryPhone],
+          a.[IndustryID],
+          a.[Website],
+          a.[fax],
+          a.[email],
+          a.[number_of_employees],
+          a.[annual_revenue],
+          a.[number_of_venues],
+          a.[number_of_releases],
+          a.[number_of_events_anually],
+          a.[ParentAccount],
+          a.[Active],
+          a.[CreatedAt],
+          a.[UpdatedAt],
+          a.[StateProvinceID],
+          a.[CountryID],
+          co.[CountryName],
+          c.CityName
+        FROM [CRM].[dbo].[Account] a
+        LEFT JOIN [CRM].[dbo].[City] c ON a.CityID = c.CityID
+        LEFT JOIN Country co ON a.CountryID = co.CountryID
+        JOIN [CRM].[dbo].[AssignedUser] au ON a.AccountID = au.AccountID AND au.Active = 1
+        WHERE a.Active = 1
+          AND au.UserID = @UserID
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Error fetching accounts by user:", error);
+    throw error;
+  }
+}
+
+async function getActiveUnassignedAccounts() {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .query(`
+        SELECT 
+          a.[AccountID],
+          a.[AccountName],
+          a.[CityID],
+          a.[street_address1],
+          a.[street_address2],
+          a.[street_address3],
+          a.[postal_code],
+          a.[PrimaryPhone],
+          a.[IndustryID],
+          a.[Website],
+          a.[fax],
+          a.[email],
+          a.[number_of_employees],
+          a.[annual_revenue],
+          a.[number_of_venues],
+          a.[number_of_releases],
+          a.[number_of_events_anually],
+          a.[ParentAccount],
+          a.[Active],
+          a.[CreatedAt],
+          a.[UpdatedAt],
+          a.[StateProvinceID],
+          a.[CountryID],
+          co.[CountryName],
+          c.CityName
+        FROM [CRM].[dbo].[Account] a
+        LEFT JOIN [CRM].[dbo].[City] c ON a.CityID = c.CityID
+        LEFT JOIN Country co ON a.CountryID = co.CountryID
+        LEFT JOIN [CRM].[dbo].[AssignedUser] au ON a.AccountID = au.AccountID AND au.Active = 1
+        WHERE a.Active = 1
+          AND au.UserID IS NULL
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Error fetching unassigned accounts:", error);
+    throw error;
   }
 }
 
@@ -351,8 +444,11 @@ module.exports = {
   getAllAccounts,
   createAccount,
   updateAccount,
-  deactivateAccount, 
+  deactivateAccount,
   reactivateAccount,
-  deleteAccount, 
-  getAccountDetails
+  deleteAccount,
+  getAccountDetails,
+  getActiveAccountsByUser,
+  getActiveUnassignedAccounts
+
 };

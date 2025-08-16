@@ -2,17 +2,20 @@
 import React, { lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import PrivateRoute from "./components/PrivateRoute";
+import PrivateRoute from "./components/auth/PrivateRoute";
+import { ROUTE_ACCESS } from "./utils/auth/routesAccess";
 
 // Import Unauthorized directly
 import Unauthorized from "./pages/Unauthorized";
 
-// Lazy load other pages
+// Lazy load pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Accounts = lazy(() => import("./pages/AccountsPage"));
-const Contacts = lazy(() => import("./pages/ContactsPage"));
-const Deals = lazy(() => import("./pages/DealsPage"));
-const Activities = lazy(() => import("./pages/ActivitiesPage"));
+const Accounts = lazy(() => import("./components/containers/AccountsContainer"));
+const Contacts = lazy(() => import("./components/containers/ContactsContainer"));
+const Deals = lazy(() => import("./components/containers/DealsContainer"));
+const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
+// const Roles= lazy(() =>import("./pages/RoleManagementPage"));
+
 
 const AccountsDetailsPage = lazy(() => import("./pages/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
@@ -32,51 +35,58 @@ const EditActivityPage = lazy(() => import("./pages/EditActivityPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
 
-const allowedRole = "C-level"; 
-
 const AppRoutes = () => {
   console.log("AppRoutes component is rendering");
-  
+
   return (
     <Routes>
-      {/* Public routes - no authentication required */}
+      {/* Public routes */}
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route 
-        path="/unauthorized" 
-        element={<Unauthorized />} 
-      />
+      <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* Protected routes - authentication and role required */}
+      {/* Protected routes with dynamic allowedRoles from ROUTE_ACCESS */}
       <Route
         path="/dashboard"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dashboard}>
             <Dashboard />
           </PrivateRoute>
         }
       />
 
+      {/* --- Accounts Routes --- */}
       <Route
         path="/accounts"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.accounts}>
+            <Accounts />
+          </PrivateRoute>
+        }
+
+      />
+      <Route
+        path="/accounts/unassigned"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.accounts}>
             <Accounts />
           </PrivateRoute>
         }
       />
+
       <Route
         path="/accounts/:id"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.accountsDetails}>
             <AccountsDetailsPage />
           </PrivateRoute>
         }
       />
+
       <Route
         path="/accounts/create"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.accountsCreate}>
             <CreateAccountPage />
           </PrivateRoute>
         }
@@ -84,16 +94,17 @@ const AppRoutes = () => {
       <Route
         path="/accounts/edit/:id"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.accountsEdit}>
             <EditAccountPage />
           </PrivateRoute>
         }
+        
       />
-
+      {/* --- Contacts Routes --- */}
       <Route
         path="/contacts"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.contacts}>
             <Contacts />
           </PrivateRoute>
         }
@@ -101,7 +112,7 @@ const AppRoutes = () => {
       <Route
         path="/contacts/:id"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.contactsDetails}>
             <ContactsDetailsPage />
           </PrivateRoute>
         }
@@ -109,7 +120,7 @@ const AppRoutes = () => {
       <Route
         path="/contacts/create"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.contactsCreate}>
             <CreateContactsPage />
           </PrivateRoute>
         }
@@ -117,16 +128,16 @@ const AppRoutes = () => {
       <Route
         path="/contacts/edit/:id"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.contactsEdit}>
             <EditContactPage />
           </PrivateRoute>
         }
       />
-
+        {/* --- Deal Routes --- */}
       <Route
         path="/deals"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.deals}>
             <Deals />
           </PrivateRoute>
         }
@@ -134,7 +145,7 @@ const AppRoutes = () => {
       <Route
         path="/deals/:id"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealsDetails}>
             <DealsDetailsPage />
           </PrivateRoute>
         }
@@ -142,7 +153,7 @@ const AppRoutes = () => {
       <Route
         path="/deals/create"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealsCreate}>
             <CreateDealPage />
           </PrivateRoute>
         }
@@ -150,16 +161,16 @@ const AppRoutes = () => {
       <Route
         path="/deals/edit/:id"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealsEdit}>
             <EditDealPage />
           </PrivateRoute>
         }
       />
-
+        {/* --- Activity Routes --- */}
       <Route
         path="/activities"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activities}>
             <Activities />
           </PrivateRoute>
         }
@@ -167,7 +178,7 @@ const AppRoutes = () => {
       <Route
         path="/activities/:id"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activitiesDetails}>
             <ActivitiesDetailsPage />
           </PrivateRoute>
         }
@@ -175,7 +186,7 @@ const AppRoutes = () => {
       <Route
         path="/activities/create"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activitiesCreate}>
             <CreateActivitiesPage />
           </PrivateRoute>
         }
@@ -183,13 +194,24 @@ const AppRoutes = () => {
       <Route
         path="/activities/edit/:id"
         element={
-          <PrivateRoute allowedRoles={[allowedRole]}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activitiesEdit}>
             <EditActivityPage />
           </PrivateRoute>
         }
       />
+      {/* --- Role Management Routes ---
+      
+      <Route
+        path="/roleManagement"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.roleManagement}>
+            <Roles />
+          </PrivateRoute>
+        }
+      /> */}
 
-      {/* Catch-all route for 404 */}
+
+      {/* Catch all */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
