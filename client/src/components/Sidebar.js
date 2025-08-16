@@ -26,7 +26,7 @@ import {
   ChevronRight,
   BarChart as BarChartIcon,
    AdminPanelSettings as AdminPanelSettingsIcon,
-   AdminPanelSettings as AdminPanelSettingsIcon,
+   
 } from "@mui/icons-material";
 
 import { useAuth } from "../hooks/auth/useAuth";

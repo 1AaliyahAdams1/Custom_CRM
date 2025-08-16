@@ -29,8 +29,7 @@ import {
   ViewColumn as ColumnsIcon,
   Business,
   PersonAdd,
-  Business,
-  PersonAdd,
+  
 } from '@mui/icons-material';
 
 import ColumnsDialog from './ColumnsDialog';
@@ -117,6 +116,14 @@ const TableView = ({
   if (onClaimAccount && menuRow) onClaimAccount(menuRow);
   handleMenuClose();
 };
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
+  };
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
+  };
 
   // Get filtered data based on search term and filters
   const filteredData = data.filter((item) => {
