@@ -14,6 +14,7 @@ const Accounts = lazy(() => import("./components/containers/AccountsContainer"))
 const Contacts = lazy(() => import("./components/containers/ContactsContainer"));
 const Deals = lazy(() => import("./pages/DealsPage"));
 const Activities = lazy(() => import("./pages/ActivitiesPage"));
+const Reports = lazy(() => import("./pages/ReportsPage"));
 
 
 
@@ -199,6 +200,16 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      {/* --- Reports Routes --- */}
+      <Route
+        path="/reports"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.reports}>
+            <Reports />
+          </PrivateRoute>
+        }
+      />
+      
       
 
 
