@@ -9,79 +9,16 @@ import {
   CircularProgress,
   Alert,
   Paper,
-  TextField,
-  InputAdornment,
   Chip,
-  FormControl,
-  InputLabel,
-  Select,
   Toolbar,
-  MenuItem,
 } from "@mui/material";
 import {
-  Search,
   Add,
-  Clear,
 } from "@mui/icons-material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../utils/formatters';
 import UniversalTable from '../components/TableView';
-
-// Monochrome theme for MUI components
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-  },
-  components: {
-    MuiTableHead: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#f0f0f0',
-        },
-      },
-    },
-    MuiTableRow: {
-      styleOverrides: {
-        root: {
-          '&:hover': {
-            backgroundColor: '#f5f5f5',
-          },
-          '&.Mui-selected': {
-            backgroundColor: '#e0e0e0',
-            '&:hover': {
-              backgroundColor: '#d5d5d5',
-            },
-          },
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: '4px',
-          fontWeight: 500,
-        },
-      },
-    },
-  },
-});
+import theme from "../components/Theme";
 
 // Table configuration for activities
 const activitiesTableConfig = {
@@ -117,20 +54,13 @@ const ActivitiesPage = ({
   loading,
   error,
   successMessage,
-  searchTerm,
-  statusFilter,
-  priorityFilter,
   setSuccessMessage,
-  setSearchTerm,
-  setStatusFilter,
-  setPriorityFilter,
   onDeactivate,
   onEdit,
   onView,
   onCreate,
   onAddNote,
   onAddAttachment,
-  clearFilters,
   totalCount,
 }) => {
   const [selected, setSelected] = React.useState([]);
@@ -189,7 +119,7 @@ const ActivitiesPage = ({
             overflow: 'hidden'
           }}
         >
-          {/* Toolbar with search and filters */}
+          {/* Toolbar*/}
           <Toolbar
             sx={{
               backgroundColor: '#ffffff',
@@ -232,67 +162,6 @@ const ActivitiesPage = ({
                 Add Activity
               </Button>
 
-              {/* Status Filter */}
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Status"
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  sx={{
-                    backgroundColor: '#ffffff',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e5e5e5' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#cccccc' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#050505' },
-                  }}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="completed">Completed</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* Priority Filter */}
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Priority</InputLabel>
-                <Select
-                  value={priorityFilter}
-                  label="Priority"
-                  onChange={(e) => setPriorityFilter(e.target.value)}
-                  sx={{
-                    backgroundColor: '#ffffff',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e5e5e5' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#cccccc' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#050505' },
-                  }}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="1">Low</MenuItem>
-                  <MenuItem value="2">Medium</MenuItem>
-                  <MenuItem value="3">High</MenuItem>
-                  <MenuItem value="4">Critical</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* Clear Filters */}
-              {(searchTerm || statusFilter || priorityFilter) && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={clearFilters}
-                  startIcon={<Clear />}
-                  sx={{
-                    borderColor: '#e5e5e5',
-                    color: '#666666',
-                    '&:hover': {
-                      borderColor: '#cccccc',
-                      backgroundColor: '#f5f5f5',
-                    },
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
             </Box>
           </Toolbar>
 
