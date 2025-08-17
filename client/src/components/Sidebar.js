@@ -69,8 +69,7 @@ const navigation = [
     name: "Role Management",
     href: "/roleManagement",
     icon: AdminPanelSettingsIcon,
-    accessKey: 'roles',//only for testing
-    // allowedRoles: ["Admin", "C-Level Executive"], // Only admins and executives can access, not in routeAccess just keep it so long
+    accessKey: 'roles',
   },
   {
     name: "Settings",
@@ -80,7 +79,7 @@ const navigation = [
   },
 ];
 
-const DRAWER_WIDTH_EXPANDED = 256;
+const DRAWER_WIDTH_EXPANDED = 200;
 const DRAWER_WIDTH_COLLAPSED = 64;
 
 export function AppSidebar() {
@@ -294,7 +293,7 @@ export function AppSidebar() {
               transition: "opacity 0.3s ease",
             }}
           >
-            CRM MVP v2.0
+            2025 CRM Prototype v2
           </Typography>
         </Box>
       )}

@@ -1,36 +1,10 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Checkbox,
-  Chip,
-  IconButton,
-  Menu,
-  MenuItem,
-  Tooltip,
-  Link,
-  TextField,
-  Button,
-} from '@mui/material';
-import {
-  MoreVert,
-  Info,
-  Edit,
-  Delete,
-  Note,
-  AttachFile,
-  Search as SearchIcon,
-  FilterList as FilterIcon,
-  ViewColumn as ColumnsIcon,
-  Business,
-  PersonAdd,
-} from '@mui/icons-material';
+import { Box } from '@mui/material';
 
+// Import components
+import TableControls from './TableControls';
+import DataTable from './DataTable';
+import ActionMenu from './ActionMenu';
 import ColumnsDialog from './ColumnsDialog';
 import FilterDialog from './FiltersDialog';
 
@@ -51,9 +25,6 @@ const TableView = ({
   onClaimAccount,
   entityType,
   onAssignUser,
-  onClaimAccount,
-  entityType,
-  onAssignUser,
   menuItems = [],
   formatters = {},
 }) => {
@@ -70,12 +41,9 @@ const TableView = ({
     columns.reduce((acc, col) => ({ ...acc, [col.field]: true }), {})
   );
 
-  // Dialog open states - removed filterDialogOpen since we're not using a dialog anymore
+  // Dialog open states
   const [columnsDialogOpen, setColumnsDialogOpen] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
-
-  // Helpers
-  const isSelected = (id) => selected.includes(id);
 
   // Menu handlers
   const handleMenuClick = (event, row) => {
@@ -89,43 +57,28 @@ const TableView = ({
     setMenuRow(null);
   };
 
-  // Action handlers
-  const handleView = () => {
-    if (onView && menuRow) onView(menuRow[idField]);
-    handleMenuClose();
+  // Search handler
+  const handleSearchChange = (newSearchTerm) => {
+    setSearchTerm(newSearchTerm);
   };
-  const handleAssignUser = () => {
-    if (onAssignUser && menuRow) onAssignUser(menuRow);
-    handleMenuClose();
-  };
-  const handleAssignUser = () => {
-    if (onAssignUser && menuRow) onAssignUser(menuRow);
-    handleMenuClose();
-  };
-  const handleEdit = () => {
-    if (onEdit && menuRow) onEdit(menuRow);
-    handleMenuClose();
-  };
-  const handleDelete = () => {
-    if (onDelete && menuRow) onDelete(menuRow[idField]);
-    handleMenuClose();
-  };
-  const handleAddNote = () => {
-    if (onAddNote && menuRow) onAddNote(menuRow);
-    handleMenuClose();
-  };
-  const handleAddAttachment = () => {
-    if (onAddAttachment && menuRow) onAddAttachment(menuRow);
-    handleMenuClose();
-  };
-  const handleClaimAccount = () => {
-  if (onClaimAccount && menuRow) onClaimAccount(menuRow);
-  handleMenuClose();
-};
 
-  // Filter handler for the new FilterComponent
+  // Filter handlers
+  const handleToggleFilters = () => {
+    setFiltersExpanded(!filtersExpanded);
+  };
+
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
+  };
+
+  // Column handlers
+  const handleOpenColumnsDialog = () => {
+    setColumnsDialogOpen(true);
+  };
+
+  const handleColumnsSave = (newVisibleColumns) => {
+    setVisibleColumns(newVisibleColumns);
+    setColumnsDialogOpen(false);
   };
 
   // Get filtered data based on search term and filters
@@ -147,7 +100,7 @@ const TableView = ({
         if (typeof filterValue === 'boolean') {
           if (itemVal !== filterValue) return false;
         } else {
-          // Use includes for partial matching (like the old implementation)
+          // Use includes for partial matching
           if (!itemVal?.toString().toLowerCase().includes(filterValue.toString().toLowerCase())) {
             return false;
           }
@@ -160,209 +113,19 @@ const TableView = ({
   // Columns to show based on visibility state
   const displayedColumns = columns.filter((col) => visibleColumns[col.field]);
 
-  // Selection handlers
-  const handleSelectAll = (event) => {
-    onSelectAllClick && onSelectAllClick(event);
-  };
-  const handleSelectRow = (id) => {
-    onSelectClick && onSelectClick(id);
-  };
-
-  // Render cell content (with formatters and different column types)
-  const renderCellContent = (row, column) => {
-    const value = row[column.field];
-    if (formatters[column.field]) {
-      return formatters[column.field](value, row);
-    }
-    switch (column.type) {
-      case 'chip':
-        return (
-          <Chip
-            label={column.chipLabels ? column.chipLabels[value] : value}
-            sx={{
-              backgroundColor: column.chipColors ? column.chipColors[value] : '#1976d2',
-              color: '#fff',
-              fontWeight: 500,
-            }}
-            size="small"
-          />
-        );
-      case 'boolean':
-        return (
-          <Chip
-            label={value ? 'Yes' : 'No'}
-            sx={{
-              backgroundColor: value ? '#4caf50' : '#f44336',
-              color: '#fff',
-              fontWeight: 500,
-            }}
-            size="small"
-          />
-        );
-      case 'link':
-        if (!value) return '-';
-        const href = value.startsWith('http') ? value : `https://${value}`;
-        return (
-          <Link
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            sx={{ textDecoration: 'none', color: 'inherit' }}
-          >
-            {value}
-          </Link>
-        );
-      case 'truncated':
-        if (!value) return '-';
-        return (
-          <Tooltip title={value}>
-            <span
-              style={{
-                display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: column.maxWidth || 200,
-              }}
-            >
-              {value}
-            </span>
-          </Tooltip>
-        );
-      case 'tooltip':
-        return (
-          <Tooltip title={value || ''}>
-            <span>{value || '-'}</span>
-          </Tooltip>
-        );
-      default:
-        return value || '-';
-    }
-  };
-
-  // Default menu actions if none provided
-  const defaultMenuItems = [
-    {
-    label: 'Assign User',  
-    icon: <PersonAdd sx={{ mr: 2 }} />, 
-    onClick: handleAssignUser,
-    show: !!onAssignUser,  
-    sx: { color: '#7c3aed' },  
-  },
-  
-    {
-     label: 'Claim Account',  
-      icon: <Business sx={{ mr: 2 }} />, 
-      onClick: handleClaimAccount,
-      show: entityType === 'account' && !!onClaimAccount,  // Only show for accounts, this is not showin up
-     sx: { color: '#f59e0b' },  
-    },
-    {
-    label: 'Assign User',  
-    icon: <PersonAdd sx={{ mr: 2 }} />, 
-    onClick: handleAssignUser,
-    show: !!onAssignUser,  
-    sx: { color: '#7c3aed' },  
-  },
-  
-    {
-     label: 'Claim Account',  
-      icon: <Business sx={{ mr: 2 }} />, 
-      onClick: handleClaimAccount,
-      show: entityType === 'account' && !!onClaimAccount,  // Only show for accounts, this is not showin up
-     sx: { color: '#f59e0b' },  
-    },
-    {
-      label: 'View Details',
-      icon: <Info sx={{ mr: 2 }} />,
-      onClick: handleView,
-      show: !!onView,
-    },
-    {
-      label: 'Edit',
-      icon: <Edit sx={{ mr: 2 }} />,
-      onClick: handleEdit,
-      show: !!onEdit,
-    },
-    {
-      label: 'Add Notes',
-      icon: <Note sx={{ mr: 2 }} />,
-      onClick: handleAddNote,
-      show: !!onAddNote,
-      sx: { color: '#2563eb' },
-    },
-    {
-      label: 'Add Attachments',
-      icon: <AttachFile sx={{ mr: 2 }} />,
-      onClick: handleAddAttachment,
-      show: !!onAddAttachment,
-      sx: { color: '#059669' },
-    },
-    {
-      label: 'Delete',
-      icon: <Delete sx={{ mr: 2 }} />,
-      onClick: handleDelete,
-      show: !!onDelete,
-      sx: { color: '#dc2626' },
-      disabled: (row) => row?.Active === false,
-    }
-  ];
-
-  const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
-
-  // Columns dialog save handler
-  const handleColumnsSave = (newVisibleColumns) => {
-    setVisibleColumns(newVisibleColumns);
-    setColumnsDialogOpen(false);
-  };
-
   return (
     <>
-      {/* Search + Columns controls */}
-      <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
-        <Button
-          variant="outlined"
-          startIcon={<FilterIcon />}
-          onClick={() => setFiltersExpanded(!filtersExpanded)}
-          sx={{
-            backgroundColor: filtersExpanded ? 'primary.main' : 'transparent',
-            color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
-            '&:hover': {
-              backgroundColor: filtersExpanded ? 'primary.dark' : 'primary.light',
-              color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
-            }
-          }}
-        >
-          {filtersExpanded ? 'Hide Filters' : 'Show Filters'}
-          {Object.keys(filters).length > 0 && (
-            <Chip
-              label={Object.keys(filters).length}
-              size="small"
-              color={filtersExpanded ? "secondary" : "primary"}
-              sx={{ ml: 1 }}
-            />
-          )}
-        </Button>
+      {/* Search + Controls */}
+      <TableControls
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        filtersExpanded={filtersExpanded}
+        onToggleFilters={handleToggleFilters}
+        onOpenColumnsDialog={handleOpenColumnsDialog}
+        activeFiltersCount={Object.keys(filters).length}
+      />
 
-        <TextField
-          size="small"
-          variant="outlined"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: <SearchIcon sx={{ mr: 1 }} />,
-          }}
-          sx={{ minWidth: 250 }}
-        />
-
-        <Button variant="outlined" startIcon={<ColumnsIcon />} onClick={() => setColumnsDialogOpen(true)}>
-          Columns
-        </Button>
-      </Box>
-
-      {/* Collapsible FilterComponent */}
+      {/* Collapsible Filter Dialog */}
       {filtersExpanded && (
         <FilterDialog
           columns={columns}
@@ -371,82 +134,39 @@ const TableView = ({
         />
       )}
 
-      {/* Table */}
-      <TableContainer>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              {showSelection && (
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    color="primary"
-                    indeterminate={selected.length > 0 && selected.length < filteredData.length}
-                    checked={filteredData.length > 0 && selected.length === filteredData.length}
-                    onChange={handleSelectAll}
-                    inputProps={{ 'aria-label': 'select all rows' }}
-                  />
-                </TableCell>
-              )}
-              {displayedColumns.map((column) => (
-                <TableCell key={column.field} sx={{ fontWeight: 600 }}>
-                  {column.headerName || column.field}
-                </TableCell>
-              ))}
-              {showActions && <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>}
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {filteredData.map((row) => {
-              const isItemSelected = showSelection ? isSelected(row[idField]) : false;
-              return (
-                <TableRow
-                  key={row[idField]}
-                  hover
-                  selected={isItemSelected}
-                  onClick={showSelection ? () => handleSelectRow(row[idField]) : undefined}
-                  sx={{ cursor: showSelection ? 'pointer' : 'default' }}
-                >
-                  {showSelection && (
-                    <TableCell padding="checkbox">
-                      <Checkbox color="primary" checked={isItemSelected} />
-                    </TableCell>
-                  )}
-                  {displayedColumns.map((column) => (
-                    <TableCell key={column.field}>{renderCellContent(row, column)}</TableCell>
-                  ))}
-                  {showActions && (
-                    <TableCell>
-                      <IconButton size="small" onClick={(e) => handleMenuClick(e, row)}>
-                        <MoreVert />
-                      </IconButton>
-                    </TableCell>
-                  )}
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {/* Data Table */}
+      <DataTable
+        data={filteredData}
+        columns={displayedColumns}
+        idField={idField}
+        selected={selected}
+        onSelectClick={onSelectClick}
+        onSelectAllClick={onSelectAllClick}
+        showSelection={showSelection}
+        showActions={showActions}
+        onMenuClick={handleMenuClick}
+        formatters={formatters}
+      />
 
       {/* Action Menu */}
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        {allMenuItems
-          .filter((item) => item.show !== false)
-          .map((item, index) => (
-            <MenuItem
-              key={index}
-              onClick={item.onClick}
-              disabled={typeof item.disabled === 'function' ? item.disabled(menuRow) : item.disabled}
-              sx={item.sx}
-            >
-              {item.icon}
-              {item.label}
-            </MenuItem>
-          ))}
-      </Menu>
+      <ActionMenu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        menuRow={menuRow}
+        idField={idField}
+        entityType={entityType}
+        onView={onView}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onAddNote={onAddNote}
+        onAddAttachment={onAddAttachment}
+        onClaimAccount={onClaimAccount}
+        onAssignUser={onAssignUser}
+        menuItems={menuItems}
+      />
 
-      {/* Columns Dialog - kept as is */}
+      {/* Columns Dialog */}
       <ColumnsDialog
         open={columnsDialogOpen}
         visibleColumns={visibleColumns}

@@ -1,5 +1,7 @@
 export const ROUTE_ACCESS = {
   dashboard: ["C-level", "Sales Manager"],
+  
+  roles: ["C-level"],
 
   accounts: ["C-level", "Sales Manager", "Sales Representative"], 
   accountsDetails: ["C-level", "Sales Manager", "Sales Representative"],
