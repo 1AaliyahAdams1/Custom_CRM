@@ -38,7 +38,7 @@ const RevenueForecastReport = () => {
         const data = await getRevenueForecastReport();
         setForecastData(data);
       } catch (err) {
-        setError('Failed to load revenue forecast data');
+        setError('Failed to load revenue forecast data - using demo data');
         console.error(err);
       } finally {
         setLoading(false);
@@ -94,19 +94,45 @@ const RevenueForecastReport = () => {
     }
   ];
 
-  // Pipeline stages data
-  const pipelineStages = [
-    { stage: "Lead", deals: 45, value: 2250000, avgTime: 7, probability: 10 },
-    { stage: "Qualified", deals: 32, value: 1920000, avgTime: 14, probability: 25 },
-    { stage: "Proposal", deals: 18, value: 1440000, avgTime: 21, probability: 50 },
-    { stage: "Negotiation", deals: 12, value: 1200000, avgTime: 28, probability: 75 },
-    { stage: "Closed Won", deals: 8, value: 800000, avgTime: 35, probability: 100 },
+  const defaultQuarterlyTargets = [
+    {
+      quarter: "Q1 2024",
+      target: 4200000,
+      forecast: 4050000,
+      actual: 2600000,
+      status: "behind"
+    },
+    {
+      quarter: "Q2 2024",
+      target: 4800000,
+      forecast: 4650000,
+      actual: null,
+      status: "on-track"
+    },
+    {
+      quarter: "Q3 2024",
+      target: 5200000,
+      forecast: 5100000,
+      actual: null,
+      status: "on-track"
+    },
+    {
+      quarter: "Q4 2024",
+      target: 5500000,
+      forecast: 5300000,
+      actual: null,
+      status: "ahead"
+    }
   ];
 
   // Use API data if available, otherwise use default data
   const monthlyForecast = (forecastData.monthlyForecast && forecastData.monthlyForecast.length > 0)
     ? forecastData.monthlyForecast
     : defaultMonthlyForecast;
+
+  const quarterlyTargets = (forecastData.quarterlyTargets && forecastData.quarterlyTargets.length > 0)
+    ? forecastData.quarterlyTargets
+    : defaultQuarterlyTargets;
 
   const getConfidenceChip = (confidence) => {
     if (confidence >= 90) {
@@ -148,6 +174,48 @@ const RevenueForecastReport = () => {
     }
   };
 
+  const getVarianceChip = (variance) => {
+    if (variance === null || variance === undefined) {
+      return (
+        <Chip
+          label="TBD"
+          sx={{
+            backgroundColor: '#f5f5f5',
+            color: '#616161',
+            fontWeight: 500,
+          }}
+          size="small"
+        />
+      );
+    }
+
+    if (variance > 0) {
+      return (
+        <Chip
+          label={`+${variance.toFixed(1)}%`}
+          sx={{
+            backgroundColor: '#e8f5e8',
+            color: '#2e7d32',
+            fontWeight: 500,
+          }}
+          size="small"
+        />
+      );
+    } else {
+      return (
+        <Chip
+          label={`${variance.toFixed(1)}%`}
+          sx={{
+            backgroundColor: '#ffebee',
+            color: '#d32f2f',
+            fontWeight: 500,
+          }}
+          size="small"
+        />
+      );
+    }
+  };
+
   const getStatusChip = (status) => {
     const statusColors = {
       "on-track": { bg: '#e3f2fd', color: '#1976d2' },
@@ -171,6 +239,7 @@ const RevenueForecastReport = () => {
   };
 
   const formatCurrency = (amount) => {
+    if (amount === null || amount === undefined) return 'TBD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
@@ -178,11 +247,10 @@ const RevenueForecastReport = () => {
   };
 
   // Calculate totals
-  const totalYearForecast = forecastData.totalYearForecast || 0;
-  const totalYearTarget = forecastData.totalYearTarget || 0;
+  const totalYearForecast = forecastData.totalYearForecast || 19700000;
+  const totalYearTarget = forecastData.totalYearTarget || 19700000;
   const forecastAccuracy = forecastData.forecastAccuracy || 87;
   const pipelineValue = forecastData.pipelineValue || 8450000;
-  const q1Performance = Math.round((2600000 / 4200000) * 100);
 
   if (loading) {
     return (
@@ -192,50 +260,140 @@ const RevenueForecastReport = () => {
     );
   }
 
-  if (error) {
-    return (
-      <Box m={2}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    );
-  }
-
   return (
-    <Card sx={{ height: 'fit-content' }}>
-      <CardContent>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Pipeline by Stage
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Breakdown of deals and value by pipeline stage
-        </Typography>
-        
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableCell sx={{ fontWeight: 600 }}>Stage</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Deals</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Value</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Avg Time</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Win %</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {pipelineStages.map((stage, index) => (
-                <TableRow key={index} hover>
-                  <TableCell sx={{ fontWeight: 500 }}>{stage.stage}</TableCell>
-                  <TableCell>{stage.deals}</TableCell>
-                  <TableCell>{formatCurrency(stage.value)}</TableCell>
-                  <TableCell>{stage.avgTime}d</TableCell>
-                  <TableCell>{stage.probability}%</TableCell>
+    <Box>
+      {error && (
+        <Box mb={2}>
+          <Alert severity="warning">{error}</Alert>
+        </Box>
+      )}
+
+      {/* Summary Cards will add this to dashboard
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="text.secondary" gutterBottom>
+                Year Forecast
+              </Typography>
+              <Typography variant="h4" component="div">
+                {formatCurrency(totalYearForecast)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="text.secondary" gutterBottom>
+                Year Target
+              </Typography>
+              <Typography variant="h4" component="div">
+                {formatCurrency(totalYearTarget)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="text.secondary" gutterBottom>
+                Forecast Accuracy
+              </Typography>
+              <Typography variant="h4" component="div">
+                {forecastAccuracy}%
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="text.secondary" gutterBottom>
+                Pipeline Value
+              </Typography>
+              <Typography variant="h4" component="div">
+                {formatCurrency(pipelineValue)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid> */}
+
+      {/* Monthly Forecast Table */}
+      <Card sx={{ height: 'fit-content', mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Monthly Revenue Forecast
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Predicted vs actual revenue by month
+          </Typography>
+          
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>Month</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Predicted</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Actual</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Variance</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Confidence</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </CardContent>
-    </Card>
+              </TableHead>
+              <TableBody>
+                {monthlyForecast.map((forecast, index) => (
+                  <TableRow key={index} hover>
+                    <TableCell sx={{ fontWeight: 500 }}>{forecast.month}</TableCell>
+                    <TableCell>{formatCurrency(forecast.predicted)}</TableCell>
+                    <TableCell>{formatCurrency(forecast.actual)}</TableCell>
+                    <TableCell>{getVarianceChip(forecast.variance)}</TableCell>
+                    <TableCell>{getConfidenceChip(forecast.confidence)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+
+      {/* Quarterly Targets Table dont know if we want this can add later to its own tab??
+      <Card sx={{ height: 'fit-content' }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Quarterly Targets
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Target vs forecast vs actual by quarter
+          </Typography>
+          
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>Quarter</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Target</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Forecast</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Actual</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {quarterlyTargets.map((quarter, index) => (
+                  <TableRow key={index} hover>
+                    <TableCell sx={{ fontWeight: 500 }}>{quarter.quarter}</TableCell>
+                    <TableCell>{formatCurrency(quarter.target)}</TableCell>
+                    <TableCell>{formatCurrency(quarter.forecast)}</TableCell>
+                    <TableCell>{formatCurrency(quarter.actual)}</TableCell>
+                    <TableCell>{getStatusChip(quarter.status)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card> */}
+    </Box>
   );
 };
 
