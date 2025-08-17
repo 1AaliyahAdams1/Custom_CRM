@@ -22,4 +22,6 @@ export const ROUTE_ACCESS = {
   activitiesDetails: ["C-level", "Sales Manager", "Sales Representative"],
   activitiesCreate: ["C-level", "Sales Manager", "Sales Representative"],
   activitiesEdit: ["C-level", "Sales Manager", "Sales Representative"],
+
+  reports: ["C-level", "Sales Manager", "Sales Representative"],
 };

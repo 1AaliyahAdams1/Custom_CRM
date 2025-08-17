@@ -1,10 +1,36 @@
 import React, { useState } from 'react';
-import { Box } from '@mui/material';
+import {
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Checkbox,
+  Chip,
+  IconButton,
+  Menu,
+  MenuItem,
+  Tooltip,
+  Link,
+  TextField,
+  Button,
+} from '@mui/material';
+import {
+  MoreVert,
+  Info,
+  Edit,
+  Delete,
+  Note,
+  AttachFile,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  ViewColumn as ColumnsIcon,
+  Business,
+  PersonAdd,
+} from '@mui/icons-material';
 
-// Import components
-import TableControls from './TableControls';
-import DataTable from './DataTable';
-import ActionMenu from './ActionMenu';
 import ColumnsDialog from './ColumnsDialog';
 import FilterDialog from './FiltersDialog';
 
@@ -42,8 +68,11 @@ const TableView = ({
   );
 
   // Dialog open states
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [columnsDialogOpen, setColumnsDialogOpen] = useState(false);
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+  // Helpers
+  const isSelected = (id) => selected.includes(id);
 
   // Menu handlers
   const handleMenuClick = (event, row) => {
@@ -75,11 +104,18 @@ const TableView = ({
   const handleOpenColumnsDialog = () => {
     setColumnsDialogOpen(true);
   };
-
-  const handleColumnsSave = (newVisibleColumns) => {
-    setVisibleColumns(newVisibleColumns);
-    setColumnsDialogOpen(false);
+  const handleAddNote = () => {
+    if (onAddNote && menuRow) onAddNote(menuRow);
+    handleMenuClose();
   };
+  const handleAddAttachment = () => {
+    if (onAddAttachment && menuRow) onAddAttachment(menuRow);
+    handleMenuClose();
+  };
+  const handleClaimAccount = () => {
+  if (onClaimAccount && menuRow) onClaimAccount(menuRow);
+  handleMenuClose();
+};
 
   // Get filtered data based on search term and filters
   const filteredData = data.filter((item) => {
@@ -100,10 +136,7 @@ const TableView = ({
         if (typeof filterValue === 'boolean') {
           if (itemVal !== filterValue) return false;
         } else {
-          // Use includes for partial matching
-          if (!itemVal?.toString().toLowerCase().includes(filterValue.toString().toLowerCase())) {
-            return false;
-          }
+          if (itemVal?.toString() !== filterValue.toString()) return false;
         }
       }
     }
@@ -115,58 +148,117 @@ const TableView = ({
 
   return (
     <>
-      {/* Search + Controls */}
-      <TableControls
-        searchTerm={searchTerm}
-        onSearchChange={handleSearchChange}
-        filtersExpanded={filtersExpanded}
-        onToggleFilters={handleToggleFilters}
-        onOpenColumnsDialog={handleOpenColumnsDialog}
-        activeFiltersCount={Object.keys(filters).length}
-      />
-
-      {/* Collapsible Filter Dialog */}
-      {filtersExpanded && (
-        <FilterDialog
-          columns={columns}
-          onApplyFilters={handleApplyFilters}
-          deals={data}
+      {/* Search + Filter + Columns controls */}
+      <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
+        <TextField
+          size="small"
+          variant="outlined"
+          placeholder="Search..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: <SearchIcon sx={{ mr: 1 }} />,
+          }}
+          sx={{ minWidth: 250 }}
         />
-      )}
 
-      {/* Data Table */}
-      <DataTable
-        data={filteredData}
-        columns={displayedColumns}
-        idField={idField}
-        selected={selected}
-        onSelectClick={onSelectClick}
-        onSelectAllClick={onSelectAllClick}
-        showSelection={showSelection}
-        showActions={showActions}
-        onMenuClick={handleMenuClick}
-        formatters={formatters}
-      />
+        <Button variant="outlined" startIcon={<FilterIcon />} onClick={() => setFilterDialogOpen(true)}>
+          Filters
+          {Object.keys(filters).length > 0 && (
+            <Chip label={Object.keys(filters).length} size="small" color="primary" sx={{ ml: 1 }} />
+          )}
+        </Button>
+
+        <Button variant="outlined" startIcon={<ColumnsIcon />} onClick={() => setColumnsDialogOpen(true)}>
+          Columns
+        </Button>
+      </Box>
+
+      {/* Table */}
+      <TableContainer>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              {showSelection && (
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    color="primary"
+                    indeterminate={selected.length > 0 && selected.length < filteredData.length}
+                    checked={filteredData.length > 0 && selected.length === filteredData.length}
+                    onChange={handleSelectAll}
+                    inputProps={{ 'aria-label': 'select all rows' }}
+                  />
+                </TableCell>
+              )}
+              {displayedColumns.map((column) => (
+                <TableCell key={column.field} sx={{ fontWeight: 600 }}>
+                  {column.headerName || column.field}
+                </TableCell>
+              ))}
+              {showActions && <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>}
+            </TableRow>
+          </TableHead>
+
+          <TableBody>
+            {filteredData.map((row) => {
+              const isItemSelected = showSelection ? isSelected(row[idField]) : false;
+              return (
+                <TableRow
+                  key={row[idField]}
+                  hover
+                  selected={isItemSelected}
+                  onClick={showSelection ? () => handleSelectRow(row[idField]) : undefined}
+                  sx={{ cursor: showSelection ? 'pointer' : 'default' }}
+                >
+                  {showSelection && (
+                    <TableCell padding="checkbox">
+                      <Checkbox color="primary" checked={isItemSelected} />
+                    </TableCell>
+                  )}
+                  {displayedColumns.map((column) => (
+                    <TableCell key={column.field}>{renderCellContent(row, column)}</TableCell>
+                  ))}
+                  {showActions && (
+                    <TableCell>
+                      <IconButton size="small" onClick={(e) => handleMenuClick(e, row)}>
+                        <MoreVert />
+                      </IconButton>
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       {/* Action Menu */}
-      <ActionMenu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        menuRow={menuRow}
-        idField={idField}
-        entityType={entityType}
-        onView={onView}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        onAddNote={onAddNote}
-        onAddAttachment={onAddAttachment}
-        onClaimAccount={onClaimAccount}
-        onAssignUser={onAssignUser}
-        menuItems={menuItems}
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        {allMenuItems
+          .filter((item) => item.show !== false)
+          .map((item, index) => (
+            <MenuItem
+              key={index}
+              onClick={item.onClick}
+              disabled={typeof item.disabled === 'function' ? item.disabled(menuRow) : item.disabled}
+              sx={item.sx}
+            >
+              {item.icon}
+              {item.label}
+            </MenuItem>
+          ))}
+      </Menu>
+
+      {/* Dialogs */}
+      <FiltersDialog
+        open={filterDialogOpen}
+        onClose={() => setFilterDialogOpen(false)}
+        onSave={setFilters}
+        columns={columns}
+        data={data}
+        currentFilters={filters}
       />
 
-      {/* Columns Dialog */}
       <ColumnsDialog
         open={columnsDialogOpen}
         visibleColumns={visibleColumns}
