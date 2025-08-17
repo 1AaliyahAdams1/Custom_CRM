@@ -26,6 +26,7 @@ import {
   ChevronRight,
   BarChart as BarChartIcon,
    AdminPanelSettings as AdminPanelSettingsIcon,
+   
 } from "@mui/icons-material";
 
 import { useAuth } from "../hooks/auth/useAuth";
@@ -58,13 +59,19 @@ const navigation = [
     accessKey: "deals",
   },
  
+ 
   {
     name: "Activities",
     href: "/activities",
     icon: EventIcon,
     accessKey: "activities",
   },
-  
+  {    
+    name: "Reports",
+    href: "/reports", 
+    icon: BarChartIcon,
+    accessKey: "reports",
+  },
   {
     name: "Role Management",
     href: "/roleManagement",
@@ -72,6 +79,7 @@ const navigation = [
     accessKey: 'roles',//only for testing
     // allowedRoles: ["Admin", "C-Level Executive"], // Only admins and executives can access, not in routeAccess just keep it so long
   },
+
   {
     name: "Settings",
     href: "/settings",

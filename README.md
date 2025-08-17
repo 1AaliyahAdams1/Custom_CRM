@@ -103,6 +103,8 @@ DO THIS IN CLIENT FOLDER ALSO
 [For TextBox, NumericTextBox, etc.]
 
 > powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-notifications"
+
+> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-charts"
 =====================================================================================================
 COMMAND to run program:
 MAKE SURE YOU ARE ON THE ROOT FOLDER [Custom_CRM] WHEN YOU RUN THIS COMMAND

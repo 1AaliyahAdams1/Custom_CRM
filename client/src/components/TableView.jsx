@@ -29,6 +29,7 @@ import {
   ViewColumn as ColumnsIcon,
   Business,
   PersonAdd,
+  
 } from '@mui/icons-material';
 
 import ColumnsDialog from './ColumnsDialog';
@@ -48,9 +49,6 @@ const TableView = ({
   onDelete,
   onAddNote,
   onAddAttachment,
-  onClaimAccount,
-  entityType,
-  onAssignUser,
   onClaimAccount,
   entityType,
   onAssignUser,
@@ -98,10 +96,6 @@ const TableView = ({
     if (onAssignUser && menuRow) onAssignUser(menuRow);
     handleMenuClose();
   };
-  const handleAssignUser = () => {
-    if (onAssignUser && menuRow) onAssignUser(menuRow);
-    handleMenuClose();
-  };
   const handleEdit = () => {
     if (onEdit && menuRow) onEdit(menuRow);
     handleMenuClose();
@@ -122,10 +116,13 @@ const TableView = ({
   if (onClaimAccount && menuRow) onClaimAccount(menuRow);
   handleMenuClose();
 };
-
-  // Filter handler for the new FilterComponent
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
+  };
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
   };
 
   // Get filtered data based on search term and filters
@@ -259,21 +256,6 @@ const TableView = ({
      sx: { color: '#f59e0b' },  
     },
     {
-    label: 'Assign User',  
-    icon: <PersonAdd sx={{ mr: 2 }} />, 
-    onClick: handleAssignUser,
-    show: !!onAssignUser,  
-    sx: { color: '#7c3aed' },  
-  },
-  
-    {
-     label: 'Claim Account',  
-      icon: <Business sx={{ mr: 2 }} />, 
-      onClick: handleClaimAccount,
-      show: entityType === 'account' && !!onClaimAccount,  // Only show for accounts, this is not showin up
-     sx: { color: '#f59e0b' },  
-    },
-    {
       label: 'View Details',
       icon: <Info sx={{ mr: 2 }} />,
       onClick: handleView,
@@ -306,7 +288,8 @@ const TableView = ({
       show: !!onDelete,
       sx: { color: '#dc2626' },
       disabled: (row) => row?.Active === false,
-    }
+    },
+   
   ];
 
   const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
