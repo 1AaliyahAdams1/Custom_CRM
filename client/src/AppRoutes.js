@@ -8,7 +8,7 @@ import { ROUTE_ACCESS } from "./utils/auth/routesAccess";
 // Import Unauthorized directly
 import Unauthorized from "./pages/Unauthorized";
 
-// Lazy load pages
+// Lazy load page
 const Accounts = lazy(() =>
   import("./components/containers/AccountsContainer")
 );
