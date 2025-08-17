@@ -218,7 +218,7 @@ const LoginPage = () => {
             }}
           >
             <Typography variant="caption" sx={{ color: "#999", fontSize: "0.75rem" }}>
-              Â© 2025 CRM Portal
+              © 2025 CRM Prototype
             </Typography>
           </Box>
         </Paper>
