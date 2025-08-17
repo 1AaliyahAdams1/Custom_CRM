@@ -18,6 +18,8 @@ import '@syncfusion/ej2-react-schedule/styles/material.css';
 import '@syncfusion/ej2-react-layouts/styles/material.css';
 import '@syncfusion/ej2-react-popups/styles/material.css';
 import '@syncfusion/ej2-react-notifications/styles/material.css';
+
+// import '@syncfusion/ej2-react-charts/styles/material.css';
 //import '@syncfusion/ej2-react-progressbar/styles/material.css'; why is this one giving issues???
 
 
