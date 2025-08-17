@@ -1,22 +1,37 @@
 const express = require("express");
 const router = express.Router();
 const accountController = require("../controllers/accountController");
+
+// Public/basic routes
 router.get("/", accountController.getAllAccounts);
 router.get("/unassigned", accountController.getActiveUnassignedAccounts);
 router.get("/user/:userId", accountController.getActiveAccountsByUser);
 router.get("/:id", accountController.getAccountDetails);
-router.post("/", accountController.createAccount);
-router.put("/:id", accountController.updateAccount);
+
+// Create account (with validation middleware)
+router.post(
+  "/",
+  accountController.validateAccount, // apply validation rules
+  accountController.createAccount
+);
+
+// Update account (with validation middleware)
+router.put(
+  "/:id",
+  accountController.validateAccount, // apply validation rules
+  accountController.updateAccount
+);
+
+// Deactivate account
 router.patch("/:id/deactivate", accountController.deactivateAccount);
+
+// Reactivate account
 router.patch("/:id/reactivate", accountController.reactivateAccount);
+
+// Delete account
 router.delete("/:id/delete", accountController.deleteAccount);
 
-
-
 module.exports = router;
-
-
-
 
 //ROLE ACCESS FOR BACKEND
 // const express = require("express");

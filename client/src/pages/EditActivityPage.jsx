@@ -1,3 +1,5 @@
+// EditActivityPage.jsx
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -13,17 +15,14 @@ import {
 
 import { fetchActivityById, updateActivity } from "../services/activityService";
 
-
 const EditActivityPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get account ID from URL params
-  
+  const { id } = useParams();
+
   const [formData, setFormData] = useState({
-    AccountID: "",
-    ActivityType: "",
-    AccountName: "",
-    Due_date: "",
-    Priority: "",
+    activity_name: "",
+    type: "",
+    date: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -31,7 +30,12 @@ const EditActivityPage = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Fetch activity data when component mounts
+  // Validation state
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [formTouched, setFormTouched] = useState(false);
+
+  // Fetch activity
   useEffect(() => {
     const loadActivity = async () => {
       if (!id) {
@@ -44,16 +48,11 @@ const EditActivityPage = () => {
         setLoading(true);
         setError(null);
         const response = await fetchActivityById(id);
-        
-        // Populate form with fetched data
-        const activityData = response.data;
+        const activityData = response?.data || response;
         setFormData({
-          ActivityID: activityData.ActivityID || "",
-          ActivityType: activityData.ActivityType || "",
-          AccountName: activityData.AccountName || "",
-          Due_date: activityData.Due_date || "",
-           Priority: activityData.Priority || "",
-         
+          activity_name: activityData.activity_name || "",
+          type: activityData.type || "",
+          date: activityData.date || "",
         });
       } catch (error) {
         console.error("Failed to fetch activity:", error);
@@ -66,69 +65,116 @@ const EditActivityPage = () => {
     loadActivity();
   }, [id]);
 
-  // Auto-clear success message after 3 seconds
+  // Auto-clear success message
   useEffect(() => {
     if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
+      const timer = setTimeout(() => setSuccessMessage(""), 3000);
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
 
-  // Handle input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // -------- Validation --------
+  const validateField = (name, value) => {
+    switch (name) {
+      case "activity_name":
+        if (!value.trim()) return "Activity name is required";
+        if (value.length < 2)
+          return "Activity name must be at least 2 characters";
+        if (value.length > 100)
+          return "Activity name cannot exceed 100 characters";
+        break;
+
+      case "type":
+        if (!value.trim()) return "Type is required";
+        break;
+
+      case "date":
+        if (!value.trim()) return "Date is required";
+        const dateValue = new Date(value);
+        if (isNaN(dateValue.getTime())) return "Please enter a valid date";
+        break;
+
+      default:
+        break;
+    }
+    return "";
   };
 
-  // Handle form submission
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    Object.keys(formData).forEach((field) => {
+      const msg = validateField(field, formData[field]);
+      if (msg) {
+        errors[field] = msg;
+        isValid = false;
+      }
+    });
+
+    setFieldErrors(errors);
+    return isValid;
+  };
+
+  const isFieldInvalid = (name) => touched[name] && fieldErrors[name];
+  const getFieldError = (name) =>
+    isFieldInvalid(name) ? fieldErrors[name] : "";
+
+  // Handle input
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setTouched((prev) => ({ ...prev, [name]: true }));
+
+    if (error) setError(null);
+
+    const msg = validateField(name, value);
+    setFieldErrors((prev) => ({ ...prev, [name]: msg }));
+  };
+
+  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Basic validation
-    if (!formData.ActivityID.trim()) {
-      setError("Activity ID is required");
+    setFormTouched(true);
+
+    const allTouched = {};
+    Object.keys(formData).forEach((key) => (allTouched[key] = true));
+    setTouched(allTouched);
+
+    if (!validateForm()) {
+      setError("Please fix the errors before submitting");
       return;
     }
 
     try {
       setSaving(true);
       setError(null);
-      
-      // Add Activity ID to formData for the update
-      const updateData = {
-        ...formData,
-        ActivityID: id
-      };
-      
-      await updateActivity(id, updateData);
+      await updateActivity(id, formData);
       setSuccessMessage("Activity updated successfully!");
-      
-      // Navigate back to activities page after a short delay
-      setTimeout(() => {
-        navigate("/activities");
-      }, 1500);
-      
+      setTimeout(() => navigate("/activities"), 1500);
     } catch (error) {
       console.error("Failed to update activity:", error);
-      setError("Failed to update activity. Please try again.");
+      setError(
+        error.response?.data?.message ||
+          "Failed to update activity. Please try again."
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // Handle cancel - navigate back to activities page
-  const handleCancel = () => {
-    navigate("/activities");
-  };
+  const handleCancel = () => navigate("/activities");
 
+  const isFormValid = Object.values(fieldErrors).every((msg) => !msg);
+
+  // -------- UI --------
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px">
         <CircularProgress />
       </Box>
     );
@@ -140,16 +186,17 @@ const EditActivityPage = () => {
         Edit Activity
       </Typography>
 
-      {/* Error Alert */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
-      {/* Success Alert */}
       {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
+        <Alert
+          severity="success"
+          sx={{ mb: 2 }}
+          onClose={() => setSuccessMessage("")}>
           {successMessage}
         </Alert>
       )}
@@ -157,84 +204,60 @@ const EditActivityPage = () => {
       <Paper elevation={3} sx={{ p: 3 }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            {/* Account ID - Required */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Account ID"
-                name="AccountID"
-                value={formData.AccountID}
+                label="Activity Name"
+                name="activity_name"
+                value={formData.activity_name}
                 onChange={handleInputChange}
+                error={isFieldInvalid("activity_name")}
+                helperText={getFieldError("activity_name")}
                 required
-                variant="outlined"
               />
             </Grid>
 
-            {/* ActivityType */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Activity Type"
-                name="ActivityType"
-                value={formData.ActivityType}
+                label="Type"
+                name="type"
+                value={formData.type}
                 onChange={handleInputChange}
-                variant="outlined"
+                error={isFieldInvalid("type")}
+                helperText={getFieldError("type")}
+                required
               />
             </Grid>
-            {/* Account Name */}
+
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Account Name"
-                name="AccountName"
-                value={formData.AccountName}
+                label="Date"
+                name="date"
+                type="date"
+                value={formData.date}
                 onChange={handleInputChange}
-                variant="outlined"
+                InputLabelProps={{ shrink: true }}
+                error={isFieldInvalid("date")}
+                helperText={getFieldError("date")}
+                required
               />
             </Grid>
 
-            {/* Due_date */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Due date"
-                name="Due_date"
-                value={formData.Due_date}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Priority */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Priority"
-                name="Priority"
-                value={formData.Priority}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            
-            {/* Action Buttons */}
             <Grid item xs={12}>
               <Box display="flex" gap={2} justifyContent="flex-end" mt={2}>
                 <Button
                   variant="outlined"
                   onClick={handleCancel}
-                  disabled={saving}
-                >
+                  disabled={saving}>
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   variant="contained"
-                  color="primary"
-                  disabled={saving}
-                  startIcon={saving ? <CircularProgress size={20} /> : null}
-                >
+                  disabled={saving || (formTouched && !isFormValid)}
+                  startIcon={saving ? <CircularProgress size={20} /> : null}>
                   {saving ? "Updating..." : "Update Activity"}
                 </Button>
               </Box>

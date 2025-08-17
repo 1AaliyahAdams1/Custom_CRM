@@ -1,152 +1,228 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Button,
-  Grid,
-  Box,
-  TextField,
-  Typography
-} from '@mui/material';
-import { createActivity } from '../services/activityService';
-import { getAllAccounts } from '../services/accountService';
-import SmartDropdown from '../components/SmartDropdown';
-import { activityTypeService, priorityLevelService } from '../services/dropdownServices';
+//CreateActivityPage.js
 
-const CreateActivitiesPage = () => {
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Grid,
+  Alert,
+  CircularProgress,
+} from "@mui/material";
+import { createActivity } from "../services/activityService";
+
+const CreateActivityPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    AccountID: "",
-    TypeID: "",
-    Priority: "",
-    DueToStart: "",
-    DueToEnd: "",
-    Completed: ""
+    activity_name: "",
+    type: "",
+    date: "",
   });
 
-  const accountService = {
-    getAll: async () => {
-      try {
-        const response = await getAllAccounts();
-        return response.data || [];
-      } catch (error) {
-        console.error('Error loading accounts:', error);
-        return [];
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [validationErrors, setValidationErrors] = useState({});
+
+  // Auto-clear success message after 3 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  // Validation function
+  const validateForm = () => {
+    const errors = {};
+
+    // Activity name validation
+    if (!formData.activity_name.trim()) {
+      errors.activity_name = "Activity name is required";
+    } else if (formData.activity_name.length < 2) {
+      errors.activity_name = "Activity name must be at least 2 characters";
+    } else if (formData.activity_name.length > 100) {
+      errors.activity_name = "Activity name cannot exceed 100 characters";
+    }
+
+    // Type validation
+    if (!formData.type.trim()) {
+      errors.type = "Type is required";
+    }
+
+    // Date validation
+    if (!formData.date.trim()) {
+      errors.date = "Date is required";
+    } else {
+      const dateValue = new Date(formData.date);
+      if (isNaN(dateValue.getTime())) {
+        errors.date = "Please enter a valid date";
       }
-    },
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
+
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate form
+    if (!validateForm()) {
+      setError("Please fix the validation errors below");
+      return;
+    }
+
     try {
-      console.log('Creating activity:', formData);
+      setLoading(true);
+      setError(null);
+      console.log("Creating activity:", formData);
+
       await createActivity(formData);
-      navigate('/activities');
+      setSuccessMessage("Activity created successfully!");
+
+      // Navigate back to activities page after a short delay
+      setTimeout(() => {
+        navigate("/activities");
+      }, 1500);
     } catch (error) {
-      console.error('Error creating activity:', error);
-      alert('Failed to create activity. Please try again.');
+      console.error("Error creating activity:", error);
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Failed to create activity. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    navigate('/activities');
+    navigate("/activities");
   };
 
   return (
-    <Box p={4} maxWidth={900} mx="auto">
-      {/* Page Title */}
+    <Box p={4}>
       <Typography variant="h4" gutterBottom>
         Create New Activity
       </Typography>
-      {/* Buttons at the top */}
-      <Box mb={3} display="flex" justifyContent="flex-end" gap={2}>
-        <Button variant="outlined" onClick={() => navigate(-1)}>
-          Back
-        </Button>
-        <Button variant="outlined" onClick={handleCancel}>
-          Cancel
-        </Button>
-        <Button variant="contained" color="primary" onClick={handleSubmit}>
-          Save
-        </Button>
-      </Box>
 
-      <Grid item xs={20} sm={10}>
-        <SmartDropdown
-          label="Account"
-          name="AccountID"
-          value={formData.AccountID}
-          onChange={handleInputChange}
-          service={accountService}
-          displayField="AccountName"
-          valueField="AccountID"
-          placeholder="Search for account..."
-          required
-          fullWidth
-        />
+      {/* Error Alert */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
-        <SmartDropdown
-          label="Activity Type"
-          name="TypeID"
-          value={formData.TypeID}
-          onChange={handleInputChange}
-          service={activityTypeService}
-          displayField="TypeName"
-          valueField="TypeID"
-          placeholder="Search for activity type..."
-          //make a create activity type page to use in the below command
-          // onCreateNewClick={() => setShowActivityTypePopup(true)}
-          fullWidth
-        />
+      {/* Success Alert */}
+      {successMessage && (
+        <Alert
+          severity="success"
+          sx={{ mb: 2 }}
+          onClose={() => setSuccessMessage("")}>
+          {successMessage}
+        </Alert>
+      )}
 
-        <SmartDropdown
-          label="Priority"
-          name="PriorityLevelID"
-          value={formData.PriorityLevelID}
-          onChange={handleInputChange}
-          service={priorityLevelService}
-          displayField="PriorityLevelName"
-          valueField="PriorityLevelID"
-          placeholder="Search for priority level..."
-          //make a create priority level page to use in the below command
-          // onCreateNewClick={() => setShowPriorityPopup(true)}
-          fullWidth
-        />
+      <Paper elevation={3} sx={{ p: 3 }}>
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            {/* Activity Name - Required */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Activity Name"
+                name="activity_name"
+                value={formData.activity_name}
+                onChange={handleInputChange}
+                required
+                variant="outlined"
+                error={!!validationErrors.activity_name}
+                helperText={validationErrors.activity_name}
+                placeholder="Enter activity name"
+              />
+            </Grid>
 
-        <TextField
-          label="DueToStart"
-          name="DueToStart"
-          value={formData.DueToStart}
-          onChange={handleInputChange}
-          fullWidth
-        />
+            {/* Type - Required */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Type"
+                name="type"
+                value={formData.type}
+                onChange={handleInputChange}
+                required
+                variant="outlined"
+                error={!!validationErrors.type}
+                helperText={validationErrors.type}
+                placeholder="Enter activity type"
+              />
+            </Grid>
 
-        <TextField
-          label="DueToEnd"
-          name="DueToEnd"
-          value={formData.DueToEnd}
-          onChange={handleInputChange}
-          fullWidth
-        />
+            {/* Date - Required */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Date"
+                name="date"
+                type="date"
+                value={formData.date}
+                onChange={handleInputChange}
+                required
+                variant="outlined"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                error={!!validationErrors.date}
+                helperText={validationErrors.date}
+              />
+            </Grid>
 
-        <TextField
-          label="Completed"
-          name="Completed"
-          value={formData.Completed}
-          onChange={handleInputChange}
-          fullWidth
-        />
-      </Grid>
+            {/* Action Buttons */}
+            <Grid item xs={12}>
+              <Box display="flex" gap={2} justifyContent="flex-end" mt={2}>
+                <Button
+                  variant="outlined"
+                  onClick={handleCancel}
+                  disabled={loading}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} /> : null}>
+                  {loading ? "Creating..." : "Create Activity"}
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </form>
+      </Paper>
     </Box>
   );
 };
 
-export default CreateActivitiesPage;
-
+export default CreateActivityPage;

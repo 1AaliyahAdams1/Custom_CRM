@@ -10,17 +10,24 @@ import Unauthorized from "./pages/Unauthorized";
 
 // Lazy load pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Accounts = lazy(() => import("./components/containers/AccountsContainer"));
-const Contacts = lazy(() => import("./components/containers/ContactsContainer"));
+const Accounts = lazy(() =>
+  import("./components/containers/AccountsContainer")
+);
+const Contacts = lazy(() =>
+  import("./components/containers/ContactsContainer")
+);
 const Deals = lazy(() => import("./components/containers/DealsContainer"));
-const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
+const Activities = lazy(() =>
+  import("./components/containers/ActivitiesContainer")
+);
 // const Roles= lazy(() =>import("./pages/RoleManagementPage"));
-
 
 const AccountsDetailsPage = lazy(() => import("./pages/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
 const DealsDetailsPage = lazy(() => import("./pages/DealsDetailsPage"));
-const ActivitiesDetailsPage = lazy(() => import("./pages/ActivitiesDetailsPage"));
+const ActivitiesDetailsPage = lazy(() =>
+  import("./pages/ActivitiesDetailsPage")
+);
 
 const CreateAccountPage = lazy(() => import("./pages/CreateAccountPage"));
 const CreateContactsPage = lazy(() => import("./pages/CreateContactsPage"));
@@ -63,7 +70,6 @@ const AppRoutes = () => {
             <Accounts />
           </PrivateRoute>
         }
-
       />
       <Route
         path="/accounts/unassigned"
@@ -98,7 +104,6 @@ const AppRoutes = () => {
             <EditAccountPage />
           </PrivateRoute>
         }
-        
       />
       {/* --- Contacts Routes --- */}
       <Route
@@ -133,7 +138,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-        {/* --- Deal Routes --- */}
+      {/* --- Deal Routes --- */}
       <Route
         path="/deals"
         element={
@@ -166,7 +171,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-        {/* --- Activity Routes --- */}
+      {/* --- Activity Routes --- */}
       <Route
         path="/activities"
         element={
@@ -209,7 +214,6 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       /> */}
-
 
       {/* Catch all */}
       <Route path="*" element={<NotFoundPage />} />

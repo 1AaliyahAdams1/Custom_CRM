@@ -1,99 +1,127 @@
+// Client/services/accountService.js
 import api from "../utils/api";
 
 const RESOURCE = "/accounts";
 
-export const getAllAccounts = async () => {
-  try {
-    return await api.get(RESOURCE);
-  } catch (error) {
-    console.error("Error fetching all accounts:", error);
-    throw error;
-  }
+const handleError = (context, error) => {
+  console.error(`${context}:`, error?.response?.data || error.message || error);
+  throw error;
 };
 
-export const fetchAccountById = async (id) => {
-  if (id === undefined || id === null || id === "") {
-    throw new Error(`Invalid Account ID provided: ${id}`);
-  }
-
+// 🔹 Get all accounts
+export const getAllAccounts = async (onlyActive = true) => {
   try {
-    return await api.get(`${RESOURCE}/${encodeURIComponent(id)}`);
-  } catch (error) {
-    console.error(`Error fetching account ${id}:`, error?.response || error);
-    throw error;
-  }
-};
-
-
-export const createAccount = async (data) => {
-  if (!data.AccountName) throw new Error("Account name is required");
-  try {
-    return await api.post(RESOURCE, data);
-  } catch (error) {
-    console.error("Error creating account:", error);
-    throw error;
-  }
-};
-
-export const updateAccount = async (id, data) => {
-  if (!id) throw new Error("Account ID is required");
-  if (!data.AccountName) throw new Error("Account name is required");
-  try {
-    return await api.put(`${RESOURCE}/${id}`, data);
-  } catch (error) {
-    console.error(`Error updating account ${id}:`, error);
-    throw error;
-  }
-};
-
-export const deactivateAccount = async (id) => {
-  if (!id) throw new Error("Account ID is required");
-  try {
-    const response = await api.patch(`${RESOURCE}/${id}/deactivate`);
+    const response = await api.get(RESOURCE, { params: { onlyActive } });
     return response.data;
   } catch (error) {
-    console.error("Deactivate account error:", error);
-    throw error;
+    handleError("Error fetching accounts", error);
   }
 };
 
-export const reactivateAccount = async (id) => {
-  if (!id) throw new Error("Account ID is required");
+// 🔹 Get account by ID
+export const fetchAccountById = async (accountId) => {
+  if (!accountId) throw new Error("Account ID is required");
+
   try {
-    return await api.patch(`${RESOURCE}/${id}/reactivate`);
+    const response = await api.get(`${RESOURCE}/${accountId}`);
+    return response.data;
   } catch (error) {
-    console.error("Reactivate account error:", error);
-    throw error;
+    handleError(`Error fetching account ${accountId}`, error);
   }
 };
 
-export const deleteAccount = async (id) => {
-  if (!id) throw new Error("Account ID is required");
+// 🔹 Create new account
+export const createAccount = async (accountData) => {
+  if (!accountData) throw new Error("Account data is required");
+
   try {
-    return await api.delete(`${RESOURCE}/${id}/delete`);
+    const response = await api.post(RESOURCE, accountData);
+    return response.data;
   } catch (error) {
-    console.error("Delete account error:", error);
-    throw error;
+    handleError("Error creating account", error);
   }
 };
 
-export async function fetchActiveAccountsByUser(userId) {
+// 🔹 Update account
+export const updateAccount = async (accountId, accountData) => {
+  if (!accountId) throw new Error("Account ID is required");
+  if (!accountData) throw new Error("Account data is required");
+
+  try {
+    const response = await api.put(`${RESOURCE}/${accountId}`, accountData);
+    return response.data;
+  } catch (error) {
+    handleError(`Error updating account ${accountId}`, error);
+  }
+};
+
+// 🔹 Deactivate account
+export const deactivateAccount = async (accountId) => {
+  if (!accountId) throw new Error("Account ID is required");
+
+  try {
+    const response = await api.patch(`${RESOURCE}/${accountId}/deactivate`);
+    return response.data;
+  } catch (error) {
+    handleError(`Error deactivating account ${accountId}`, error);
+  }
+};
+
+// 🔹 Reactivate account
+export const reactivateAccount = async (accountId) => {
+  if (!accountId) throw new Error("Account ID is required");
+
+  try {
+    const response = await api.patch(`${RESOURCE}/${accountId}/reactivate`);
+    return response.data;
+  } catch (error) {
+    handleError(`Error reactivating account ${accountId}`, error);
+  }
+};
+
+// 🔹 Delete account
+export const deleteAccount = async (accountId) => {
+  if (!accountId) throw new Error("Account ID is required");
+
+  try {
+    const response = await api.delete(`${RESOURCE}/${accountId}/delete`);
+    return response.data;
+  } catch (error) {
+    handleError(`Error deleting account ${accountId}`, error);
+  }
+};
+
+// 🔹 Accounts by user
+export const fetchActiveAccountsByUser = async (userId) => {
   if (!userId) throw new Error("User ID is required");
+
   try {
     const response = await api.get(`${RESOURCE}/user/${userId}`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching active accounts by user:", error);
-    throw error;
+    handleError(`Error fetching accounts for user ${userId}`, error);
   }
-}
+};
 
-export async function fetchActiveUnassignedAccounts() {
+// 🔹 Unassigned active accounts
+export const fetchActiveUnassignedAccounts = async () => {
   try {
-    const response = await api.get(`${RESOURCE}/unassigned`);
+    const response = await api.get(`${RESOURCE}/unassigned/active`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching active unassigned accounts:", error);
-    throw error;
+    handleError("Error fetching unassigned active accounts", error);
   }
-}
+};
+
+// 🔹 Default export (backward compatibility)
+export default {
+  getAllAccounts,
+  fetchAccountById,
+  createAccount,
+  updateAccount,
+  deactivateAccount,
+  reactivateAccount,
+  deleteAccount,
+  fetchActiveAccountsByUser,
+  fetchActiveUnassignedAccounts,
+};

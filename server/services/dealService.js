@@ -1,7 +1,7 @@
 const dealRepo = require("../data/dealRepository");
 
-async function getAllDeals(onlyActive) {
-  return await dealRepo.getAllDeals(onlyActive = true);
+async function getAllDeals(onlyActive = true) {
+  return await dealRepo.getAllDeals(onlyActive);
 }
 
 async function getDealById(id) {
@@ -40,5 +40,5 @@ module.exports = {
   deactivateDeal,
   reactivateDeal,
   deleteDeal,
-  getDealsByUser
+  getDealsByUser,
 };

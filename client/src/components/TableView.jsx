@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Table,
@@ -16,7 +16,7 @@ import {
   Link,
   TextField,
   Button,
-} from '@mui/material';
+} from "@mui/material";
 import {
   MoreVert,
   Info,
@@ -29,15 +29,15 @@ import {
   ViewColumn as ColumnsIcon,
   Business,
   PersonAdd,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
-import ColumnsDialog from './ColumnsDialog';
-import FilterDialog from './FiltersDialog';
+import ColumnsDialog from "./ColumnsDialog";
+import FilterDialog from "./FiltersDialog";
 
 const TableView = ({
   data = [],
   columns = [],
-  idField = 'id',
+  idField = "id",
   selected = [],
   onSelectClick,
   onSelectAllClick,
@@ -51,9 +51,6 @@ const TableView = ({
   onClaimAccount,
   entityType,
   onAssignUser,
-  onClaimAccount,
-  entityType,
-  onAssignUser,
   menuItems = [],
   formatters = {},
 }) => {
@@ -62,7 +59,7 @@ const TableView = ({
   const [menuRow, setMenuRow] = useState(null);
 
   // Search and filters
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({});
 
   // Column visibility state
@@ -98,10 +95,6 @@ const TableView = ({
     if (onAssignUser && menuRow) onAssignUser(menuRow);
     handleMenuClose();
   };
-  const handleAssignUser = () => {
-    if (onAssignUser && menuRow) onAssignUser(menuRow);
-    handleMenuClose();
-  };
   const handleEdit = () => {
     if (onEdit && menuRow) onEdit(menuRow);
     handleMenuClose();
@@ -119,9 +112,9 @@ const TableView = ({
     handleMenuClose();
   };
   const handleClaimAccount = () => {
-  if (onClaimAccount && menuRow) onClaimAccount(menuRow);
-  handleMenuClose();
-};
+    if (onClaimAccount && menuRow) onClaimAccount(menuRow);
+    handleMenuClose();
+  };
 
   // Filter handler for the new FilterComponent
   const handleApplyFilters = (newFilters) => {
@@ -135,20 +128,31 @@ const TableView = ({
       const searchableFields = columns.map((c) => c.field);
       const found = searchableFields.some((field) => {
         const val = item[field];
-        return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
+        return (
+          val && val.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        );
       });
       if (!found) return false;
     }
 
     // Apply filters from FilterComponent
     for (const [filterField, filterValue] of Object.entries(filters)) {
-      if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
+      if (
+        filterValue !== undefined &&
+        filterValue !== null &&
+        filterValue !== ""
+      ) {
         const itemVal = item[filterField];
-        if (typeof filterValue === 'boolean') {
+        if (typeof filterValue === "boolean") {
           if (itemVal !== filterValue) return false;
         } else {
           // Use includes for partial matching (like the old implementation)
-          if (!itemVal?.toString().toLowerCase().includes(filterValue.toString().toLowerCase())) {
+          if (
+            !itemVal
+              ?.toString()
+              .toLowerCase()
+              .includes(filterValue.toString().toLowerCase())
+          ) {
             return false;
           }
         }
@@ -175,138 +179,122 @@ const TableView = ({
       return formatters[column.field](value, row);
     }
     switch (column.type) {
-      case 'chip':
+      case "chip":
         return (
           <Chip
             label={column.chipLabels ? column.chipLabels[value] : value}
             sx={{
-              backgroundColor: column.chipColors ? column.chipColors[value] : '#1976d2',
-              color: '#fff',
+              backgroundColor: column.chipColors
+                ? column.chipColors[value]
+                : "#1976d2",
+              color: "#fff",
               fontWeight: 500,
             }}
             size="small"
           />
         );
-      case 'boolean':
+      case "boolean":
         return (
           <Chip
-            label={value ? 'Yes' : 'No'}
+            label={value ? "Yes" : "No"}
             sx={{
-              backgroundColor: value ? '#4caf50' : '#f44336',
-              color: '#fff',
+              backgroundColor: value ? "#4caf50" : "#f44336",
+              color: "#fff",
               fontWeight: 500,
             }}
             size="small"
           />
         );
-      case 'link':
-        if (!value) return '-';
-        const href = value.startsWith('http') ? value : `https://${value}`;
+      case "link":
+        if (!value) return "-";
+        const href = value.startsWith("http") ? value : `https://${value}`;
         return (
           <Link
             href={href}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            sx={{ textDecoration: 'none', color: 'inherit' }}
-          >
+            sx={{ textDecoration: "none", color: "inherit" }}>
             {value}
           </Link>
         );
-      case 'truncated':
-        if (!value) return '-';
+      case "truncated":
+        if (!value) return "-";
         return (
           <Tooltip title={value}>
             <span
               style={{
-                display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                display: "block",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
                 maxWidth: column.maxWidth || 200,
-              }}
-            >
+              }}>
               {value}
             </span>
           </Tooltip>
         );
-      case 'tooltip':
+      case "tooltip":
         return (
-          <Tooltip title={value || ''}>
-            <span>{value || '-'}</span>
+          <Tooltip title={value || ""}>
+            <span>{value || "-"}</span>
           </Tooltip>
         );
       default:
-        return value || '-';
+        return value || "-";
     }
   };
 
   // Default menu actions if none provided
   const defaultMenuItems = [
     {
-    label: 'Assign User',  
-    icon: <PersonAdd sx={{ mr: 2 }} />, 
-    onClick: handleAssignUser,
-    show: !!onAssignUser,  
-    sx: { color: '#7c3aed' },  
-  },
-  
-    {
-     label: 'Claim Account',  
-      icon: <Business sx={{ mr: 2 }} />, 
-      onClick: handleClaimAccount,
-      show: entityType === 'account' && !!onClaimAccount,  // Only show for accounts, this is not showin up
-     sx: { color: '#f59e0b' },  
+      label: "Assign User",
+      icon: <PersonAdd sx={{ mr: 2 }} />,
+      onClick: handleAssignUser,
+      show: !!onAssignUser,
+      sx: { color: "#7c3aed" },
     },
     {
-    label: 'Assign User',  
-    icon: <PersonAdd sx={{ mr: 2 }} />, 
-    onClick: handleAssignUser,
-    show: !!onAssignUser,  
-    sx: { color: '#7c3aed' },  
-  },
-  
-    {
-     label: 'Claim Account',  
-      icon: <Business sx={{ mr: 2 }} />, 
+      label: "Claim Account",
+      icon: <Business sx={{ mr: 2 }} />,
       onClick: handleClaimAccount,
-      show: entityType === 'account' && !!onClaimAccount,  // Only show for accounts, this is not showin up
-     sx: { color: '#f59e0b' },  
+      show: entityType === "account" && !!onClaimAccount, // Only show for accounts, this is not showin up
+      sx: { color: "#f59e0b" },
     },
     {
-      label: 'View Details',
+      label: "View Details",
       icon: <Info sx={{ mr: 2 }} />,
       onClick: handleView,
       show: !!onView,
     },
     {
-      label: 'Edit',
+      label: "Edit",
       icon: <Edit sx={{ mr: 2 }} />,
       onClick: handleEdit,
       show: !!onEdit,
     },
     {
-      label: 'Add Notes',
+      label: "Add Notes",
       icon: <Note sx={{ mr: 2 }} />,
       onClick: handleAddNote,
       show: !!onAddNote,
-      sx: { color: '#2563eb' },
+      sx: { color: "#2563eb" },
     },
     {
-      label: 'Add Attachments',
+      label: "Add Attachments",
       icon: <AttachFile sx={{ mr: 2 }} />,
       onClick: handleAddAttachment,
       show: !!onAddAttachment,
-      sx: { color: '#059669' },
+      sx: { color: "#059669" },
     },
     {
-      label: 'Delete',
+      label: "Delete",
       icon: <Delete sx={{ mr: 2 }} />,
       onClick: handleDelete,
       show: !!onDelete,
-      sx: { color: '#dc2626' },
+      sx: { color: "#dc2626" },
       disabled: (row) => row?.Active === false,
-    }
+    },
   ];
 
   const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
@@ -326,15 +314,16 @@ const TableView = ({
           startIcon={<FilterIcon />}
           onClick={() => setFiltersExpanded(!filtersExpanded)}
           sx={{
-            backgroundColor: filtersExpanded ? 'primary.main' : 'transparent',
-            color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
-            '&:hover': {
-              backgroundColor: filtersExpanded ? 'primary.dark' : 'primary.light',
-              color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
-            }
-          }}
-        >
-          {filtersExpanded ? 'Hide Filters' : 'Show Filters'}
+            backgroundColor: filtersExpanded ? "primary.main" : "transparent",
+            color: filtersExpanded ? "primary.contrastText" : "primary.main",
+            "&:hover": {
+              backgroundColor: filtersExpanded
+                ? "primary.dark"
+                : "primary.light",
+              color: filtersExpanded ? "primary.contrastText" : "primary.main",
+            },
+          }}>
+          {filtersExpanded ? "Hide Filters" : "Show Filters"}
           {Object.keys(filters).length > 0 && (
             <Chip
               label={Object.keys(filters).length}
@@ -357,7 +346,10 @@ const TableView = ({
           sx={{ minWidth: 250 }}
         />
 
-        <Button variant="outlined" startIcon={<ColumnsIcon />} onClick={() => setColumnsDialogOpen(true)}>
+        <Button
+          variant="outlined"
+          startIcon={<ColumnsIcon />}
+          onClick={() => setColumnsDialogOpen(true)}>
           Columns
         </Button>
       </Box>
@@ -380,10 +372,16 @@ const TableView = ({
                 <TableCell padding="checkbox">
                   <Checkbox
                     color="primary"
-                    indeterminate={selected.length > 0 && selected.length < filteredData.length}
-                    checked={filteredData.length > 0 && selected.length === filteredData.length}
+                    indeterminate={
+                      selected.length > 0 &&
+                      selected.length < filteredData.length
+                    }
+                    checked={
+                      filteredData.length > 0 &&
+                      selected.length === filteredData.length
+                    }
                     onChange={handleSelectAll}
-                    inputProps={{ 'aria-label': 'select all rows' }}
+                    inputProps={{ "aria-label": "select all rows" }}
                   />
                 </TableCell>
               )}
@@ -392,32 +390,43 @@ const TableView = ({
                   {column.headerName || column.field}
                 </TableCell>
               ))}
-              {showActions && <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>}
+              {showActions && (
+                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+              )}
             </TableRow>
           </TableHead>
 
           <TableBody>
             {filteredData.map((row) => {
-              const isItemSelected = showSelection ? isSelected(row[idField]) : false;
+              const isItemSelected = showSelection
+                ? isSelected(row[idField])
+                : false;
               return (
                 <TableRow
                   key={row[idField]}
                   hover
                   selected={isItemSelected}
-                  onClick={showSelection ? () => handleSelectRow(row[idField]) : undefined}
-                  sx={{ cursor: showSelection ? 'pointer' : 'default' }}
-                >
+                  onClick={
+                    showSelection
+                      ? () => handleSelectRow(row[idField])
+                      : undefined
+                  }
+                  sx={{ cursor: showSelection ? "pointer" : "default" }}>
                   {showSelection && (
                     <TableCell padding="checkbox">
                       <Checkbox color="primary" checked={isItemSelected} />
                     </TableCell>
                   )}
                   {displayedColumns.map((column) => (
-                    <TableCell key={column.field}>{renderCellContent(row, column)}</TableCell>
+                    <TableCell key={column.field}>
+                      {renderCellContent(row, column)}
+                    </TableCell>
                   ))}
                   {showActions && (
                     <TableCell>
-                      <IconButton size="small" onClick={(e) => handleMenuClick(e, row)}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleMenuClick(e, row)}>
                         <MoreVert />
                       </IconButton>
                     </TableCell>
@@ -430,16 +439,22 @@ const TableView = ({
       </TableContainer>
 
       {/* Action Menu */}
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}>
         {allMenuItems
           .filter((item) => item.show !== false)
           .map((item, index) => (
             <MenuItem
               key={index}
               onClick={item.onClick}
-              disabled={typeof item.disabled === 'function' ? item.disabled(menuRow) : item.disabled}
-              sx={item.sx}
-            >
+              disabled={
+                typeof item.disabled === "function"
+                  ? item.disabled(menuRow)
+                  : item.disabled
+              }
+              sx={item.sx}>
               {item.icon}
               {item.label}
             </MenuItem>
