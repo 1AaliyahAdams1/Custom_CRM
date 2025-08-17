@@ -1,22 +1,34 @@
 const express = require("express");
 const router = express.Router();
 const activityController = require("../controllers/activityController");
+
+// Get all activities
 router.get("/", activityController.getAllActivities);
-router.get("/user/:userId", activityController.getActivitiesByUser); 
+
+// Get activities by user ID
+router.get("/user/:userId", activityController.getActivitiesByUser);
+
+// Get specific activity by ID
 router.get("/:id", activityController.getActivityByID);
+
+// Create new activity
 router.post("/", activityController.createActivity);
+
+// Update activity
 router.put("/:id", activityController.updateActivity);
+
+// Deactivate activity (soft delete)
 router.patch("/:id/deactivate", activityController.deactivateActivity);
+
+// Reactivate activity
 router.patch("/:id/reactivate", activityController.reactivateActivity);
+
+// Permanently delete activity
 router.delete("/:id/delete", activityController.deleteActivity);
 
 module.exports = router;
 
-
-
-
-
-//ROLE BASED ACCESS BACKEND
+//ROLE BASED ACCESS BACKEND (Commented for reference)
 // const express = require("express");
 // const router = express.Router();
 // const activityController = require("../controllers/activityController");
