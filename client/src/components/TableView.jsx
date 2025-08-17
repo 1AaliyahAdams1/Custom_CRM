@@ -29,6 +29,7 @@ import {
   ViewColumn as ColumnsIcon,
   Business,
   PersonAdd,
+  
 } from '@mui/icons-material';
 
 import ColumnsDialog from './ColumnsDialog';
@@ -67,9 +68,9 @@ const TableView = ({
     columns.reduce((acc, col) => ({ ...acc, [col.field]: true }), {})
   );
 
-  // Dialog open states
-  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  // Dialog open states - removed filterDialogOpen since we're not using a dialog anymore
   const [columnsDialogOpen, setColumnsDialogOpen] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Helpers
   const isSelected = (id) => selected.includes(id);
@@ -86,23 +87,22 @@ const TableView = ({
     setMenuRow(null);
   };
 
-  // Search handler
-  const handleSearchChange = (newSearchTerm) => {
-    setSearchTerm(newSearchTerm);
+  // Action handlers
+  const handleView = () => {
+    if (onView && menuRow) onView(menuRow[idField]);
+    handleMenuClose();
   };
-
-  // Filter handlers
-  const handleToggleFilters = () => {
-    setFiltersExpanded(!filtersExpanded);
+  const handleAssignUser = () => {
+    if (onAssignUser && menuRow) onAssignUser(menuRow);
+    handleMenuClose();
   };
-
-  const handleApplyFilters = (newFilters) => {
-    setFilters(newFilters);
+  const handleEdit = () => {
+    if (onEdit && menuRow) onEdit(menuRow);
+    handleMenuClose();
   };
-
-  // Column handlers
-  const handleOpenColumnsDialog = () => {
-    setColumnsDialogOpen(true);
+  const handleDelete = () => {
+    if (onDelete && menuRow) onDelete(menuRow[idField]);
+    handleMenuClose();
   };
   const handleAddNote = () => {
     if (onAddNote && menuRow) onAddNote(menuRow);
@@ -116,6 +116,14 @@ const TableView = ({
   if (onClaimAccount && menuRow) onClaimAccount(menuRow);
   handleMenuClose();
 };
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
+  };
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
+  };
 
   // Get filtered data based on search term and filters
   const filteredData = data.filter((item) => {
@@ -136,7 +144,10 @@ const TableView = ({
         if (typeof filterValue === 'boolean') {
           if (itemVal !== filterValue) return false;
         } else {
-          if (itemVal?.toString() !== filterValue.toString()) return false;
+          // Use includes for partial matching (like the old implementation)
+          if (!itemVal?.toString().toLowerCase().includes(filterValue.toString().toLowerCase())) {
+            return false;
+          }
         }
       }
     }
@@ -146,10 +157,177 @@ const TableView = ({
   // Columns to show based on visibility state
   const displayedColumns = columns.filter((col) => visibleColumns[col.field]);
 
+  // Selection handlers
+  const handleSelectAll = (event) => {
+    onSelectAllClick && onSelectAllClick(event);
+  };
+  const handleSelectRow = (id) => {
+    onSelectClick && onSelectClick(id);
+  };
+
+  // Render cell content (with formatters and different column types)
+  const renderCellContent = (row, column) => {
+    const value = row[column.field];
+    if (formatters[column.field]) {
+      return formatters[column.field](value, row);
+    }
+    switch (column.type) {
+      case 'chip':
+        return (
+          <Chip
+            label={column.chipLabels ? column.chipLabels[value] : value}
+            sx={{
+              backgroundColor: column.chipColors ? column.chipColors[value] : '#1976d2',
+              color: '#fff',
+              fontWeight: 500,
+            }}
+            size="small"
+          />
+        );
+      case 'boolean':
+        return (
+          <Chip
+            label={value ? 'Yes' : 'No'}
+            sx={{
+              backgroundColor: value ? '#4caf50' : '#f44336',
+              color: '#fff',
+              fontWeight: 500,
+            }}
+            size="small"
+          />
+        );
+      case 'link':
+        if (!value) return '-';
+        const href = value.startsWith('http') ? value : `https://${value}`;
+        return (
+          <Link
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            sx={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            {value}
+          </Link>
+        );
+      case 'truncated':
+        if (!value) return '-';
+        return (
+          <Tooltip title={value}>
+            <span
+              style={{
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: column.maxWidth || 200,
+              }}
+            >
+              {value}
+            </span>
+          </Tooltip>
+        );
+      case 'tooltip':
+        return (
+          <Tooltip title={value || ''}>
+            <span>{value || '-'}</span>
+          </Tooltip>
+        );
+      default:
+        return value || '-';
+    }
+  };
+
+  // Default menu actions if none provided
+  const defaultMenuItems = [
+    {
+    label: 'Assign User',  
+    icon: <PersonAdd sx={{ mr: 2 }} />, 
+    onClick: handleAssignUser,
+    show: !!onAssignUser,  
+    sx: { color: '#7c3aed' },  
+  },
+  
+    {
+     label: 'Claim Account',  
+      icon: <Business sx={{ mr: 2 }} />, 
+      onClick: handleClaimAccount,
+      show: entityType === 'account' && !!onClaimAccount,  // Only show for accounts, this is not showin up
+     sx: { color: '#f59e0b' },  
+    },
+    {
+      label: 'View Details',
+      icon: <Info sx={{ mr: 2 }} />,
+      onClick: handleView,
+      show: !!onView,
+    },
+    {
+      label: 'Edit',
+      icon: <Edit sx={{ mr: 2 }} />,
+      onClick: handleEdit,
+      show: !!onEdit,
+    },
+    {
+      label: 'Add Notes',
+      icon: <Note sx={{ mr: 2 }} />,
+      onClick: handleAddNote,
+      show: !!onAddNote,
+      sx: { color: '#2563eb' },
+    },
+    {
+      label: 'Add Attachments',
+      icon: <AttachFile sx={{ mr: 2 }} />,
+      onClick: handleAddAttachment,
+      show: !!onAddAttachment,
+      sx: { color: '#059669' },
+    },
+    {
+      label: 'Delete',
+      icon: <Delete sx={{ mr: 2 }} />,
+      onClick: handleDelete,
+      show: !!onDelete,
+      sx: { color: '#dc2626' },
+      disabled: (row) => row?.Active === false,
+    },
+   
+  ];
+
+  const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
+
+  // Columns dialog save handler
+  const handleColumnsSave = (newVisibleColumns) => {
+    setVisibleColumns(newVisibleColumns);
+    setColumnsDialogOpen(false);
+  };
+
   return (
     <>
-      {/* Search + Filter + Columns controls */}
+      {/* Search + Columns controls */}
       <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
+        <Button
+          variant="outlined"
+          startIcon={<FilterIcon />}
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
+          sx={{
+            backgroundColor: filtersExpanded ? 'primary.main' : 'transparent',
+            color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
+            '&:hover': {
+              backgroundColor: filtersExpanded ? 'primary.dark' : 'primary.light',
+              color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
+            }
+          }}
+        >
+          {filtersExpanded ? 'Hide Filters' : 'Show Filters'}
+          {Object.keys(filters).length > 0 && (
+            <Chip
+              label={Object.keys(filters).length}
+              size="small"
+              color={filtersExpanded ? "secondary" : "primary"}
+              sx={{ ml: 1 }}
+            />
+          )}
+        </Button>
+
         <TextField
           size="small"
           variant="outlined"
@@ -162,17 +340,19 @@ const TableView = ({
           sx={{ minWidth: 250 }}
         />
 
-        <Button variant="outlined" startIcon={<FilterIcon />} onClick={() => setFilterDialogOpen(true)}>
-          Filters
-          {Object.keys(filters).length > 0 && (
-            <Chip label={Object.keys(filters).length} size="small" color="primary" sx={{ ml: 1 }} />
-          )}
-        </Button>
-
         <Button variant="outlined" startIcon={<ColumnsIcon />} onClick={() => setColumnsDialogOpen(true)}>
           Columns
         </Button>
       </Box>
+
+      {/* Collapsible FilterComponent */}
+      {filtersExpanded && (
+        <FilterDialog
+          columns={columns}
+          onApplyFilters={handleApplyFilters}
+          deals={data}
+        />
+      )}
 
       {/* Table */}
       <TableContainer>
@@ -249,16 +429,7 @@ const TableView = ({
           ))}
       </Menu>
 
-      {/* Dialogs */}
-      <FiltersDialog
-        open={filterDialogOpen}
-        onClose={() => setFilterDialogOpen(false)}
-        onSave={setFilters}
-        columns={columns}
-        data={data}
-        currentFilters={filters}
-      />
-
+      {/* Columns Dialog - kept as is */}
       <ColumnsDialog
         open={columnsDialogOpen}
         visibleColumns={visibleColumns}
