@@ -1,5 +1,7 @@
 export const ROUTE_ACCESS = {
   dashboard: ["C-level", "Sales Manager"],
+  
+  roles: ["C-level"],
 
   accounts: ["C-level", "Sales Manager", "Sales Representative"], 
   accountsDetails: ["C-level", "Sales Manager", "Sales Representative"],
@@ -20,4 +22,6 @@ export const ROUTE_ACCESS = {
   activitiesDetails: ["C-level", "Sales Manager", "Sales Representative"],
   activitiesCreate: ["C-level", "Sales Manager", "Sales Representative"],
   activitiesEdit: ["C-level", "Sales Manager", "Sales Representative"],
+
+  reports: ["C-level", "Sales Manager", "Sales Representative"],
 };

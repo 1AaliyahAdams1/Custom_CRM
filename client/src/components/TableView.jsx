@@ -29,7 +29,12 @@ import {
   ViewColumn as ColumnsIcon,
   Business,
   PersonAdd,
+<<<<<<< HEAD
 } from "@mui/icons-material";
+=======
+  
+} from '@mui/icons-material';
+>>>>>>> 136b0a4d8d94add01ec2032edcd5adb77ce1b0a1
 
 import ColumnsDialog from "./ColumnsDialog";
 import FilterDialog from "./FiltersDialog";
@@ -112,13 +117,24 @@ const TableView = ({
     handleMenuClose();
   };
   const handleClaimAccount = () => {
+<<<<<<< HEAD
     if (onClaimAccount && menuRow) onClaimAccount(menuRow);
     handleMenuClose();
   };
 
   // Filter handler for the new FilterComponent
+=======
+  if (onClaimAccount && menuRow) onClaimAccount(menuRow);
+  handleMenuClose();
+};
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
+  };
+>>>>>>> 136b0a4d8d94add01ec2032edcd5adb77ce1b0a1
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
   };
 
   // Get filtered data based on search term and filters
@@ -255,6 +271,7 @@ const TableView = ({
       sx: { color: "#7c3aed" },
     },
     {
+<<<<<<< HEAD
       label: "Claim Account",
       icon: <Business sx={{ mr: 2 }} />,
       onClick: handleClaimAccount,
@@ -263,6 +280,9 @@ const TableView = ({
     },
     {
       label: "View Details",
+=======
+      label: 'View Details',
+>>>>>>> 136b0a4d8d94add01ec2032edcd5adb77ce1b0a1
       icon: <Info sx={{ mr: 2 }} />,
       onClick: handleView,
       show: !!onView,
@@ -295,6 +315,10 @@ const TableView = ({
       sx: { color: "#dc2626" },
       disabled: (row) => row?.Active === false,
     },
+<<<<<<< HEAD
+=======
+   
+>>>>>>> 136b0a4d8d94add01ec2032edcd5adb77ce1b0a1
   ];
 
   const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;

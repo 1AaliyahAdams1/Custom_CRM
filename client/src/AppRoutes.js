@@ -9,18 +9,15 @@ import { ROUTE_ACCESS } from "./utils/auth/routesAccess";
 import Unauthorized from "./pages/Unauthorized";
 
 // Lazy load pages
-const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Accounts = lazy(() =>
   import("./components/containers/AccountsContainer")
 );
 const Contacts = lazy(() =>
   import("./components/containers/ContactsContainer")
 );
-const Deals = lazy(() => import("./components/containers/DealsContainer"));
-const Activities = lazy(() =>
-  import("./components/containers/ActivitiesContainer")
-);
-// const Roles= lazy(() =>import("./pages/RoleManagementPage"));
+const Deals = lazy(() => import("./pages/DealsPage"));
+const Activities = lazy(() => import("./pages/ActivitiesPage"));
+const Reports = lazy(() => import("./pages/ReportsPage"));
 
 const AccountsDetailsPage = lazy(() => import("./pages/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
