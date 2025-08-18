@@ -1,8 +1,4 @@
-//PAGE : Main Deals Page (presentational only, no data fetching)
-
-//IMPORTS
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -12,16 +8,20 @@ import {
   Paper,
   Chip,
   Toolbar,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   Add,
+  Clear,
 } from "@mui/icons-material";
-import {ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../utils/formatters';
-import UniversalTable from '../components/TableView';
-import { getAllDeals } from '../services/dealService';
+import TableView from '../components/TableView'; 
 import theme from "../components/Theme";
-
 
 // Table configuration for deals
 const dealsTableConfig = {
@@ -31,7 +31,7 @@ const dealsTableConfig = {
     { field: "AccountName", headerName: "Account", width: 150 },
     { field: "StageName", headerName: "Stage", width: 150 },
     { field: 'SymbolValue', headerName: 'Amount' },
-    { field: 'LocalName', headerName: 'Currency symbol' }, //currency name
+    { field: 'LocalName', headerName: 'Currency symbol' },
     { field: 'CloseDate', headerName: 'Close Date', type: 'date' },
     { field: 'Probability', headerName: 'Probability (%)', type: 'percentage' },
     {
@@ -47,109 +47,47 @@ const dealsTableConfig = {
   ]
 };
 
-const DealsPage = () => {
-  const navigate = useNavigate();
-  const [deals, setDeals] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
+const DealsPage = ({ 
+  deals = [],
+  loading = false,
+  error = null,
+  successMessage = "",
+  searchTerm = "",
+  statusFilter = "",
+  setSuccessMessage,
+  setSearchTerm,
+  setStatusFilter,
+  onDeactivate,
+  onEdit,
+  onView,
+  onCreate,
+  onAddNote,
+  onAddAttachment,
+  clearFilters,
+  totalCount = 0
+}) => {
   const [selected, setSelected] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
 
-  // Function to fetch deals data from backend API
-  const fetchDeals = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getAllDeals(true);
-      console.log("Fetched deals:", data);
-      const processedData = data.map(deal => ({
-        ...deal, // keep all original deal fields
-        SymbolValue: deal.Prefix
-          ? `${deal.Symbol}${deal.Value}` // symbol before value
-          : `${deal.Value}${deal.Symbol}` // symbol after value
-      }));
-
-      setDeals(processedData);
-    } catch (error) {
-      console.error("Failed to fetch deals:", error);
-      setError("Failed to load deals. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Action handlers - implement these based on your needs
-  const onCreate = () => {
-    navigate('/deals/create');
-  };
-
-  const onView = (dealId) => {
-    navigate(`/deals/${dealId}`);
-  };
-
-  const onEdit = (deal) => {
-    navigate(`/deals/${deal.DealID}/edit`);
-  };
-
-  const onDeactivate = (dealId) => {
-    // Implement delete/deactivate logic
-    console.log('Deactivate deal:', dealId);
-    // Example:
-    // if (window.confirm('Are you sure you want to delete this deal?')) {
-    //   // Call your delete API
-    // }
-  };
-
-  const onAddNote = (deal) => {
-    // Implement add note logic
-    console.log('Add note to deal:', deal.DealID);
-  };
-
-  const onAddAttachment = (deal) => {
-    // Implement add attachment logic
-    console.log('Add attachment to deal:', deal.DealID);
-  };
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('');
-  };
-
-  // Fetch deals once when component mounts
-  useEffect(() => {
-    fetchDeals();
-  }, []);
+  // Process deals data to add SymbolValue field
+  const processedDeals = deals.map(deal => ({
+    ...deal,
+    SymbolValue: deal.Prefix
+      ? `${deal.Symbol}${deal.Value}`
+      : `${deal.Value}${deal.Symbol}`
+  }));
 
   // Automatically clear success message after 3 seconds
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => {
-        setSuccessMessage("");
+        if (setSuccessMessage) {
+          setSuccessMessage("");
+        }
       }, 3000);
 
-      // Cleanup timer if component unmounts or successMessage changes
       return () => clearTimeout(timer);
     }
-  }, [successMessage]);
-
-  // Filter and search logic
-  const filteredDeals = useMemo(() => {
-    return deals.filter((deal) => {
-      const matchesSearch =
-        (deal.DealName && deal.DealName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (deal.AccountID && deal.AccountID.toString().includes(searchTerm)) ||
-        (deal.DealStageID && deal.DealStageID.toString().includes(searchTerm));
-
-      const matchesStatus = !statusFilter ||
-        (statusFilter === 'high' && deal.Probability >= 75) ||
-        (statusFilter === 'medium' && deal.Probability >= 50 && deal.Probability < 75) ||
-        (statusFilter === 'low' && deal.Probability < 50);
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [deals, searchTerm, statusFilter]);
+  }, [successMessage, setSuccessMessage]);
 
   // Selection handlers
   const handleSelectClick = (id) => {
@@ -174,7 +112,7 @@ const DealsPage = () => {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      setSelected(deals.map(deal => deal.DealID));
+      setSelected(processedDeals.map(deal => deal.DealID));
     } else {
       setSelected([]);
     }
@@ -190,7 +128,7 @@ const DealsPage = () => {
         )}
 
         {successMessage && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage && setSuccessMessage("")}>
             {successMessage}
           </Alert>
         )}
@@ -205,7 +143,7 @@ const DealsPage = () => {
             overflow: 'hidden'
           }}
         >
-          {/* Toolbar*/}
+          {/* Toolbar with search and filters */}
           <Toolbar
             sx={{
               backgroundColor: '#ffffff',
@@ -230,6 +168,40 @@ const DealsPage = () => {
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+              {/* Search and filter controls */}
+              <TextField
+                size="small"
+                placeholder="Search deals..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm && setSearchTerm(e.target.value)}
+                sx={{ minWidth: 200 }}
+              />
+              
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label="Status"
+                  onChange={(e) => setStatusFilter && setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="high">High (75%+)</MenuItem>
+                  <MenuItem value="medium">Medium (50-74%)</MenuItem>
+                  <MenuItem value="low">Low (&lt;50%)</MenuItem>
+                </Select>
+              </FormControl>
+
+              {(searchTerm || statusFilter) && (
+                <Button
+                  variant="outlined"
+                  startIcon={<Clear />}
+                  onClick={clearFilters}
+                  size="small"
+                >
+                  Clear
+                </Button>
+              )}
+
               <Button
                 variant="contained"
                 startIcon={<Add />}
@@ -256,8 +228,8 @@ const DealsPage = () => {
               <CircularProgress />
             </Box>
           ) : (
-            <UniversalTable
-              data={deals}
+            <TableView
+              data={processedDeals}
               columns={dealsTableConfig.columns}
               idField={dealsTableConfig.idField}
               selected={selected}
@@ -270,6 +242,7 @@ const DealsPage = () => {
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
               formatters={formatters}
+              entityType="deal"
             />
           )}
 
@@ -283,7 +256,7 @@ const DealsPage = () => {
             alignItems: 'center'
           }}>
             <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {deals.length} of {deals.length} deals
+              Showing {processedDeals.length} of {totalCount} deals
             </Typography>
             {selected.length > 0 && (
               <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>

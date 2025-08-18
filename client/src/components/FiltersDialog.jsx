@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   TextField, 
-  MenuItem, 
   Button, 
   Grid, 
   Typography,
@@ -10,11 +9,12 @@ import {
   Chip,
   FormControl,
   InputLabel,
-  Select
+  Select,
+  MenuItem
 } from '@mui/material';
 import { Add, Clear, FilterList } from '@mui/icons-material';
 
-const FilterComponent = ({ columns, onApplyFilters, deals = [] }) => {
+const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
   const [filters, setFilters] = useState({});
   const [selectedColumn, setSelectedColumn] = useState('');
   const [filterValue, setFilterValue] = useState('');
@@ -35,14 +35,11 @@ const FilterComponent = ({ columns, onApplyFilters, deals = [] }) => {
 
   const handleAddFilter = () => {
     if (selectedColumn && filterValue.trim()) {
-      setFilters(prev => ({
-        ...prev,
-        [selectedColumn]: filterValue.trim()
-      }));
+      const newFilters = { ...filters, [selectedColumn]: filterValue.trim() };
+      setFilters(newFilters);
       setFilterValue('');
       
       // Auto-apply filters after adding
-      const newFilters = { ...filters, [selectedColumn]: filterValue.trim() };
       applyFilters(newFilters);
     }
   };
@@ -101,7 +98,7 @@ const FilterComponent = ({ columns, onApplyFilters, deals = [] }) => {
       <Box display="flex" alignItems="center" gap={1} mb={2}>
         <FilterList color="primary" />
         <Typography variant="h6" component="h2">
-          Filter Deals
+          Filter Data
         </Typography>
         {activeFiltersCount > 0 && (
           <Chip 
@@ -125,7 +122,7 @@ const FilterComponent = ({ columns, onApplyFilters, deals = [] }) => {
             >
               {columns.map((column) => (
                 <MenuItem key={column.field} value={column.field}>
-                  {column.headerName}
+                  {column.headerName || column.field}
                 </MenuItem>
               ))}
             </Select>
@@ -213,4 +210,4 @@ const FilterComponent = ({ columns, onApplyFilters, deals = [] }) => {
   );
 };
 
-export default FilterComponent;
+export default FiltersDialog;

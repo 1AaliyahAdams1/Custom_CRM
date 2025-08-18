@@ -1,4 +1,3 @@
-// This component is for all the Buttons
 import React from 'react';
 import {
   Menu,
@@ -30,7 +29,7 @@ const ActionMenu = ({
   onAssignUser,
   menuItems = [],
 }) => {
-  // Get current user role
+  // Get current user role - Fixed to handle localStorage errors gracefully
   const getCurrentUserRole = () => {
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');

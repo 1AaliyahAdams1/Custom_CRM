@@ -1,6 +1,4 @@
-// PAGE : Main Accounts Page (presentational only, no data fetching) 
-
-// IMPORTS
+// AccountsPage.jsx 
 import React from "react";
 import {
   Box,
@@ -15,7 +13,7 @@ import {
 import { Add } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../utils/formatters';
-import UniversalTable from '../components/TableView';
+import TableView from '../components/TableView'; 
 import theme from "../components/Theme";
 
 // Table config for accounts
@@ -52,8 +50,8 @@ const accountsTableConfig = {
 };
 
 const AccountsPage = ({
-  accounts,
-  loading,
+  accounts = [], // Added default prop
+  loading = false,
   error,
   successMessage,
   setSuccessMessage,
@@ -67,15 +65,14 @@ const AccountsPage = ({
   const [selected, setSelected] = React.useState([]);
 
   const handleClaimAccount = (account) => {
-  console.log("Claiming account:", account);
-  // Add claim logic here
-  
-};
-const handleAssignUser = (account) => {
-  console.log("Assigning user to account:", account);
-  // Add  assign user logic here
-  
-};
+    console.log("Claiming account:", account);
+    // Add claim logic here
+  };
+
+  const handleAssignUser = (account) => {
+    console.log("Assigning user to account:", account);
+    // Add assign user logic here
+  };
 
   // Selection handlers
   const handleSelectClick = (id) => {
@@ -177,7 +174,7 @@ const handleAssignUser = (account) => {
               <CircularProgress />
             </Box>
           ) : (
-            <UniversalTable
+            <TableView
               data={accounts}
               columns={accountsTableConfig.columns}
               idField={accountsTableConfig.idField}
