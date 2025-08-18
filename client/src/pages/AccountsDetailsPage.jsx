@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Grid, Typography, Link as MuiLink, Alert, Button } from "@mui/material";
-import { UniversalDetailView } from "../components/DetailsView";
+import  {UniversalDetailView} from "../components/DetailsView";
 import { fetchAccountById, updateAccount, deactivateAccount } from "../services/accountService";
 
 // Main fields configuration for accounts

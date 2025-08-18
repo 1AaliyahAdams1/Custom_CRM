@@ -334,6 +334,12 @@ export default function ContactDetailView() {
                         </Typography>
                         <Typography variant="body2">{formatDate(deal.CloseDate)}</Typography>
                       </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Probability:
+                        </Typography>
+                        <Typography variant="body2">{deal.Probability ? `${deal.Probability}%` : "-"}</Typography>
+                      </Box>
                     </Box>
 
                     <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
@@ -406,6 +412,12 @@ export default function ContactDetailView() {
                           Status:
                         </Typography>
                         <Typography variant="body2">{activity.Status || "-"}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '100px' }}>
+                          Priority:
+                        </Typography>
+                        <Typography variant="body2">{activity.Priority || "-"}</Typography>
                       </Box>
                     </Box>
 
