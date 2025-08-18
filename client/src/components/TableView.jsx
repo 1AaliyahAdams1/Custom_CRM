@@ -27,10 +27,13 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon,
   ViewColumn as ColumnsIcon,
+  Business,
+  PersonAdd,
+  
 } from '@mui/icons-material';
 
 import ColumnsDialog from './ColumnsDialog';
-import FiltersDialog from './FiltersDialog';
+import FilterDialog from './FiltersDialog';
 
 const TableView = ({
   data = [],
@@ -46,6 +49,9 @@ const TableView = ({
   onDelete,
   onAddNote,
   onAddAttachment,
+  onClaimAccount,
+  entityType,
+  onAssignUser,
   menuItems = [],
   formatters = {},
 }) => {
@@ -62,9 +68,9 @@ const TableView = ({
     columns.reduce((acc, col) => ({ ...acc, [col.field]: true }), {})
   );
 
-  // Dialog open states
-  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  // Dialog open states - removed filterDialogOpen since we're not using a dialog anymore
   const [columnsDialogOpen, setColumnsDialogOpen] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Helpers
   const isSelected = (id) => selected.includes(id);
@@ -86,6 +92,10 @@ const TableView = ({
     if (onView && menuRow) onView(menuRow[idField]);
     handleMenuClose();
   };
+  const handleAssignUser = () => {
+    if (onAssignUser && menuRow) onAssignUser(menuRow);
+    handleMenuClose();
+  };
   const handleEdit = () => {
     if (onEdit && menuRow) onEdit(menuRow);
     handleMenuClose();
@@ -102,6 +112,18 @@ const TableView = ({
     if (onAddAttachment && menuRow) onAddAttachment(menuRow);
     handleMenuClose();
   };
+  const handleClaimAccount = () => {
+  if (onClaimAccount && menuRow) onClaimAccount(menuRow);
+  handleMenuClose();
+};
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
+  };
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
+  };
 
   // Get filtered data based on search term and filters
   const filteredData = data.filter((item) => {
@@ -114,14 +136,18 @@ const TableView = ({
       });
       if (!found) return false;
     }
-    // Filters
+
+    // Apply filters from FilterComponent
     for (const [filterField, filterValue] of Object.entries(filters)) {
       if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
         const itemVal = item[filterField];
         if (typeof filterValue === 'boolean') {
           if (itemVal !== filterValue) return false;
         } else {
-          if (itemVal?.toString() !== filterValue.toString()) return false;
+          // Use includes for partial matching (like the old implementation)
+          if (!itemVal?.toString().toLowerCase().includes(filterValue.toString().toLowerCase())) {
+            return false;
+          }
         }
       }
     }
@@ -215,6 +241,21 @@ const TableView = ({
   // Default menu actions if none provided
   const defaultMenuItems = [
     {
+    label: 'Assign User',  
+    icon: <PersonAdd sx={{ mr: 2 }} />, 
+    onClick: handleAssignUser,
+    show: !!onAssignUser,  
+    sx: { color: '#7c3aed' },  
+  },
+  
+    {
+     label: 'Claim Account',  
+      icon: <Business sx={{ mr: 2 }} />, 
+      onClick: handleClaimAccount,
+      show: entityType === 'account' && !!onClaimAccount,  // Only show for accounts, this is not showin up
+     sx: { color: '#f59e0b' },  
+    },
+    {
       label: 'View Details',
       icon: <Info sx={{ mr: 2 }} />,
       onClick: handleView,
@@ -248,14 +289,7 @@ const TableView = ({
       sx: { color: '#dc2626' },
       disabled: (row) => row?.Active === false,
     },
-    {
-      label: 'Delete',
-      icon: <Delete sx={{ mr: 2 }} />,
-      onClick: handleDelete,
-      show: !!onDelete,
-      sx: { color: '#dc2626' },
-      disabled: (row) => row?.Active === false, // Can be customized per table
-    }
+   
   ];
 
   const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
@@ -268,8 +302,32 @@ const TableView = ({
 
   return (
     <>
-      {/* Search + Filter + Columns controls */}
+      {/* Search + Columns controls */}
       <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
+        <Button
+          variant="outlined"
+          startIcon={<FilterIcon />}
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
+          sx={{
+            backgroundColor: filtersExpanded ? 'primary.main' : 'transparent',
+            color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
+            '&:hover': {
+              backgroundColor: filtersExpanded ? 'primary.dark' : 'primary.light',
+              color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
+            }
+          }}
+        >
+          {filtersExpanded ? 'Hide Filters' : 'Show Filters'}
+          {Object.keys(filters).length > 0 && (
+            <Chip
+              label={Object.keys(filters).length}
+              size="small"
+              color={filtersExpanded ? "secondary" : "primary"}
+              sx={{ ml: 1 }}
+            />
+          )}
+        </Button>
+
         <TextField
           size="small"
           variant="outlined"
@@ -282,17 +340,19 @@ const TableView = ({
           sx={{ minWidth: 250 }}
         />
 
-        <Button variant="outlined" startIcon={<FilterIcon />} onClick={() => setFilterDialogOpen(true)}>
-          Filters
-          {Object.keys(filters).length > 0 && (
-            <Chip label={Object.keys(filters).length} size="small" color="primary" sx={{ ml: 1 }} />
-          )}
-        </Button>
-
         <Button variant="outlined" startIcon={<ColumnsIcon />} onClick={() => setColumnsDialogOpen(true)}>
           Columns
         </Button>
       </Box>
+
+      {/* Collapsible FilterComponent */}
+      {filtersExpanded && (
+        <FilterDialog
+          columns={columns}
+          onApplyFilters={handleApplyFilters}
+          deals={data}
+        />
+      )}
 
       {/* Table */}
       <TableContainer>
@@ -369,16 +429,7 @@ const TableView = ({
           ))}
       </Menu>
 
-      {/* Dialogs */}
-      <FiltersDialog
-        open={filterDialogOpen}
-        onClose={() => setFilterDialogOpen(false)}
-        onSave={setFilters}
-        columns={columns}
-        data={data}
-        currentFilters={filters}
-      />
-
+      {/* Columns Dialog - kept as is */}
       <ColumnsDialog
         open={columnsDialogOpen}
         visibleColumns={visibleColumns}

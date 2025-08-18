@@ -14,63 +14,10 @@ import {
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { formatters } from '../utils/formatters';
 import UniversalTable from '../components/TableView';
+import theme from "../components/Theme";
 
-// Monochrome theme for MUI components
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-  },
-  components: {
-    MuiTableHead: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#f0f0f0',
-        },
-      },
-    },
-    MuiTableRow: {
-      styleOverrides: {
-        root: {
-          '&:hover': {
-            backgroundColor: '#f5f5f5',
-          },
-          '&.Mui-selected': {
-            backgroundColor: '#e0e0e0',
-            '&:hover': {
-              backgroundColor: '#d5d5d5',
-            },
-          },
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: '4px',
-          fontWeight: 500,
-        },
-      },
-    },
-  },
-});
 
 const ContactsPage = ({
   contacts,
@@ -87,57 +34,51 @@ const ContactsPage = ({
   onAddNote,
   onAddAttachment,
 }) => {
+  const handleAssignUser = (account) => {
+  console.log("Assigning user to account:", account);
+  // Add  assign user logic here
+  
+};
 
   const columns = [
     {
       field: 'AccountName',
       headerName: 'Account Name',
-      width: 120
     },
     {
       field: 'PersonFullName',
       headerName: 'Person',
-      width: 300,
       type: 'string'
     },
     {
       field: 'WorkEmail',
       headerName: 'Email',
-      width: 200,
       type: 'string'
     },
     {
       field: 'WorkPhone',
       headerName: 'Phone',
-      width: 150,
       type: 'string'
-    },
-    {
-      field: 'Still_employed',
-      headerName: 'Still Employed',
-      width: 140,
-      type: 'boolean',
-      valueGetter: (params) =>
-        params.row?.Still_employed === true ? "Yes" :
-          params.row?.Still_employed === false ? "No" : "N/A"
     },
     {
       field: 'JobTitleName',
       headerName: 'Job Title',
-      width: 130
     },
     {
       field: 'CreatedAt',
       headerName: 'Created At',
-      width: 180,
-      type: 'dateTime'
+      type: 'dateTime',
     },
     {
       field: 'UpdatedAt',
       headerName: 'Updated At',
-      width: 180,
-      type: 'dateTime'
-    }
+      type: 'dateTime',
+    },
+    {
+      field: 'Still_employed',
+      headerName: 'Still Employed',
+      type: 'boolean',
+    },
   ];
 
   return (
@@ -227,6 +168,7 @@ const ContactsPage = ({
               onDelete={handleDeactivate}
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
+              onAssignUser={handleAssignUser}
               formatters={formatters}
             />
           )}
@@ -254,14 +196,6 @@ const ContactsPage = ({
   );
 };
 
-const formatters = {
-  CreatedAt: (value) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (isNaN(date)) return "-";
-    return date.toLocaleDateString();
-  },
-};
 
 export default ContactsPage;
 

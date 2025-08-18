@@ -13,64 +13,10 @@ import {
   Toolbar,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
+import { formatters } from '../utils/formatters';
 import UniversalTable from '../components/TableView';
-
-// Monochrome theme for MUI components
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-  },
-  components: {
-    MuiTableHead: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#f0f0f0',
-        },
-      },
-    },
-    MuiTableRow: {
-      styleOverrides: {
-        root: {
-          '&:hover': {
-            backgroundColor: '#f5f5f5',
-          },
-          '&.Mui-selected': {
-            backgroundColor: '#e0e0e0',
-            '&:hover': {
-              backgroundColor: '#d5d5d5',
-            },
-          },
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: '4px',
-          fontWeight: 500,
-        },
-      },
-    },
-  },
-});
+import theme from "../components/Theme";
 
 // Table config for accounts
 const accountsTableConfig = {
@@ -78,14 +24,23 @@ const accountsTableConfig = {
   columns: [
     { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
     { field: 'CityName', headerName: 'City Name' },
+    { field: 'StateProvince_Name', headerName: 'State Province Name' },
+    { field: 'CountryName', headerName: 'Country Name' },
     { field: 'street_address', headerName: 'Street Address', type: 'truncated', maxWidth: 200 },
     { field: 'postal_code', headerName: 'Postal Code' },
     { field: 'PrimaryPhone', headerName: 'Phone' },
+    { field: 'IndustryName', headerName: 'Industry Name' },
+    { field: 'fax', headerName: 'Fax' },
     { field: 'email', headerName: 'Email' },
     { field: 'Website', headerName: 'Website', type: 'link' },
     { field: 'number_of_employees', headerName: '# Employees' },
+    { field: 'number_of_venues', headerName: '# Venues' },
+    { field: 'number_of_releases', headerName: '# Releases' },
+    { field: 'number_of_events_anually', headerName: '# Events Anually' },
     { field: 'annual_revenue', headerName: 'Annual Revenue' },
+    { field: 'ParentAccountName', headerName: 'Parent Account' },
     { field: 'CreatedAt', headerName: 'Created' },
+    { field: 'UpdatedAt', headerName: 'Updated' },
     {
       field: 'ownerStatus',
       headerName: 'Ownership',
@@ -110,6 +65,17 @@ const AccountsPage = ({
   onAddAttachment,
 }) => {
   const [selected, setSelected] = React.useState([]);
+
+  const handleClaimAccount = (account) => {
+  console.log("Claiming account:", account);
+  // Add claim logic here
+  
+};
+const handleAssignUser = (account) => {
+  console.log("Assigning user to account:", account);
+  // Add  assign user logic here
+  
+};
 
   // Selection handlers
   const handleSelectClick = (id) => {
@@ -138,26 +104,6 @@ const AccountsPage = ({
     } else {
       setSelected([]);
     }
-  };
-
-  // Formatters for columns
-  const formatters = {
-    street_address: (value, row) => {
-      const fullAddress = [row.street_address1, row.street_address2, row.street_address3]
-        .filter(Boolean)
-        .join(" ");
-      return fullAddress || "-";
-    },
-    annual_revenue: (value) => {
-      if (!value) return "-";
-      return new Intl.NumberFormat().format(value);
-    },
-    CreatedAt: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
   };
 
   return (
@@ -245,6 +191,9 @@ const AccountsPage = ({
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
               formatters={formatters}
+              entityType="account"  
+              onClaimAccount={handleClaimAccount} 
+              onAssignUser={handleAssignUser}
             />
           )}
 

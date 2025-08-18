@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   Link as MuiLink,
   Tabs,
   Tab,
@@ -13,12 +12,10 @@ import {
   Button,
   Paper,
   Chip,
-  Divider,
   TextField,
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
   Checkbox,
   FormControlLabel,
   Switch,
@@ -29,56 +26,12 @@ import {
   Save,
   Close,
   Delete,
-  Business,
-  Phone,
-  Language,
-  LocationOn,
   Note,
   AttachFile,
+   PersonAdd,
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-  },
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          border: '1px solid #e5e5e5',
-          boxShadow: 'none',
-          borderRadius: '8px',
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: '4px',
-          fontWeight: 500,
-        },
-      },
-    },
-  },
-});
+import theme from "../components/Theme";
 
 /**
  * Universal DetailView Component
@@ -100,6 +53,7 @@ const theme = createTheme({
  * @param {Object} props.customTheme - Optional custom theme override
  * @param {boolean} props.readOnly - If true, hides edit/delete buttons
  * @param {string} props.entityType - Type of entity for logging/analytics
+ *  
  */
 export function UniversalDetailView({
   title,
@@ -169,6 +123,11 @@ export function UniversalDetailView({
     }
     console.log(`Adding attachment to ${entityType}:`, item);
   };
+  const handleAssignUser = () => {
+  console.log(`Assigning user to ${entityType}:`, item);
+  // Add  assign user logic here
+  
+};
 
   const updateField = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -176,6 +135,8 @@ export function UniversalDetailView({
 
   const renderField = (field) => {
     const value = formData[field.key] || "";
+  
+
 
     if (!isEditing) {
       // Read-only display
@@ -438,6 +399,7 @@ export function UniversalDetailView({
             
             {!readOnly && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+               
                 {/* Add Notes and Attachments buttons - always visible */}
                 
                 {isEditing ? (
@@ -453,6 +415,7 @@ export function UniversalDetailView({
                       '&:hover': {
                         borderColor: '#1d4ed8',
                         backgroundColor: '#dbeafe',
+                      
                       },
                     }}
                   >
@@ -511,6 +474,38 @@ export function UniversalDetailView({
               >
                 Back
               </Button>
+            
+              <Button
+                variant="outlined"
+                onClick={handleAssignUser}
+                startIcon={<PersonAdd />}
+                sx={{
+                 borderColor: '#7c3aed',
+                 color: '#7c3aed',
+                  '&:hover': {
+                     borderColor: '#6d28d9',
+                      backgroundColor: '#f3e8ff',
+                    },
+                }}
+              >
+              Assign User
+            </Button>
+              {entityType === "account" && (
+              <Button
+                variant="outlined"
+                // onClick={handleClaimAccount} need to have claim account logic
+                sx={{
+                  borderColor: '#f59e0b',
+                  color: '#f59e0b',
+                  '&:hover': {
+                  borderColor: '#d97706',
+                  backgroundColor: '#fef3c7',
+                  },
+               }}
+              >
+              Claim Account
+            </Button>
+          )}
                     {onSave && (
                       <Button
                         variant="contained"

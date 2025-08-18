@@ -25,6 +25,8 @@ import {
   ChevronLeft,
   ChevronRight,
   BarChart as BarChartIcon,
+   AdminPanelSettings as AdminPanelSettingsIcon,
+   
 } from "@mui/icons-material";
 
 import { useAuth } from "../hooks/auth/useAuth";
@@ -56,12 +58,27 @@ const navigation = [
     icon: HandshakeIcon,
     accessKey: "deals",
   },
+ 
+ 
   {
     name: "Activities",
     href: "/activities",
     icon: EventIcon,
     accessKey: "activities",
   },
+  {    
+    name: "Reports",
+    href: "/reports", 
+    icon: BarChartIcon,
+    accessKey: "reports",
+  },
+  {
+    name: "Role Management",
+    href: "/roleManagement",
+    icon: AdminPanelSettingsIcon,
+    accessKey: 'roles',
+  },
+
   {
     name: "Settings",
     href: "/settings",
@@ -70,7 +87,7 @@ const navigation = [
   },
 ];
 
-const DRAWER_WIDTH_EXPANDED = 256;
+const DRAWER_WIDTH_EXPANDED = 200;
 const DRAWER_WIDTH_COLLAPSED = 64;
 
 export function AppSidebar() {
@@ -284,7 +301,7 @@ export function AppSidebar() {
               transition: "opacity 0.3s ease",
             }}
           >
-            CRM MVP v2.0
+            2025 CRM Prototype v2
           </Typography>
         </Box>
       )}
