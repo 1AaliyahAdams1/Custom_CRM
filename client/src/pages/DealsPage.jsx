@@ -18,6 +18,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { formatters } from "../utils/formatters";
 import UniversalTable from "../components/TableView";
 import { getAllDeals } from "../services/dealService";
+import { getAllAccounts } from "../services/accountService"; // Import the account service
 import theme from "../components/Theme";
 
 // Table configuration for deals
@@ -47,7 +48,8 @@ const dealsTableConfig = {
 const DealsPage = () => {
   const navigate = useNavigate();
   const [deals, setDeals] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [accounts, setAccounts] = useState([]); // State for accounts
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [selected, setSelected] = useState([]);
@@ -55,69 +57,53 @@ const DealsPage = () => {
   const [statusFilter, setStatusFilter] = useState("");
 
   // Function to fetch deals data from backend API
-  const fetchDeals = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getAllDeals(true);
-      console.log("Fetched deals:", data);
-      const processedData = data.map((deal) => ({
-        ...deal, // keep all original deal fields
-        SymbolValue: deal.Prefix
-          ? `${deal.Symbol}${deal.Value}` // symbol before value
-          : `${deal.Value}${deal.Symbol}`, // symbol after value
-      }));
+  useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        setLoading(true);
+        const response = await getAllDeals(true);
+        const data = response?.data || response || [];
+        console.log("Fetched deals:", data);
+        const processedData = Array.isArray(data)
+          ? data.map((deal) => ({
+              ...deal, // keep all original deal fields
+              SymbolValue: deal.Prefix
+                ? `${deal.Symbol}${deal.Value}` // symbol before value
+                : `${deal.Value}${deal.Symbol}`, // symbol after value
+            }))
+          : [];
+        setDeals(processedData);
+      } catch (error) {
+        console.error("Failed to fetch deals:", error);
+        setError("Failed to load deals. Please try again.");
+        setDeals([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setDeals(processedData);
+    fetchDeals();
+    fetchParentAccounts();
+  }, []);
+
+  // Function to fetch accounts data from backend API
+  const fetchParentAccounts = async () => {
+    try {
+      const response = await getAllAccounts();
+      const data = response?.data || response || [];
+      console.log("Fetched accounts:", data);
+      const processedAccounts = Array.isArray(data)
+        ? data.map((account) => ({
+            AccountID: account.AccountID || account.id,
+            AccountName: account.AccountName || account.name,
+          }))
+        : [];
+      setAccounts(processedAccounts);
     } catch (error) {
-      console.error("Failed to fetch deals:", error);
-      setError("Failed to load deals. Please try again.");
-    } finally {
-      setLoading(false);
+      console.error("Failed to fetch accounts:", error);
+      setError("Failed to load accounts. Please try again.");
     }
   };
-
-  // Action handlers - implement these based on your needs
-  const onCreate = () => {
-    navigate("/deals/create");
-  };
-
-  const onView = (dealId) => {
-    navigate(`/deals/${dealId}`);
-  };
-
-  const onEdit = (deal) => {
-    navigate(`/deals/${deal.DealID}/edit`);
-  };
-
-  const onDeactivate = (dealId) => {
-    // Implement delete/deactivate logic
-    console.log("Deactivate deal:", dealId);
-    // Example:
-    // if (window.confirm('Are you sure you want to delete this deal?')) {
-    //   // Call your delete API
-    // }
-  };
-
-  const onAddNote = (deal) => {
-    // Implement add note logic
-    console.log("Add note to deal:", deal.DealID);
-  };
-
-  const onAddAttachment = (deal) => {
-    // Implement add attachment logic
-    console.log("Add attachment to deal:", deal.DealID);
-  };
-
-  const clearFilters = () => {
-    setSearchTerm("");
-    setStatusFilter("");
-  };
-
-  // Fetch deals once when component mounts
-  useEffect(() => {
-    fetchDeals();
-  }, []);
 
   // Automatically clear success message after 3 seconds
   useEffect(() => {
@@ -133,24 +119,9 @@ const DealsPage = () => {
 
   // Filter and search logic
   const filteredDeals = useMemo(() => {
-    return deals.filter((deal) => {
-      const matchesSearch =
-        (deal.DealName &&
-          deal.DealName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (deal.AccountID && deal.AccountID.toString().includes(searchTerm)) ||
-        (deal.DealStageID && deal.DealStageID.toString().includes(searchTerm));
-
-      const matchesStatus =
-        !statusFilter ||
-        (statusFilter === "high" && deal.Probability >= 75) ||
-        (statusFilter === "medium" &&
-          deal.Probability >= 50 &&
-          deal.Probability < 75) ||
-        (statusFilter === "low" && deal.Probability < 50);
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [deals, searchTerm, statusFilter]);
+    if (loading) return [];
+    return deals.filter((deal) => deal.status === "active");
+  }, [deals, loading]);
 
   // Selection handlers
   const handleSelectClick = (id) => {
@@ -179,6 +150,26 @@ const DealsPage = () => {
     } else {
       setSelected([]);
     }
+  };
+
+  // Placeholder functions for unimplemented features
+  const onCreate = () => {
+    /* your logic */
+  };
+  const onView = () => {
+    /* your logic */
+  };
+  const onEdit = () => {
+    /* your logic */
+  };
+  const onDeactivate = () => {
+    /* your logic */
+  };
+  const onAddNote = () => {
+    /* your logic */
+  };
+  const onAddAttachment = () => {
+    /* your logic */
   };
 
   return (

@@ -415,16 +415,9 @@ const LoginPage = () => {
               backgroundColor: "#fafafa",
               borderTop: "1px solid rgba(0, 0, 0, 0.06)",
               textAlign: "center",
-<<<<<<< HEAD
             }}>
             <Typography variant="caption" sx={{ color: "#999" }}>
               © 2025 CRM Portal
-=======
-            }}
-          >
-            <Typography variant="caption" sx={{ color: "#999", fontSize: "0.75rem" }}>
-              © 2025 CRM Prototype
->>>>>>> 136b0a4d8d94add01ec2032edcd5adb77ce1b0a1
             </Typography>
           </Box>
         </Paper>
