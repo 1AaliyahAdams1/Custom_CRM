@@ -16,8 +16,6 @@ const Deals = lazy(() => import("./components/containers/DealsContainer"));
 const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
 
-
-
 const AccountsDetailsPage = lazy(() => import("./pages/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
 const DealsDetailsPage = lazy(() => import("./pages/DealsDetailsPage"));

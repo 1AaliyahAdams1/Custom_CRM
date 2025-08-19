@@ -120,7 +120,7 @@ const TableView = ({
   const handleSelectAll = (event) => {
     onSelectAllClick && onSelectAllClick(event);
   };
-  
+
   const handleSelectRow = (id) => {
     onSelectClick && onSelectClick(id);
   };

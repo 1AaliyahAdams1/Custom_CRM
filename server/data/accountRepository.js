@@ -147,9 +147,9 @@ async function updateAccount(id, accountData, changedBy = 1) {
       .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
       .input("UpdatedAt", sql.SmallDateTime, new Date())
       .input("ChangedBy", sql.Int, changedBy)
+      .input("ActionTypeID", sql.Int, 2)
       .input("StateProvinceID", sql.Int, StateProvinceID)
       .input("CountryID", sql.Int, CountryID)
-      .input("ActionTypeID", sql.Int, 2)
       .execute('UpdateAccount');
 
     return { message: "Account updated", AccountID: id };
