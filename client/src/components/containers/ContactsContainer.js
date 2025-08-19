@@ -34,28 +34,50 @@ const ContactsContainer = () => {
       let data = [];
 
       if (isCLevel) {
-        // Fetch all contacts for C-level users
+        console.log("Fetching all contacts for C-level user...");
         const allContacts = await getAllContacts();
+        console.log("getAllContacts() returned:", allContacts);
         data = allContacts;
       } else if (isSalesRep && userId) {
-        // Fetch contacts assigned to this Sales Rep
+        console.log("Fetching contacts for Sales Rep user:", userId);
         const userContacts = await fetchContactsByUser(userId);
+        console.log("fetchContactsByUser() returned:", userContacts);
         data = userContacts;
       } else {
-        // No matching role, show empty list or customize as needed
+        console.log("No matching role or user ID");
         data = [];
       }
 
-      // Add full name to each contact
-      const processedData = data.map(contact => ({
-        ...contact,
-        PersonFullName: [
-          contact.first_name || '',
-          contact.middle_name || '',
-          contact.surname || ''
-        ].filter(part => part.trim() !== '').join(' ')
-      }));
+      console.log("Raw contacts data from API:", data);
+      console.log("Sample contact (first item):", data[0]);
 
+      // Ensure data is an array
+      if (!Array.isArray(data)) {
+        console.error("API did not return an array:", data);
+        throw new Error("Invalid response format - expected array");
+      }
+
+      // Add full name to each contact
+      const processedData = data.map((contact, index) => {
+        console.log(`Processing contact ${index}:`, contact);
+        console.log(`ContactID for contact ${index}:`, contact.ContactID, "Type:", typeof contact.ContactID);
+        
+        if (!contact.ContactID) {
+          console.warn(`Contact ${index} missing ContactID:`, contact);
+        }
+
+        return {
+          ...contact,
+          PersonFullName: [
+            contact.first_name || '',
+            contact.middle_name || '',
+            contact.surname || ''
+          ].filter(part => part.trim() !== '').join(' ')
+        };
+      });
+
+      console.log("Processed contacts data:", processedData);
+      console.log("First processed contact ContactID:", processedData[0]?.ContactID);
       setContacts(processedData);
     } catch (err) {
       console.error("Failed to load contacts:", err);
@@ -79,22 +101,34 @@ const ContactsContainer = () => {
   // filteredContacts and handlers from your original code remain here
 
   const filteredContacts = useMemo(() => {
-    return contacts.filter((contact) => {
+    console.log("Filtering contacts. Raw contacts:", contacts);
+    console.log("Search term:", searchTerm, "Employment filter:", employmentStatusFilter);
+    
+    const filtered = contacts.filter((contact) => {
+      console.log("Filtering contact:", contact, "ContactID:", contact.ContactID);
+      
       const matchesSearch =
         (contact.ContactID && contact.ContactID.toString().includes(searchTerm)) ||
         (contact.AccountID && contact.AccountID.toString().includes(searchTerm)) ||
         (contact.PersonID && contact.PersonID.toString().includes(searchTerm)) ||
         (contact.WorkEmail && contact.WorkEmail.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (contact.WorkPhone && contact.WorkPhone.includes(searchTerm)) ||
-        (contact.JobTitleID && contact.JobTitleID.toString().includes(searchTerm));
+        (contact.JobTitleID && contact.JobTitleID.toString().includes(searchTerm)) ||
+        (contact.PersonFullName && contact.PersonFullName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (contact.AccountName && contact.AccountName.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesEmploymentStatus = !employmentStatusFilter ||
         (employmentStatusFilter === 'employed' && contact.Still_employed === true) ||
         (employmentStatusFilter === 'not_employed' && contact.Still_employed === false) ||
         (employmentStatusFilter === 'unknown' && contact.Still_employed == null);
 
-      return matchesSearch && matchesEmploymentStatus;
+      const passes = matchesSearch && matchesEmploymentStatus;
+      console.log("Contact", contact.ContactID, "passes filter:", passes);
+      return passes;
     });
+    
+    console.log("Filtered contacts:", filtered);
+    return filtered;
   }, [contacts, searchTerm, employmentStatusFilter]);
 
   const handleSelectClick = (event, id) => {
@@ -106,6 +140,12 @@ const ContactsContainer = () => {
   };
 
   const handleEdit = (contact) => {
+    console.log("Editing contact:", contact);
+    if (!contact.ContactID) {
+      console.error("Cannot edit contact - missing ContactID:", contact);
+      setError("Cannot edit contact - missing ID");
+      return;
+    }
     navigate(`/contacts/edit/${contact.ContactID}`);
   };
 
@@ -114,6 +154,15 @@ const ContactsContainer = () => {
   };
 
   const handleView = (contact) => {
+    console.log("Viewing contact:", contact);
+    console.log("ContactID:", contact.ContactID, "Type:", typeof contact.ContactID);
+    
+    if (!contact.ContactID) {
+      console.error("Cannot view contact - missing ContactID:", contact);
+      setError("Cannot view contact - missing ID");
+      return;
+    }
+    
     navigate(`/contacts/${contact.ContactID}`);
   };
 
@@ -126,8 +175,12 @@ const ContactsContainer = () => {
     fetchContacts();
   }, [refreshFlag]);
 
-
   const handleDeactivate = async (id) => {
+    if (!id) {
+      setError("Cannot delete contact - missing ID");
+      return;
+    }
+
     const confirm = window.confirm(
       "Are you sure you want to delete this contact? This will deactivate it."
     );
@@ -139,19 +192,26 @@ const ContactsContainer = () => {
       setSuccessMessage("Contact deleted successfully.");
       setRefreshFlag((flag) => !flag);
     } catch (error) {
-      console.error("Failed to delete account:", error);
-      setError("Failed to delete account. Please try again.");
+      console.error("Failed to delete contact:", error);
+      setError("Failed to delete contact. Please try again.");
     }
   };
 
   const handleAddNote = (contact) => {
+    if (!contact.ContactID) {
+      console.error("Cannot add note - missing ContactID:", contact);
+      return;
+    }
     //navigate(`/contacts/${contact.ContactID}/add-note`);
   };
 
   const handleAddAttachment = (contact) => {
+    if (!contact.ContactID) {
+      console.error("Cannot add attachment - missing ContactID:", contact);
+      return;
+    }
     //navigate(`/contacts/${contact.ContactID}/add-attachment`);
   };
-
 
   const formatters = {
     CreatedAt: (value) => {
@@ -164,7 +224,7 @@ const ContactsContainer = () => {
 
   return (
     <ContactsPage
-      contacts={contacts}
+      contacts={filteredContacts} 
       loading={loading}
       error={error}
       successMessage={successMessage}
@@ -185,7 +245,6 @@ const ContactsContainer = () => {
       onAddNote={handleAddNote}
       onAddAttachment={handleAddAttachment}
     />
-
   );
 };
 

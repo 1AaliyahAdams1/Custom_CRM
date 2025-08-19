@@ -101,15 +101,52 @@ export default function ContactDetailView() {
         return;
       }
 
+      // Validate that ID is a number
+      const contactId = parseInt(id, 10);
+      if (isNaN(contactId) || contactId <= 0) {
+        setError(`Invalid contact ID: "${id}". Expected a positive number.`);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
-        const response = await getContactDetails(id);
-        console.log("Fetched contact details:", response.data);
-        setContact(response.data);
+        console.log("Fetching contact with ID:", contactId, "(original param:", id, ")");
+        
+        // Fix: Handle the API response structure properly
+        const response = await getContactDetails(contactId);
+        console.log("Raw API response:", response);
+        
+        // The response might be structured differently
+        // Check if response has a data property or if it's the data directly
+        let contactData;
+        if (response && response.data) {
+          contactData = response.data;
+        } else if (response && typeof response === 'object') {
+          contactData = response;
+        } else {
+          throw new Error('Invalid response format');
+        }
+        
+        console.log("Processed contact data:", contactData);
+        setContact(contactData);
       } catch (error) {
         console.error("Failed to fetch contact:", error);
-        setError("Failed to load contact details. Please try again.");
+        // More specific error handling
+        if (error.response) {
+          if (error.response.status === 404) {
+            setError(`Contact with ID ${id} not found.`);
+          } else if (error.response.status === 403) {
+            setError("You don't have permission to view this contact.");
+          } else {
+            setError(`Failed to load contact details: ${error.response.data?.error || error.message}`);
+          }
+        } else if (error.request) {
+          setError("Network error. Please check your connection and try again.");
+        } else {
+          setError(`Failed to load contact details: ${error.message}`);
+        }
       } finally {
         setLoading(false);
       }
@@ -125,21 +162,31 @@ export default function ContactDetailView() {
   const handleSave = async (formData) => {
     try {
       console.log("Saving contact:", formData);
-      setContact(formData);
       await updateContact(id, formData);
+      setContact(formData);
       setSuccessMessage("Contact updated successfully!");
     } catch (error) {
       console.error("Failed to save contact:", error);
+      setError(`Failed to update contact: ${error.response?.data?.error || error.message}`);
     }
   };
 
   const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to deactivate this contact?')) {
+      return;
+    }
+    
     try {
-      console.log("Deactivating (soft deleting) contact with ID:", id);
+      console.log("Deactivating contact with ID:", id);
       await deactivateContact(id);
-      navigate('/contacts');
+      setSuccessMessage("Contact deactivated successfully!");
+      // Navigate after a short delay to show the success message
+      setTimeout(() => {
+        navigate('/contacts');
+      }, 1500);
     } catch (error) {
       console.error("Failed to delete contact:", error);
+      setError(`Failed to deactivate contact: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -334,6 +381,12 @@ export default function ContactDetailView() {
                         </Typography>
                         <Typography variant="body2">{formatDate(deal.CloseDate)}</Typography>
                       </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '80px' }}>
+                          Probability:
+                        </Typography>
+                        <Typography variant="body2">{deal.Probability ? `${deal.Probability}%` : "-"}</Typography>
+                      </Box>
                     </Box>
 
                     <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
@@ -406,6 +459,12 @@ export default function ContactDetailView() {
                           Status:
                         </Typography>
                         <Typography variant="body2">{activity.Status || "-"}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: '100px' }}>
+                          Priority:
+                        </Typography>
+                        <Typography variant="body2">{activity.Priority || "-"}</Typography>
                       </Box>
                     </Box>
 
@@ -622,6 +681,41 @@ export default function ContactDetailView() {
       .filter(Boolean);
     return nameParts.length > 0 ? nameParts.join(' ') : 'Contact Details';
   };
+
+  // Early return for loading and error states
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <Typography>Loading contact details...</Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button variant="outlined" onClick={handleBack}>
+          Back to Contacts
+        </Button>
+      </Box>
+    );
+  }
+
+  if (!contact) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Contact not found.
+        </Alert>
+        <Button variant="outlined" onClick={handleBack}>
+          Back to Contacts
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <>

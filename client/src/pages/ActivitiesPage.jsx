@@ -1,6 +1,3 @@
-//PAGE : Main Activities Page (presentational only, no data fetching)
-
-//IMPORTS
 import React from "react";
 import {
   Box,
@@ -12,12 +9,10 @@ import {
   Chip,
   Toolbar,
 } from "@mui/material";
-import {
-  Add,
-} from "@mui/icons-material";
+import { Add } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../utils/formatters';
-import UniversalTable from '../components/TableView';
+import TableView from '../components/TableView'; 
 import theme from "../components/Theme";
 
 // Table configuration for activities
@@ -50,8 +45,8 @@ const activitiesTableConfig = {
 };
 
 const ActivitiesPage = ({
-  activities,
-  loading,
+  activities = [], // Added default prop
+  loading = false,
   error,
   successMessage,
   setSuccessMessage,
@@ -161,7 +156,6 @@ const ActivitiesPage = ({
               >
                 Add Activity
               </Button>
-
             </Box>
           </Toolbar>
 
@@ -171,7 +165,7 @@ const ActivitiesPage = ({
               <CircularProgress />
             </Box>
           ) : (
-            <UniversalTable
+            <TableView
               data={activities}
               columns={activitiesTableConfig.columns}
               idField={activitiesTableConfig.idField}
@@ -185,6 +179,7 @@ const ActivitiesPage = ({
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
               formatters={formatters}
+              entityType="activity"
             />
           )}
 

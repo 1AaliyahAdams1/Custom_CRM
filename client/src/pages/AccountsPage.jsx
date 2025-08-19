@@ -1,6 +1,4 @@
-// PAGE : Main Accounts Page (presentational only, no data fetching) 
-
-// IMPORTS
+// AccountsPage.jsx
 import React from "react";
 import {
   Box,
@@ -13,209 +11,132 @@ import {
   Toolbar,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { formatters } from '../utils/formatters';
-import UniversalTable from '../components/TableView';
+import { ThemeProvider } from "@mui/material/styles";
+import TableView from '../components/TableView';
 import theme from "../components/Theme";
-
-// Table config for accounts
-const accountsTableConfig = {
-  idField: 'AccountID',
-  columns: [
-    { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
-    { field: 'CityName', headerName: 'City Name' },
-    { field: 'StateProvince_Name', headerName: 'State Province Name' },
-    { field: 'CountryName', headerName: 'Country Name' },
-    { field: 'street_address', headerName: 'Street Address', type: 'truncated', maxWidth: 200 },
-    { field: 'postal_code', headerName: 'Postal Code' },
-    { field: 'PrimaryPhone', headerName: 'Phone' },
-    { field: 'IndustryName', headerName: 'Industry Name' },
-    { field: 'fax', headerName: 'Fax' },
-    { field: 'email', headerName: 'Email' },
-    { field: 'Website', headerName: 'Website', type: 'link' },
-    { field: 'number_of_employees', headerName: '# Employees' },
-    { field: 'number_of_venues', headerName: '# Venues' },
-    { field: 'number_of_releases', headerName: '# Releases' },
-    { field: 'number_of_events_anually', headerName: '# Events Anually' },
-    { field: 'annual_revenue', headerName: 'Annual Revenue' },
-    { field: 'ParentAccountName', headerName: 'Parent Account' },
-    { field: 'CreatedAt', headerName: 'Created' },
-    { field: 'UpdatedAt', headerName: 'Updated' },
-    {
-      field: 'ownerStatus',
-      headerName: 'Ownership',
-      type: 'chip',
-      chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
-      chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' }
-    },
-  ],
-};
+import { formatters } from '../utils/formatters';
 
 const AccountsPage = ({
-  accounts,
-  loading,
+  accounts = [],
+  loading = false,
   error,
   successMessage,
   setSuccessMessage,
+  selected = [],
+  onSelectClick,
+  onSelectAllClick,
   onDeactivate,
   onEdit,
   onView,
   onCreate,
   onAddNote,
   onAddAttachment,
+  onClaimAccount,
+  onAssignUser,
+  tableConfig,
+  notesPopupOpen,
+  setNotesPopupOpen,
+  attachmentsPopupOpen,
+  setAttachmentsPopupOpen,
+  selectedAccount,
+  popupLoading,
+  popupError,
+  handleSaveNote,
+  handleDeleteNote,
+  handleEditNote,
+  handleUploadAttachment,
+  handleDeleteAttachment,
+  handleDownloadAttachment,
 }) => {
-  const [selected, setSelected] = React.useState([]);
-
-  const handleClaimAccount = (account) => {
-  console.log("Claiming account:", account);
-  // Add claim logic here
-  
-};
-const handleAssignUser = (account) => {
-  console.log("Assigning user to account:", account);
-  // Add  assign user logic here
-  
-};
-
-  // Selection handlers
-  const handleSelectClick = (id) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
-      );
-    }
-
-    setSelected(newSelected);
-  };
-
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      setSelected(accounts.map(account => account.AccountID));
-    } else {
-      setSelected([]);
-    }
-  };
+  const columns = [
+    { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
+    { field: 'CityName', headerName: 'City' },
+    { field: 'StateProvince_Name', headerName: 'State Province' },
+    { field: 'CountryName', headerName: 'Country' },
+    { field: 'street_address', headerName: 'Street', type: 'truncated', maxWidth: 200 },
+    { field: 'postal_code', headerName: 'Postal Code' },
+    { field: 'PrimaryPhone', headerName: 'Phone' },
+    { field: 'IndustryName', headerName: 'Industry' },
+    { field: 'fax', headerName: 'Fax' },
+    { field: 'email', headerName: 'Email' },
+    { field: 'Website', headerName: 'Website', type: 'link' },
+    { field: 'number_of_employees', headerName: '# Employees' },
+    { field: 'number_of_venues', headerName: '# Venues' },
+    { field: 'number_of_releases', headerName: '# Releases' },
+    { field: 'number_of_events_anually', headerName: '# Events Annually' },
+    { field: 'annual_revenue', headerName: 'Annual Revenue' },
+    { field: 'ParentAccountName', headerName: 'Parent Account' },
+    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime' },
+    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime' },
+    {
+      field: 'ownerStatus',
+      headerName: 'Ownership',
+      type: 'chip',
+      chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
+      chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' },
+    },
+  ];
 
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {successMessage && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
+          <Alert
+            severity="success"
+            sx={{ mb: 2 }}
+            onClose={() => setSuccessMessage && setSuccessMessage("")}
+          >
             {successMessage}
           </Alert>
         )}
 
-        <Paper
-          elevation={0}
-          sx={{
-            width: '100%',
-            mb: 2,
-            border: '0px solid #e5e5e5',
-            borderRadius: '8px',
-            overflow: 'hidden'
-          }}
-        >
-          {/* Toolbar with title and Add button */}
-          <Toolbar
-            sx={{
-              backgroundColor: '#ffffff',
-              borderBottom: '1px solid #e5e5e5',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 2,
-              py: 2,
-            }}
-          >
+        <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+          <Toolbar sx={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e5e5', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, py: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
               <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
                 Accounts
               </Typography>
-              {selected.length > 0 && (
-                <Chip
-                  label={`${selected.length} selected`}
-                  size="small"
-                  sx={{ backgroundColor: '#e0e0e0', color: '#050505' }}
-                />
-              )}
+              {selected.length > 0 && <Chip label={`${selected.length} selected`} size="small" sx={{ backgroundColor: '#e0e0e0', color: '#050505' }} />}
             </Box>
-
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Button
                 variant="contained"
                 startIcon={<Add />}
                 onClick={onCreate}
-                sx={{
-                  backgroundColor: '#050505',
-                  color: '#ffffff',
-                  '&:hover': { backgroundColor: '#333333' },
-                }}
               >
                 Add Account
               </Button>
+
             </Box>
           </Toolbar>
 
-          {/* Loading spinner or table */}
           {loading ? (
-            <Box display="flex" justifyContent="center" p={8}>
-              <CircularProgress />
-            </Box>
+            <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>
           ) : (
-            <UniversalTable
+            <TableView
               data={accounts}
-              columns={accountsTableConfig.columns}
-              idField={accountsTableConfig.idField}
+              columns={columns}
+              idField="AccountID" 
               selected={selected}
-              onSelectClick={handleSelectClick}
-              onSelectAllClick={handleSelectAllClick}
+              onSelectClick={onSelectClick}
+              onSelectAllClick={onSelectAllClick}
               showSelection={true}
               onView={onView}
               onEdit={onEdit}
               onDelete={onDeactivate}
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
+              onClaimAccount={onClaimAccount}
+              onAssignUser={onAssignUser}
               formatters={formatters}
-              entityType="account"  
-              onClaimAccount={handleClaimAccount} 
-              onAssignUser={handleAssignUser}
+              entityType="account"
             />
           )}
 
-          {/* Footer */}
-          <Box
-            sx={{
-              p: 2,
-              borderTop: '1px solid #e5e5e5',
-              backgroundColor: '#fafafa',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {accounts.length} accounts
-            </Typography>
-            {selected.length > 0 && (
-              <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
-                {selected.length} selected
-              </Typography>
-            )}
+          <Box sx={{ p: 2, borderTop: '1px solid #e5e5e5', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" sx={{ color: '#666666' }}>Showing {accounts.length} accounts</Typography>
+            {selected.length > 0 && <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>{selected.length} selected</Typography>}
           </Box>
         </Paper>
       </Box>

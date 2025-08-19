@@ -1,6 +1,4 @@
-// ContactsPage.jsx (presentational only, no internal search/filter UI)
-
-// IMPORTS
+// ContactsPage.jsx 
 import React from "react";
 import {
   Box,
@@ -13,20 +11,20 @@ import {
   Toolbar,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../utils/formatters';
-import UniversalTable from '../components/TableView';
+import TableView from '../components/TableView'; 
 import theme from "../components/Theme";
 
-
 const ContactsPage = ({
-  contacts,
-  loading,
+  contacts = [], 
+  loading = false,
   error,
   successMessage,
-  selected,
-  handleSelectClick,
-  handleSelectAllClick,
+  setSuccessMessage, 
+  selected = [], 
+  handleSelectClick, 
+  handleSelectAllClick, 
   handleEdit,
   handleOpenCreate,
   handleView,
@@ -34,12 +32,7 @@ const ContactsPage = ({
   onAddNote,
   onAddAttachment,
 }) => {
-  const handleAssignUser = (account) => {
-  console.log("Assigning user to account:", account);
-  // Add  assign user logic here
   
-};
-
   const columns = [
     {
       field: 'AccountName',
@@ -91,7 +84,11 @@ const ContactsPage = ({
         )}
 
         {successMessage && (
-          <Alert severity="success" sx={{ mb: 2 }}>
+          <Alert 
+            severity="success" 
+            sx={{ mb: 2 }} 
+            onClose={() => setSuccessMessage && setSuccessMessage("")}
+          >
             {successMessage}
           </Alert>
         )}
@@ -101,7 +98,7 @@ const ContactsPage = ({
           sx={{
             width: '100%',
             mb: 2,
-            border: '1px solid #e5e5e5',
+            border: '0px solid #e5e5e5', 
             borderRadius: '8px',
             overflow: 'hidden'
           }}
@@ -155,7 +152,7 @@ const ContactsPage = ({
               <CircularProgress />
             </Box>
           ) : (
-            <UniversalTable
+            <TableView
               data={contacts}
               columns={columns}
               idField="ContactID"
@@ -168,8 +165,8 @@ const ContactsPage = ({
               onDelete={handleDeactivate}
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
-              onAssignUser={handleAssignUser}
               formatters={formatters}
+              entityType="contact"
             />
           )}
 
@@ -196,6 +193,4 @@ const ContactsPage = ({
   );
 };
 
-
 export default ContactsPage;
-
