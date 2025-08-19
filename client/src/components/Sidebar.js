@@ -26,8 +26,8 @@ import {
   ChevronLeft,
   ChevronRight,
   BarChart as BarChartIcon,
-   AdminPanelSettings as AdminPanelSettingsIcon,
-   
+  AdminPanelSettings as AdminPanelSettingsIcon,
+
 } from "@mui/icons-material";
 
 import { useAuth } from "../hooks/auth/useAuth";
@@ -59,8 +59,8 @@ const navigation = [
     icon: HandshakeIcon,
     accessKey: "deals",
   },
- 
- 
+
+
   {
     name: "Activities",
     href: "/activities",
@@ -73,9 +73,9 @@ const navigation = [
     icon: WorkspacesOutlineIcon,
     accessKey: "smartWork",
   },
-  {    
+  {
     name: "Reports",
-    href: "/reports", 
+    href: "/reports",
     icon: BarChartIcon,
     accessKey: "reports",
   },
