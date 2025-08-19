@@ -48,9 +48,10 @@ const ActionMenu = ({
 
   // Action handlers
   const handleView = () => {
-    if (onView && menuRow) onView(menuRow[idField]);
+    if (onView && menuRow) onView(menuRow);  
     onClose();
   };
+
 
   const handleAssignUser = () => {
     if (onAssignUser && menuRow) onAssignUser(menuRow);
