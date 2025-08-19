@@ -21,6 +21,13 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon,
   ViewColumn as ColumnsIcon,
+  PersonAdd,
+  Business,
+  Info,
+  Edit,
+  Note,
+  AttachFile,
+  Delete,
 } from '@mui/icons-material';
 
 import ColumnsDialog from './ColumnsDialog';

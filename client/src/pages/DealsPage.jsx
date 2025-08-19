@@ -104,32 +104,49 @@ const dealsTableConfig = {
 };
 
 const DealsPage = ({ 
-  deals = [],
-  loading = false,
-  error = null,
+  deals: propsDeals = [],
+  loading: propsLoading = false,
+  error: propsError = null,
   successMessage = "",
-  searchTerm = "",
-  statusFilter = "",
+  searchTerm: propsSearchTerm = "",
+  statusFilter: propsStatusFilter = "",
   setSuccessMessage,
-  setSearchTerm,
-  setStatusFilter,
-  onDeactivate,
-  onEdit,
-  onView,
-  onCreate,
-  onAddNote,
-  onAddAttachment,
-  clearFilters,
+  setSearchTerm: propsSetSearchTerm,
+  setStatusFilter: propsSetStatusFilter,
+  onDeactivate: propsOnDeactivate,
+  onEdit: propsOnEdit,
+  onView: propsOnView,
+  onCreate: propsOnCreate,
+  onAddNote: propsOnAddNote,
+  onAddAttachment: propsOnAddAttachment,
+  clearFilters: propsClearFilters,
   totalCount = 0
 }) => {
+  const navigate = useNavigate();
+  
+  // Internal state management
   const [selected, setSelected] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [localDeals, setLocalDeals] = useState([]);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [localError, setLocalError] = useState(null);
+  const [internalSearchTerm, setInternalSearchTerm] = useState("");
+  const [internalStatusFilter, setInternalStatusFilter] = useState("");
+  
+  // Use props if provided, otherwise use internal state
+  const currentDeals = propsDeals.length > 0 ? propsDeals : localDeals;
+  const currentLoading = propsLoading || localLoading;
+  const currentError = propsError || localError;
+  const currentSearchTerm = propsSearchTerm || internalSearchTerm;
+  const currentStatusFilter = propsStatusFilter || internalStatusFilter;
+  
+  // Use props handlers if provided, otherwise use internal handlers
+  const handleSetSearchTerm = propsSetSearchTerm || setInternalSearchTerm;
+  const handleSetStatusFilter = propsSetStatusFilter || setInternalStatusFilter;
 
   // Function to fetch deals data from backend API
   const fetchDeals = async () => {
-    setLoading(true);
-    setError(null);
+    setLocalLoading(true);
+    setLocalError(null);
     try {
       const data = await getAllDeals(true);
       console.log("Fetched deals:", data);
@@ -140,49 +157,60 @@ const DealsPage = ({
           : `${deal.Value}${deal.Symbol}`, // symbol after value
       }));
 
-      setDeals(processedData);
+      setLocalDeals(processedData);
     } catch (error) {
       console.error("Failed to fetch deals:", error);
-      setError("Failed to load deals. Please try again.");
+      setLocalError("Failed to load deals. Please try again.");
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
   };
 
-  // Action handlers
-  const onCreate = () => {
+  // Internal action handlers
+  const handleCreateDeal = () => {
     navigate("/deals/create");
   };
 
-  const onView = (dealId) => {
+  const handleViewDeal = (dealId) => {
     navigate(`/deals/${dealId}`);
   };
 
-const onEdit = (deal) => {
-  navigate(`/deals/edit/${deal.DealID}`);
-};
+  const handleEditDeal = (deal) => {
+    navigate(`/deals/edit/${deal.DealID}`);
+  };
 
-  const onDeactivate = (dealId) => {
+  const handleDeactivateDeal = (dealId) => {
     console.log("Deactivate deal:", dealId);
   };
 
-  const onAddNote = (deal) => {
+  const handleAddNoteToDeal = (deal) => {
     console.log("Add note to deal:", deal.DealID);
   };
 
-  const onAddAttachment = (deal) => {
+  const handleAddAttachmentToDeal = (deal) => {
     console.log("Add attachment to deal:", deal.DealID);
   };
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setStatusFilter("");
+  const handleClearAllFilters = () => {
+    handleSetSearchTerm("");
+    handleSetStatusFilter("");
   };
 
-  // Fetch deals once when component mounts
+  // Use provided handlers or fallback to internal handlers
+  const finalOnCreate = propsOnCreate || handleCreateDeal;
+  const finalOnView = propsOnView || handleViewDeal;
+  const finalOnEdit = propsOnEdit || handleEditDeal;
+  const finalOnDeactivate = propsOnDeactivate || handleDeactivateDeal;
+  const finalOnAddNote = propsOnAddNote || handleAddNoteToDeal;
+  const finalOnAddAttachment = propsOnAddAttachment || handleAddAttachmentToDeal;
+  const finalClearFilters = propsClearFilters || handleClearAllFilters;
+
+  // Fetch deals once when component mounts (only if no deals provided via props)
   useEffect(() => {
-    fetchDeals();
-  }, []);
+    if (propsDeals.length === 0) {
+      fetchDeals();
+    }
+  }, [propsDeals.length]);
 
   // Automatically clear success message after 3 seconds
   useEffect(() => {
@@ -194,28 +222,28 @@ const onEdit = (deal) => {
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [successMessage]);
+  }, [successMessage, setSuccessMessage]);
 
   // Filter and search logic
   const filteredDeals = useMemo(() => {
-    return deals.filter((deal) => {
+    return currentDeals.filter((deal) => {
       const matchesSearch =
         (deal.DealName &&
-          deal.DealName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (deal.AccountID && deal.AccountID.toString().includes(searchTerm)) ||
-        (deal.DealStageID && deal.DealStageID.toString().includes(searchTerm));
+          deal.DealName.toLowerCase().includes(currentSearchTerm.toLowerCase())) ||
+        (deal.AccountID && deal.AccountID.toString().includes(currentSearchTerm)) ||
+        (deal.DealStageID && deal.DealStageID.toString().includes(currentSearchTerm));
 
       const matchesStatus =
-        !statusFilter ||
-        (statusFilter === "high" && deal.Probability >= 75) ||
-        (statusFilter === "medium" &&
+        !currentStatusFilter ||
+        (currentStatusFilter === "high" && deal.Probability >= 75) ||
+        (currentStatusFilter === "medium" &&
           deal.Probability >= 50 &&
           deal.Probability < 75) ||
-        (statusFilter === "low" && deal.Probability < 50);
+        (currentStatusFilter === "low" && deal.Probability < 50);
 
       return matchesSearch && matchesStatus;
     });
-  }, [deals, searchTerm, statusFilter]);
+  }, [currentDeals, currentSearchTerm, currentStatusFilter]);
 
   // Selection handlers
   const handleSelectClick = (id) => {
@@ -240,7 +268,7 @@ const onEdit = (deal) => {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      setSelected(deals.map((deal) => deal.DealID));
+      setSelected(currentDeals.map((deal) => deal.DealID));
     } else {
       setSelected([]);
     }
@@ -256,9 +284,9 @@ const onEdit = (deal) => {
           p: 3,
         }}
       >
-        {error && (
+        {currentError && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
+            {currentError}
           </Alert>
         )}
 
@@ -266,7 +294,7 @@ const onEdit = (deal) => {
           <Alert
             severity="success"
             sx={{ mb: 2 }}
-            onClose={() => setSuccessMessage("")}
+            onClose={() => setSuccessMessage && setSuccessMessage("")}
           >
             {successMessage}
           </Alert>
@@ -321,8 +349,8 @@ const onEdit = (deal) => {
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={onCreate}
-                disabled={loading}
+                onClick={finalOnCreate}
+                disabled={currentLoading}
                 sx={{
                   backgroundColor: "#050505",
                   color: "#ffffff",
@@ -340,9 +368,9 @@ const onEdit = (deal) => {
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <InputLabel>Probability</InputLabel>
                 <Select
-                  value={statusFilter}
+                  value={currentStatusFilter}
                   label="Probability"
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => handleSetStatusFilter(e.target.value)}
                   sx={{
                     backgroundColor: "#ffffff",
                     "& .MuiOutlinedInput-notchedOutline": {
@@ -364,11 +392,11 @@ const onEdit = (deal) => {
               </FormControl>
 
               {/* Clear Filters */}
-              {(searchTerm || statusFilter) && (
+              {(currentSearchTerm || currentStatusFilter) && (
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={clearFilters}
+                  onClick={finalClearFilters}
                   startIcon={<Clear />}
                   sx={{
                     borderColor: "#e5e5e5",
@@ -386,7 +414,7 @@ const onEdit = (deal) => {
           </Toolbar>
 
           {/* Loading spinner or table */}
-          {loading ? (
+          {currentLoading ? (
             <Box display="flex" justifyContent="center" p={8}>
               <CircularProgress />
             </Box>
@@ -399,11 +427,11 @@ const onEdit = (deal) => {
               onSelectClick={handleSelectClick}
               onSelectAllClick={handleSelectAllClick}
               showSelection={true}
-              onView={onView}
-              onEdit={onEdit}
-              onDelete={onDeactivate}
-              onAddNote={onAddNote}
-              onAddAttachment={onAddAttachment}
+              onView={finalOnView}
+              onEdit={finalOnEdit}
+              onDelete={finalOnDeactivate}
+              onAddNote={finalOnAddNote}
+              onAddAttachment={finalOnAddAttachment}
               formatters={formatters}
               entityType="deal"
             />
@@ -421,7 +449,7 @@ const onEdit = (deal) => {
             }}
           >
             <Typography variant="body2" sx={{ color: "#666666" }}>
-              Showing {filteredDeals.length} of {deals.length} deals
+              Showing {filteredDeals.length} of {currentDeals.length} deals
             </Typography>
             {selected.length > 0 && (
               <Typography

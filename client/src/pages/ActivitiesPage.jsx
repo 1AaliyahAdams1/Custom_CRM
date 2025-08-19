@@ -282,7 +282,7 @@ const ActivitiesPage = ({
               <CircularProgress />
             </Box>
           ) : (
-            <TableView
+            <UniversalTable
               data={activities}
               columns={activitiesTableConfig.columns}
               idField={activitiesTableConfig.idField}

@@ -309,13 +309,13 @@ const AccountsPage = ({
           {loading ? (
             <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>
           ) : (
-            <TableView
+            <UniversalTable
               data={accounts}
-              columns={columns}
-              idField="AccountID" 
+              columns={accountsTableConfig.columns}
+              idField={accountsTableConfig.idField}
               selected={selected}
-              onSelectClick={onSelectClick}
-              onSelectAllClick={onSelectAllClick}
+              onSelectClick={handleSelectClick}
+              onSelectAllClick={handleSelectAllClick}
               showSelection={true}
               onView={onView}
               onEdit={onEdit}
