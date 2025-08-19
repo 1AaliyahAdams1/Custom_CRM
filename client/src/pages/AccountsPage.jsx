@@ -99,8 +99,6 @@ const AccountsPage = ({
       setSuccessMessage('Note added successfully!');
       setNotesPopupOpen(false);
       
-      // Optionally refresh accounts list if notes count affects display
-      
     } catch (error) {
       setPopupError(error.message || 'Failed to save note');
     } finally {
@@ -115,8 +113,6 @@ const AccountsPage = ({
       
       await noteService.deleteNote(noteId);
       setSuccessMessage('Note deleted successfully!');
-      
-      // Optionally refresh accounts list
       
     } catch (error) {
       setPopupError(error.message || 'Failed to delete note');
@@ -133,8 +129,6 @@ const AccountsPage = ({
       await noteService.updateNote(noteData.NoteID, noteData);
       setSuccessMessage('Note updated successfully!');
       
-      // Optionally refresh accounts list
-      
     } catch (error) {
       setPopupError(error.message || 'Failed to update note');
     } finally {
@@ -142,7 +136,7 @@ const AccountsPage = ({
     }
   };
 
-  // Attachments handlers
+  // Fixed attachments handlers
   const handleAddAttachment = (account) => {
     setSelectedAccount(account);
     setAttachmentsPopupOpen(true);
@@ -154,15 +148,9 @@ const AccountsPage = ({
       setPopupLoading(true);
       setPopupError(null);
       
-      // Upload each file
-      for (const attachmentData of attachmentDataArray) {
-        await attachmentService.uploadAttachment(attachmentData);
-      }
-      
+      // The upload is already handled in the popup component
+      // Just show success message
       setSuccessMessage(`${attachmentDataArray.length} attachment(s) uploaded successfully!`);
-      setAttachmentsPopupOpen(false);
-      
-      // Optionally refresh accounts list if attachment count affects display
       
     } catch (error) {
       setPopupError(error.message || 'Failed to upload attachments');
@@ -178,8 +166,6 @@ const AccountsPage = ({
       
       await attachmentService.deleteAttachment(attachmentId);
       setSuccessMessage('Attachment deleted successfully!');
-      
-      // Optionally refresh accounts list
       
     } catch (error) {
       setPopupError(error.message || 'Failed to delete attachment');
@@ -364,7 +350,6 @@ const AccountsPage = ({
           entityType="account"
           entityId={selectedAccount?.AccountID}
           entityName={selectedAccount?.AccountName}
-          existingAttachments={selectedAccount?.attachments || []}
           loading={popupLoading}
           error={popupError}
         />
