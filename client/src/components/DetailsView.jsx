@@ -28,7 +28,7 @@ import {
   Delete,
   Note,
   AttachFile,
-   PersonAdd,
+  PersonAdd,
 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import theme from "../components/Theme";
@@ -44,7 +44,7 @@ import theme from "../components/Theme";
  * @param {Function} props.onBack - Callback for back button
  * @param {Function} props.onSave - Callback for save action (optional)
  * @param {Function} props.onDelete - Callback for delete action (optional)
- * * @param {Function} props.onAddNote - Callback for add note action (optional)
+ * @param {Function} props.onAddNote - Callback for add note action (optional)
  * @param {Function} props.onAddAttachment - Callback for add attachment action (optional)
  * @param {boolean} props.loading - Loading state
  * @param {string} props.error - Error message
@@ -112,22 +112,27 @@ export function UniversalDetailView({
 
   const handleAddNote = () => {
     if (onAddNote) {
-      onAddNote(item);
+      onAddNote();
     }
     console.log(`Adding note to ${entityType}:`, item);
   };
 
   const handleAddAttachment = () => {
     if (onAddAttachment) {
-      onAddAttachment(item);
+      onAddAttachment();
     }
     console.log(`Adding attachment to ${entityType}:`, item);
   };
+
   const handleAssignUser = () => {
-  console.log(`Assigning user to ${entityType}:`, item);
-  // Add  assign user logic here
-  
-};
+    console.log(`Assigning user to ${entityType}:`, item);
+    // Add assign user logic here
+  };
+
+  const handleClaimAccount = () => {
+    console.log(`Claiming ${entityType}:`, item);
+    // Add claim account logic here
+  };
 
   const updateField = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -135,8 +140,6 @@ export function UniversalDetailView({
 
   const renderField = (field) => {
     const value = formData[field.key] || "";
-  
-
 
     if (!isEditing) {
       // Read-only display
@@ -158,7 +161,7 @@ export function UniversalDetailView({
               {value}
             </MuiLink>
           ) : field.type === "currency" && value ? (
-            `${parseFloat(value).toLocaleString()}`
+            `$${parseFloat(value).toLocaleString()}`
           ) : field.type === "date" && value ? (
             new Date(value).toLocaleDateString()
           ) : field.type === "datetime" && value ? (
@@ -367,7 +370,6 @@ export function UniversalDetailView({
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-             
               <Box>
                 <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600, mb: 0.5 }}>
                   {title}
@@ -393,53 +395,12 @@ export function UniversalDetailView({
                   </Box>
                 )}
               </Box>
-               
             </Box>
-            
             
             {!readOnly && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-               
-                {/* Add Notes and Attachments buttons - always visible */}
-                
                 {isEditing ? (
                   <>
-                  {onAddNote && (
-                  <Button
-                    variant="outlined"
-                    onClick={handleAddNote}
-                    startIcon={<Note />}
-                    sx={{
-                      borderColor: '#2563eb',
-                      color: '#2563eb',
-                      '&:hover': {
-                        borderColor: '#1d4ed8',
-                        backgroundColor: '#dbeafe',
-                      
-                      },
-                    }}
-                  >
-                    Add Notes
-                  </Button>
-                )}
-                
-                {onAddAttachment && (
-                  <Button
-                    variant="outlined"
-                    onClick={handleAddAttachment}
-                    startIcon={<AttachFile />}
-                    sx={{
-                      borderColor: '#059669',
-                      color: '#059669',
-                      '&:hover': {
-                        borderColor: '#047857',
-                        backgroundColor: '#d1fae5',
-                      },
-                    }}
-                  >
-                    Add Attachments
-                  </Button>
-                )}
                     <Button
                       variant="outlined"
                       onClick={handleCancel}
@@ -459,53 +420,91 @@ export function UniversalDetailView({
                   </>
                 ) : (
                   <>
-                  <Button
-                variant="outlined"
-                onClick={onBack}
-                startIcon={<ArrowBack />}
-                sx={{
-                  borderColor: '#e5e5e5',
-                  color: '#666666',
-                  '&:hover': {
-                    borderColor: '#cccccc',
-                    backgroundColor: '#f5f5f5',
-                  },
-                }}
-              >
-                Back
-              </Button>
-            
-              <Button
-                variant="outlined"
-                onClick={handleAssignUser}
-                startIcon={<PersonAdd />}
-                sx={{
-                 borderColor: '#7c3aed',
-                 color: '#7c3aed',
-                  '&:hover': {
-                     borderColor: '#6d28d9',
-                      backgroundColor: '#f3e8ff',
-                    },
-                }}
-              >
-              Assign User
-            </Button>
-              {entityType === "account" && (
-              <Button
-                variant="outlined"
-                // onClick={handleClaimAccount} need to have claim account logic
-                sx={{
-                  borderColor: '#f59e0b',
-                  color: '#f59e0b',
-                  '&:hover': {
-                  borderColor: '#d97706',
-                  backgroundColor: '#fef3c7',
-                  },
-               }}
-              >
-              Claim Account
-            </Button>
-          )}
+                    <Button
+                      variant="outlined"
+                      onClick={onBack}
+                      startIcon={<ArrowBack />}
+                      sx={{
+                        borderColor: '#e5e5e5',
+                        color: '#666666',
+                        '&:hover': {
+                          borderColor: '#cccccc',
+                          backgroundColor: '#f5f5f5',
+                        },
+                      }}
+                    >
+                      Back
+                    </Button>
+                
+                    <Button
+                      variant="outlined"
+                      onClick={handleAssignUser}
+                      startIcon={<PersonAdd />}
+                      sx={{
+                        borderColor: '#7c3aed',
+                        color: '#7c3aed',
+                        '&:hover': {
+                          borderColor: '#6d28d9',
+                          backgroundColor: '#f3e8ff',
+                        },
+                      }}
+                    >
+                      Assign User
+                    </Button>
+                    
+                    {entityType === "account" && (
+                      <Button
+                        variant="outlined"
+                        onClick={handleClaimAccount}
+                        sx={{
+                          borderColor: '#f59e0b',
+                          color: '#f59e0b',
+                          '&:hover': {
+                            borderColor: '#d97706',
+                            backgroundColor: '#fef3c7',
+                          },
+                        }}
+                      >
+                        Claim Account
+                      </Button>
+                    )}
+                    
+                    {onAddNote && (
+                      <Button
+                        variant="outlined"
+                        onClick={handleAddNote}
+                        startIcon={<Note />}
+                        sx={{
+                          borderColor: '#2563eb',
+                          color: '#2563eb',
+                          '&:hover': {
+                            borderColor: '#1d4ed8',
+                            backgroundColor: '#dbeafe',
+                          },
+                        }}
+                      >
+                        Add Notes
+                      </Button>
+                    )}
+                    
+                    {onAddAttachment && (
+                      <Button
+                        variant="outlined"
+                        onClick={handleAddAttachment}
+                        startIcon={<AttachFile />}
+                        sx={{
+                          borderColor: '#059669',
+                          color: '#059669',
+                          '&:hover': {
+                            borderColor: '#047857',
+                            backgroundColor: '#d1fae5',
+                          },
+                        }}
+                      >
+                        Add Attachments
+                      </Button>
+                    )}
+                    
                     {onSave && (
                       <Button
                         variant="contained"
@@ -516,41 +515,7 @@ export function UniversalDetailView({
                         Edit
                       </Button>
                     )}
-                    {onAddNote && (
-                  <Button
-                    variant="outlined"
-                    onClick={handleAddNote}
-                    startIcon={<Note />}
-                    sx={{
-                      borderColor: '#2563eb',
-                      color: '#2563eb',
-                      '&:hover': {
-                        borderColor: '#1d4ed8',
-                        backgroundColor: '#dbeafe',
-                      },
-                    }}
-                  >
-                    Add Notes
-                  </Button>
-                )}
-                
-                {onAddAttachment && (
-                  <Button
-                    variant="outlined"
-                    onClick={handleAddAttachment}
-                    startIcon={<AttachFile />}
-                    sx={{
-                      borderColor: '#059669',
-                      color: '#059669',
-                      '&:hover': {
-                        borderColor: '#047857',
-                        backgroundColor: '#d1fae5',
-                      },
-                    }}
-                  >
-                    Add Attachments
-                  </Button>
-                )}
+                    
                     {onDelete && (
                       <Button
                         variant="outlined"
@@ -564,72 +529,70 @@ export function UniversalDetailView({
                   </>
                 )}
               </Box>
-              
             )}
           </Box>
-          
         </Box>
         
         {/* Main Details Section */}
         {mainFields.length > 0 && (
-  <Card sx={{ mb: 3 }}>
-    <CardContent>
-      <Typography variant="h6" gutterBottom sx={{ color: '#050505', fontWeight: 600 }}>
-        Details
-      </Typography>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
-        {mainFields.map((field) => {
-          // Determine grid column span based on field configuration
-          const getGridColumn = (field) => {
-            // If fullWidth is specified, span all columns
-            if (field.fullWidth) {
-              return '1 / -1';
-            }
-            
-            // Check legacy width configuration
-            if (field.width) {
-              // If xs: 12, span full width
-              if (field.width.xs === 12 && (!field.width.sm || field.width.sm === 12)) {
-                return '1 / -1';
-              }
-              // If md: 8 or lg: 8, span 2 columns on larger screens  
-              if (field.width.md === 8 || field.width.lg === 8) {
-                return { xs: '1 / -1', md: '1 / 3' };
-              }
-              // If md: 6 or lg: 6, span 2 columns on 3-column grid
-              if (field.width.md === 6 || field.width.lg === 6) {
-                return { xs: '1 / -1', sm: '1 / 3' };
-              }
-            }
-            
-            // Default: single column
-            return 'auto';
-          };
-
-          return (
-            <Box 
-              key={field.key}
-              sx={{ 
-                gridColumn: getGridColumn(field),
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: 1 
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 500, color: '#050505' }}>
-                {field.label}
-                {field.required && isEditing && (
-                  <span style={{ color: '#d32f2f', marginLeft: '4px' }}>*</span>
-                )}
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ color: '#050505', fontWeight: 600 }}>
+                Details
               </Typography>
-              {renderField(field)}
-            </Box>
-          );
-        })}
-      </Box>
-    </CardContent>
-  </Card>
-)}
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
+                {mainFields.map((field) => {
+                  // Determine grid column span based on field configuration
+                  const getGridColumn = (field) => {
+                    // If fullWidth is specified, span all columns
+                    if (field.fullWidth) {
+                      return '1 / -1';
+                    }
+                    
+                    // Check legacy width configuration
+                    if (field.width) {
+                      // If xs: 12, span full width
+                      if (field.width.xs === 12 && (!field.width.sm || field.width.sm === 12)) {
+                        return '1 / -1';
+                      }
+                      // If md: 8 or lg: 8, span 2 columns on larger screens  
+                      if (field.width.md === 8 || field.width.lg === 8) {
+                        return { xs: '1 / -1', md: '1 / 3' };
+                      }
+                      // If md: 6 or lg: 6, span 2 columns on 3-column grid
+                      if (field.width.md === 6 || field.width.lg === 6) {
+                        return { xs: '1 / -1', sm: '1 / 3' };
+                      }
+                    }
+                    
+                    // Default: single column
+                    return 'auto';
+                  };
+
+                  return (
+                    <Box 
+                      key={field.key}
+                      sx={{ 
+                        gridColumn: getGridColumn(field),
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: 1 
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#050505' }}>
+                        {field.label}
+                        {field.required && isEditing && (
+                          <span style={{ color: '#d32f2f', marginLeft: '4px' }}>*</span>
+                        )}
+                      </Typography>
+                      {renderField(field)}
+                    </Box>
+                  );
+                })}
+              </Box>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Related Information Tabs */}
         {relatedTabs.length > 0 && (
