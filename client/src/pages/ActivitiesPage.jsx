@@ -1,6 +1,6 @@
-//PAGE : Main Activities Page (presentational only, no data fetching)
+// PAGE : Main Activities Page (presentational only, no data fetching)
 
-//IMPORTS
+// IMPORTS
 import React from "react";
 import {
   Box,
@@ -9,107 +9,46 @@ import {
   CircularProgress,
   Alert,
   Paper,
-  TextField,
-  InputAdornment,
   Chip,
+  Toolbar,
   FormControl,
   InputLabel,
   Select,
-  Toolbar,
   MenuItem,
 } from "@mui/material";
-import {
-  Search,
-  Add,
-  Clear,
-} from "@mui/icons-material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { formatters } from '../utils/formatters';
-import UniversalTable from '../components/TableView';
-
-// Monochrome theme for MUI components
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-  },
-  components: {
-    MuiTableHead: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#f0f0f0',
-        },
-      },
-    },
-    MuiTableRow: {
-      styleOverrides: {
-        root: {
-          '&:hover': {
-            backgroundColor: '#f5f5f5',
-          },
-          '&.Mui-selected': {
-            backgroundColor: '#e0e0e0',
-            '&:hover': {
-              backgroundColor: '#d5d5d5',
-            },
-          },
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: '4px',
-          fontWeight: 500,
-        },
-      },
-    },
-  },
-});
+import { Add, Clear } from "@mui/icons-material";
+import { ThemeProvider } from "@mui/material/styles";
+import { formatters } from "../utils/formatters";
+import UniversalTable from "../components/TableView";
+import theme from "../components/Theme";
 
 // Table configuration for activities
 const activitiesTableConfig = {
-  idField: 'ActivityID',
+  idField: "ActivityID",
   columns: [
-    { field: 'ActivityType', headerName: 'Activity Type', type: 'tooltip' },
-    { field: 'AccountName', headerName: 'Account Name', type: 'tooltip' },
-    { field: 'PriorityLevelName', headerName: 'Priority' },
-    { field: 'note', headerName: 'Notes', type: 'truncated', maxWidth: 150 },
-    { field: 'attachment', headerName: 'Attachments' },
-    { field: 'DueToStart', headerName: 'Due To Start', type: 'date' },
-    { field: 'DueToEnd', headerName: 'Due To End', type: 'date' },
+    { field: "ActivityType", headerName: "Activity Type", type: "tooltip" },
+    { field: "AccountName", headerName: "Account Name", type: "tooltip" },
+    { field: "PriorityLevelName", headerName: "Priority" },
+    { field: "note", headerName: "Notes", type: "truncated", maxWidth: 150 },
+    { field: "attachment", headerName: "Attachments" },
+    { field: "DueToStart", headerName: "Due To Start", type: "date" },
+    { field: "DueToEnd", headerName: "Due To End", type: "date" },
     {
-      field: 'CreatedAt',
-      headerName: 'Created',
-      type: 'dateTime',
+      field: "CreatedAt",
+      headerName: "Created",
+      type: "dateTime",
     },
     {
-      field: 'UpdatedAt',
-      headerName: 'Updated',
-      type: 'date',
+      field: "UpdatedAt",
+      headerName: "Updated",
+      type: "date",
     },
     {
-      field: 'Completed',
-      headerName: 'Status',
-      type: 'boolean',
+      field: "Completed",
+      headerName: "Status",
+      type: "boolean",
     },
-  ]
+  ],
 };
 
 const ActivitiesPage = ({
@@ -149,7 +88,7 @@ const ActivitiesPage = ({
     } else if (selectedIndex > 0) {
       newSelected = newSelected.concat(
         selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
+        selected.slice(selectedIndex + 1)
       );
     }
 
@@ -158,7 +97,7 @@ const ActivitiesPage = ({
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      setSelected(activities.map(activity => activity.ActivityID));
+      setSelected(activities.map((activity) => activity.ActivityID));
     } else {
       setSelected([]);
     }
@@ -166,7 +105,14 @@ const ActivitiesPage = ({
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
+      <Box
+        sx={{
+          width: "100%",
+          backgroundColor: "#fafafa",
+          minHeight: "100vh",
+          p: 3,
+        }}
+      >
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -174,7 +120,11 @@ const ActivitiesPage = ({
         )}
 
         {successMessage && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
+          <Alert
+            severity="success"
+            sx={{ mb: 2 }}
+            onClose={() => setSuccessMessage("")}
+          >
             {successMessage}
           </Alert>
         )}
@@ -182,50 +132,68 @@ const ActivitiesPage = ({
         <Paper
           elevation={0}
           sx={{
-            width: '100%',
+            width: "100%",
             mb: 2,
-            border: '0px solid #e5e5e5',
-            borderRadius: '8px',
-            overflow: 'hidden'
+            border: "0px solid #e5e5e5",
+            borderRadius: "8px",
+            overflow: "hidden",
           }}
         >
-          {/* Toolbar with search and filters */}
+          {/* Toolbar*/}
           <Toolbar
             sx={{
-              backgroundColor: '#ffffff',
-              borderBottom: '1px solid #e5e5e5',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
+              backgroundColor: "#ffffff",
+              borderBottom: "1px solid #e5e5e5",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
               gap: 2,
-              py: 2
+              py: 2,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-              <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                flex: 1,
+              }}
+            >
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{ color: "#050505", fontWeight: 600 }}
+              >
                 Activities
               </Typography>
               {selected.length > 0 && (
                 <Chip
                   label={`${selected.length} selected`}
                   size="small"
-                  sx={{ backgroundColor: '#e0e0e0', color: '#050505' }}
+                  sx={{ backgroundColor: "#e0e0e0", color: "#050505" }}
                 />
               )}
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                flexWrap: "wrap",
+              }}
+            >
               <Button
                 variant="contained"
                 startIcon={<Add />}
                 onClick={onCreate}
                 disabled={loading}
                 sx={{
-                  backgroundColor: '#050505',
-                  color: '#ffffff',
-                  '&:hover': { backgroundColor: '#333333' },
-                  '&:disabled': {
-                    backgroundColor: '#cccccc',
-                    color: '#666666',
+                  backgroundColor: "#050505",
+                  color: "#ffffff",
+                  "&:hover": { backgroundColor: "#333333" },
+                  "&:disabled": {
+                    backgroundColor: "#cccccc",
+                    color: "#666666",
                   },
                 }}
               >
@@ -240,10 +208,16 @@ const ActivitiesPage = ({
                   label="Status"
                   onChange={(e) => setStatusFilter(e.target.value)}
                   sx={{
-                    backgroundColor: '#ffffff',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e5e5e5' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#cccccc' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#050505' },
+                    backgroundColor: "#ffffff",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#e5e5e5",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#cccccc",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#050505",
+                    },
                   }}
                 >
                   <MenuItem value="">All</MenuItem>
@@ -260,10 +234,16 @@ const ActivitiesPage = ({
                   label="Priority"
                   onChange={(e) => setPriorityFilter(e.target.value)}
                   sx={{
-                    backgroundColor: '#ffffff',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e5e5e5' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#cccccc' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#050505' },
+                    backgroundColor: "#ffffff",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#e5e5e5",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#cccccc",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#050505",
+                    },
                   }}
                 >
                   <MenuItem value="">All</MenuItem>
@@ -282,11 +262,11 @@ const ActivitiesPage = ({
                   onClick={clearFilters}
                   startIcon={<Clear />}
                   sx={{
-                    borderColor: '#e5e5e5',
-                    color: '#666666',
-                    '&:hover': {
-                      borderColor: '#cccccc',
-                      backgroundColor: '#f5f5f5',
+                    borderColor: "#e5e5e5",
+                    color: "#666666",
+                    "&:hover": {
+                      borderColor: "#cccccc",
+                      backgroundColor: "#f5f5f5",
                     },
                   }}
                 >
@@ -320,19 +300,25 @@ const ActivitiesPage = ({
           )}
 
           {/* Results footer */}
-          <Box sx={{
-            p: 2,
-            borderTop: '1px solid #e5e5e5',
-            backgroundColor: '#fafafa',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {activities.length} of {totalCount || activities.length} activities
+          <Box
+            sx={{
+              p: 2,
+              borderTop: "1px solid #e5e5e5",
+              backgroundColor: "#fafafa",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="body2" sx={{ color: "#666666" }}>
+              Showing {activities.length} of {totalCount || activities.length}{" "}
+              activities
             </Typography>
             {selected.length > 0 && (
-              <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: "#050505", fontWeight: 500 }}
+              >
                 {selected.length} selected
               </Typography>
             )}

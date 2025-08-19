@@ -1,7 +1,5 @@
-// PAGE : Main Accounts Page (presentational only, no data fetching) 
-
-// IMPORTS
-import React from "react";
+// Accounts Page
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -13,95 +11,49 @@ import {
   Toolbar,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { formatters } from '../utils/formatters';
-import UniversalTable from '../components/TableView';
-
-// Monochrome theme for MUI components
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-  },
-  components: {
-    MuiTableHead: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#f0f0f0',
-        },
-      },
-    },
-    MuiTableRow: {
-      styleOverrides: {
-        root: {
-          '&:hover': {
-            backgroundColor: '#f5f5f5',
-          },
-          '&.Mui-selected': {
-            backgroundColor: '#e0e0e0',
-            '&:hover': {
-              backgroundColor: '#d5d5d5',
-            },
-          },
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: '4px',
-          fontWeight: 500,
-        },
-      },
-    },
-  },
-});
+import { ThemeProvider } from "@mui/material/styles";
+import { formatters } from "../utils/formatters";
+import UniversalTable from "../components/TableView";
+import theme from "../components/Theme";
+import NotesPopup from "../components/NotesComponent";
+import AttachmentsPopup from "../components/AttachmentsComponent";
+import { noteService } from "../services/noteService";
+import { attachmentService } from "../services/attachmentService";
 
 // Table config for accounts
 const accountsTableConfig = {
-  idField: 'AccountID',
+  idField: "AccountID",
   columns: [
-    { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
-    { field: 'CityName', headerName: 'City Name' },
-    { field: 'StateProvince_Name', headerName: 'State Province Name' },
-    { field: 'CountryName', headerName: 'Country Name' },
-    { field: 'street_address', headerName: 'Street Address', type: 'truncated', maxWidth: 200 },
-    { field: 'postal_code', headerName: 'Postal Code' },
-    { field: 'PrimaryPhone', headerName: 'Phone' },
-    { field: 'IndustryName', headerName: 'Industry Name' },
-    { field: 'fax', headerName: 'Fax' },
-    { field: 'email', headerName: 'Email' },
-    { field: 'Website', headerName: 'Website', type: 'link' },
-    { field: 'number_of_employees', headerName: '# Employees' },
-    { field: 'number_of_venues', headerName: '# Venues' },
-    { field: 'number_of_releases', headerName: '# Releases' },
-    { field: 'number_of_events_anually', headerName: '# Events Anually' },
-    { field: 'annual_revenue', headerName: 'Annual Revenue' },
-    { field: 'ParentAccountName', headerName: 'Parent Account' },
-    { field: 'CreatedAt', headerName: 'Created' },
-    { field: 'UpdatedAt', headerName: 'Updated' },
+    { field: "AccountName", headerName: "Name", type: "tooltip" },
+    { field: "CityName", headerName: "City Name" },
+    { field: "StateProvince_Name", headerName: "State Province Name" },
+    { field: "CountryName", headerName: "Country Name" },
     {
-      field: 'ownerStatus',
-      headerName: 'Ownership',
-      type: 'chip',
-      chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
-      chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' }
+      field: "street_address",
+      headerName: "Street Address",
+      type: "truncated",
+      maxWidth: 200,
+    },
+    { field: "postal_code", headerName: "Postal Code" },
+    { field: "PrimaryPhone", headerName: "Phone" },
+    { field: "IndustryName", headerName: "Industry Name" },
+    { field: "fax", headerName: "Fax" },
+    { field: "email", headerName: "Email" },
+    { field: "Website", headerName: "Website", type: "link" },
+    { field: "number_of_employees", headerName: "# Employees" },
+    { field: "number_of_venues", headerName: "# Venues" },
+    { field: "number_of_releases", headerName: "# Releases" },
+    { field: "number_of_events_anually", headerName: "# Events Anually" },
+    { field: "annual_revenue", headerName: "Annual Revenue" },
+    { field: "ParentAccountName", headerName: "Parent Account" },
+    { field: "CreatedAt", headerName: "Created" },
+    { field: "UpdatedAt", headerName: "Updated" },
+    {
+      field: "ownerStatus",
+      headerName: "Ownership",
+      type: "chip",
+      chipLabels: { owned: "Owned", unowned: "Unowned", "n/a": "N/A" },
+      chipColors: { owned: "#079141ff", unowned: "#999999", "n/a": "#999999" },
     },
   ],
 };
@@ -116,10 +68,124 @@ const AccountsPage = ({
   onEdit,
   onView,
   onCreate,
-  onAddNote,
-  onAddAttachment,
 }) => {
-  const [selected, setSelected] = React.useState([]);
+  const [selected, setSelected] = useState([]);
+
+  // State for popups
+  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
+  const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [popupLoading, setPopupLoading] = useState(false);
+  const [popupError, setPopupError] = useState(null);
+
+  const handleClaimAccount = (account) => {
+    console.log("Claiming account:", account);
+    // Add claim logic here
+  };
+
+  const handleAssignUser = (account) => {
+    console.log("Assigning user to account:", account);
+    // Add assign user logic here
+  };
+
+  // Notes handlers
+  const handleAddNote = (account) => {
+    setSelectedAccount(account);
+    setNotesPopupOpen(true);
+    setPopupError(null);
+  };
+
+  const handleSaveNote = async (noteData) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+
+      await noteService.createNote(noteData);
+      setSuccessMessage("Note added successfully!");
+      setNotesPopupOpen(false);
+    } catch (error) {
+      setPopupError(error.message || "Failed to save note");
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+
+      await noteService.deleteNote(noteId);
+      setSuccessMessage("Note deleted successfully!");
+    } catch (error) {
+      setPopupError(error.message || "Failed to delete note");
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleEditNote = async (noteData) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+
+      await noteService.updateNote(noteData.NoteID, noteData);
+      setSuccessMessage("Note updated successfully!");
+    } catch (error) {
+      setPopupError(error.message || "Failed to update note");
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  // Attachments handlers
+  const handleAddAttachment = (account) => {
+    setSelectedAccount(account);
+    setAttachmentsPopupOpen(true);
+    setPopupError(null);
+  };
+
+  const handleUploadAttachment = async (attachmentDataArray) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+
+      for (const attachmentData of attachmentDataArray) {
+        await attachmentService.uploadAttachment(attachmentData);
+      }
+
+      setSuccessMessage(
+        `${attachmentDataArray.length} attachment(s) uploaded successfully!`
+      );
+      setAttachmentsPopupOpen(false);
+    } catch (error) {
+      setPopupError(error.message || "Failed to upload attachments");
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+
+      await attachmentService.deleteAttachment(attachmentId);
+      setSuccessMessage("Attachment deleted successfully!");
+    } catch (error) {
+      setPopupError(error.message || "Failed to delete attachment");
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      await attachmentService.downloadAttachment(attachment);
+    } catch (error) {
+      setPopupError(error.message || "Failed to download attachment");
+    }
+  };
 
   // Selection handlers
   const handleSelectClick = (id) => {
@@ -135,7 +201,7 @@ const AccountsPage = ({
     } else if (selectedIndex > 0) {
       newSelected = newSelected.concat(
         selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
+        selected.slice(selectedIndex + 1)
       );
     }
 
@@ -144,7 +210,7 @@ const AccountsPage = ({
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      setSelected(accounts.map(account => account.AccountID));
+      setSelected(accounts.map((account) => account.AccountID));
     } else {
       setSelected([]);
     }
@@ -152,7 +218,14 @@ const AccountsPage = ({
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
+      <Box
+        sx={{
+          width: "100%",
+          backgroundColor: "#fafafa",
+          minHeight: "100vh",
+          p: 3,
+        }}
+      >
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -160,7 +233,11 @@ const AccountsPage = ({
         )}
 
         {successMessage && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
+          <Alert
+            severity="success"
+            sx={{ mb: 2 }}
+            onClose={() => setSuccessMessage("")}
+          >
             {successMessage}
           </Alert>
         )}
@@ -168,46 +245,59 @@ const AccountsPage = ({
         <Paper
           elevation={0}
           sx={{
-            width: '100%',
+            width: "100%",
             mb: 2,
-            border: '0px solid #e5e5e5',
-            borderRadius: '8px',
-            overflow: 'hidden'
+            border: "0px solid #e5e5e5",
+            borderRadius: "8px",
+            overflow: "hidden",
           }}
         >
           {/* Toolbar with title and Add button */}
           <Toolbar
             sx={{
-              backgroundColor: '#ffffff',
-              borderBottom: '1px solid #e5e5e5',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
+              backgroundColor: "#ffffff",
+              borderBottom: "1px solid #e5e5e5",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
               gap: 2,
               py: 2,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-              <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
+            <Box
+              sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}
+            >
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{ color: "#050505", fontWeight: 600 }}
+              >
                 Accounts
               </Typography>
               {selected.length > 0 && (
                 <Chip
                   label={`${selected.length} selected`}
                   size="small"
-                  sx={{ backgroundColor: '#e0e0e0', color: '#050505' }}
+                  sx={{ backgroundColor: "#e0e0e0", color: "#050505" }}
                 />
               )}
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                flexWrap: "wrap",
+              }}
+            >
               <Button
                 variant="contained"
                 startIcon={<Add />}
                 onClick={onCreate}
                 sx={{
-                  backgroundColor: '#050505',
-                  color: '#ffffff',
-                  '&:hover': { backgroundColor: '#333333' },
+                  backgroundColor: "#050505",
+                  color: "#ffffff",
+                  "&:hover": { backgroundColor: "#333333" },
                 }}
               >
                 Add Account
@@ -232,9 +322,12 @@ const AccountsPage = ({
               onView={onView}
               onEdit={onEdit}
               onDelete={onDeactivate}
-              onAddNote={onAddNote}
-              onAddAttachment={onAddAttachment}
+              onAddNote={handleAddNote}
+              onAddAttachment={handleAddAttachment}
               formatters={formatters}
+              entityType="account"
+              onClaimAccount={handleClaimAccount}
+              onAssignUser={handleAssignUser}
             />
           )}
 
@@ -242,23 +335,56 @@ const AccountsPage = ({
           <Box
             sx={{
               p: 2,
-              borderTop: '1px solid #e5e5e5',
-              backgroundColor: '#fafafa',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              borderTop: "1px solid #e5e5e5",
+              backgroundColor: "#fafafa",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            <Typography variant="body2" sx={{ color: '#666666' }}>
+            <Typography variant="body2" sx={{ color: "#666666" }}>
               Showing {accounts.length} accounts
             </Typography>
             {selected.length > 0 && (
-              <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: "#050505", fontWeight: 500 }}
+              >
                 {selected.length} selected
               </Typography>
             )}
           </Box>
         </Paper>
+
+        {/* Notes Popup */}
+        <NotesPopup
+          open={notesPopupOpen}
+          onClose={() => setNotesPopupOpen(false)}
+          onSave={handleSaveNote}
+          onDelete={handleDeleteNote}
+          onEdit={handleEditNote}
+          entityType="account"
+          entityId={selectedAccount?.AccountID}
+          entityName={selectedAccount?.AccountName}
+          existingNotes={selectedAccount?.notes || []}
+          loading={popupLoading}
+          error={popupError}
+        />
+
+        {/* Attachments Popup */}
+        <AttachmentsPopup
+          open={attachmentsPopupOpen}
+          onClose={() => setAttachmentsPopupOpen(false)}
+          onUpload={handleUploadAttachment}
+          onDelete={handleDeleteAttachment}
+          onDownload={handleDownloadAttachment}
+          entityType="account"
+          entityId={selectedAccount?.AccountID}
+          entityName={selectedAccount?.AccountName}
+          existingAttachments={selectedAccount?.attachments || []}
+          loading={popupLoading}
+          error={popupError}
+        />
       </Box>
     </ThemeProvider>
   );

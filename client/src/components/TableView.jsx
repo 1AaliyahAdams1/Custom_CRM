@@ -27,6 +27,9 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon,
   ViewColumn as ColumnsIcon,
+  Business,
+  PersonAdd,
+  
 } from '@mui/icons-material';
 
 import ColumnsDialog from './ColumnsDialog';
@@ -46,6 +49,9 @@ const TableView = ({
   onDelete,
   onAddNote,
   onAddAttachment,
+  onClaimAccount,
+  entityType,
+  onAssignUser,
   menuItems = [],
   formatters = {},
 }) => {
@@ -86,6 +92,10 @@ const TableView = ({
     if (onView && menuRow) onView(menuRow[idField]);
     handleMenuClose();
   };
+  const handleAssignUser = () => {
+    if (onAssignUser && menuRow) onAssignUser(menuRow);
+    handleMenuClose();
+  };
   const handleEdit = () => {
     if (onEdit && menuRow) onEdit(menuRow);
     handleMenuClose();
@@ -102,10 +112,15 @@ const TableView = ({
     if (onAddAttachment && menuRow) onAddAttachment(menuRow);
     handleMenuClose();
   };
+  const handleClaimAccount = () => {
+    if (onClaimAccount && menuRow) onClaimAccount(menuRow);
+    handleMenuClose();
+  };
 
   // Filter handler for the new FilterComponent
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
+    setFiltersExpanded(false); // Close filters after applying
   };
 
   // Get filtered data based on search term and filters
@@ -223,6 +238,20 @@ const TableView = ({
 
   // Default menu actions if none provided
   const defaultMenuItems = [
+    {
+      label: 'Assign User',  
+      icon: <PersonAdd sx={{ mr: 2 }} />, 
+      onClick: handleAssignUser,
+      show: !!onAssignUser,  
+      sx: { color: '#7c3aed' },  
+    },
+    {
+      label: 'Claim Account',  
+      icon: <Business sx={{ mr: 2 }} />, 
+      onClick: handleClaimAccount,
+      show: entityType === 'account' && !!onClaimAccount,  // Only show for accounts, this is not showin up
+      sx: { color: '#f59e0b' },  
+    },
     {
       label: 'View Details',
       icon: <Info sx={{ mr: 2 }} />,
