@@ -81,6 +81,7 @@ export function UniversalDetailView({
     console.log(`Adding attachment to ${entityType}:`, item);
   };
 
+
   const handleAssignUser = () => {
     console.log(`Assigning user to ${entityType}:`, item);
   };
@@ -117,7 +118,7 @@ export function UniversalDetailView({
               {value}
             </MuiLink>
           ) : field.type === "currency" && value ? (
-            `${parseFloat(value).toLocaleString()}`
+            `$${parseFloat(value).toLocaleString()}`
           ) : field.type === "date" && value ? (
             new Date(value).toLocaleDateString()
           ) : field.type === "datetime" && value ? (

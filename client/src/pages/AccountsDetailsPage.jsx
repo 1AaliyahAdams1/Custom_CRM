@@ -3,6 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Box, Grid, Typography, Link as MuiLink, Alert, Button } from "@mui/material";
 import  {UniversalDetailView} from "../components/DetailsView";
 import { fetchAccountById, updateAccount, deactivateAccount } from "../services/accountService";
+import NotesPopup from "../components/NotesComponent";
+import AttachmentsPopup from "../components/AttachmentsComponent";
+import { noteService } from "../services/noteService";
+import { attachmentService } from "../services/attachmentService";
 
 // Main fields configuration for accounts
 const accountMainFields = [
@@ -61,6 +65,12 @@ export default function AccountDetailView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+
+  // State for popups
+  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
+  const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
+  const [popupLoading, setPopupLoading] = useState(false);
+  const [popupError, setPopupError] = useState(null);
   
 
   useEffect(() => {
@@ -113,22 +123,126 @@ export default function AccountDetailView() {
     }
   };
 
-  //  Handle adding notes
-  const handleAddNote = (account) => {
-    console.log("Adding note for account:", account);
-    // Navigate to notes page 
-    navigate(`/accounts/${account.AccountID}/notes/create`);
-    
+  // Notes handlers
+  const handleAddNote = () => {
+    setNotesPopupOpen(true);
+    setPopupError(null);
   };
 
-  //  Handle adding attachments
-  const handleAddAttachment = (account) => {
-    console.log("Adding attachment for account:", account);
-    // Navigate to attachments page 
-    navigate(`/accounts/${account.AccountID}/attachments/upload`);
-    
+  const handleSaveNote = async (noteData) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      
+      await noteService.createNote(noteData);
+      
+      // Refresh account data to show new note
+      const response = await fetchAccountById(id);
+      setAccount(response.data);
+      
+      setSuccessMessage('Note added successfully!');
+      setNotesPopupOpen(false);
+    } catch (error) {
+      setPopupError(error.message || 'Failed to save note');
+    } finally {
+      setPopupLoading(false);
+    }
   };
-  
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      
+      await noteService.deleteNote(noteId);
+      
+      // Refresh account data
+      const response = await fetchAccountById(id);
+      setAccount(response.data);
+      
+      setSuccessMessage('Note deleted successfully!');
+    } catch (error) {
+      setPopupError(error.message || 'Failed to delete note');
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleEditNote = async (noteData) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      
+      await noteService.updateNote(noteData.NoteID, noteData);
+      
+      // Refresh account data
+      const response = await fetchAccountById(id);
+      setAccount(response.data);
+      
+      setSuccessMessage('Note updated successfully!');
+    } catch (error) {
+      setPopupError(error.message || 'Failed to update note');
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  // Attachments handlers
+  const handleAddAttachment = () => {
+    setAttachmentsPopupOpen(true);
+    setPopupError(null);
+  };
+
+  const handleUploadAttachment = async (attachmentDataArray) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      
+      // Upload each file
+      for (const attachmentData of attachmentDataArray) {
+        await attachmentService.uploadAttachment(attachmentData);
+      }
+      
+      // Refresh account data to show new attachments
+      const response = await fetchAccountById(id);
+      setAccount(response.data);
+      
+      setSuccessMessage(`${attachmentDataArray.length} attachment(s) uploaded successfully!`);
+      setAttachmentsPopupOpen(false);
+    } catch (error) {
+      setPopupError(error.message || 'Failed to upload attachments');
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      
+      await attachmentService.deleteAttachment(attachmentId);
+      
+      // Refresh account data
+      const response = await fetchAccountById(id);
+      setAccount(response.data);
+      
+      setSuccessMessage('Attachment deleted successfully!');
+    } catch (error) {
+      setPopupError(error.message || 'Failed to delete attachment');
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      // Use the service to handle download
+      await attachmentService.downloadAttachment(attachment);
+    } catch (error) {
+      setPopupError(error.message || 'Failed to download attachment');
+    }
+  };
 
   // Navigation handlers 
   const handleContactClick = (contactId) => {
@@ -544,6 +658,7 @@ export default function AccountDetailView() {
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#666666', mb: 2 }}>
                     <strong>Created:</strong> {formatDate(note.CreatedAt)}
+                    {note.CreatedBy && ` by ${note.CreatedBy}`}
                   </Typography>
 
                   <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0' }}>
@@ -593,15 +708,6 @@ export default function AccountDetailView() {
       });
     }
 
-    {/* Success Alert */ }
-    {
-      successMessage && (
-        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
-          {successMessage}
-        </Alert>
-      )
-    }
-
     // Location chip
     if (account.CityName || account.CountryName) {
       headerChips.push({
@@ -613,23 +719,60 @@ export default function AccountDetailView() {
   }
 
   return (
-    <UniversalDetailView
-      title={account?.AccountName || 'Account Details'}
-      subtitle={account?.AccountID ? `ID: ${account.AccountID}` : undefined}
-      item={account}
-      mainFields={accountMainFields}
-      relatedTabs={relatedTabs}
-      onBack={handleBack}
-      onSave={handleSave}
-      onDelete={handleDelete}
-      onAddAttachment={handleAddAttachment}
-      onAddNote={handleAddNote}
-      loading={loading}
-      error={error}
-      entityType="account"
-      headerChips={headerChips}
-    />
+    <Box>
+      {/* Success Alert */}
+      {successMessage && (
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+          {successMessage}
+        </Alert>
+      )}
 
+      <UniversalDetailView
+        title={account?.AccountName || 'Account Details'}
+        subtitle={account?.AccountID ? `ID: ${account.AccountID}` : undefined}
+        item={account}
+        mainFields={accountMainFields}
+        relatedTabs={relatedTabs}
+        onBack={handleBack}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        onAddAttachment={handleAddAttachment}
+        onAddNote={handleAddNote}
+        loading={loading}
+        error={error}
+        entityType="account"
+        headerChips={headerChips}
+      />
 
+      {/* Notes Popup */}
+      <NotesPopup
+        open={notesPopupOpen}
+        onClose={() => setNotesPopupOpen(false)}
+        onSave={handleSaveNote}
+        onDelete={handleDeleteNote}
+        onEdit={handleEditNote}
+        entityType="account"
+        entityId={account?.AccountID}
+        entityName={account?.AccountName}
+        existingNotes={account?.notes || []}
+        loading={popupLoading}
+        error={popupError}
+      />
+
+      {/* Attachments Popup */}
+      <AttachmentsPopup
+        open={attachmentsPopupOpen}
+        onClose={() => setAttachmentsPopupOpen(false)}
+        onUpload={handleUploadAttachment}
+        onDelete={handleDeleteAttachment}
+        onDownload={handleDownloadAttachment}
+        entityType="account"
+        entityId={account?.AccountID}
+        entityName={account?.AccountName}
+        existingAttachments={account?.attachments || []}
+        loading={popupLoading}
+        error={popupError}
+      />
+    </Box>
   );
 }
