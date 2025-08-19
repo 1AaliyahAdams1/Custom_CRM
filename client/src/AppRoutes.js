@@ -15,6 +15,7 @@ const Contacts = lazy(() => import("./components/containers/ContactsContainer"))
 const Deals = lazy(() => import("./pages/DealsPage"));
 const Activities = lazy(() => import("./pages/ActivitiesPage"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
+const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
 
 
 
@@ -200,6 +201,16 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      {/* --- Smart Work Routes --- */}
+      <Route
+        path="/smart-work"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.smartWork}>
+            <SmartWorkPage />
+          </PrivateRoute>
+        } 
+        />        
+      
       {/* --- Reports Routes --- */}
       <Route
         path="/reports"
