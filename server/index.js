@@ -43,6 +43,7 @@ const countryRoutes = require("./routes/countryRoutes")
 const authRoutes = require("./routes/auth/authRoutes");
 const sequenceRoutes = require('./routes/sequenceRoutes');
 const workRoutes = require('./routes/workRoutes');
+const attachmentRoutes = require("./routes/attachmentRoutes");
 
 
 
@@ -71,6 +72,7 @@ app.use("/countries", countryRoutes)
 app.use("/auth", authRoutes);
 app.use("/sequences", sequenceRoutes);
 app.use('/work-page', workRoutes);
+app.use("/attachments", attachmentRoutes);
 
 const PORT = process.env.PORT || 5000;
 const HOST = "0.0.0.0";
