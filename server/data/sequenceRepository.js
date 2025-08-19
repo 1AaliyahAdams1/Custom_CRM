@@ -133,11 +133,83 @@ async function getActivitiesByUser(userId) {
   }
 }
 
+async function completeActivity(activityId, userId, notes = '') {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("ActivityID", sql.Int, activityId)
+      .input("UserID", sql.Int, userId)
+      .input("Notes", sql.NVarChar, notes)
+      .query(`
+        UPDATE Activity 
+        SET Completed = 1, 
+            CompletedAt = GETDATE(), 
+            Notes = @Notes,
+            UpdatedAt = GETDATE()
+        WHERE ActivityID = @ActivityID 
+          AND AccountID IN (
+            SELECT AccountID FROM AssignedUser 
+            WHERE UserID = @UserID AND Active = 1
+          )
+          AND Active = 1;
+          
+        SELECT @@ROWCOUNT AS RowsAffected;
+      `);
+
+    return { success: result.recordset[0].RowsAffected > 0 };
+  } catch (err) {
+    console.error("Database error in completeActivity:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Update Activity Order
+//======================================
+async function updateActivityOrder(userId, activityOrderData) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const transaction = new sql.Transaction(pool);
+    
+    await transaction.begin();
+    
+    try {
+      for (const item of activityOrderData) {
+        await transaction.request()
+          .input("ActivityID", sql.Int, item.activityId)
+          .input("UserID", sql.Int, userId)
+          .input("DisplayOrder", sql.Int, item.order)
+          .query(`
+            UPDATE Activity 
+            SET DisplayOrder = @DisplayOrder, UpdatedAt = GETDATE()
+            WHERE ActivityID = @ActivityID 
+              AND AccountID IN (
+                SELECT AccountID FROM AssignedUser 
+                WHERE UserID = @UserID AND Active = 1
+              )
+          `);
+      }
+      
+      await transaction.commit();
+      return { success: true };
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
+    }
+  } catch (err) {
+    console.error("Database error in updateActivityOrder:", err);
+    throw err;
+  }
+}
+
+
 // =======================
 // Exports
 // =======================
 module.exports = {
   getSequencesandItemsByUser,
   getActivitiesByUser,
-  getUserSequences
+  getUserSequences,
+  completeActivity,
+  updateActivityOrder,
 };
