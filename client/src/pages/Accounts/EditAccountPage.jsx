@@ -189,25 +189,193 @@ const EditAccount = () => {
           <Paper elevation={0} sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
-                <TextField fullWidth label="Account Name" name="AccountName" value={formData.AccountName} onChange={handleInputChange} disabled={saving} />
-                <SmartDropdown label="Parent Account" name="ParentAccount" value={formData.ParentAccount} onChange={handleInputChange} service={{ getAll: async () => (await getAllAccounts()).data }} displayField="AccountName" valueField="" disabled={saving} />
-                <SmartDropdown label="Country" name="CountryID" value={formData.CountryID} onChange={handleInputChange} service={countryService} displayField="name" valueField="id" disabled={saving} />
-                <SmartDropdown label="State/Province" name="StateProvinceID" value={formData.StateProvinceID} onChange={handleInputChange} service={stateProvinceService} displayField="name" valueField="id" disabled={saving} />
-                <SmartDropdown label="City" name="CityID" value={formData.CityID} onChange={handleInputChange} service={cityService} displayField="name" valueField="id" disabled={saving} />
-                <SmartDropdown label="Industry" name="IndustryID" value={formData.IndustryID} onChange={handleInputChange} service={industryService} displayField="name" valueField="id" disabled={saving} />
-                <TextField fullWidth label="Street Address 1" name="street_address1" value={formData.street_address1} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Street Address 2" name="street_address2" value={formData.street_address2} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Street Address 3" name="street_address3" value={formData.street_address3} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Postal Code" name="postal_code" value={formData.postal_code} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Primary Phone" name="PrimaryPhone" value={formData.PrimaryPhone} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Email" name="email" value={formData.email} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Fax" name="fax" value={formData.fax} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Website" name="Website" value={formData.Website} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Annual Revenue" name="annual_revenue" value={formData.annual_revenue} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Number of Employees" name="number_of_employees" value={formData.number_of_employees} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Number of Releases" name="number_of_releases" value={formData.number_of_releases} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Number of Events Annually" name="number_of_events_anually" value={formData.number_of_events_anually} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Number of Venues" name="number_of_venues" value={formData.number_of_venues} onChange={handleInputChange} disabled={saving} />
+
+                <TextField sx={{ gridColumn: '1 / -1' }}
+                  fullWidth
+                  label="Account Name"
+                  name="AccountName"
+                  value={formData.AccountName}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <SmartDropdown sx={{ gridColumn: '1 / -1' }}
+                  label="Parent Account"
+                  name="ParentAccount"
+                  value={formData.ParentAccount}
+                  onChange={handleInputChange}
+                  service={{ getAll: async () => (await getAllAccounts()).data }}
+                  displayField="AccountName"
+                  valueField="AccountID"
+                  disabled={saving}
+                />
+
+                <SmartDropdown
+                  label="Country"
+                  name="CountryID"
+                  value={formData.CountryID}
+                  onChange={handleInputChange}
+                  service={countryService}
+                  displayField="CountryName"
+                  valueField="CountryID"
+                  disabled={saving}
+                />
+
+                <SmartDropdown
+                  label="State/Province"
+                  name="StateProvinceID"
+                  value={formData.StateProvinceID}
+                  onChange={handleInputChange}
+                  service={stateProvinceService}
+                  displayField="StateProvince_Name"
+                  valueField="StateProvinceID"
+                  disabled={saving}
+                />
+
+                <SmartDropdown
+                  label="City"
+                  name="CityID"
+                  value={formData.CityID}
+                  onChange={handleInputChange}
+                  service={cityService}
+                  displayField="CityName"
+                  valueField="CityID"
+                  disabled={saving}
+                />
+
+                <SmartDropdown
+                  label="Industry"
+                  name="IndustryID"
+                  value={formData.IndustryID}
+                  onChange={handleInputChange}
+                  service={industryService}
+                  displayField="IndustryName"
+                  valueField="IndustryID"
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Street Address 1"
+                  name="street_address1"
+                  value={formData.street_address1}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Street Address 2"
+                  name="street_address2"
+                  value={formData.street_address2}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Street Address 3"
+                  name="street_address3"
+                  value={formData.street_address3}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Postal Code"
+                  name="postal_code"
+                  value={formData.postal_code}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Primary Phone"
+                  name="PrimaryPhone"
+                  value={formData.PrimaryPhone}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Fax"
+                  name="fax"
+                  value={formData.fax}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Website"
+                  name="Website"
+                  value={formData.Website}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Annual Revenue"
+                  name="annual_revenue"
+                  type="number"
+                  value={formData.annual_revenue}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Number of Employees"
+                  name="number_of_employees"
+                  type="number"
+                  value={formData.number_of_employees}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Number of Releases"
+                  name="number_of_releases"
+                  type="number"
+                  value={formData.number_of_releases}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Number of Events Annually"
+                  name="number_of_events_anually"
+                  type="number"
+                  value={formData.number_of_events_anually}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Number of Venues"
+                  name="number_of_venues"
+                  type="number"
+                  value={formData.number_of_venues}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+
               </Box>
             </form>
           </Paper>
