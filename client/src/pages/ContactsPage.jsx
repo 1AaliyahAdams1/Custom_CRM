@@ -1,4 +1,4 @@
-// ContactsPage.jsx - Fixed version
+// ContactsPage.jsx 
 import React from "react";
 import {
   Box,
@@ -33,11 +33,6 @@ const ContactsPage = ({
   onAddAttachment,
 }) => {
   
-  const handleAssignUser = (contact) => {
-    console.log("Assigning user to contact:", contact);
-    // Add assign user logic here
-  };
-
   const columns = [
     {
       field: 'AccountName',
@@ -170,7 +165,6 @@ const ContactsPage = ({
               onDelete={handleDeactivate}
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
-              onAssignUser={handleAssignUser}
               formatters={formatters}
               entityType="contact"
             />
