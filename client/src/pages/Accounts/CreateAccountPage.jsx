@@ -11,14 +11,14 @@ import {
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { createAccount, getAllAccounts } from '../services/accountService';
+import { createAccount, getAllAccounts } from '../../services/accountService';
 import {
   cityService,
   industryService,
   countryService,
   stateProvinceService
-} from '../services/dropdownServices';
-import SmartDropdown from '../components/SmartDropdown';
+} from '../../services/dropdownServices';
+import SmartDropdown from '../../components/SmartDropdown';
 
 // Enhanced Monochrome theme with error styling
 const theme = createTheme({

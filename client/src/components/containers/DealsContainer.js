@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import DealsPage from "../../pages/DealsPage";
+import DealsPage from "../../pages/Deals/DealsPage";
 import {
     getAllDeals,
     fetchDealsByUser,

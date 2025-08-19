@@ -10,20 +10,22 @@ import {
   Paper,
   Grid,
 } from "@mui/material";
+import { fetchDealById, updateDeal } from "../../services/dealService";
 
-import { fetchActivityById, updateActivity } from "../services/activityService";
-
-
-const EditActivityPage = () => {
+const EditDealPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get account ID from URL params
+  const { id } = useParams(); // Get deal ID from URL params
   
   const [formData, setFormData] = useState({
+    DealID: "",
     AccountID: "",
-    ActivityType: "",
-    AccountName: "",
-    Due_date: "",
-    Priority: "",
+    DealStageID: "",
+    DealName: "",
+    Value: "",
+    CloseDate: "",
+    Probability: "",
+    CreatedAt: "",
+    UpdatedAt: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -31,11 +33,11 @@ const EditActivityPage = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Fetch activity data when component mounts
+  // Fetch account data when component mounts
   useEffect(() => {
-    const loadActivity = async () => {
+    const loadDeal = async () => {
       if (!id) {
-        setError("No activity ID provided");
+        setError("No deal ID provided");
         setLoading(false);
         return;
       }
@@ -43,27 +45,31 @@ const EditActivityPage = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetchActivityById(id);
+        const response = await fetchDealById(id);
         
         // Populate form with fetched data
-        const activityData = response.data;
+        const dealData = response.data;
         setFormData({
-          ActivityID: activityData.ActivityID || "",
-          ActivityType: activityData.ActivityType || "",
-          AccountName: activityData.AccountName || "",
-          Due_date: activityData.Due_date || "",
-           Priority: activityData.Priority || "",
-         
+          DealID: dealData.DealID || "",
+          AccountID: dealData.AccountID || "",
+          DealStageID: dealData.DealStageID || "",
+          DealName: dealData.DealName || "",
+          Value: dealData.Value || "",
+          CloseDate: dealData.CloseDate || "",
+          Probability: dealData.Probability || "",
+          CreatedAt: dealData.CreatedAt|| "",
+          UpdatedAt: dealData.UpdatedAt || "",
+          
         });
       } catch (error) {
-        console.error("Failed to fetch activity:", error);
-        setError("Failed to load activity data. Please try again.");
+        console.error("Failed to fetch deal:", error);
+        setError("Failed to load deal data. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
-    loadActivity();
+    loadDeal();
   }, [id]);
 
   // Auto-clear success message after 3 seconds
@@ -90,8 +96,8 @@ const EditActivityPage = () => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.ActivityID.trim()) {
-      setError("Activity ID is required");
+    if (!formData.DealName.trim()) {
+      setError("Deal name is required");
       return;
     }
 
@@ -99,31 +105,31 @@ const EditActivityPage = () => {
       setSaving(true);
       setError(null);
       
-      // Add Activity ID to formData for the update
+      // Add dealID to formData for the update
       const updateData = {
         ...formData,
-        ActivityID: id
+        DealID: id
       };
       
-      await updateActivity(id, updateData);
-      setSuccessMessage("Activity updated successfully!");
+      await updateDeal(id, updateData);
+      setSuccessMessage("Deal updated successfully!");
       
-      // Navigate back to activities page after a short delay
+      // Navigate back to deals page after a short delay
       setTimeout(() => {
-        navigate("/activities");
+        navigate("/deals");
       }, 1500);
       
     } catch (error) {
-      console.error("Failed to update activity:", error);
-      setError("Failed to update activity. Please try again.");
+      console.error("Failed to update deal:", error);
+      setError("Failed to update deal. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  // Handle cancel - navigate back to activities page
+  // Handle cancel - navigate back to deals page
   const handleCancel = () => {
-    navigate("/activities");
+    navigate("/deals");
   };
 
   if (loading) {
@@ -137,7 +143,7 @@ const EditActivityPage = () => {
   return (
     <Box p={4}>
       <Typography variant="h4" gutterBottom>
-        Edit Activity
+        Edit Deal
       </Typography>
 
       {/* Error Alert */}
@@ -157,7 +163,20 @@ const EditActivityPage = () => {
       <Paper elevation={3} sx={{ p: 3 }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            {/* Account ID - Required */}
+            {/* Deal Id- Required */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Deal ID"
+                name="DealID"
+                value={formData.DealID}
+                onChange={handleInputChange}
+                required
+                variant="outlined"
+              />
+            </Grid>
+
+            {/* Account ID */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -165,59 +184,98 @@ const EditActivityPage = () => {
                 name="AccountID"
                 value={formData.AccountID}
                 onChange={handleInputChange}
-                required
                 variant="outlined"
               />
             </Grid>
 
-            {/* ActivityType */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Activity Type"
-                name="ActivityType"
-                value={formData.ActivityType}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-            {/* Account Name */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Account Name"
-                name="AccountName"
-                value={formData.AccountName}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Due_date */}
+            {/* DealStageID */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Due date"
-                name="Due_date"
-                value={formData.Due_date}
+                label="Deal Stage ID"
+                name="DealStageID"
+                value={formData.DealStageID}
                 onChange={handleInputChange}
                 variant="outlined"
               />
             </Grid>
 
-            {/* Priority */}
+            {/* Deal Name */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Priority"
-                name="Priority"
-                value={formData.Priority}
+                label="Deal Name"
+                name="DealName"
+                value={formData.DealName}
                 onChange={handleInputChange}
                 variant="outlined"
               />
             </Grid>
+
+            {/* Value */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Value"
+                name="Value"
+                value={formData.Value}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
+
+            {/* Close Date */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Close Date"
+                name="CloseDate"
+                value={formData.CloseDate}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
+
+            {/* Probability */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Probability"
+                name="Probability"
+                value={formData.Probability}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
+
+            {/* Created At
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Created At"
+                name="CreatedAt"
+                value={formData.CreatedAt}
+                onChange={handleInputChange}
+                variant="outlined"
+                type ="datetime-local"
+              />
+            </Grid> */}
+
+            {/* Updated At
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Updated At"
+                name="UpdatedAt"
+                value={formData.UpdatedAt}
+                onChange={handleInputChange}
+                variant="outlined"
+               type="datetime-local"
+              />
+            </Grid> */}
 
             
+
             {/* Action Buttons */}
             <Grid item xs={12}>
               <Box display="flex" gap={2} justifyContent="flex-end" mt={2}>
@@ -235,7 +293,7 @@ const EditActivityPage = () => {
                   disabled={saving}
                   startIcon={saving ? <CircularProgress size={20} /> : null}
                 >
-                  {saving ? "Updating..." : "Update Activity"}
+                  {saving ? "Updating..." : "Update Account"}
                 </Button>
               </Box>
             </Grid>
@@ -246,4 +304,4 @@ const EditActivityPage = () => {
   );
 };
 
-export default EditActivityPage;
+export default EditDealPage;

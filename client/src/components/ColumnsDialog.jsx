@@ -13,7 +13,8 @@ const ColumnsDialog = ({
   open, 
   visibleColumns, 
   onClose, 
-  onSave 
+  onSave,
+  columns = [] // Added default prop
 }) => {
   const [tempVisibleColumns, setTempVisibleColumns] = React.useState({});
 
@@ -31,6 +32,11 @@ const ColumnsDialog = ({
     }));
   };
 
+  const handleSave = () => {
+    onSave(tempVisibleColumns);
+    onClose();
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Show / Hide Columns</DialogTitle>
@@ -45,7 +51,7 @@ const ColumnsDialog = ({
                 color="primary"
               />
             }
-            label={field}
+            label={columns.find(col => col.field === field)?.headerName || field}
           />
         ))}
       </DialogContent>
@@ -53,7 +59,7 @@ const ColumnsDialog = ({
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"
-          onClick={() => onSave(tempVisibleColumns)}
+          onClick={handleSave}
         >
           Save
         </Button>

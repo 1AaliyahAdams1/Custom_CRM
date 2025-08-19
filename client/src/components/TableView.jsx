@@ -1,3 +1,4 @@
+// TableView.jsx
 import React, { useState } from 'react';
 import {
   Box,
@@ -10,8 +11,6 @@ import {
   Checkbox,
   Chip,
   IconButton,
-  Menu,
-  MenuItem,
   Tooltip,
   Link,
   TextField,
@@ -19,21 +18,14 @@ import {
 } from '@mui/material';
 import {
   MoreVert,
-  Info,
-  Edit,
-  Delete,
-  Note,
-  AttachFile,
   Search as SearchIcon,
   FilterList as FilterIcon,
   ViewColumn as ColumnsIcon,
-  Business,
-  PersonAdd,
-  
 } from '@mui/icons-material';
 
 import ColumnsDialog from './ColumnsDialog';
-import FilterDialog from './FiltersDialog';
+import FiltersDialog from './FiltersDialog';
+import ActionMenu from './ActionMenu';
 
 const TableView = ({
   data = [],
@@ -68,7 +60,7 @@ const TableView = ({
     columns.reduce((acc, col) => ({ ...acc, [col.field]: true }), {})
   );
 
-  // Dialog open states - removed filterDialogOpen since we're not using a dialog anymore
+  // Dialog open states
   const [columnsDialogOpen, setColumnsDialogOpen] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
@@ -87,42 +79,9 @@ const TableView = ({
     setMenuRow(null);
   };
 
-  // Action handlers
-  const handleView = () => {
-    if (onView && menuRow) onView(menuRow[idField]);
-    handleMenuClose();
-  };
-  const handleAssignUser = () => {
-    if (onAssignUser && menuRow) onAssignUser(menuRow);
-    handleMenuClose();
-  };
-  const handleEdit = () => {
-    if (onEdit && menuRow) onEdit(menuRow);
-    handleMenuClose();
-  };
-  const handleDelete = () => {
-    if (onDelete && menuRow) onDelete(menuRow[idField]);
-    handleMenuClose();
-  };
-  const handleAddNote = () => {
-    if (onAddNote && menuRow) onAddNote(menuRow);
-    handleMenuClose();
-  };
-  const handleAddAttachment = () => {
-    if (onAddAttachment && menuRow) onAddAttachment(menuRow);
-    handleMenuClose();
-  };
-  const handleClaimAccount = () => {
-  if (onClaimAccount && menuRow) onClaimAccount(menuRow);
-  handleMenuClose();
-};
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-    setFiltersExpanded(false); // Close filters after applying
-  };
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
-    setFiltersExpanded(false); // Close filters after applying
+    setFiltersExpanded(false);
   };
 
   // Get filtered data based on search term and filters
@@ -144,7 +103,7 @@ const TableView = ({
         if (typeof filterValue === 'boolean') {
           if (itemVal !== filterValue) return false;
         } else {
-          // Use includes for partial matching (like the old implementation)
+          // Use includes for partial matching
           if (!itemVal?.toString().toLowerCase().includes(filterValue.toString().toLowerCase())) {
             return false;
           }
@@ -161,6 +120,7 @@ const TableView = ({
   const handleSelectAll = (event) => {
     onSelectAllClick && onSelectAllClick(event);
   };
+  
   const handleSelectRow = (id) => {
     onSelectClick && onSelectClick(id);
   };
@@ -238,62 +198,6 @@ const TableView = ({
     }
   };
 
-  // Default menu actions if none provided
-  const defaultMenuItems = [
-    {
-    label: 'Assign User',  
-    icon: <PersonAdd sx={{ mr: 2 }} />, 
-    onClick: handleAssignUser,
-    show: !!onAssignUser,  
-    sx: { color: '#7c3aed' },  
-  },
-  
-    {
-     label: 'Claim Account',  
-      icon: <Business sx={{ mr: 2 }} />, 
-      onClick: handleClaimAccount,
-      show: entityType === 'account' && !!onClaimAccount,  // Only show for accounts, this is not showin up
-     sx: { color: '#f59e0b' },  
-    },
-    {
-      label: 'View Details',
-      icon: <Info sx={{ mr: 2 }} />,
-      onClick: handleView,
-      show: !!onView,
-    },
-    {
-      label: 'Edit',
-      icon: <Edit sx={{ mr: 2 }} />,
-      onClick: handleEdit,
-      show: !!onEdit,
-    },
-    {
-      label: 'Add Notes',
-      icon: <Note sx={{ mr: 2 }} />,
-      onClick: handleAddNote,
-      show: !!onAddNote,
-      sx: { color: '#2563eb' },
-    },
-    {
-      label: 'Add Attachments',
-      icon: <AttachFile sx={{ mr: 2 }} />,
-      onClick: handleAddAttachment,
-      show: !!onAddAttachment,
-      sx: { color: '#059669' },
-    },
-    {
-      label: 'Delete',
-      icon: <Delete sx={{ mr: 2 }} />,
-      onClick: handleDelete,
-      show: !!onDelete,
-      sx: { color: '#dc2626' },
-      disabled: (row) => row?.Active === false,
-    },
-   
-  ];
-
-  const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
-
   // Columns dialog save handler
   const handleColumnsSave = (newVisibleColumns) => {
     setVisibleColumns(newVisibleColumns);
@@ -302,7 +206,7 @@ const TableView = ({
 
   return (
     <>
-      {/* Search + Columns controls */}
+      {/* Search + Controls */}
       <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
         <Button
           variant="outlined"
@@ -347,7 +251,7 @@ const TableView = ({
 
       {/* Collapsible FilterComponent */}
       {filtersExpanded && (
-        <FilterDialog
+        <FiltersDialog
           columns={columns}
           onApplyFilters={handleApplyFilters}
           deals={data}
@@ -413,23 +317,24 @@ const TableView = ({
       </TableContainer>
 
       {/* Action Menu */}
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        {allMenuItems
-          .filter((item) => item.show !== false)
-          .map((item, index) => (
-            <MenuItem
-              key={index}
-              onClick={item.onClick}
-              disabled={typeof item.disabled === 'function' ? item.disabled(menuRow) : item.disabled}
-              sx={item.sx}
-            >
-              {item.icon}
-              {item.label}
-            </MenuItem>
-          ))}
-      </Menu>
+      <ActionMenu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        menuRow={menuRow}
+        idField={idField}
+        entityType={entityType}
+        onView={onView}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onAddNote={onAddNote}
+        onAddAttachment={onAddAttachment}
+        onClaimAccount={onClaimAccount}
+        onAssignUser={onAssignUser}
+        menuItems={menuItems}
+      />
 
-      {/* Columns Dialog - kept as is */}
+      {/* Columns Dialog */}
       <ColumnsDialog
         open={columnsDialogOpen}
         visibleColumns={visibleColumns}

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Grid, Typography, Link as MuiLink, Alert, Button } from "@mui/material";
-import { UniversalDetailView } from "../components/DetailsView";
-import { fetchAccountById, updateAccount, deactivateAccount } from "../services/accountService";
-import NotesPopup from "../components/NotesComponent";
-import AttachmentsPopup from "../components/AttachmentsComponent";
-import { noteService } from "../services/noteService";
-import { attachmentService } from "../services/attachmentService";
+import  {UniversalDetailView} from "../../components/DetailsView";
+import { fetchAccountById, updateAccount, deactivateAccount } from "../../services/accountService";
+import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent";
+import { noteService } from "../../services/noteService";
+import { attachmentService } from "../../services/attachmentService";
 
 // Main fields configuration for accounts
 const accountMainFields = [

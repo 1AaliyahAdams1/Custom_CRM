@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 
 
-import { fetchActivityById } from "../services/activityService"; // Make sure this function exists
+import { fetchActivityById } from "../../services/activityService"; // Make sure this function exists
 
 function ActivitiesDetailsPage() {
   const { id } = useParams(); // Get activity ID from route params

@@ -1,150 +1,261 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AccountsPage from "../../pages/AccountsPage";
+import AccountsPage from "../../pages/Accounts/AccountsPage";
 import {
-    getAllAccounts,
-    fetchActiveAccountsByUser,
-    fetchActiveUnassignedAccounts,
-    deactivateAccount,
+  getAllAccounts,
+  fetchActiveAccountsByUser,
+  fetchActiveUnassignedAccounts,
+  deactivateAccount,
 } from "../../services/accountService";
+import { noteService } from "../../services/noteService";
+import { attachmentService } from "../../services/attachmentService";
 
 const AccountsContainer = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const [accounts, setAccounts] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState("");
-    const [refreshFlag, setRefreshFlag] = useState(false);
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [refreshFlag, setRefreshFlag] = useState(false);
 
-    const storedUser = JSON.parse(localStorage.getItem("user")) || {};
-    const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
-    const userId = storedUser.UserID || storedUser.id || null;
+  const [selected, setSelected] = useState([]);
 
-    const isCLevel = roles.includes("C-level");
-    const isSalesRep = roles.includes("Sales Representative");
+  // Popups
+  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
+  const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [popupLoading, setPopupLoading] = useState(false);
+  const [popupError, setPopupError] = useState(null);
 
-    const fetchAccounts = async () => {
-        setLoading(true);
-        setError(null);
+  const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+  const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
+  const userId = storedUser.UserID || storedUser.id || null;
 
-        try {
-            let accountsData = [];
+  const isCLevel = roles.includes("C-level");
+  const isSalesRep = roles.includes("Sales Representative");
 
-            console.log("User Roles:", roles);
-            console.log("User ID:", userId);
+  // ---------------- FETCH ACCOUNTS ----------------
+  const fetchAccounts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      let accountsData = [];
 
-            if (isCLevel) {
-                console.log("Fetching all accounts for C-level user");
-                const response = await getAllAccounts();
-                accountsData = response.data || [];
+      if (isCLevel) {
+        const response = await getAllAccounts();
+        accountsData = response.data || [];
+        accountsData.forEach((acc) => (acc.ownerStatus = "n/a"));
+      } else if (isSalesRep) {
+        const assignedRes = await fetchActiveAccountsByUser(userId);
+        const unassignedRes = await fetchActiveUnassignedAccounts();
 
-                accountsData.forEach(acc => {
-                    acc.ownerStatus = 'n/a';
-                });
+        const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
+        const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
 
-            } else if (isSalesRep) {
-                console.log("Fetching assigned and unassigned accounts for Sales Representative");
+        assignedAccounts.forEach((acc) => (acc.ownerStatus = "owned"));
+        unassignedAccounts.forEach((acc) => (acc.ownerStatus = "unowned"));
 
-                const assignedRes = await fetchActiveAccountsByUser(userId);
-                const unassignedRes = await fetchActiveUnassignedAccounts();
+        // Remove duplicates by AccountID
+        const map = new Map();
+        [...assignedAccounts, ...unassignedAccounts].forEach((acc) => {
+          if (acc.AccountID) map.set(acc.AccountID, acc);
+        });
+        accountsData = Array.from(map.values());
+      }
 
-                const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
-                const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
+      setAccounts(accountsData);
+    } catch (err) {
+      console.error("Failed to load accounts:", err);
+      setError("Failed to load accounts. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                assignedAccounts.forEach(acc => {
-                    acc.ownerStatus = 'owned';
-                });
-                unassignedAccounts.forEach(acc => {
-                    acc.ownerStatus = 'unowned';
-                });
+  useEffect(() => {
+    fetchAccounts();
+  }, [refreshFlag]);
 
-                const combined = [...assignedAccounts, ...unassignedAccounts];
+  // ---------------- ACCOUNT HANDLERS ----------------
+  const handleDeactivate = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this account?")) return;
+    setError(null);
+    try {
+      await deactivateAccount(id);
+      setSuccessMessage("Account deleted successfully.");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+      setError("Failed to delete account. Please try again.");
+    }
+  };
 
-                const map = new Map();
-                combined.forEach(acc => {
-                    if (!acc.AccountID) {
-                        console.warn("Account with missing AccountID:", acc);
-                        return;
-                    }
-                    map.set(acc.AccountID, acc);
-                });
+  const handleEdit = (account) => {
+    navigate(`/accounts/edit/${account.AccountID}`, { state: { account } });
+  };
 
-                accountsData = Array.from(map.values());
+  const handleView = (account) => {
+    if (!account?.AccountID) {
+      console.error("Cannot view account - missing ID:", account);
+      return;
+    }
+    navigate(`/accounts/${account.AccountID}`);
+  };
 
-            } else {
-                console.log("No matching role for fetching accounts");
-                accountsData = [];
-            }
+  const handleCreate = () => navigate("/accounts/create");
 
-            setAccounts(accountsData);
+  const handleClaimAccount = (account) => {
+    console.log("Claim account:", account);
+  };
 
-        } catch (err) {
-            console.error("Failed to load accounts:", err);
-            setError("Failed to load accounts. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleAssignUser = (account) => {
+    console.log("Assign user to account:", account);
+  };
 
-    useEffect(() => {
-        fetchAccounts();
-    }, [refreshFlag]);
+  // ---------------- SELECTION HANDLERS ----------------
+  const handleSelectClick = (id) => {
+    const selectedIndex = selected.indexOf(id);
+    let newSelected = [];
+    if (selectedIndex === -1) newSelected = [...selected, id];
+    else newSelected = selected.filter((sid) => sid !== id);
+    setSelected(newSelected);
+  };
 
-    // Handler to deactivate (soft delete) an account
-    const handleDeactivate = async (id) => {
-        const confirm = window.confirm(
-            "Are you sure you want to delete this account? This will deactivate it."
-        );
-        if (!confirm) return;
+  const handleSelectAllClick = (event) => {
+    if (event.target.checked) setSelected(accounts.map((a) => a.AccountID));
+    else setSelected([]);
+  };
 
-        setError(null);
-        try {
-            await deactivateAccount(id);
-            setSuccessMessage("Account deleted successfully.");
-            setRefreshFlag((flag) => !flag);
-        } catch (error) {
-            console.error("Failed to delete account:", error);
-            setError("Failed to delete account. Please try again.");
-        }
-    };
+  // ---------------- NOTES HANDLERS ----------------
+  const handleAddNote = (account) => {
+    setSelectedAccount(account);
+    setNotesPopupOpen(true);
+    setPopupError(null);
+  };
 
-    const handleEdit = (account) => {
-        navigate(`/accounts/edit/${account.AccountID}`, { state: { account } });
-    };
+  const handleSaveNote = async (noteData) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      await noteService.createNote(noteData);
+      setSuccessMessage("Note added successfully!");
+      setNotesPopupOpen(false);
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setPopupError(err.message || "Failed to save note");
+    } finally {
+      setPopupLoading(false);
+    }
+  };
 
-    const handleView = (accountId) => {
-        console.log("Navigating to account details with ID:", accountId);
-        navigate(`/accounts/${accountId}`);
-    };
+  const handleDeleteNote = async (noteId) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      await noteService.deleteNote(noteId);
+      setSuccessMessage("Note deleted successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setPopupError(err.message || "Failed to delete note");
+    } finally {
+      setPopupLoading(false);
+    }
+  };
 
-    const handleOpenCreate = () => {
-        navigate("/accounts/create");
-    };
+  const handleEditNote = async (noteData) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      await noteService.updateNote(noteData.NoteID, noteData);
+      setSuccessMessage("Note updated successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setPopupError(err.message || "Failed to update note");
+    } finally {
+      setPopupLoading(false);
+    }
+  };
 
-    const handleAddNote = (account) => {
-        //navigate(`/accounts/${account.AccountID}/notes/create`);
-    };
+  // ---------------- ATTACHMENTS HANDLERS ----------------
+  const handleAddAttachment = (account) => {
+    setSelectedAccount(account);
+    setAttachmentsPopupOpen(true);
+    setPopupError(null);
+  };
 
-    const handleAddAttachment = (account) => {
-        //navigate(`/accounts/${account.AccountID}/attachments/create`);
-    };
+  const handleUploadAttachment = async (attachments) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      for (const attachment of attachments) {
+        await attachmentService.uploadAttachment(attachment);
+      }
+      setSuccessMessage(`${attachments.length} attachment(s) uploaded successfully!`);
+      setAttachmentsPopupOpen(false);
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setPopupError(err.message || "Failed to upload attachments");
+    } finally {
+      setPopupLoading(false);
+    }
+  };
 
-    return (
-        <AccountsPage
-            accounts={accounts}
-            loading={loading}
-            error={error}
-            successMessage={successMessage}
-            setSuccessMessage={setSuccessMessage}
-            onDeactivate={handleDeactivate}
-            onEdit={handleEdit}
-            onView={handleView}
-            onCreate={handleOpenCreate}
-            onAddNote={handleAddNote}
-            onAddAttachment={handleAddAttachment}
-        />
-    );
+  const handleDeleteAttachment = async (attachmentId) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      await attachmentService.deleteAttachment(attachmentId);
+      setSuccessMessage("Attachment deleted successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setPopupError(err.message || "Failed to delete attachment");
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      await attachmentService.downloadAttachment(attachment);
+    } catch (err) {
+      setPopupError(err.message || "Failed to download attachment");
+    }
+  };
+
+  return (
+    <AccountsPage
+      accounts={accounts}
+      loading={loading}
+      error={error}
+      successMessage={successMessage}
+      setSuccessMessage={setSuccessMessage}
+      selected={selected}
+      onSelectClick={handleSelectClick}
+      onSelectAllClick={handleSelectAllClick}
+      onDeactivate={handleDeactivate}
+      onEdit={handleEdit}
+      onView={handleView}
+      onCreate={handleCreate}
+      onAddNote={handleAddNote}
+      onAddAttachment={handleAddAttachment}
+      onClaimAccount={handleClaimAccount}
+      onAssignUser={handleAssignUser}
+      notesPopupOpen={notesPopupOpen}
+      setNotesPopupOpen={setNotesPopupOpen}
+      attachmentsPopupOpen={attachmentsPopupOpen}
+      setAttachmentsPopupOpen={setAttachmentsPopupOpen}
+      selectedAccount={selectedAccount}
+      popupLoading={popupLoading}
+      popupError={popupError}
+      handleSaveNote={handleSaveNote}
+      handleDeleteNote={handleDeleteNote}
+      handleEditNote={handleEditNote}
+      handleUploadAttachment={handleUploadAttachment}
+      handleDeleteAttachment={handleDeleteAttachment}
+      handleDownloadAttachment={handleDownloadAttachment}
+    />
+  );
 };
 
 export default AccountsContainer;
