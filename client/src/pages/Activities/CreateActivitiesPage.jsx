@@ -7,27 +7,22 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { createDeal } from '../services/dealService';
-import { getAllAccounts } from '../services/accountService';
-import SmartDropdown from '../components/SmartDropdown';
-import { dealStageService } from '../services/dropdownServices';
+import { createActivity } from '../../services/activityService';
+import { getAllAccounts } from '../../services/accountService';
+import SmartDropdown from '../../components/SmartDropdown';
+import { activityTypeService, priorityLevelService } from '../../services/dropdownServices';
 
-const CreateDealPage = () => {
+const CreateActivitiesPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    DealID: "",
     AccountID: "",
-    DealStageID: "",
-    DealName: "",
-    Value: "",
-    CloseDate: "",
-    Probability: "",
-    CurrencyID: "",
-    CreatedAt: "",
-    UpdatedAt: "",
+    TypeID: "",
+    Priority: "",
+    DueToStart: "",
+    DueToEnd: "",
+    Completed: ""
   });
 
-  // Account service wrapper for dropdown - matching your pattern
   const accountService = {
     getAll: async () => {
       try {
@@ -51,24 +46,24 @@ const CreateDealPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log('Creating deal:', formData);
-      await createDeal(formData);
-      navigate('/deals');
+      console.log('Creating activity:', formData);
+      await createActivity(formData);
+      navigate('/activities');
     } catch (error) {
-      console.error('Error creating deal:', error);
-      alert('Failed to create deal. Please try again.');
+      console.error('Error creating activity:', error);
+      alert('Failed to create activity. Please try again.');
     }
   };
 
   const handleCancel = () => {
-    navigate('/deals');
+    navigate('/activities');
   };
 
   return (
     <Box p={4} maxWidth={900} mx="auto">
       {/* Page Title */}
       <Typography variant="h4" gutterBottom>
-        Create New Deal
+        Create New Activity
       </Typography>
       {/* Buttons at the top */}
       <Box mb={3} display="flex" justifyContent="flex-end" gap={2}>
@@ -85,75 +80,73 @@ const CreateDealPage = () => {
 
       <Grid item xs={20} sm={10}>
         <SmartDropdown
-          label="Account ID"
+          label="Account"
           name="AccountID"
           value={formData.AccountID}
           onChange={handleInputChange}
           service={accountService}
           displayField="AccountName"
           valueField="AccountID"
-          // onCreateNewClick={() => setShowAccountPopup(true)}
+          placeholder="Search for account..."
+          required
           fullWidth
         />
 
         <SmartDropdown
-          label="Deal Stage ID"
-          name="DealStageID"
-          value={formData.DealStageID}
+          label="Activity Type"
+          name="TypeID"
+          value={formData.TypeID}
           onChange={handleInputChange}
-          service={dealStageService}
-          displayField="StageName"
-          valueField="DealStageID"
-          // onCreateNewClick={() => setShowDealStagePopup(true)}
+          service={activityTypeService}
+          displayField="TypeName"
+          valueField="TypeID"
+          placeholder="Search for activity type..."
+          //make a create activity type page to use in the below command
+          // onCreateNewClick={() => setShowActivityTypePopup(true)}
           fullWidth
         />
 
-
-        <TextField
-          label="Deal Name"
-          name="DealName"
-          value={formData.DealName}
+        <SmartDropdown
+          label="Priority"
+          name="PriorityLevelID"
+          value={formData.PriorityLevelID}
           onChange={handleInputChange}
+          service={priorityLevelService}
+          displayField="PriorityLevelName"
+          valueField="PriorityLevelID"
+          placeholder="Search for priority level..."
+          //make a create priority level page to use in the below command
+          // onCreateNewClick={() => setShowPriorityPopup(true)}
           fullWidth
         />
 
         <TextField
-          label="Value"
-          name="Value"
-          value={formData.Value}
-          onChange={handleInputChange}
-          fullWidth
-        />
-      </Grid>
-
-      <Grid item xs={12} sm={6}>
-        <TextField
-          label="CloseDate"
-          name="CloseDate"
-          value={formData.CloseDate}
+          label="DueToStart"
+          name="DueToStart"
+          value={formData.DueToStart}
           onChange={handleInputChange}
           fullWidth
         />
 
         <TextField
-          label="Probability"
-          name="Probability"
-          value={formData.Probability}
+          label="DueToEnd"
+          name="DueToEnd"
+          value={formData.DueToEnd}
           onChange={handleInputChange}
           fullWidth
         />
 
         <TextField
-          label="CurrencyID"
-          name="CurrencyID"
-          value={formData.CurrencyID}
+          label="Completed"
+          name="Completed"
+          value={formData.Completed}
           onChange={handleInputChange}
           fullWidth
         />
-        
       </Grid>
     </Box>
   );
 };
 
-export default CreateDealPage;
+export default CreateActivitiesPage;
+

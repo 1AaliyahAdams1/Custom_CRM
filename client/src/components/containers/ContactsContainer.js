@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import ContactsPage from "../../pages/ContactsPage";
+import ContactsPage from "../../pages/Contacts/ContactsPage";
 import {
   getAllContacts,
   fetchContactsByUser,

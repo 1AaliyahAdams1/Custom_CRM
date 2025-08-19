@@ -19,9 +19,9 @@ import {
   Clear,
 } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
-import { formatters } from '../utils/formatters';
-import TableView from '../components/TableView'; 
-import theme from "../components/Theme";
+import { formatters } from '../../utils/formatters';
+import TableView from '../../components/TableView'; 
+import theme from "../../components/Theme";
 
 // Table configuration for deals
 const dealsTableConfig = {

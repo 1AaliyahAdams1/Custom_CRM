@@ -13,7 +13,7 @@ import {
   Button,
   Box,
 } from "@mui/material";
-import { fetchDealById} from "../services/dealService"; // API call to get deal details
+import { fetchDealById} from "../../services/dealService"; // API call to get deal details
 
 function DealsDetailsPage() {
   const { id } = useParams();       // Get deal ID from URL params
