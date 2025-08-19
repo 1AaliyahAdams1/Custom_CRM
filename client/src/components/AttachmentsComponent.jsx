@@ -33,28 +33,10 @@ import {
   VideoLibrary,
   AudioFile,
 } from '@mui/icons-material';
+import { attachmentService } from '../services/attachmentService';
 
 /**
- * Reusable Attachments Popup Component
- * 
- * @param {Object} props
- * @param {boolean} props.open - Whether the dialog is open
- * @param {Function} props.onClose - Callback when dialog closes
- * @param {Function} props.onUpload - Callback when files are uploaded (attachmentData) => void
- * @param {Function} props.onDelete - Optional callback when attachment is deleted (attachmentId) => void
- * @param {Function} props.onDownload - Optional callback when attachment is downloaded (attachment) => void
- * @param {string} props.entityType - Type of entity (e.g., 'account', 'contact', 'deal')
- * @param {string|number} props.entityId - ID of the entity
- * @param {string} props.entityName - Name of the entity for display
- * @param {Array} props.existingAttachments - Array of existing attachments to display
- * @param {boolean} props.loading - Loading state
- * @param {string} props.error - Error message
- * @param {Array} props.acceptedFileTypes - Accepted file types (default: common types)
- * @param {number} props.maxFileSize - Maximum file size in MB (default: 10)
- * @param {number} props.maxFiles - Maximum number of files (default: 5)
- * @param {boolean} props.showExisting - Whether to show existing attachments (default: true)
- * @param {boolean} props.allowMultiple - Whether to allow multiple file selection (default: true)
- * @param {Object} props.customTheme - Optional custom theme
+ * Fixed Reusable Attachments Popup Component
  */
 const AttachmentsPopup = ({
   open,
@@ -62,24 +44,31 @@ const AttachmentsPopup = ({
   onUpload,
   onDelete,
   onDownload,
-  entityType = 'entity',
+  entityType = 'account',
   entityId,
   entityName,
   existingAttachments = [],
   loading = false,
   error = null,
-  acceptedFileTypes = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.gif', '.mp4', '.mov'],
+  acceptedFileTypes = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.gif', '.mp4', '.mov', '.mp3', '.txt', '.zip'],
   maxFileSize = 10,
   maxFiles = 5,
   showExisting = true,
   allowMultiple = true,
-  customTheme,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
   const [localLoading, setLocalLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [attachments, setAttachments] = useState([]);
   const fileInputRef = useRef(null);
+
+  // Load existing attachments when dialog opens
+  useEffect(() => {
+    if (open && entityId && entityType) {
+      loadAttachments();
+    }
+  }, [open, entityId, entityType]);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -89,6 +78,20 @@ const AttachmentsPopup = ({
       setValidationError('');
     }
   }, [open]);
+
+  // Load attachments from backend
+  const loadAttachments = async () => {
+    try {
+      setLocalLoading(true);
+      const attachmentsData = await attachmentService.getAttachmentsByEntity(entityId, entityType);
+      setAttachments(Array.isArray(attachmentsData) ? attachmentsData : []);
+    } catch (error) {
+      console.error('Error loading attachments:', error);
+      setValidationError('Failed to load existing attachments');
+    } finally {
+      setLocalLoading(false);
+    }
+  };
 
   // File type icons mapping
   const getFileIcon = (fileName) => {
@@ -147,6 +150,7 @@ const AttachmentsPopup = ({
     setValidationError('');
     setSelectedFiles(files);
   };
+
   // Close handler
   const handleClose = () => {
     setSelectedFiles([]);
@@ -156,7 +160,7 @@ const AttachmentsPopup = ({
     onClose();
   };
   
-  // Upload handler
+  // Fixed upload handler
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
       setValidationError('Please select at least one file');
@@ -167,9 +171,27 @@ const AttachmentsPopup = ({
     setValidationError('');
 
     try {
-      // Simulate upload progress for each file
-      const uploadPromises = selectedFiles.map(async (file, index) => {
-        const attachmentData = {
+      // Upload files one by one
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        
+        // Simulate progress
+        setUploadProgress(prev => ({ ...prev, [i]: 0 }));
+        
+        // Upload the file
+        await attachmentService.uploadAttachment({
+          file,
+          entityId,
+          entityTypeName: entityType
+        });
+        
+        // Complete progress
+        setUploadProgress(prev => ({ ...prev, [i]: 100 }));
+      }
+      
+      // Call parent upload handler if provided
+      if (onUpload) {
+        const attachmentDataArray = selectedFiles.map(file => ({
           file,
           FileName: file.name,
           FileSize: file.size,
@@ -177,48 +199,59 @@ const AttachmentsPopup = ({
           EntityType: entityType,
           EntityID: entityId,
           EntityName: entityName,
-          UploadedAt: new Date().toISOString(),
-        };
-
-        // Simulate progress updates
-        for (let progress = 0; progress <= 100; progress += 10) {
-          setUploadProgress(prev => ({
-            ...prev,
-            [index]: progress
-          }));
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-
-        return attachmentData;
-      });
-
-      const attachmentDataArray = await Promise.all(uploadPromises);
+        }));
+        await onUpload(attachmentDataArray);
+      }
       
-      // Call the provided upload handler
-      await onUpload(attachmentDataArray);
+      // Reload attachments after successful upload
+      await loadAttachments();
       
-      handleClose();
+      // Reset and close
+      setSelectedFiles([]);
+      setUploadProgress({});
+      
     } catch (error) {
-      setValidationError('Failed to upload files. Please try again.');
+      setValidationError(error.message || 'Failed to upload files. Please try again.');
       console.error('Upload error:', error);
     } finally {
       setLocalLoading(false);
-      setUploadProgress({});
     }
   };
 
   // Download handler
-  const handleDownload = (attachment) => {
-    if (onDownload) {
-      onDownload(attachment);
-    } else if (attachment.FilePath || attachment.url) {
-      // Default download behavior
-      const link = document.createElement('a');
-      link.href = attachment.FilePath || attachment.url;
-      link.download = attachment.FileName || 'download';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  const handleDownload = async (attachment) => {
+    try {
+      if (onDownload) {
+        await onDownload(attachment);
+      } else {
+        // Use the service method directly
+        await attachmentService.downloadAttachment(attachment);
+      }
+    } catch (error) {
+      setValidationError(error.message || 'Failed to download file');
+    }
+  };
+
+  // Delete handler
+  const handleDelete = async (attachment) => {
+    try {
+      setLocalLoading(true);
+      
+      const attachmentId = attachment.AttachmentID || attachment.attachmentId;
+      
+      if (onDelete) {
+        await onDelete(attachmentId);
+      } else {
+        await attachmentService.deleteAttachment(attachmentId);
+      }
+      
+      // Reload attachments after deletion
+      await loadAttachments();
+      
+    } catch (error) {
+      setValidationError(error.message || 'Failed to delete attachment');
+    } finally {
+      setLocalLoading(false);
     }
   };
 
@@ -375,14 +408,18 @@ const AttachmentsPopup = ({
         {showExisting && (
           <Box>
             <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
-              Existing Attachments ({existingAttachments.length})
+              Existing Attachments ({attachments.length})
             </Typography>
             
-            {existingAttachments.length > 0 ? (
+            {localLoading && attachments.length === 0 ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : attachments.length > 0 ? (
               <List sx={{ maxHeight: 300, overflow: 'auto' }}>
-                {existingAttachments.map((attachment, index) => (
+                {attachments.map((attachment, index) => (
                   <ListItem
-                    key={attachment.AttachmentID || index}
+                    key={attachment.AttachmentID || attachment.attachmentId || index}
                     sx={{
                       border: '1px solid #e5e7eb',
                       borderRadius: 1,
@@ -391,21 +428,18 @@ const AttachmentsPopup = ({
                     }}
                   >
                     <ListItemIcon>
-                      {getFileIcon(attachment.FileName || '')}
+                      {getFileIcon(attachment.FileName || attachment.fileName || '')}
                     </ListItemIcon>
                     <ListItemText
-                      primary={attachment.FileName || 'Unknown File'}
+                      primary={attachment.FileName || attachment.fileName || 'Unknown File'}
                       secondary={
                         <Box>
                           <Typography variant="caption" display="block">
-                            Size: {formatFileSize(attachment.FileSize)}
+                            Uploaded: {new Date(attachment.UploadedAt || attachment.uploadedAt).toLocaleDateString()}
                           </Typography>
-                          <Typography variant="caption" display="block">
-                            Uploaded: {new Date(attachment.UploadedAt || attachment.CreatedAt).toLocaleDateString()}
-                          </Typography>
-                          {attachment.UploadedBy && (
+                          {attachment.fileExtension && (
                             <Typography variant="caption" display="block">
-                              By: {attachment.UploadedBy}
+                              Type: {attachment.fileExtension.toUpperCase()}
                             </Typography>
                           )}
                         </Box>
@@ -421,17 +455,15 @@ const AttachmentsPopup = ({
                         >
                           <GetApp fontSize="small" />
                         </IconButton>
-                        {onDelete && (
-                          <IconButton
-                            size="small"
-                            onClick={() => onDelete(attachment.AttachmentID)}
-                            disabled={loading || localLoading}
-                            sx={{ color: '#dc2626' }}
-                            title="Delete"
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        )}
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(attachment)}
+                          disabled={loading || localLoading}
+                          sx={{ color: '#dc2626' }}
+                          title="Delete"
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
                       </Box>
                     </ListItemSecondaryAction>
                   </ListItem>

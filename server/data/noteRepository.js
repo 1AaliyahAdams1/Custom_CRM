@@ -21,6 +21,7 @@ async function getEntityTypeId(typeName) {
   }
 }
 
+
 // =======================
 // Get notes for entity
 // =======================
