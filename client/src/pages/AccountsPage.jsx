@@ -1,7 +1,5 @@
-// PAGE : Main Accounts Page (presentational only, no data fetching) 
-
 // IMPORTS
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -17,6 +15,10 @@ import { ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../utils/formatters';
 import UniversalTable from '../components/TableView';
 import theme from "../components/Theme";
+import NotesPopup from '../components/NotesComponent';
+import AttachmentsPopup from '../components/AttachmentsComponent';
+import { noteService } from '../services/noteService';
+import { attachmentService } from '../services/attachmentService';
 
 // Table config for accounts
 const accountsTableConfig = {
@@ -61,21 +63,139 @@ const AccountsPage = ({
   onEdit,
   onView,
   onCreate,
-  onAddNote,
-  onAddAttachment,
 }) => {
-  const [selected, setSelected] = React.useState([]);
+  const [selected, setSelected] = useState([]);
+
+  // State for popups
+  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
+  const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [popupLoading, setPopupLoading] = useState(false);
+  const [popupError, setPopupError] = useState(null);
 
   const handleClaimAccount = (account) => {
-  console.log("Claiming account:", account);
-  // Add claim logic here
-  
-};
-const handleAssignUser = (account) => {
-  console.log("Assigning user to account:", account);
-  // Add  assign user logic here
-  
-};
+    console.log("Claiming account:", account);
+    // Add claim logic here
+  };
+
+  const handleAssignUser = (account) => {
+    console.log("Assigning user to account:", account);
+    // Add assign user logic here
+  };
+
+  // Notes handlers
+  const handleAddNote = (account) => {
+    setSelectedAccount(account);
+    setNotesPopupOpen(true);
+    setPopupError(null);
+  };
+
+  const handleSaveNote = async (noteData) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      
+      await noteService.createNote(noteData);
+      setSuccessMessage('Note added successfully!');
+      setNotesPopupOpen(false);
+      
+      // Optionally refresh accounts list if notes count affects display
+      
+    } catch (error) {
+      setPopupError(error.message || 'Failed to save note');
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      
+      await noteService.deleteNote(noteId);
+      setSuccessMessage('Note deleted successfully!');
+      
+      // Optionally refresh accounts list
+      
+    } catch (error) {
+      setPopupError(error.message || 'Failed to delete note');
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleEditNote = async (noteData) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      
+      await noteService.updateNote(noteData.NoteID, noteData);
+      setSuccessMessage('Note updated successfully!');
+      
+      // Optionally refresh accounts list
+      
+    } catch (error) {
+      setPopupError(error.message || 'Failed to update note');
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  // Attachments handlers
+  const handleAddAttachment = (account) => {
+    setSelectedAccount(account);
+    setAttachmentsPopupOpen(true);
+    setPopupError(null);
+  };
+
+  const handleUploadAttachment = async (attachmentDataArray) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      
+      // Upload each file
+      for (const attachmentData of attachmentDataArray) {
+        await attachmentService.uploadAttachment(attachmentData);
+      }
+      
+      setSuccessMessage(`${attachmentDataArray.length} attachment(s) uploaded successfully!`);
+      setAttachmentsPopupOpen(false);
+      
+      // Optionally refresh accounts list if attachment count affects display
+      
+    } catch (error) {
+      setPopupError(error.message || 'Failed to upload attachments');
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    try {
+      setPopupLoading(true);
+      setPopupError(null);
+      
+      await attachmentService.deleteAttachment(attachmentId);
+      setSuccessMessage('Attachment deleted successfully!');
+      
+      // Optionally refresh accounts list
+      
+    } catch (error) {
+      setPopupError(error.message || 'Failed to delete attachment');
+    } finally {
+      setPopupLoading(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      // Use the service to handle download
+      await attachmentService.downloadAttachment(attachment);
+    } catch (error) {
+      setPopupError(error.message || 'Failed to download attachment');
+    }
+  };
 
   // Selection handlers
   const handleSelectClick = (id) => {
@@ -188,8 +308,8 @@ const handleAssignUser = (account) => {
               onView={onView}
               onEdit={onEdit}
               onDelete={onDeactivate}
-              onAddNote={onAddNote}
-              onAddAttachment={onAddAttachment}
+              onAddNote={handleAddNote}              
+              onAddAttachment={handleAddAttachment} 
               formatters={formatters}
               entityType="account"  
               onClaimAccount={handleClaimAccount} 
@@ -218,6 +338,36 @@ const handleAssignUser = (account) => {
             )}
           </Box>
         </Paper>
+       
+        {/* Notes Popup */}
+        <NotesPopup
+          open={notesPopupOpen}
+          onClose={() => setNotesPopupOpen(false)}
+          onSave={handleSaveNote}
+          onDelete={handleDeleteNote}
+          onEdit={handleEditNote}
+          entityType="account"
+          entityId={selectedAccount?.AccountID}
+          entityName={selectedAccount?.AccountName}
+          existingNotes={selectedAccount?.notes || []}
+          loading={popupLoading}
+          error={popupError}
+        />
+
+        {/* Attachments Popup */}
+        <AttachmentsPopup
+          open={attachmentsPopupOpen}
+          onClose={() => setAttachmentsPopupOpen(false)}
+          onUpload={handleUploadAttachment}
+          onDelete={handleDeleteAttachment}
+          onDownload={handleDownloadAttachment}
+          entityType="account"
+          entityId={selectedAccount?.AccountID}
+          entityName={selectedAccount?.AccountName}
+          existingAttachments={selectedAccount?.attachments || []}
+          loading={popupLoading}
+          error={popupError}
+        />
       </Box>
     </ThemeProvider>
   );
