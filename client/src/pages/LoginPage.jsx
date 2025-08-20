@@ -163,7 +163,7 @@ const LoginPage = () => {
                   }
                 }}
                 error={!!fieldErrors.identifier}
-                helperText={fieldErrors.identifier}
+                helpertext={fieldErrors.identifier}
                 sx={{ mb: 3 }}
                 InputProps={{
                   startAdornment: (
@@ -189,7 +189,7 @@ const LoginPage = () => {
                   }
                 }}
                 error={!!fieldErrors.password}
-                helperText={fieldErrors.password}
+                helpertext={fieldErrors.password}
                 sx={{ mb: 3 }}
                 InputProps={{
                   startAdornment: (

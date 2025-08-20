@@ -335,8 +335,8 @@ const CreateAccount = () => {
                     required
                     disabled={isSubmitting}
                     error={isFieldInvalid('AccountName')}
-                    helperText={getFieldError('AccountName')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('AccountName')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -358,7 +358,7 @@ const CreateAccount = () => {
                     valueField="AccountID"
                     disabled={isSubmitting}
                     error={isFieldInvalid('ParentAccount')}
-                    helperText={getFieldError('ParentAccount')}
+                    helpertext={getFieldError('ParentAccount')}
                   />
                 </Box>
 
@@ -373,7 +373,7 @@ const CreateAccount = () => {
                     valueField="CountryID"
                     disabled={isSubmitting}
                     error={isFieldInvalid('CountryID')}
-                    helperText={getFieldError('CountryID')}
+                    helpertext={getFieldError('CountryID')}
                   />
                 </Box>
 
@@ -393,7 +393,7 @@ const CreateAccount = () => {
                     disabled={isSubmitting || !formData.CountryID}
                     placeholder={!formData.CountryID ? "Select a country first" : "Select a state/province"}
                     error={isFieldInvalid('StateProvinceID')}
-                    helperText={getFieldError('StateProvinceID')}
+                    helpertext={getFieldError('StateProvinceID')}
                     key={`state-${formData.CountryID}`} // Force re-render when country changes
                   />
                 </Box>
@@ -423,7 +423,7 @@ const CreateAccount = () => {
                           : "Select a city"
                     }
                     error={isFieldInvalid('CityID')}
-                    helperText={getFieldError('CityID')}
+                    helpertext={getFieldError('CityID')}
                     key={`city-${formData.StateProvinceID}-${formData.CountryID}`} // Force re-render when dependencies change
                   />
                 </Box>
@@ -439,7 +439,7 @@ const CreateAccount = () => {
                     valueField="IndustryID"
                     disabled={isSubmitting}
                     error={isFieldInvalid('IndustryID')}
-                    helperText={getFieldError('IndustryID')}
+                    helpertext={getFieldError('IndustryID')}
                   />
                 </Box>
 
@@ -453,8 +453,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('street_address1')}
-                    helperText={getFieldError('street_address1')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('street_address1')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -470,8 +470,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('street_address2')}
-                    helperText={getFieldError('street_address2')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('street_address2')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -487,8 +487,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('street_address3')}
-                    helperText={getFieldError('street_address3')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('street_address3')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -504,8 +504,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('postal_code')}
-                    helperText={getFieldError('postal_code')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('postal_code')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -522,8 +522,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('PrimaryPhone')}
-                    helperText={getFieldError('PrimaryPhone')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('PrimaryPhone')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -540,8 +540,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('email')}
-                    helperText={getFieldError('email')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('email')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -558,8 +558,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('fax')}
-                    helperText={getFieldError('fax')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('fax')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -576,8 +576,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('Website')}
-                    helperText={getFieldError('Website')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('Website')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -594,8 +594,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('annual_revenue')}
-                    helperText={getFieldError('annual_revenue')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('annual_revenue')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -612,8 +612,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('number_of_employees')}
-                    helperText={getFieldError('number_of_employees')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('number_of_employees')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -630,8 +630,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('number_of_releases')}
-                    helperText={getFieldError('number_of_releases')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('number_of_releases')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -648,8 +648,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('number_of_events_anually')}
-                    helperText={getFieldError('number_of_events_anually')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('number_of_events_anually')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />
@@ -666,8 +666,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('number_of_venues')}
-                    helperText={getFieldError('number_of_venues')}
-                    FormHelperTextProps={{
+                    helpertext={getFieldError('number_of_venues')}
+                    FormhelpertextProps={{
                       component: 'div'
                     }}
                   />

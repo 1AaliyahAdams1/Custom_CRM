@@ -221,7 +221,7 @@ const EditAccount = () => {
                     valueField="CountryID"
                     disabled={isSubmitting}
                     error={isFieldInvalid('CountryID')}
-                    helperText={getFieldError('CountryID')}
+                    helpertext={getFieldError('CountryID')}
                   />
                 </Box>
 
@@ -241,7 +241,7 @@ const EditAccount = () => {
                     disabled={isSubmitting || !formData.CountryID}
                     placeholder={!formData.CountryID ? "Select a country first" : "Select a state/province"}
                     error={isFieldInvalid('StateProvinceID')}
-                    helperText={getFieldError('StateProvinceID')}
+                    helpertext={getFieldError('StateProvinceID')}
                     key={`state-${formData.CountryID}`} // Force re-render when country changes
                   />
                 </Box>
@@ -271,7 +271,7 @@ const EditAccount = () => {
                           : "Select a city"
                     }
                     error={isFieldInvalid('CityID')}
-                    helperText={getFieldError('CityID')}
+                    helpertext={getFieldError('CityID')}
                     key={`city-${formData.StateProvinceID}-${formData.CountryID}`} // Force re-render when dependencies change
                   />
                 </Box>

@@ -52,7 +52,7 @@ const theme = createTheme({
             '& .MuiSvgIcon-root': {
               color: '#ff4444',
             },
-            '& .MuiFormHelperText-root': {
+            '& .MuiFormhelpertext-root': {
               color: '#ff4444',
               display: 'flex',
               alignItems: 'center',
@@ -87,7 +87,7 @@ const theme = createTheme({
         },
       },
     },
-    MuiFormHelperText: {
+    MuiFormhelpertext: {
       styleOverrides: {
         root: {
           marginLeft: '0',

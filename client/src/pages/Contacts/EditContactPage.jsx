@@ -37,6 +37,7 @@ const EditContactPage = () => {
   const [formData, setFormData] = useState({
     ContactID: "",
     AccountID: "",
+    AccountName: "",
     PersonID: "",
     Title: "",
     first_name: "",
@@ -49,8 +50,8 @@ const EditContactPage = () => {
     PersonStateProvinceID: "",
     Still_employed: false,
     JobTitleID: "",
-    PrimaryEmail: "",
-    PrimaryPhone: "",
+    WorkEmail: "",
+    WorkPhone: "",
     Position: "",
     isNewPerson: true,
   });
@@ -91,15 +92,12 @@ const EditContactPage = () => {
       }
       try {
         const response = await getContactDetails(id);
-        const redata = response.data;
-        console.log(redata)
-        const anotherResponse = await getContactsByAccountId(redata.AccountID);
-        console.log(anotherResponse)
-        const contactData = anotherResponse.data;
+        const contactData = response.data;
         console.log(contactData)
         setFormData({
           ContactID: contactData.ContactID || "",
           AccountID: contactData.AccountID || "",
+          AccountName: contactData.AccountName || "",
           PersonID: contactData.PersonID || "",
           Title: contactData.Title || "",
           first_name: contactData.first_name || "",
@@ -112,8 +110,8 @@ const EditContactPage = () => {
           PersonStateProvinceID: contactData.PersonStateProvinceID || "",
           Still_employed: contactData.Still_employed || false,
           JobTitleID: contactData.JobTitleID || "",
-          PrimaryEmail: contactData.PrimaryEmail || "",
-          PrimaryPhone: contactData.PrimaryPhone || "",
+          PrimaryEmail: contactData.WorkEmail || "",
+          PrimaryPhone: contactData.WorkPhone || "",
           Position: contactData.Position || "",
           isNewPerson: contactData.isNewPerson || true,
         });
@@ -287,17 +285,6 @@ const EditContactPage = () => {
                     disabled={saving}
                   />
                 </Box>
-                {/* Person ID */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Person ID"
-                    name="PersonID"
-                    value={formData.PersonID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Box>
 
                 {/* Middle Name */}
                 <Box>
@@ -308,18 +295,6 @@ const EditContactPage = () => {
                     value={formData.middle_name}
                     onChange={handleInputChange}
                     disabled={saving}
-                  />
-                </Box>
-                {/* Contact ID - Read Only */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Contact ID"
-                    name="ContactID"
-                    value={formData.ContactID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                    InputProps={{ readOnly: true }}
                   />
                 </Box>
 
@@ -336,71 +311,42 @@ const EditContactPage = () => {
                   />
                 </Box>
 
-
-                {/* Account ID - Read Only */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Account ID"
-                    name="AccountID"
-                    value={formData.AccountID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                    InputProps={{ readOnly: true }}
-                  />
-                </Box>
-
-
+                {/* Account Name - Read Only */}
+                <SmartDropdown
+                  label="Account"
+                  name="AccountName"
+                  value={formData.AccountID}
+                  onChange={handleInputChange}
+                  service={industryService}
+                  displayField="AccountName"
+                  valueField="AccountID"
+                  disabled={saving}
+                />
 
                 {/* Title */}
-                <Box>
+                <SmartDropdown
+                  label="Job Title"
+                  name="JobTitleID"
+                  value={formData.JobTitleID}
+                  onChange={handleInputChange}
+                  service={industryService}
+                  displayField="JobTitleName"
+                  valueField="JobTitleID"
+                  disabled={saving}
+                />
 
-                  <SmartDropdown
-                    label="Title"
-                    name="Title"
-                    value={formData.Title}
-                    onChange={handleInputChange}
-                    service={jobTitleService}
-                    displayField="name"
-                    valueField="id"
-                    disabled={saving}
+                {/* City */}
+                <SmartDropdown
+                  label="City"
+                  name="CityID"
+                  value={formData.PersonCityID}
+                  onChange={handleInputChange}
+                  service={industryService}
+                  displayField="CityName"
+                  valueField="CityID"
+                  disabled={saving}
+                />
 
-                  />
-                </Box>
-
-                {/* Job Title ID */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Job Title ID"
-                    name="JobTitleID"
-                    value={formData.JobTitleID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Box>
-                {/* Position */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Position"
-                    name="Position"
-                    value={formData.Position}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Box>
-                {/* Person City ID */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Person City ID"
-                    name="PersonCityID"
-                    value={formData.PersonCityID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Box>
                 {/* LinkedIn Link */}
                 <Box /*sx={{ gridColumn: '1 / -1' }}*/>
                   <TextField
@@ -413,17 +359,18 @@ const EditContactPage = () => {
                     disabled={saving}
                   />
                 </Box>
-                {/* Person State/Province ID */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Person State/Province ID"
-                    name="PersonStateProvinceID"
-                    value={formData.PersonStateProvinceID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Box>
+
+                {/* State/Province */}
+                <SmartDropdown
+                  label="State/Province"
+                  name="StateProvinceID"
+                  value={formData.PersonStateProvinceID}
+                  onChange={handleInputChange}
+                  service={industryService}
+                  displayField="StateProvince_Name"
+                  valueField="StateProvinceID"
+                  disabled={saving}
+                />
 
                 {/* Primary Email */}
                 <Box>
@@ -438,18 +385,19 @@ const EditContactPage = () => {
                   />
                 </Box>
 
-                {/* Primary Phone */}
+                {/* Work Phone */}
                 <Box>
                   <TextField
                     fullWidth
-                    label="Primary Phone"
-                    name="PrimaryPhone"
-                    value={formData.PrimaryPhone}
+                    label="Work Phone"
+                    name="WorkPhone"
+                    value={formData.WorkPhone}
                     onChange={handleInputChange}
                     type="tel"
                     disabled={saving}
                   />
                 </Box>
+
                 {/* Personal Email */}
                 <Box>
                   <TextField
