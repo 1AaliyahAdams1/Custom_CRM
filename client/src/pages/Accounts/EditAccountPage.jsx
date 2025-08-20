@@ -20,29 +20,7 @@ import {
   stateProvinceService 
 } from '../../services/dropdownServices';
 import SmartDropdown from '../../components/SmartDropdown';
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-  }
-});
+import theme from "../../components/Theme";
 
 const EditAccount = () => {
   const navigate = useNavigate();

@@ -15,7 +15,7 @@ import {
 import { Add, Clear, FilterList } from '@mui/icons-material';
 
 const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {} }) => {
-  const [filters, setFilters] = useState(currentFilters || {});
+  const [filters, setFilters] = useState(currentFilters);
   const [selectedColumn, setSelectedColumn] = useState('');
   const [filterValue, setFilterValue] = useState('');
 
@@ -31,12 +31,10 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
     }
   }, [columns, selectedColumn]);
 
-  // Reset filters when columns change
+  // Sync internal state with current filters from parent
   useEffect(() => {
-    if (columns && columns.length > 0) {
-      setFilters(currentFilters || {});
-    }
-  }, [columns, currentFilters]);
+    setFilters(currentFilters);
+  }, [currentFilters]);
 
   const handleAddFilter = () => {
     if (selectedColumn && filterValue.trim()) {
@@ -65,10 +63,11 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
   };
 
   const handleClearAllFilters = () => {
-    setFilters({});
+    const emptyFilters = {};
+    setFilters(emptyFilters);
     setFilterValue('');
     if (onApplyFilters) {
-      onApplyFilters({});
+      onApplyFilters(emptyFilters);
     }
   };
 

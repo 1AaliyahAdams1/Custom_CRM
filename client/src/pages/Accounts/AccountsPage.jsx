@@ -33,20 +33,6 @@ const AccountsPage = ({
   onAddAttachment,
   onClaimAccount,
   onAssignUser,
-  tableConfig,
-  notesPopupOpen,
-  setNotesPopupOpen,
-  attachmentsPopupOpen,
-  setAttachmentsPopupOpen,
-  selectedAccount,
-  popupLoading,
-  popupError,
-  handleSaveNote,
-  handleDeleteNote,
-  handleEditNote,
-  handleUploadAttachment,
-  handleDeleteAttachment,
-  handleDownloadAttachment,
 }) => {
   // Add state for managing filters
   const [activeFilters, setActiveFilters] = useState({});

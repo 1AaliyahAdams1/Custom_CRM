@@ -21,6 +21,7 @@ import {
   activityTypeService, 
 } from '../../services/dropdownServices';
 
+
 const EditActivityPage = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // Get activity ID from URL params
