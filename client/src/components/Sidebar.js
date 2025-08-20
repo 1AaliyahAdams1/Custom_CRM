@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import WorkspacesOutlineIcon from '@mui/icons-material/WorkspacesOutline';
 import {
   Drawer,
   List,
@@ -65,6 +66,12 @@ const navigation = [
     href: "/activities",
     icon: EventIcon,
     accessKey: "activities",
+  },
+  {
+    name: "Work Page",
+    href: "/smart-work",
+    icon: WorkspacesOutlineIcon,
+    accessKey: "smartWork",
   },
   {    
     name: "Reports",
@@ -137,7 +144,7 @@ export function AppSidebar() {
 
     if (isLogout) {
       // Handle logout button if needed
-      return null; // You can implement logout button logic here if needed
+      return null; // can implement logout button logic here if needed
     }
 
     const listItemContent = (
