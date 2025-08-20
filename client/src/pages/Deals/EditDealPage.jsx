@@ -1,21 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
   TextField,
   Button,
-  CircularProgress,
-  Alert,
   Paper,
-  Grid,
-} from "@mui/material";
+  Alert,
+  CircularProgress,
+  Skeleton
+} from '@mui/material';
+import { ArrowBack, Save, Clear } from '@mui/icons-material';
+import { ThemeProvider } from '@mui/material/styles';
+import theme from "../../components/Theme";
+import SmartDropdown from '../../components/SmartDropdown';
 import { fetchDealById, updateDeal } from "../../services/dealService";
+import { dealStageService } from '../../services/dropdownServices';
+import { getAllAccounts } from '../../services/accountService';
 
 const EditDealPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get deal ID from URL params
-  
+  const { id } = useParams();
+
   const [formData, setFormData] = useState({
     DealID: "",
     AccountID: "",
@@ -24,30 +30,18 @@ const EditDealPage = () => {
     Value: "",
     CloseDate: "",
     Probability: "",
-    CreatedAt: "",
-    UpdatedAt: "",
   });
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState('');
 
-  // Fetch account data when component mounts
   useEffect(() => {
     const loadDeal = async () => {
-      if (!id) {
-        setError("No deal ID provided");
-        setLoading(false);
-        return;
-      }
+      if (!id) return setError("No deal ID provided");
 
       try {
-        setLoading(true);
-        setError(null);
         const response = await fetchDealById(id);
-        
-        // Populate form with fetched data
         const dealData = response.data;
         setFormData({
           DealID: dealData.DealID || "",
@@ -57,250 +51,141 @@ const EditDealPage = () => {
           Value: dealData.Value || "",
           CloseDate: dealData.CloseDate || "",
           Probability: dealData.Probability || "",
-          CreatedAt: dealData.CreatedAt|| "",
-          UpdatedAt: dealData.UpdatedAt || "",
-          
         });
-      } catch (error) {
-        console.error("Failed to fetch deal:", error);
-        setError("Failed to load deal data. Please try again.");
+      } catch {
+        setError("Failed to load deal data");
       } finally {
         setLoading(false);
       }
     };
-
     loadDeal();
   }, [id]);
 
-  // Auto-clear success message after 3 seconds
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
-
-  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (error) setError(null);
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Basic validation
-    if (!formData.DealName.trim()) {
-      setError("Deal name is required");
-      return;
-    }
-
     try {
       setSaving(true);
-      setError(null);
-      
-      // Add dealID to formData for the update
-      const updateData = {
-        ...formData,
-        DealID: id
-      };
-      
-      await updateDeal(id, updateData);
+      await updateDeal(id, formData);
       setSuccessMessage("Deal updated successfully!");
-      
-      // Navigate back to deals page after a short delay
-      setTimeout(() => {
-        navigate("/deals");
-      }, 1500);
-      
-    } catch (error) {
-      console.error("Failed to update deal:", error);
-      setError("Failed to update deal. Please try again.");
+      setTimeout(() => navigate("/deals"), 1500);
+    } catch {
+      setError("Failed to update deal");
     } finally {
       setSaving(false);
     }
   };
 
-  // Handle cancel - navigate back to deals page
-  const handleCancel = () => {
-    navigate("/deals");
-  };
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Box p={4}>
-      <Typography variant="h4" gutterBottom>
-        Edit Deal
-      </Typography>
-
-      {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Success Alert */}
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
-          {successMessage}
-        </Alert>
-      )}
-
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            {/* Deal Id- Required */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Deal ID"
-                name="DealID"
-                value={formData.DealID}
-                onChange={handleInputChange}
-                required
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Account ID */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Account ID"
-                name="AccountID"
-                value={formData.AccountID}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* DealStageID */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Deal Stage ID"
-                name="DealStageID"
-                value={formData.DealStageID}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Deal Name */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Deal Name"
-                name="DealName"
-                value={formData.DealName}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Value */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Value"
-                name="Value"
-                value={formData.Value}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Close Date */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Close Date"
-                name="CloseDate"
-                value={formData.CloseDate}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Probability */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Probability"
-                name="Probability"
-                value={formData.Probability}
-                onChange={handleInputChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Created At
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Created At"
-                name="CreatedAt"
-                value={formData.CreatedAt}
-                onChange={handleInputChange}
-                variant="outlined"
-                type ="datetime-local"
-              />
-            </Grid> */}
-
-            {/* Updated At
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Updated At"
-                name="UpdatedAt"
-                value={formData.UpdatedAt}
-                onChange={handleInputChange}
-                variant="outlined"
-               type="datetime-local"
-              />
-            </Grid> */}
-
-            
-
-            {/* Action Buttons */}
-            <Grid item xs={12}>
-              <Box display="flex" gap={2} justifyContent="flex-end" mt={2}>
-                <Button
-                  variant="outlined"
-                  onClick={handleCancel}
-                  disabled={saving}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  disabled={saving}
-                  startIcon={saving ? <CircularProgress size={20} /> : null}
-                >
-                  {saving ? "Updating..." : "Update Account"}
-                </Button>
+    <ThemeProvider theme={theme}>
+      <Box sx={{ width: '100%', minHeight: '100vh', p: 3, backgroundColor: '#fafafa' }}>
+        <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+          {loading ? (
+            <Box sx={{ p: 3 }}>
+              <Skeleton variant="rectangular" width="100%" height={400} />
+            </Box>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                <Typography variant="h4">Edit Deal</Typography>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>Back</Button>
+                  <Button variant="outlined" startIcon={<Clear />} onClick={() => navigate("/deals")} disabled={saving}>Cancel</Button>
+                  <Button variant="contained" startIcon={saving ? <CircularProgress size={20} /> : <Save />} onClick={handleSubmit} disabled={saving}>
+                    {saving ? 'Updating...' : 'Update Deal'}
+                  </Button>
+                </Box>
               </Box>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
-    </Box>
+
+              {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+              {successMessage && <Alert severity="success" sx={{ mb: 3 }}>{successMessage}</Alert>}
+
+              <Paper elevation={0} sx={{ p: 3 }}>
+                <form onSubmit={handleSubmit}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <TextField
+                      fullWidth
+                      label="Deal ID"
+                      name="DealID"
+                      value={formData.DealID}
+                      onChange={handleInputChange}
+                      disabled={saving}
+                    />
+
+                    <SmartDropdown
+                      label="Account"
+                      name="AccountID"
+                      value={formData.AccountID}
+                      onChange={handleInputChange}
+                      service={{ getAll: async () => (await getAllAccounts()).data }}
+                      displayField="AccountName"
+                      valueField="AccountID"
+                      disabled={saving}
+                    />
+
+                    <SmartDropdown
+                      label="Deal Stage"
+                      name="DealStageID"
+                      value={formData.DealStageID}
+                      onChange={handleInputChange}
+                      service={dealStageService}
+                      displayField="StageName"
+                      valueField="DealStageID"
+                      disabled={saving}
+                    />
+
+                    <TextField
+                      fullWidth
+                      label="Deal Name"
+                      name="DealName"
+                      value={formData.DealName}
+                      onChange={handleInputChange}
+                      disabled={saving}
+                    />
+
+                    <TextField
+                      fullWidth
+                      label="Value"
+                      name="Value"
+                      type="number"
+                      value={formData.Value}
+                      onChange={handleInputChange}
+                      disabled={saving}
+                    />
+
+                    <TextField
+                      fullWidth
+                      label="Close Date"
+                      name="CloseDate"
+                      type="date"
+                      InputLabelProps={{ shrink: true }}
+                      value={formData.CloseDate}
+                      onChange={handleInputChange}
+                      disabled={saving}
+                    />
+
+                    <TextField
+                      fullWidth
+                      label="Probability (%)"
+                      name="Probability"
+                      type="number"
+                      value={formData.Probability}
+                      onChange={handleInputChange}
+                      disabled={saving}
+                    />
+                  </Box>
+                </form>
+              </Paper>
+            </>
+          )}
+        </Box>
+      </Box>
+    </ThemeProvider>
   );
 };
 
