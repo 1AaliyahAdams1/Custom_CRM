@@ -11,11 +11,12 @@ const DealsContainer = () => {
     const navigate = useNavigate();
 
     const [deals, setDeals] = useState([]);
+    const [selectedDeals, setSelectedDeals] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState("");
-    const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+    const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("");
     const [refreshFlag, setRefreshFlag] = useState(false);
 
     const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -25,31 +26,23 @@ const DealsContainer = () => {
     const isCLevel = roles.includes("C-level");
     const isSalesRep = roles.includes("Sales Representative");
 
+    // Fetch deals
     const fetchDeals = async () => {
         setLoading(true);
         setError(null);
-        
+
         try {
             let dealsData = [];
 
-            console.log("User Roles:", roles);
-            console.log("User ID:", userId);
-
             if (isCLevel) {
-                console.log("Fetching all deals for C-level user");
-                const response = await getAllDeals(true);
-                dealsData = response || [];
+                dealsData = (await getAllDeals(true)) || [];
             } else if (isSalesRep && userId) {
-                console.log("Fetching deals for Sales Representative");
-                const response = await fetchDealsByUser(userId);
-                dealsData = response || [];
+                dealsData = (await fetchDealsByUser(userId)) || [];
             } else {
-                console.log("No matching role for fetching deals");
                 dealsData = [];
             }
 
             setDeals(dealsData);
-
         } catch (err) {
             console.error("Failed to load deals:", err);
             setError("Failed to load deals. Please try again.");
@@ -62,7 +55,6 @@ const DealsContainer = () => {
         fetchDeals();
     }, [refreshFlag]);
 
-    // Automatically clear success message after 3 seconds
     useEffect(() => {
         if (successMessage) {
             const timer = setTimeout(() => setSuccessMessage(""), 3000);
@@ -70,69 +62,87 @@ const DealsContainer = () => {
         }
     }, [successMessage]);
 
-    // Filter and search logic
+    // Filtering + search
     const filteredDeals = useMemo(() => {
         return deals.filter((deal) => {
             const matchesSearch =
-                (deal.DealName && deal.DealName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                (deal.AccountID && deal.AccountID.toString().includes(searchTerm)) ||
-                (deal.DealStageID && deal.DealStageID.toString().includes(searchTerm)) ||
+                (deal.DealName &&
+                    deal.DealName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (deal.AccountID &&
+                    deal.AccountID.toString().includes(searchTerm)) ||
+                (deal.DealStageID &&
+                    deal.DealStageID.toString().includes(searchTerm)) ||
                 (deal.Value && deal.Value.toString().includes(searchTerm));
 
-            const matchesStatus = !statusFilter ||
-                (statusFilter === 'high' && deal.Probability >= 75) ||
-                (statusFilter === 'medium' && deal.Probability >= 50 && deal.Probability < 75) ||
-                (statusFilter === 'low' && deal.Probability < 50);
+            const matchesStatus =
+                !statusFilter ||
+                (statusFilter === "Active" && deal.Status === "Active") ||
+                (statusFilter === "Inactive" && deal.Status === "Inactive");
 
             return matchesSearch && matchesStatus;
         });
     }, [deals, searchTerm, statusFilter]);
 
-    // Handler to deactivate (soft delete) a deal
+    // Handlers
+    const handleSelectClick = (id) => {
+        setSelectedDeals((prev) =>
+            prev.includes(id) ? prev.filter((dealId) => dealId !== id) : [...prev, id]
+        );
+    };
+
+    const handleSelectAllClick = (checked) => {
+        if (checked) {
+            setSelectedDeals(filteredDeals.map((deal) => deal.DealID));
+        } else {
+            setSelectedDeals([]);
+        }
+    };
+
     const handleDeactivate = async (id) => {
         const confirm = window.confirm(
-            "Are you sure you want to delete this deal? This will deactivate it."
+            "Are you sure you want to deactivate this deal?"
         );
         if (!confirm) return;
 
-        setError(null);
         try {
-            console.log("Deactivating (soft deleting) deal with ID:", id);
             await deactivateDeal(id);
-            setSuccessMessage("Deal deleted successfully.");
+            setSuccessMessage("Deal deactivated successfully.");
             setRefreshFlag((flag) => !flag);
         } catch (error) {
-            console.error("Failed to delete deal:", error);
-            setError("Failed to delete deal. Please try again.");
+            console.error("Failed to deactivate deal:", error);
+            setError("Failed to deactivate deal. Please try again.");
         }
     };
 
     const handleEdit = (deal) => {
-        navigate(`/deals/edit/${deal.DealID}`, { state: { deal } });
+        navigate(`/deals/edit/${deal.DealID}`);
     };
 
-    const handleView = (dealId) => {
-        console.log("Navigating to deal details with ID:", dealId);
-        navigate(`/deals/${dealId}`);
+    const handleView = (deal) => {
+        if (!deal?.DealID) {
+            console.error("Cannot view deal - missing ID:", deal);
+            return;
+        }
+        // Navigate to the details page by ID
+        navigate(`/deals/${deal.DealID}`);
     };
+
 
     const handleOpenCreate = () => {
         navigate("/deals/create");
     };
 
     const handleAddNote = (deal) => {
-        console.log("Adding note for deal:", deal);
         navigate(`/deals/${deal.DealID}/notes`);
     };
 
     const handleAddAttachment = (deal) => {
-        console.log("Adding attachment for deal:", deal);
         navigate(`/deals/${deal.DealID}/attachments`);
     };
 
     const clearFilters = () => {
-        setSearchTerm('');
-        setStatusFilter('');
+        setSearchTerm("");
+        setStatusFilter("");
     };
 
     return (
@@ -143,9 +153,12 @@ const DealsContainer = () => {
             successMessage={successMessage}
             searchTerm={searchTerm}
             statusFilter={statusFilter}
-            setSuccessMessage={setSuccessMessage}
+            selectedDeals={selectedDeals}
             setSearchTerm={setSearchTerm}
             setStatusFilter={setStatusFilter}
+            setSuccessMessage={setSuccessMessage}
+            onSelectClick={handleSelectClick}
+            onSelectAllClick={handleSelectAllClick}
             onDeactivate={handleDeactivate}
             onEdit={handleEdit}
             onView={handleView}
