@@ -86,40 +86,10 @@ const TableView = ({
     setMenuRow(null);
   };
 
-  // Action handlers
-  const handleView = () => {
-    if (onView && menuRow) onView(menuRow[idField]);
-    handleMenuClose();
-  };
-  const handleAssignUser = () => {
-    if (onAssignUser && menuRow) onAssignUser(menuRow);
-    handleMenuClose();
-  };
-  const handleEdit = () => {
-    if (onEdit && menuRow) onEdit(menuRow);
-    handleMenuClose();
-  };
-  const handleDelete = () => {
-    if (onDelete && menuRow) onDelete(menuRow[idField]);
-    handleMenuClose();
-  };
-  const handleAddNote = () => {
-    if (onAddNote && menuRow) onAddNote(menuRow);
-    handleMenuClose();
-  };
-  const handleAddAttachment = () => {
-    if (onAddAttachment && menuRow) onAddAttachment(menuRow);
-    handleMenuClose();
-  };
-  const handleClaimAccount = () => {
-    if (onClaimAccount && menuRow) onClaimAccount(menuRow);
-    handleMenuClose();
-  };
-
-  // Filter handler for the new FilterComponent
+  // Filter handler for the FiltersDialog
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
-    setFiltersExpanded(false); // Close filters after applying
+    // Don't auto-close filters here - let user decide when to close
   };
 
   // Get filtered data based on search term and filters
@@ -236,59 +206,7 @@ const TableView = ({
     }
   };
 
-  // Default menu actions if none provided
-  const defaultMenuItems = [
-    {
-      label: 'Assign User',  
-      icon: <PersonAdd sx={{ mr: 2 }} />, 
-      onClick: handleAssignUser,
-      show: !!onAssignUser,  
-      sx: { color: '#7c3aed' },  
-    },
-    {
-      label: 'Claim Account',  
-      icon: <Business sx={{ mr: 2 }} />, 
-      onClick: handleClaimAccount,
-      show: entityType === 'account' && !!onClaimAccount,  // Only show for accounts, this is not showin up
-      sx: { color: '#f59e0b' },  
-    },
-    {
-      label: 'View Details',
-      icon: <Info sx={{ mr: 2 }} />,
-      onClick: handleView,
-      show: !!onView,
-    },
-    {
-      label: 'Edit',
-      icon: <Edit sx={{ mr: 2 }} />,
-      onClick: handleEdit,
-      show: !!onEdit,
-    },
-    {
-      label: 'Add Notes',
-      icon: <Note sx={{ mr: 2 }} />,
-      onClick: handleAddNote,
-      show: !!onAddNote,
-      sx: { color: '#2563eb' },
-    },
-    {
-      label: 'Add Attachments',
-      icon: <AttachFile sx={{ mr: 2 }} />,
-      onClick: handleAddAttachment,
-      show: !!onAddAttachment,
-      sx: { color: '#059669' },
-    },
-    {
-      label: 'Delete',
-      icon: <Delete sx={{ mr: 2 }} />,
-      onClick: handleDelete,
-      show: !!onDelete,
-      sx: { color: '#dc2626' },
-      disabled: (row) => row?.Active === false,
-    }
-  ];
-
-  const allMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
+  const allMenuItems = menuItems.length > 0 ? menuItems : ActionMenu;
 
   // Columns dialog save handler
   const handleColumnsSave = (newVisibleColumns) => {
@@ -347,6 +265,7 @@ const TableView = ({
           columns={columns}
           onApplyFilters={handleApplyFilters}
           deals={data}
+          currentFilters={filters} // Pass current filters to FiltersDialog
         />
       )}
 
