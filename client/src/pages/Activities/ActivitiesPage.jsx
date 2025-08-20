@@ -18,15 +18,10 @@ import {
 } from "@mui/material";
 import { Add, Clear } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
-<<<<<<< HEAD:client/src/pages/ActivitiesPage.jsx
-import { formatters } from "../utils/formatters";
-import UniversalTable from "../components/TableView";
-import theme from "../components/Theme";
-=======
 import { formatters } from '../../utils/formatters';
 import TableView from '../../components/TableView'; 
 import theme from "../../components/Theme";
->>>>>>> c19972a1058d85fa1e7705b1d84eb000e58da43d:client/src/pages/Activities/ActivitiesPage.jsx
+
 
 // Table configuration for activities
 const activitiesTableConfig = {
@@ -206,79 +201,7 @@ const ActivitiesPage = ({
                 Add Activity
               </Button>
 
-              {/* Status Filter */}
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Status"
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  sx={{
-                    backgroundColor: "#ffffff",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#e5e5e5",
-                    },
-                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#cccccc",
-                    },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#050505",
-                    },
-                  }}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="completed">Completed</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* Priority Filter */}
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Priority</InputLabel>
-                <Select
-                  value={priorityFilter}
-                  label="Priority"
-                  onChange={(e) => setPriorityFilter(e.target.value)}
-                  sx={{
-                    backgroundColor: "#ffffff",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#e5e5e5",
-                    },
-                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#cccccc",
-                    },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#050505",
-                    },
-                  }}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="1">Low</MenuItem>
-                  <MenuItem value="2">Medium</MenuItem>
-                  <MenuItem value="3">High</MenuItem>
-                  <MenuItem value="4">Critical</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* Clear Filters */}
-              {(searchTerm || statusFilter || priorityFilter) && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={clearFilters}
-                  startIcon={<Clear />}
-                  sx={{
-                    borderColor: "#e5e5e5",
-                    color: "#666666",
-                    "&:hover": {
-                      borderColor: "#cccccc",
-                      backgroundColor: "#f5f5f5",
-                    },
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
+              
             </Box>
           </Toolbar>
 
@@ -288,7 +211,7 @@ const ActivitiesPage = ({
               <CircularProgress />
             </Box>
           ) : (
-            <UniversalTable
+            <TableView
               data={activities}
               columns={activitiesTableConfig.columns}
               idField={activitiesTableConfig.idField}

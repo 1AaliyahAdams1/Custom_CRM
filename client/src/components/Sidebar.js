@@ -81,7 +81,7 @@ const navigation = [
   },
   {
     name: "Role Management",
-    href: "/roleManagement",
+    href: "/rolemanagement",
     icon: AdminPanelSettingsIcon,
     accessKey: 'roles',
   },

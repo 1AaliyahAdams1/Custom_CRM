@@ -13,7 +13,6 @@ import {
   CardActions,
   List,
   ListItem,
-  ListItemText,
   ListItemButton,
   Tab,
   Tabs,
@@ -25,26 +24,24 @@ import {
   Snackbar,
   Alert,
   Grid,
-  Divider,
   Switch,
   FormControlLabel,
-  Badge
 } from "@mui/material";
 import {
-  Settings,
-  PlayArrow,
-  Pause,
-  Refresh,
-  Psychology,
   Close,
   Add,
   CheckCircle,
   Schedule,
-  Assignment,
-  Email,
+  Event,
   Phone,
-  Event
+  Email,
+  Assignment,
+  Psychology,
+  Refresh,
 } from "@mui/icons-material";
+import theme from "../components/Theme";
+import WIPBanner from '../components/WIPBanner';
+
 
 // Mock data
 const mockActivities = [
@@ -55,10 +52,10 @@ const mockActivities = [
     type: "task",
     priority: "high",
     status: "pending",
-    dueDate: new Date(Date.now() + 86400000), // Tomorrow
+    dueDate: new Date(Date.now() + 86400000),
     estimatedDuration: 60,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   },
   {
     id: "2",
@@ -67,10 +64,10 @@ const mockActivities = [
     type: "meeting",
     priority: "medium",
     status: "pending",
-    dueDate: new Date(Date.now() + 3600000), // 1 hour from now
+    dueDate: new Date(Date.now() + 3600000),
     estimatedDuration: 30,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   },
   {
     id: "3",
@@ -79,10 +76,10 @@ const mockActivities = [
     type: "call",
     priority: "high",
     status: "overdue",
-    dueDate: new Date(Date.now() - 86400000), // Yesterday
+    dueDate: new Date(Date.now() - 86400000),
     estimatedDuration: 45,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   },
   {
     id: "4",
@@ -94,37 +91,49 @@ const mockActivities = [
     dueDate: new Date(),
     estimatedDuration: 90,
     createdAt: new Date(),
-    updatedAt: new Date()
-  }
+    updatedAt: new Date(),
+  },
 ];
 
-// Activity icon mapping
+// Icons
 const getActivityIcon = (type) => {
   switch (type) {
-    case 'meeting': return <Event />;
-    case 'call': return <Phone />;
-    case 'email': return <Email />;
-    default: return <Assignment />;
+    case "meeting":
+      return <Event />;
+    case "call":
+      return <Phone />;
+    case "email":
+      return <Email />;
+    default:
+      return <Assignment />;
   }
 };
 
-// Priority color mapping
+// Priority colors
 const getPriorityColor = (priority) => {
   switch (priority) {
-    case 'high': return 'error';
-    case 'medium': return 'warning';
-    case 'low': return 'info';
-    default: return 'default';
+    case "high":
+      return "error";
+    case "medium":
+      return "warning";
+    case "low":
+      return "success";
+    default:
+      return "default";
   }
 };
 
-// Status color mapping
+// Status colors
 const getStatusColor = (status) => {
   switch (status) {
-    case 'completed': return 'success';
-    case 'in_progress': return 'black';
-    case 'overdue': return 'error';
-    default: return 'default';
+    case "completed":
+      return "success";
+    case "in_progress":
+      return "primary";
+    case "overdue":
+      return "secondary";
+    default:
+      return "default";
   }
 };
 
@@ -132,80 +141,72 @@ function SmartWork() {
   const [activities, setActivities] = useState(mockActivities);
   const [workTabs, setWorkTabs] = useState([]);
   const [activeTabId, setActiveTabId] = useState(0);
-  const [dropzonePosition, setDropzonePosition] = useState('left');
+  const [dropzonePosition] = useState("left");
   const [isAutoAdvance, setIsAutoAdvance] = useState(true);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState(null);
-  const [completionNotes, setCompletionNotes] = useState('');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  const [completionNotes, setCompletionNotes] = useState("");
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
 
-  const showToast = (message, severity = 'info') => {
+  const showToast = (message, severity = "info") => {
     setSnackbar({ open: true, message, severity });
   };
 
-  // Auto-open next activity when tabs are empty and auto-advance is enabled
+  // Auto-open next activity
   useEffect(() => {
     if (workTabs.length === 0 && isAutoAdvance && activities.length > 0) {
-      const nextActivity = activities.find(a => a.status === 'pending' || a.status === 'overdue');
-      if (nextActivity) {
-        handleActivityClick(nextActivity);
-      }
+      const nextActivity = activities.find(
+        (a) => a.status === "pending" || a.status === "overdue"
+      );
+      if (nextActivity) handleActivityClick(nextActivity);
     }
   }, [workTabs, isAutoAdvance, activities]);
 
   const handleActivityClick = (activity) => {
-    // Check if tab already exists
-    const existingTab = workTabs.find(tab => tab.activityId === activity.id);
+    const existingTab = workTabs.find((tab) => tab.activityId === activity.id);
     if (existingTab) {
-      const tabIndex = workTabs.findIndex(tab => tab.id === existingTab.id);
-      setActiveTabId(tabIndex);
+      setActiveTabId(workTabs.findIndex((tab) => tab.id === existingTab.id));
       return;
     }
 
-    // Create new tab
     const newTab = {
       id: `tab-${Date.now()}`,
       activityId: activity.id,
       title: activity.title,
       type: activity.type,
-      color: 'black',
-      isActive: true
+      color: "primary",
+      isActive: true,
     };
 
-    setWorkTabs(prev => {
+    setWorkTabs((prev) => {
       const newTabs = [...prev, newTab];
       setActiveTabId(newTabs.length - 1);
       return newTabs;
-      
     });
 
-    // Update activity status to in_progress
-    setActivities(prev => prev.map(a => 
-      a.id === activity.id 
-        ? { ...a, status: 'in_progress' }
-        : a
-    ));
+    setActivities((prev) =>
+      prev.map((a) =>
+        a.id === activity.id ? { ...a, status: "in_progress" } : a
+      )
+    );
 
-    showToast(`${activity.title} is now open in a new tab`, 'success');
+    showToast(`${activity.title} is now open in a new tab`, "success");
   };
 
   const handleCloseTab = (tabIndex) => {
     const tab = workTabs[tabIndex];
     if (tab) {
-      // Reset activity status if not completed
-      const activity = activities.find(a => a.id === tab.activityId);
-      if (activity && activity.status === 'in_progress') {
-        setActivities(prev => prev.map(a => 
-          a.id === activity.id 
-            ? { ...a, status: 'pending' }
-            : a
-        ));
+      const activity = activities.find((a) => a.id === tab.activityId);
+      if (activity && activity.status === "in_progress") {
+        setActivities((prev) =>
+          prev.map((a) =>
+            a.id === activity.id ? { ...a, status: "pending" } : a
+          )
+        );
       }
     }
 
-    setWorkTabs(prev => prev.filter((_, index) => index !== tabIndex));
-    
-    // Adjust active tab
+    setWorkTabs((prev) => prev.filter((_, index) => index !== tabIndex));
     if (activeTabId === tabIndex && workTabs.length > 1) {
       setActiveTabId(tabIndex > 0 ? tabIndex - 1 : 0);
     } else if (activeTabId > tabIndex) {
@@ -216,35 +217,26 @@ function SmartWork() {
   const handleCompleteActivity = () => {
     if (!selectedActivityId) return;
 
-    // Update activity status and notes
-    setActivities(prev => prev.map(a => 
-      a.id === selectedActivityId 
-        ? { 
-            ...a, 
-            status: 'completed',
-            notes: completionNotes,
-            updatedAt: new Date()
-          }
-        : a
-    ));
+    setActivities((prev) =>
+      prev.map((a) =>
+        a.id === selectedActivityId
+          ? { ...a, status: "completed", notes: completionNotes, updatedAt: new Date() }
+          : a
+      )
+    );
 
-    // Close the tab
-    const tabIndex = workTabs.findIndex(t => t.activityId === selectedActivityId);
-    if (tabIndex !== -1) {
-      handleCloseTab(tabIndex);
-    }
+    const tabIndex = workTabs.findIndex((t) => t.activityId === selectedActivityId);
+    if (tabIndex !== -1) handleCloseTab(tabIndex);
 
     setCompleteDialogOpen(false);
-    setCompletionNotes('');
+    setCompletionNotes("");
     setSelectedActivityId(null);
+    showToast("Activity completed successfully!", "success");
 
-    showToast("Activity completed successfully!", 'success');
-
-    // Auto-advance to next activity if enabled
     if (isAutoAdvance) {
       setTimeout(() => {
-        const nextActivity = activities.find(a => 
-          a.status === 'pending' || a.status === 'overdue'
+        const nextActivity = activities.find(
+          (a) => a.status === "pending" || a.status === "overdue"
         );
         if (nextActivity && nextActivity.id !== selectedActivityId) {
           handleActivityClick(nextActivity);
@@ -254,150 +246,105 @@ function SmartWork() {
   };
 
   const handleAddTab = () => {
-    const availableActivity = activities.find(a => 
-      (a.status === 'pending' || a.status === 'overdue') &&
-      !workTabs.some(tab => tab.activityId === a.id)
+    const availableActivity = activities.find(
+      (a) =>
+        (a.status === "pending" || a.status === "overdue") &&
+        !workTabs.some((tab) => tab.activityId === a.id)
     );
-
-    if (availableActivity) {
-      handleActivityClick(availableActivity);
-    } else {
-      showToast("All activities are either completed or already open", 'warning');
-    }
+    if (availableActivity) handleActivityClick(availableActivity);
+    else showToast("All activities are either completed or already open", "warning");
   };
 
-  const pendingActivities = activities.filter(a => 
-    a.status === 'pending' || a.status === 'overdue'
+  const pendingActivities = activities.filter(
+    (a) => a.status === "pending" || a.status === "overdue"
   );
-
-  const completedToday = activities.filter(a => {
+  const completedToday = activities.filter((a) => {
     const today = new Date();
     const completedDate = new Date(a.updatedAt);
-    return a.status === 'completed' && 
-           completedDate.toDateString() === today.toDateString();
+    return a.status === "completed" && completedDate.toDateString() === today.toDateString();
   }).length;
-
-  const currentActivity = workTabs.length > 0 && workTabs[activeTabId] 
-    ? activities.find(a => a.id === workTabs[activeTabId].activityId)
-    : null;
+  const currentActivity =
+    workTabs.length > 0 && workTabs[activeTabId]
+      ? activities.find((a) => a.id === workTabs[activeTabId].activityId)
+      : null;
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      {/* Header */}
-      <AppBar position="static" color="light grey" elevation={1}>
-        <Toolbar sx={{ px: 3, py: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Paper
-                // sx={{
-                //   p: 1,
-                //   background: 'black',
-                //   display: 'flex',
-                //   alignItems: 'center',
-                //   justifyContent: 'center'
-                // }}
-              >
-                {/* <Psychology sx={{ color: 'white', fontSize: 24 }} /> */}
-              </Paper>
-              <Box>
-                <Typography variant="h3" component="h1" fontWeight="bold">
-                  Smart Work
-                </Typography>
-                
-              </Box>
-            </Box>
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.default", color: "text.primary" }}>
+      {/* WIP Banner */}
+      <WIPBanner />
 
-            <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-              <Chip
-                label={`${pendingActivities.length} pending`}
-                color="default"
-                size="small"
-              />
-              <Chip
-                label={`${completedToday} completed today`}
-                color="success"
-                variant="outlined"
-                size="small"
-              />
+      {/* Header */}
+      <AppBar position="static" sx={{ bgcolor: "white", color: "primary.main" }} elevation={1}>
+        <Toolbar sx={{ px: 3, py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexGrow: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Typography variant="h3" fontWeight="bold" color="text.secondary">
+                Smart Work
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", gap: 1, ml: 2 }}>
+              <Chip label={`${pendingActivities.length} pending`} color="default" size="small" />
+              <Chip label={`${completedToday} completed today`} color="success" variant="outlined" size="small" />
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <FormControlLabel
               control={
                 <Switch
                   checked={isAutoAdvance}
                   onChange={(e) => setIsAutoAdvance(e.target.checked)}
                   size="small"
-                    color="black"
+                  color="primary"
                 />
               }
               label="Auto-advance"
             />
-            
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               size="small"
               startIcon={<Refresh />}
-              color="black"
+              sx={{ color: theme.palette.primary.main, borderColor: theme.palette.divider }}
               onClick={() => {
                 setWorkTabs([]);
                 setActivities(mockActivities);
-                showToast("Workspace reset", 'info');
+                showToast("Workspace reset", "info");
               }}
             >
               Reset
             </Button>
-            
-            {/* <IconButton size="small">
-              <Settings />
-            </IconButton> */}
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* Main Workspace */}
-      <Box sx={{ display: 'flex', height: 'calc(100vh - 88px)' }}>
-        {/* Activity Sidebar */}
-        {dropzonePosition === 'left' && (
-          <Paper sx={{ width: 320, flexShrink: 0, overflow: 'hidden' }}>
-            <Box sx={{ p: 2, bgcolor: 'black', color: 'white' }}>
-              <Typography variant="h6" component="h2">
-                Activities
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+      {/* Workspace */}
+      <Box sx={{ display: "flex", height: "calc(100vh - 112px)" }}>
+        {/* Sidebar */}
+        {dropzonePosition === "left" && (
+          <Paper sx={{ width: 320, flexShrink: 0, overflow: "hidden" }}>
+            <Box sx={{ p: 2, bgcolor: "#f5f5f5", color: "primary.contrastText" }}>
+              <Typography variant="h6" color="text.secondary">Activities</Typography>
+              <Typography variant="body2" sx={{ opacity: 0.8, color: "text.secondary" }}>
                 Click to open in workspace
               </Typography>
             </Box>
-            <List sx={{ p: 0, height: 'calc(100% - 80px)', overflow: 'auto' }}>
+            <List sx={{ p: 0, height: "calc(100% - 80px)", overflow: "auto" }}>
               {pendingActivities.map((activity) => (
                 <ListItem key={activity.id} disablePadding>
-                  <ListItemButton 
-                    onClick={() => handleActivityClick(activity)}
-                    sx={{ p: 2 }}
-                  >
-                    <Box sx={{ width: '100%' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <ListItemButton onClick={() => handleActivityClick(activity)} sx={{ p: 2 }}>
+                    <Box sx={{ width: "100%" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                         {getActivityIcon(activity.type)}
-                        <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
+                        <Typography variant="subtitle2" sx={{ flexGrow: 1, color: "text.secondary" }}>
                           {activity.title}
                         </Typography>
-                        <Chip 
-                          label={activity.priority}
-                          color={getPriorityColor(activity.priority)}
-                          size="small"
-                        />
+                        <Chip label={activity.priority} color={getPriorityColor(activity.priority)} size="small" />
                       </Box>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         {activity.description}
                       </Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Chip 
-                          label={activity.status}
-                          color={getStatusColor(activity.status)}
-                          variant="outlined"
-                          size="small"
-                        />
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Chip label={activity.status} color={getStatusColor(activity.status)} variant="outlined" size="small" />
                         <Typography variant="caption" color="text.secondary">
                           {activity.estimatedDuration}min
                         </Typography>
@@ -411,45 +358,37 @@ function SmartWork() {
         )}
 
         {/* Work Area */}
-        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
           {workTabs.length > 0 ? (
             <>
               {/* Tabs */}
-              <Box sx={{ borderBottom: 1, borderColor: 'divider'}}>
+              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                 <Tabs
                   value={activeTabId}
-                  onChange={(event, newValue) => setActiveTabId(newValue)}
+                  onChange={(e, newVal) => setActiveTabId(newVal)}
                   variant="scrollable"
-                    scrollButtons="auto"
-                sx={{
-                      '& .MuiTabs-indicator': {
-                        height: 3,
-                        backgroundColor: '#000',
-                      },
-                      '& .MuiTab-root': {
-                        textTransform: 'none',
-                        fontSize: '0.95rem',
-                        fontWeight: 500,
-                        minHeight: 56,
-                        px: 3,
-                        color: '#666',
-                        '&.Mui-selected': {
-                          color: '#000',
-                        }
-                      }
-                    }} 
+                  scrollButtons="auto"
+                  sx={{
+                    "& .MuiTabs-indicator": { height: 3, bgcolor: theme.palette.primary.main },
+                    "& .MuiTab-root": {
+                      textTransform: "none",
+                      fontSize: "0.95rem",
+                      fontWeight: 500,
+                      minHeight: 56,
+                      px: 3,
+                      color: theme.palette.text.secondary,
+                      "&.Mui-selected": { color: theme.palette.text.primary },
+                    },
+                  }}
                 >
                   {workTabs.map((tab, index) => (
-                    <Tab 
-                        
+                    <Tab
                       key={tab.id}
                       label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           {getActivityIcon(tab.type)}
                           {tab.title}
-                          
                           <IconButton
-                          
                             size="small"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -463,36 +402,22 @@ function SmartWork() {
                       }
                     />
                   ))}
-                  <Tab
-                    icon={<Add />}
-                    onClick={handleAddTab}
-                    sx={{ minWidth: 48 }}
-                  />
+                  <Tab icon={<Add />} onClick={handleAddTab} sx={{ minWidth: 48 }} />
                 </Tabs>
               </Box>
 
               {/* Tab Content */}
               <Box sx={{ flexGrow: 1, p: 3 }}>
                 {currentActivity && (
-                  <Card>
+                  <Card sx={{ bgcolor: "background.paper" }}>
                     <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
                         {getActivityIcon(currentActivity.type)}
                         <Typography variant="h5" component="h2">
                           {currentActivity.title}
-                          
                         </Typography>
-                        <Chip 
-                          label={currentActivity.priority}
-                          color={getPriorityColor(currentActivity.priority)}
-                          size="small"
-                        />
-                        <Chip 
-                          label={currentActivity.status}
-                          color={getStatusColor(currentActivity.status)}
-                          variant="outlined"
-                          size="small"
-                        />
+                        <Chip label={currentActivity.priority} color={getPriorityColor(currentActivity.priority)} size="small" />
+                        <Chip label={currentActivity.status} color={getStatusColor(currentActivity.status)} variant="outlined" size="small" />
                       </Box>
 
                       <Typography variant="body1" sx={{ mb: 3 }}>
@@ -501,38 +426,26 @@ function SmartWork() {
 
                       <Grid container spacing={2} sx={{ mb: 3 }}>
                         <Grid item xs={6}>
-                          <Typography variant="body2" color="text.secondary">
-                            Due Date
-                          </Typography>
-                          <Typography variant="body1">
-                            {currentActivity.dueDate.toLocaleDateString()}
-                          </Typography>
+                          <Typography variant="body2" color="text.secondary">Due Date</Typography>
+                          <Typography variant="body1">{currentActivity.dueDate.toLocaleDateString()}</Typography>
                         </Grid>
                         <Grid item xs={6}>
-                          <Typography variant="body2" color="text.secondary">
-                            Estimated Duration
-                          </Typography>
-                          <Typography variant="body1">
-                            {currentActivity.estimatedDuration} minutes
-                          </Typography>
+                          <Typography variant="body2" color="text.secondary">Estimated Duration</Typography>
+                          <Typography variant="body1">{currentActivity.estimatedDuration} minutes</Typography>
                         </Grid>
                       </Grid>
 
                       {currentActivity.notes && (
                         <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            Notes
-                          </Typography>
-                          <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-                            <Typography variant="body2">
-                              {currentActivity.notes}
-                            </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Notes</Typography>
+                          <Paper sx={{ p: 2, bgcolor: "grey.50" }}>
+                            <Typography variant="body2">{currentActivity.notes}</Typography>
                           </Paper>
                         </Box>
                       )}
                     </CardContent>
 
-                    <CardActions sx={{ justifyContent: 'space-between', px: 3, pb: 3 }}>
+                    <CardActions sx={{ justifyContent: "space-between", px: 3, pb: 3 }}>
                       <Box>
                         <Button
                           variant="contained"
@@ -548,9 +461,9 @@ function SmartWork() {
                         </Button>
                         <Button
                           variant="outlined"
-                          color="black"
                           startIcon={<Schedule />}
-                          onClick={() => showToast("Follow-up scheduling feature coming soon!", 'info')}
+                          sx={{ color: theme.palette.text.primary, borderColor: theme.palette.divider }}
+                          onClick={() => showToast("Follow-up scheduling feature coming soon!", "info")}
                         >
                           Schedule Follow-up
                         </Button>
@@ -561,87 +474,32 @@ function SmartWork() {
               </Box>
             </>
           ) : (
-            // Empty state
-            <Box sx={{ 
-              flexGrow: 1, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              flexDirection: 'column',
-              gap: 2
-            }}>
-              <Psychology sx={{ fontSize: 64, color: 'text.secondary' }} />
+            <Box
+              sx={{
+                flexGrow: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "column",
+                gap: 2,
+              }}
+            >
+              <Psychology sx={{ fontSize: 64, color: "text.secondary" }} />
               <Typography variant="h5" color="text.secondary">
                 No activities open
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                 Select an activity from the sidebar to get started
               </Typography>
-              <Button
-                variant="contained"
-                onClick={handleAddTab}
-                startIcon={<Add />}
-              >
+              <Button variant="contained" onClick={handleAddTab} startIcon={<Add />}>
                 Open Next Activity
               </Button>
             </Box>
           )}
         </Box>
-
-        {/* Activity Sidebar (Right) */}
-        {dropzonePosition === 'right' && (
-          <Paper sx={{ width: 320, flexShrink: 0, overflow: 'hidden' }}>
-            <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
-              <Typography variant="h6" component="h2">
-                Activities
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Click to open in workspace
-              </Typography>
-            </Box>
-            <List sx={{ p: 0, height: 'calc(100% - 80px)', overflow: 'auto' }}>
-              {pendingActivities.map((activity) => (
-                <ListItem key={activity.id} disablePadding>
-                  <ListItemButton 
-                    onClick={() => handleActivityClick(activity)}
-                    sx={{ p: 2 }}
-                  >
-                    <Box sx={{ width: '100%' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        {getActivityIcon(activity.type)}
-                        <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
-                          {activity.title}
-                        </Typography>
-                        <Chip 
-                          label={activity.priority}
-                          color={getPriorityColor(activity.priority)}
-                          size="small"
-                        />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        {activity.description}
-                      </Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Chip 
-                          label={activity.status}
-                          color={getStatusColor(activity.status)}
-                          variant="outlined"
-                          size="small"
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                          {activity.estimatedDuration}min
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
-        )}
       </Box>
 
-      {/* Complete Activity Dialog */}
+      {/* Complete Dialog */}
       <Dialog
         open={completeDialogOpen}
         onClose={() => setCompleteDialogOpen(false)}
@@ -660,30 +518,28 @@ function SmartWork() {
             variant="outlined"
             value={completionNotes}
             onChange={(e) => setCompletionNotes(e.target.value)}
-            placeholder="Add any notes about completing this activity..."
+            placeholder="Add any notes..."
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCompleteDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleCompleteActivity} variant="contained" color="success">
+          <Button onClick={() => setCompleteDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="success" onClick={handleCompleteActivity}>
             Mark Complete
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar for notifications */}
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
-          variant="filled"
+          sx={{ width: "100%" }}
         >
           {snackbar.message}
         </Alert>

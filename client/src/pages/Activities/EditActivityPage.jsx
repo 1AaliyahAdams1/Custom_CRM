@@ -11,15 +11,15 @@ import {
   Grid,
 } from "@mui/material";
 
-<<<<<<< HEAD:client/src/pages/EditActivityPage.jsx
-import { fetchActivityById, updateActivity } from "../services/activityService";
-import { getAllAccounts } from '../services/accountService';
-import SmartDropdown from '../components/SmartDropdown';
-import { activityTypeService, priorityLevelService } from '../services/dropdownServices';
-=======
 import { fetchActivityById, updateActivity } from "../../services/activityService";
-
->>>>>>> c19972a1058d85fa1e7705b1d84eb000e58da43d:client/src/pages/Activities/EditActivityPage.jsx
+import SmartDropdown from '../../components/SmartDropdown';
+import {
+  getAllAccounts,
+} from "../../services/accountService";
+import { 
+  priorityLevelService, 
+  activityTypeService, 
+} from '../../services/dropdownServices';
 
 const EditActivityPage = () => {
   const navigate = useNavigate();
