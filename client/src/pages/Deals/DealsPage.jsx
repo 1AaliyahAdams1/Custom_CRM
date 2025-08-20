@@ -168,40 +168,6 @@ const DealsPage = ({
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-              {/* Search and filter controls */}
-              <TextField
-                size="small"
-                placeholder="Search deals..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm && setSearchTerm(e.target.value)}
-                sx={{ minWidth: 200 }}
-              />
-              
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Status"
-                  onChange={(e) => setStatusFilter && setStatusFilter(e.target.value)}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="high">High (75%+)</MenuItem>
-                  <MenuItem value="medium">Medium (50-74%)</MenuItem>
-                  <MenuItem value="low">Low (&lt;50%)</MenuItem>
-                </Select>
-              </FormControl>
-
-              {(searchTerm || statusFilter) && (
-                <Button
-                  variant="outlined"
-                  startIcon={<Clear />}
-                  onClick={clearFilters}
-                  size="small"
-                >
-                  Clear
-                </Button>
-              )}
-
               <Button
                 variant="contained"
                 startIcon={<Add />}
