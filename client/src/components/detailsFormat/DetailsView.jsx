@@ -21,8 +21,9 @@ import {
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
-import theme from "../components/Theme";
+import theme from "../Theme";
 import DetailsActions from "./DetailsActions";
+import { claimAccount, assignUser } from "../../services/assignService";
 
 export function UniversalDetailView({
   title,
@@ -53,16 +54,51 @@ export function UniversalDetailView({
   const activeTheme = customTheme || theme;
 
   const handleTabChange = (_, newValue) => setTab(newValue);
-  const handleSave = () => {
-    if (onSave) onSave(formData);
-    setIsEditing(false);
-  };
-  const handleCancel = () => setFormData(item);
-  const handleDelete = () => onDelete && onDelete();
-  const handleAddNote = () => onAddNote && onAddNote(item);
-  const handleAddAttachment = () => onAddAttachment && onAddAttachment(item);
 
   const updateField = (key, value) => setFormData((prev) => ({ ...prev, [key]: value }));
+
+  const handleSave = async () => {
+    if (onSave) await onSave(formData);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => setFormData(item);
+
+  const handleDelete = async () => {
+    if (onDelete) await onDelete(formData);
+  };
+
+  const handleAddNote = () => {
+    if (onAddNote) onAddNote(formData);
+  };
+
+  const handleAddAttachment = () => {
+    if (onAddAttachment) onAddAttachment(formData);
+  };
+
+  const handleClaimAccount = async () => {
+    try {
+      const result = await claimAccount(formData.AccountID);
+      alert(result.message || "Account claimed!");
+      setFormData(prev => ({ ...prev, ownerStatus: "owned" }));
+    } catch (err) {
+      console.error("Failed to claim account:", err);
+      alert(err.response?.data?.message || err.message || "Failed to claim account");
+    }
+  };
+
+  const handleAssignUser = async () => {
+    try {
+      const userId = prompt("Enter user ID to assign:");
+      if (!userId) return;
+      const result = await assignUser(formData.AccountID, userId);
+      alert(result.message || "User assigned successfully");
+    } catch (err) {
+      console.error("Failed to assign user:", err);
+      alert(err.response?.data?.message || err.message || "Failed to assign user");
+    }
+  };
+
 
   const visibleFields = mainFields.filter(
     (field) =>
@@ -76,35 +112,27 @@ export function UniversalDetailView({
     const value = formData[field.key] || "";
 
     if (!isEditing) {
-      return (
-        <Box
-          sx={{
-            px: 2,
-            py: 1.5,
-            backgroundColor: "#f5f5f5",
-            borderRadius: 1,
-            display: "flex",
-            alignItems: "center",
-            wordBreak: "break-word",
-          }}
-        >
-          {field.type === "boolean" ? (
-            <Checkbox checked={Boolean(value)} disabled size="small" />
-          ) : field.type === "link" && value ? (
-            <a href={value} target="_blank" rel="noopener noreferrer">{value}</a>
-          ) : field.type === "currency" && value ? (
-            `$${parseFloat(value).toLocaleString()}`
-          ) : field.type === "date" && value ? (
-            new Date(value).toLocaleDateString()
-          ) : field.type === "datetime" && value ? (
-            new Date(value).toLocaleString()
-          ) : (
-            value || "—"
-          )}
-        </Box>
-      );
+      switch (field.type) {
+        case "boolean":
+          return <Checkbox checked={Boolean(value)} disabled size="small" />;
+        case "link":
+          return value ? (
+            <a href={value.startsWith("http") ? value : `https://${value}`} target="_blank" rel="noopener noreferrer">
+              {value}
+            </a>
+          ) : "—";
+        case "currency":
+          return value ? `$${parseFloat(value).toLocaleString()}` : "—";
+        case "date":
+          return value ? new Date(value).toLocaleDateString() : "—";
+        case "datetime":
+          return value ? new Date(value).toLocaleString() : "—";
+        default:
+          return value || "—";
+      }
     }
 
+    // Edit mode
     switch (field.type) {
       case "textarea":
         return (
@@ -162,11 +190,7 @@ export function UniversalDetailView({
             size="small"
             fullWidth
             required={field.required}
-            InputProps={
-              field.type === "currency"
-                ? { startAdornment: <span style={{ marginRight: 4 }}>$</span> }
-                : undefined
-            }
+            InputProps={field.type === "currency" ? { startAdornment: <span style={{ marginRight: 4 }}>$</span> } : undefined}
           />
         );
       case "date":
@@ -270,6 +294,7 @@ export function UniversalDetailView({
               isEditing={isEditing}
               readOnly={readOnly}
               entityType={entityType}
+              currentRow={formData}
               onBack={onBack}
               onEdit={() => setIsEditing(true)}
               onSave={handleSave}
@@ -277,6 +302,8 @@ export function UniversalDetailView({
               onDelete={handleDelete}
               onAddNote={handleAddNote}
               onAddAttachment={handleAddAttachment}
+              onAssignUser={handleAssignUser}
+              onClaimAccount={handleClaimAccount}
             />
           </Box>
         </Box>
@@ -292,9 +319,7 @@ export function UniversalDetailView({
                 <Box key={field.key} sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: 500, color: "#050505" }}>
                     {field.label}
-                    {field.required && isEditing && (
-                      <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>
-                    )}
+                    {field.required && isEditing && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
                   </Typography>
                   {renderField(field)}
                 </Box>

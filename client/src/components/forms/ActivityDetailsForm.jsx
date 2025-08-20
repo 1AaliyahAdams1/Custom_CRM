@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Tabs, Tab, Alert, Typography } from "@mui/material";
-import { UniversalDetailView } from "../../components/DetailsView";
+import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { fetchActivityById, updateActivity } from "../../services/activityService";
 
 // Main fields configuration for activities

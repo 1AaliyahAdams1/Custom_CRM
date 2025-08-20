@@ -214,6 +214,51 @@ async function deleteEmployee(employee, changedBy, actionTypeId) {
   }
 }
 
+
+// =======================
+// Get employee by UserID
+// =======================
+async function getEmployeeByUserId(userId) {
+  if (!userId) throw new Error("userId is required");
+
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT TOP 1 *
+        FROM Employee
+        WHERE UserID = @UserID
+      `);
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("EmployeeRepo Error [getEmployeeByUserId]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Get UserID by EmployeeID
+// =======================
+async function getUserIdByEmployeeId(employeeId) {
+  if (!employeeId) throw new Error("employeeId is required");
+
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("EmployeeID", sql.Int, employeeId)
+      .query(`
+        SELECT TOP 1 UserID
+        FROM Employee
+        WHERE EmployeeID = @EmployeeID
+      `);
+    return result.recordset[0]?.UserID || null;
+  } catch (error) {
+    console.error("EmployeeRepo Error [getUserIdByEmployeeId]:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   getAllEmployees,
   getEmployeeById,
@@ -222,4 +267,6 @@ module.exports = {
   deactivateEmployee,
   reactivateEmployee,
   deleteEmployee,
+  getUserIdByEmployeeId,
+  getEmployeeByUserId
 };

@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Alert } from "@mui/material";
-import { UniversalDetailView } from "../../components/DetailsView";
+import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import { fetchAccountById, updateAccount, deactivateAccount } from "../../services/accountService";
-import { noteService } from "../../services/noteService";
-import { attachmentService } from "../../services/attachmentService";
 
 // Define the main fields for the account form
 const accountMainFields = [

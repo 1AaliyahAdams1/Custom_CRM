@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
-import TableView from '../../components/TableView';
+import TableView from '../../components/tableFormat/TableView';
 import theme from "../../components/Theme";
 import { formatters } from '../../utils/formatters';
 
