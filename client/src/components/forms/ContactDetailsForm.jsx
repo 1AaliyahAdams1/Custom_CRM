@@ -1,16 +1,16 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { Box, Tabs, Tab, Alert, Typography } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Box, Alert } from "@mui/material";
 import { UniversalDetailView } from "../../components/DetailsView";
-import { updateContact } from "../../services/contactService";
+import { getContactDetails, updateContact } from "../../services/contactService";
 
 const contactMainFields = [
   { key: "Title", label: "Title", type: "select", options: ["Mr.", "Ms.", "Mrs.", "Dr.", "Prof."], width: { xs: 12, md: 3 } },
   { key: "first_name", label: "First Name", required: true, width: { xs: 12, md: 3 } },
   { key: "middle_name", label: "Middle Name", width: { xs: 12, md: 3 } },
   { key: "surname", label: "Last Name", required: true, width: { xs: 12, md: 3 } },
-  { key: "JobTitleName", label: "Job Title", type: "select", options: ["CEO","CTO","CFO","Manager","Director","VP","Senior Manager","Team Lead","Developer","Analyst","Consultant","Coordinator"] },
-  { key: "department", label: "Department", type: "select", options: ["Sales","Marketing","Engineering","HR","Finance","Operations","Customer Service","Legal","IT","R&D"] },
+  { key: "JobTitleName", label: "Job Title", type: "select", options: ["CEO", "CTO", "CFO", "Manager", "Director", "VP", "Senior Manager", "Team Lead", "Developer", "Analyst", "Consultant", "Coordinator"] },
+  { key: "department", label: "Department", type: "select", options: ["Sales", "Marketing", "Engineering", "HR", "Finance", "Operations", "Customer Service", "Legal", "IT", "R&D"] },
   { key: "WorkEmail", label: "Work Email", type: "email", required: true },
   { key: "PersonalEmail", label: "Personal Email", type: "email" },
   { key: "WorkPhone", label: "Work Phone", type: "tel" },
@@ -20,60 +20,67 @@ const contactMainFields = [
   { key: "street_address2", label: "Street Address 2" },
   { key: "street_address3", label: "Street Address 3" },
   { key: "postal_code", label: "Postal Code" },
-  { key: "CityName", label: "City", type: "select", options: ["New York","Los Angeles","Chicago","Houston","Phoenix","Philadelphia","San Antonio","San Diego","Dallas","San Jose"] },
-  { key: "CountryName", label: "Country", type: "select", options: ["USA","Canada","UK","Australia","Germany","France","India"] },
-  { key: "StateProvinceName", label: "State/Province", type: "select", options: ["California","Texas","Florida","New York","Illinois","Pennsylvania","Ohio","Georgia","North Carolina","Michigan"] },
-  { key: "status", label: "Status", type: "select", options: ["Active","Inactive","Lead","Customer","Prospect"] },
+  { key: "CityName", label: "City", type: "select", options: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose"] },
+  { key: "CountryName", label: "Country", type: "select", options: ["USA", "Canada", "UK", "Australia", "Germany", "France", "India"] },
+  { key: "StateProvinceName", label: "State/Province", type: "select", options: ["California", "Texas", "Florida", "New York", "Illinois", "Pennsylvania", "Ohio", "Georgia", "North Carolina", "Michigan"] },
+  { key: "status", label: "Status", type: "select", options: ["Active", "Inactive", "Lead", "Customer", "Prospect"] },
   { key: "Active", label: "Active", type: "boolean" },
 ];
 
-export default function ContactDetailsForm({ contacts = [] }) {
+export default function ContactDetailsForm() {
   const navigate = useNavigate();
-  const [activeContactIndex, setActiveContactIndex] = useState(0);
-  const [contactData, setContactData] = useState([]);
+  const { id } = useParams(); // ✅ matches your route `/contacts/:id`
+
+  const [contact, setContact] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const loadContacts = useCallback(async () => {
-    try {
-      setLoading(true);
-      if (!Array.isArray(contacts)) throw new Error("Invalid contacts data");
-      setContactData(contacts);
-    } catch (err) {
-      setError(err.message || "Failed to load contact(s)");
-    } finally {
-      setLoading(false);
-    }
-  }, [contacts]);
-
   useEffect(() => {
-    loadContacts();
-  }, [loadContacts]);
+    console.log("🔍 Debug: useParams() =", { id });
 
-  const handleSave = async (formData, index) => {
+    const loadContact = async () => {
+      if (!id) {
+        setError("No contact ID provided in the route.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const data = await getContactDetails(id);
+        console.log("Debug: getContactDetails response:", data);
+
+        setContact(data?.data || data || null);
+      } catch (err) {
+        console.error("Error loading contact:", err);
+        setError("Failed to load contact");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadContact();
+  }, [id]);
+
+  const handleSave = async (formData) => {
     try {
-      const updatedContacts = [...contactData];
-      updatedContacts[index] = formData;
-      setContactData(updatedContacts);
-      await updateContact(formData.ContactID, formData);
+      console.log("Debug: Saving contact:", formData);
+      setContact(formData);
+      await updateContact(id, formData);
       setSuccessMessage("Contact updated successfully!");
     } catch (err) {
-      setError("Failed to save contact. Please try again.");
+      console.error("Error saving contact:", err);
+      setError("Failed to save contact.");
     }
   };
 
-  const handleTabChange = (_, newIndex) => setActiveContactIndex(newIndex);
-
-  if (loading) return <Typography>Loading contact details...</Typography>;
+  if (loading) return <Box>Loading contact details...</Box>;
   if (error) return <Alert severity="error">{error}</Alert>;
-  if (!contactData || !contactData.length) return <Alert severity="warning">No contact records found.</Alert>;
+  if (!contact) return <Alert severity="warning">Contact not found.</Alert>;
 
-  const multipleContacts = contactData.length > 1;
-  const currentContact = contactData[activeContactIndex];
-
-  const getContactDisplayName = (contact) =>
-    [contact.Title, contact.first_name, contact.middle_name, contact.surname].filter(Boolean).join(" ") || `Contact #${contact.ContactID}`;
+  const getContactDisplayName = (c) =>
+    [c.Title, c.first_name, c.middle_name, c.surname].filter(Boolean).join(" ") || `Contact #${c.ContactID}`;
 
   return (
     <Box>
@@ -83,32 +90,13 @@ export default function ContactDetailsForm({ contacts = [] }) {
         </Alert>
       )}
 
-      {multipleContacts && (
-        <Tabs
-          value={activeContactIndex}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}
-        >
-          {contactData.map((c, idx) => (
-            <Tab key={idx} label={getContactDisplayName(c)} />
-          ))}
-        </Tabs>
-      )}
-
       <UniversalDetailView
-        title={getContactDisplayName(currentContact)}
-        subtitle={currentContact?.ContactID ? `Contact ID: ${currentContact.ContactID}` : undefined}
-        item={currentContact}
+        title={getContactDisplayName(contact)}
+        subtitle={contact?.ContactID ? `Contact ID: ${contact.ContactID}` : undefined}
+        item={contact}
         mainFields={contactMainFields}
-        onSave={(formData) => handleSave(formData, activeContactIndex)}
+        onSave={handleSave}
         entityType="contact"
-        setFormData={(updatedData) => {
-          const newContacts = [...contactData];
-          newContacts[activeContactIndex] = updatedData; // reactive updates
-          setContactData(newContacts);
-        }}
       />
     </Box>
   );

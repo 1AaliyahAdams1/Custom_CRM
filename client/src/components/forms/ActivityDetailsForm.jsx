@@ -1,70 +1,84 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { Box, Tabs, Tab, Alert, Typography } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Box, Alert, Typography } from "@mui/material";
 import { UniversalDetailView } from "../../components/DetailsView";
 import { fetchActivityById, updateActivity } from "../../services/activityService";
 
-// Main fields configuration for activities
 const activityMainFields = [
   { key: "TypeName", label: "Activity Type", required: true, type: "select", options: ["Call","Meeting","Email","Task","Follow-up","Demo","Presentation","Other"], width: { xs: 12, md: 6 } },
   { key: "AccountName", label: "Account", type: "text", disabled: true, width: { xs: 12, md: 6 } },
-  { key: "Description", label: "Description", type: "textarea", rows: 3, width: { xs: 12 } },
-  { key: "ContactID", label: "Contact", type: "select", width: { xs: 12, md: 6 } },
-  { key: "Due_date", label: "Due Date & Time", type: "datetime-local", width: { xs: 12, md: 6 } },
   { key: "PriorityLevelName", label: "Priority", type: "select", options: ["Low","Medium","High","Urgent"], width: { xs: 12, md: 6 } },
+  { key: "DueToStart", label: "Due To Start", type: "date", width: { xs: 12, md: 6 } }, // new
+  { key: "DueToEnd", label: "Due To End", type: "date", width: { xs: 12, md: 6 } }, // new
   { key: "Completed", label: "Completed", type: "boolean", width: { xs: 12, md: 6 } },
+  { key: "CreatedAt", label: "Created", type: "datetime", disabled: true, width: { xs: 12, md: 6 } }, // new
+  { key: "UpdatedAt", label: "Updated", type: "datetime", disabled: true, width: { xs: 12, md: 6 } }, // new
 ];
 
-export default function ActivityDetailsForm({ activities = [] }) {
+export default function ActivityDetailsForm() {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [activityData, setActivityData] = useState([]);
+
+  const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const loadActivities = useCallback(async () => {
-    try {
-      setLoading(true);
-      if (!Array.isArray(activities)) throw new Error("Invalid activities data");
-      setActivityData(activities);
-    } catch (err) {
-      setError(err.message || "Failed to load activity records");
-    } finally {
-      setLoading(false);
-    }
-  }, [activities]);
-
   useEffect(() => {
-    loadActivities();
-  }, [loadActivities]);
+    console.log("🔍 Debug: useParams() =", { id });
 
-  const handleSave = async (formData, index) => {
+    const loadActivity = async () => {
+      if (!id) {
+        setError("No activity ID provided in the route.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const data = await fetchActivityById(id);
+        console.log("Debug: fetchActivityById response:", data);
+
+        setActivity(data?.data || data || null);
+      } catch (err) {
+        console.error("Error loading activity:", err);
+        setError("Failed to load activity details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadActivity();
+  }, [id]);
+
+  const handleSave = async (formData) => {
     try {
-      const updatedActivities = [...activityData];
-      updatedActivities[index] = formData;
-      setActivityData(updatedActivities);
+      console.log("Debug: Saving activity:", formData);
+      setActivity(formData); // optimistic UI update
       await updateActivity(formData.ActivityID, formData);
       setSuccessMessage("Activity updated successfully!");
     } catch (err) {
-      setError("Failed to save activity. Please try again.");
+      console.error("Error saving activity:", err);
+      setError("Failed to save activity.");
     }
   };
 
   const handleBack = () => navigate("/activities");
 
-  const handleTabChange = (_, newIndex) => setActiveIndex(newIndex);
-
   if (loading) return <Typography>Loading activity details...</Typography>;
   if (error) return <Alert severity="error">{error}</Alert>;
-  if (!activityData || !activityData.length) return <Alert severity="warning">No activity records found.</Alert>;
+  if (!activity) return <Alert severity="warning">Activity not found.</Alert>;
 
-  const multipleRecords = activityData.length > 1;
-  const currentActivity = activityData[activeIndex];
+  const getActivityDisplayName = (a) =>
+    a.TypeName ? `${a.TypeName} Activity` : `Activity #${a.ActivityID}`;
 
-  const headerChips = currentActivity
-    ? [{ label: currentActivity.Completed ? "Completed" : "Pending", color: currentActivity.Completed ? "#10b981" : "#f59e0b", textColor: "#fff" }]
-    : [];
+  const headerChips = [
+    {
+      label: activity.Completed ? "Completed" : "Pending",
+      color: activity.Completed ? "#10b981" : "#f59e0b",
+      textColor: "#fff",
+    },
+  ];
 
   return (
     <Box>
@@ -74,22 +88,13 @@ export default function ActivityDetailsForm({ activities = [] }) {
         </Alert>
       )}
 
-      {multipleRecords && (
-        <Tabs value={activeIndex} onChange={handleTabChange} variant="scrollable" scrollButtons="auto" sx={{ mb: 2, borderBottom: 1, borderColor: "divider" }}>
-          {activityData.map((act, idx) => (
-            <Tab key={idx} label={`${act.TypeName || "Activity"} #${act.ActivityID}`} />
-          ))}
-        </Tabs>
-      )}
-
       <UniversalDetailView
-        title={currentActivity?.TypeName || "Activity Details"}
-        subtitle={currentActivity?.ActivityID ? `ID: ${currentActivity.ActivityID}` : undefined}
-        item={currentActivity}
+        title={getActivityDisplayName(activity)}
+        subtitle={activity?.ActivityID ? `ID: ${activity.ActivityID}` : undefined}
+        item={activity}
         mainFields={activityMainFields}
-        // onBack={handleBack}
-        onSave={(formData) => handleSave(formData, activeIndex)}
-        loading={loading}
+        onBack={handleBack}
+        onSave={handleSave}
         entityType="activity"
         headerChips={headerChips}
       />
