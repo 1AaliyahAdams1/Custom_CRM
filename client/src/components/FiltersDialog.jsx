@@ -14,10 +14,15 @@ import {
 } from '@mui/material';
 import { Add, Clear, FilterList } from '@mui/icons-material';
 
-const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
-  const [filters, setFilters] = useState({});
+const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {} }) => {
+  const [filters, setFilters] = useState(currentFilters || {});
   const [selectedColumn, setSelectedColumn] = useState('');
   const [filterValue, setFilterValue] = useState('');
+
+  // Sync local filters with parent's currentFilters
+  useEffect(() => {
+    setFilters(currentFilters || {});
+  }, [currentFilters]);
 
   // Initialize selected column when columns are available
   useEffect(() => {
@@ -29,9 +34,9 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
   // Reset filters when columns change
   useEffect(() => {
     if (columns && columns.length > 0) {
-      setFilters({});
+      setFilters(currentFilters || {});
     }
-  }, [columns]);
+  }, [columns, currentFilters]);
 
   const handleAddFilter = () => {
     if (selectedColumn && filterValue.trim()) {
@@ -39,7 +44,7 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
       setFilters(newFilters);
       setFilterValue('');
       
-      // Auto-apply filters after adding
+      // Apply filters
       applyFilters(newFilters);
     }
   };
@@ -49,7 +54,7 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
     delete newFilters[field];
     setFilters(newFilters);
     
-    // Auto-apply filters after removing
+    // Apply filters
     applyFilters(newFilters);
   };
 

@@ -1,5 +1,5 @@
 // AccountsPage.jsx
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -48,6 +48,9 @@ const AccountsPage = ({
   handleDeleteAttachment,
   handleDownloadAttachment,
 }) => {
+  // Add state for managing filters
+  const [activeFilters, setActiveFilters] = useState({});
+
   const columns = [
     { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
     { field: 'CityName', headerName: 'City' },
@@ -77,6 +80,26 @@ const AccountsPage = ({
     },
   ];
 
+  // Filter accounts based on active filters
+  const filteredAccounts = useMemo(() => {
+    if (Object.keys(activeFilters).length === 0) {
+      return accounts;
+    }
+
+    return accounts.filter(account => {
+      return Object.entries(activeFilters).every(([field, value]) => {
+        const accountValue = String(account[field] || '').toLowerCase();
+        const filterValue = String(value).toLowerCase();
+        return accountValue.includes(filterValue);
+      });
+    });
+  }, [accounts, activeFilters]);
+
+  // Handle filter changes from TableView
+  const handleFiltersChange = (filters) => {
+    setActiveFilters(filters);
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
@@ -98,6 +121,13 @@ const AccountsPage = ({
                 Accounts
               </Typography>
               {selected.length > 0 && <Chip label={`${selected.length} selected`} size="small" sx={{ backgroundColor: '#e0e0e0', color: '#050505' }} />}
+              {Object.keys(activeFilters).length > 0 && (
+                <Chip 
+                  label={`${Object.keys(activeFilters).length} filter${Object.keys(activeFilters).length > 1 ? 's' : ''} applied`} 
+                  size="small" 
+                  sx={{ backgroundColor: '#e3f2fd', color: '#1976d2' }} 
+                />
+              )}
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Button
@@ -107,7 +137,6 @@ const AccountsPage = ({
               >
                 Add Account
               </Button>
-
             </Box>
           </Toolbar>
 
@@ -115,7 +144,7 @@ const AccountsPage = ({
             <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>
           ) : (
             <TableView
-              data={accounts}
+              data={filteredAccounts} // Use filtered data
               columns={columns}
               idField="AccountID" 
               selected={selected}
@@ -131,11 +160,21 @@ const AccountsPage = ({
               onAssignUser={onAssignUser}
               formatters={formatters}
               entityType="account"
+              // Pass filter props
+              activeFilters={activeFilters}
+              onFiltersChange={handleFiltersChange}
             />
           )}
 
           <Box sx={{ p: 2, borderTop: '1px solid #e5e5e5', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" sx={{ color: '#666666' }}>Showing {accounts.length} accounts</Typography>
+            <Typography variant="body2" sx={{ color: '#666666' }}>
+              Showing {filteredAccounts.length} of {accounts.length} accounts
+              {Object.keys(activeFilters).length > 0 && (
+                <span style={{ color: '#1976d2', marginLeft: '8px' }}>
+                  (filtered)
+                </span>
+              )}
+            </Typography>
             {selected.length > 0 && <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>{selected.length} selected</Typography>}
           </Box>
         </Paper>

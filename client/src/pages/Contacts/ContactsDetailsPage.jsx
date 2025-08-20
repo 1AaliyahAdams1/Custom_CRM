@@ -718,7 +718,8 @@ export default function ContactDetailView() {
   }
 
   return (
-    <>
+    <Box>
+
       {/* Success Alert */}
       {successMessage && (
         <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
@@ -742,6 +743,7 @@ export default function ContactDetailView() {
         entityType="contact"
         headerChips={headerChips}
       />
-    </>
+
+    </Box>
   );
 }

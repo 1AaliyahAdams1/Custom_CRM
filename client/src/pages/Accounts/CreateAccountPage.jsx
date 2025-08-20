@@ -265,10 +265,19 @@ const CreateAccount = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // Clear dependent fields when parent changes
+      if (name === 'CountryID') {
+        newData.StateProvinceID = "";
+        newData.CityID = "";
+      } else if (name === 'StateProvinceID') {
+        newData.CityID = "";
+      }
+      
+      return newData;
+    });
 
     setTouched(prev => ({
       ...prev,
@@ -472,17 +481,16 @@ const CreateAccount = () => {
                     onChange={handleInputChange}
                     service={{
                       getAll: async () => {
-                        const allStates = await stateProvinceService.getAll();
-                        return formData.CountryID 
-                          ? allStates.filter(state => state.countryId === parseInt(formData.CountryID))
-                          : allStates;
+                        return await stateProvinceService.getAllFiltered(formData.CountryID);
                       }
                     }}
                     displayField="StateProvince_Name"
                     valueField="StateProvinceID"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !formData.CountryID}
+                    placeholder={!formData.CountryID ? "Select a country first" : "Select a state/province"}
                     error={isFieldInvalid('StateProvinceID')}
                     helperText={getFieldError('StateProvinceID')}
+                    key={`state-${formData.CountryID}`} // Force re-render when country changes
                   />
                 </Box>
 
@@ -492,12 +500,27 @@ const CreateAccount = () => {
                     name="CityID"
                     value={formData.CityID}
                     onChange={handleInputChange}
-                    service={cityService}
+                    service={{
+                      getAll: async () => {
+                        return await cityService.getAllFiltered(
+                          formData.StateProvinceID, 
+                          formData.CountryID
+                        );
+                      }
+                    }}
                     displayField="CityName"
                     valueField="CityID"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || (!formData.StateProvinceID && !formData.CountryID)}
+                    placeholder={
+                      !formData.CountryID 
+                        ? "Select a country first" 
+                        : !formData.StateProvinceID 
+                          ? "Select a state/province first" 
+                          : "Select a city"
+                    }
                     error={isFieldInvalid('CityID')}
                     helperText={getFieldError('CityID')}
+                    key={`city-${formData.StateProvinceID}-${formData.CountryID}`} // Force re-render when dependencies change
                   />
                 </Box>
 
