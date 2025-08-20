@@ -95,12 +95,13 @@ const AccountsPage = ({
       setPopupLoading(true);
       setPopupError(null);
       
-      await noteService.createNote(noteData);
+      // The noteService.createNote is called from within the popup component
+      // Just show success message here
       setSuccessMessage('Note added successfully!');
-      setNotesPopupOpen(false);
       
     } catch (error) {
       setPopupError(error.message || 'Failed to save note');
+      console.error('Failed to save note:', error);
     } finally {
       setPopupLoading(false);
     }
@@ -111,11 +112,13 @@ const AccountsPage = ({
       setPopupLoading(true);
       setPopupError(null);
       
-      await noteService.deleteNote(noteId);
+      // The noteService.deleteNote is called from within the popup component
+      // Just show success message here
       setSuccessMessage('Note deleted successfully!');
       
     } catch (error) {
       setPopupError(error.message || 'Failed to delete note');
+      console.error('Failed to delete note:', error);
     } finally {
       setPopupLoading(false);
     }
@@ -126,17 +129,19 @@ const AccountsPage = ({
       setPopupLoading(true);
       setPopupError(null);
       
-      await noteService.updateNote(noteData.NoteID, noteData);
+      // The noteService.updateNote is called from within the popup component
+      // Just show success message here
       setSuccessMessage('Note updated successfully!');
       
     } catch (error) {
       setPopupError(error.message || 'Failed to update note');
+      console.error('Failed to update note:', error);
     } finally {
       setPopupLoading(false);
     }
   };
 
-  // Fixed attachments handlers
+  // Attachments handlers
   const handleAddAttachment = (account) => {
     setSelectedAccount(account);
     setAttachmentsPopupOpen(true);
@@ -154,6 +159,7 @@ const AccountsPage = ({
       
     } catch (error) {
       setPopupError(error.message || 'Failed to upload attachments');
+      console.error('Failed to upload attachments:', error);
     } finally {
       setPopupLoading(false);
     }
@@ -169,6 +175,7 @@ const AccountsPage = ({
       
     } catch (error) {
       setPopupError(error.message || 'Failed to delete attachment');
+      console.error('Failed to delete attachment:', error);
     } finally {
       setPopupLoading(false);
     }
@@ -180,6 +187,7 @@ const AccountsPage = ({
       await attachmentService.downloadAttachment(attachment);
     } catch (error) {
       setPopupError(error.message || 'Failed to download attachment');
+      console.error('Failed to download attachment:', error);
     }
   };
 
@@ -210,6 +218,18 @@ const AccountsPage = ({
     } else {
       setSelected([]);
     }
+  };
+
+  const handleCloseNotesPopup = () => {
+    setNotesPopupOpen(false);
+    setSelectedAccount(null);
+    setPopupError(null);
+  };
+
+  const handleCloseAttachmentsPopup = () => {
+    setAttachmentsPopupOpen(false);
+    setSelectedAccount(null);
+    setPopupError(null);
   };
 
   return (
@@ -328,22 +348,24 @@ const AccountsPage = ({
         {/* Notes Popup */}
         <NotesPopup
           open={notesPopupOpen}
-          onClose={() => setNotesPopupOpen(false)}
+          onClose={handleCloseNotesPopup}
           onSave={handleSaveNote}
           onDelete={handleDeleteNote}
           onEdit={handleEditNote}
           entityType="account"
           entityId={selectedAccount?.AccountID}
           entityName={selectedAccount?.AccountName}
-          existingNotes={selectedAccount?.notes || []}
           loading={popupLoading}
           error={popupError}
+          showExistingNotes={true}
+          maxLength={1000}
+          required={true}
         />
 
         {/* Attachments Popup */}
         <AttachmentsPopup
           open={attachmentsPopupOpen}
-          onClose={() => setAttachmentsPopupOpen(false)}
+          onClose={handleCloseAttachmentsPopup}
           onUpload={handleUploadAttachment}
           onDelete={handleDeleteAttachment}
           onDownload={handleDownloadAttachment}
