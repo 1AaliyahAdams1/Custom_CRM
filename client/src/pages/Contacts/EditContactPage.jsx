@@ -14,15 +14,15 @@ import {
 } from "@mui/material";
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { getContactDetails, updateContact, getContactsByAccountId } from "../services/contactService";
+import { getContactDetails, updateContact, getContactsByAccountId } from "../../services/contactService";
 import { 
   cityService, 
   industryService, 
   countryService, 
   stateProvinceService, 
   jobTitleService
-} from '../services/dropdownServices';
-import SmartDropdown from '../components/SmartDropdown';
+} from '../../services/dropdownServices';
+import SmartDropdown from '../../components/SmartDropdown';
 
 // Monochrome theme 
 const theme = createTheme({

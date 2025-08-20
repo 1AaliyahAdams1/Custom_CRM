@@ -18,9 +18,15 @@ import {
 } from "@mui/material";
 import { Add, Clear } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
+<<<<<<< HEAD:client/src/pages/ActivitiesPage.jsx
 import { formatters } from "../utils/formatters";
 import UniversalTable from "../components/TableView";
 import theme from "../components/Theme";
+=======
+import { formatters } from '../../utils/formatters';
+import TableView from '../../components/TableView'; 
+import theme from "../../components/Theme";
+>>>>>>> c19972a1058d85fa1e7705b1d84eb000e58da43d:client/src/pages/Activities/ActivitiesPage.jsx
 
 // Table configuration for activities
 const activitiesTableConfig = {

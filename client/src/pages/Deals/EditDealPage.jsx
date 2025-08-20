@@ -10,7 +10,7 @@ import {
   Paper,
   Grid,
 } from "@mui/material";
-import { fetchDealById, updateDeal } from "../services/dealService";
+import { fetchDealById, updateDeal } from "../../services/dealService";
 
 const EditDealPage = () => {
   const navigate = useNavigate();

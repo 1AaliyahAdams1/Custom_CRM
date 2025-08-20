@@ -15,11 +15,11 @@ import {
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import SmartDropdown from '../components/SmartDropdown';
-import { createContact } from '../services/contactService';
-import { getAllPersons, createPerson } from '../services/personService';
-import { getAllAccounts } from '../services/accountService';
-import { cityService, jobTitleService } from '../services/dropdownServices';
+import SmartDropdown from '../../components/SmartDropdown';
+import { createContact } from '../../services/contactService';
+import { getAllPersons, createPerson } from '../../services/personService';
+import { getAllAccounts } from '../../services/accountService';
+import { cityService, jobTitleService } from '../../services/dropdownServices';
 
 // Monochrome theme for MUI components
 const theme = createTheme({

@@ -7,10 +7,10 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { createActivity } from '../services/activityService';
-import { getAllAccounts } from '../services/accountService';
-import SmartDropdown from '../components/SmartDropdown';
-import { activityTypeService, priorityLevelService } from '../services/dropdownServices';
+import { createActivity } from '../../services/activityService';
+import { getAllAccounts } from '../../services/accountService';
+import SmartDropdown from '../../components/SmartDropdown';
+import { activityTypeService, priorityLevelService } from '../../services/dropdownServices';
 
 const CreateActivitiesPage = () => {
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AccountsPage from "../../pages/AccountsPage";
+import AccountsPage from "../../pages/Accounts/AccountsPage";
 import {
   getAllAccounts,
   fetchActiveAccountsByUser,

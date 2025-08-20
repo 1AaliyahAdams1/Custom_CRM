@@ -7,10 +7,10 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { createDeal } from '../services/dealService';
-import { getAllAccounts } from '../services/accountService';
-import SmartDropdown from '../components/SmartDropdown';
-import { dealStageService } from '../services/dropdownServices';
+import { createDeal } from '../../services/dealService';
+import { getAllAccounts } from '../../services/accountService';
+import SmartDropdown from '../../components/SmartDropdown';
+import { dealStageService } from '../../services/dropdownServices';
 
 const CreateDealPage = () => {
   const navigate = useNavigate();

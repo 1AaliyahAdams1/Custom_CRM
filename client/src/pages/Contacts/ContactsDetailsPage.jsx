@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Grid, Typography, Link as MuiLink, Alert, Button } from "@mui/material";
-import { UniversalDetailView } from "../components/DetailsView";
-import { getContactDetails, updateContact, deactivateContact } from "../services/contactService";
+import { UniversalDetailView } from "../../components/DetailsView";
+import { getContactDetails, updateContact, deactivateContact } from "../../services/contactService";
 
 // Main fields configuration for contacts
 const contactMainFields = [

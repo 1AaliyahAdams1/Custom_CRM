@@ -17,20 +17,20 @@ const Activities = lazy(() => import("./components/containers/ActivitiesContaine
 const Reports = lazy(() => import("./pages/ReportsPage"));
 const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
 
-const AccountsDetailsPage = lazy(() => import("./pages/AccountsDetailsPage"));
-const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
-const DealsDetailsPage = lazy(() => import("./pages/DealsDetailsPage"));
-const ActivitiesDetailsPage = lazy(() => import("./pages/ActivitiesDetailsPage"));
+const AccountsDetailsPage = lazy(() => import("./pages/Accounts/AccountsDetailsPage"));
+const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsPage"));
+const DealsDetailsPage = lazy(() => import("./pages/Deals/DealsDetailsPage"));
+const ActivitiesDetailsPage = lazy(() => import("./pages/Activities/ActivitiesDetailsPage"));
 
-const CreateAccountPage = lazy(() => import("./pages/CreateAccountPage"));
-const CreateContactsPage = lazy(() => import("./pages/CreateContactsPage"));
-const CreateDealPage = lazy(() => import("./pages/CreateDealPage"));
-const CreateActivitiesPage = lazy(() => import("./pages/CreateActivitiesPage"));
+const CreateAccountPage = lazy(() => import("./pages/Accounts/CreateAccountPage"));
+const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPage"));
+const CreateDealPage = lazy(() => import("./pages/Deals/CreateDealPage"));
+const CreateActivitiesPage = lazy(() => import("./pages/Activities/CreateActivitiesPage"));
 
-const EditAccountPage = lazy(() => import("./pages/EditAccountPage"));
-const EditContactPage = lazy(() => import("./pages/EditContactPage"));
-const EditDealPage = lazy(() => import("./pages/EditDealPage"));
-const EditActivityPage = lazy(() => import("./pages/EditActivityPage"));
+const EditAccountPage = lazy(() => import("./pages/Accounts/EditAccountPage"));
+const EditContactPage = lazy(() => import("./pages/Contacts/EditContactPage"));
+const EditDealPage = lazy(() => import("./pages/Deals/EditDealPage"));
+const EditActivityPage = lazy(() => import("./pages/Activities/EditActivityPage"));
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));

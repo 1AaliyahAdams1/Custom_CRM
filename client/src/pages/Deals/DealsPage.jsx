@@ -17,6 +17,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
+<<<<<<< HEAD:client/src/pages/DealsPage.jsx
 import { Add, Clear } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { formatters } from "../utils/formatters";
@@ -78,6 +79,16 @@ const theme = createTheme({
     },
   },
 });
+=======
+import {
+  Add,
+  Clear,
+} from "@mui/icons-material";
+import { ThemeProvider } from "@mui/material/styles";
+import { formatters } from '../../utils/formatters';
+import TableView from '../../components/TableView'; 
+import theme from "../../components/Theme";
+>>>>>>> c19972a1058d85fa1e7705b1d84eb000e58da43d:client/src/pages/Deals/DealsPage.jsx
 
 // Table configuration for deals
 const dealsTableConfig = {

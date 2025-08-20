@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import ActivitiesPage from "../../pages/ActivitiesPage";
+import ActivitiesPage from "../../pages/Activities/ActivitiesPage";
 import {
     getAllActivities,
     fetchActivitiesByUser,
