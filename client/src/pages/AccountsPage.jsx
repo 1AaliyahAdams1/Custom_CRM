@@ -103,6 +103,7 @@ const AccountsPage = ({
       await noteService.createNote(noteData);
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
+      
     } catch (error) {
       setPopupError(error.message || "Failed to save note");
     } finally {
@@ -116,7 +117,8 @@ const AccountsPage = ({
       setPopupError(null);
 
       await noteService.deleteNote(noteId);
-      setSuccessMessage("Note deleted successfully!");
+      setSuccessMessage('Note deleted successfully!');
+      
     } catch (error) {
       setPopupError(error.message || "Failed to delete note");
     } finally {
@@ -130,7 +132,8 @@ const AccountsPage = ({
       setPopupError(null);
 
       await noteService.updateNote(noteData.NoteID, noteData);
-      setSuccessMessage("Note updated successfully!");
+      setSuccessMessage('Note updated successfully!');
+      
     } catch (error) {
       setPopupError(error.message || "Failed to update note");
     } finally {
@@ -138,7 +141,7 @@ const AccountsPage = ({
     }
   };
 
-  // Attachments handlers
+  // Fixed attachments handlers
   const handleAddAttachment = (account) => {
     setSelectedAccount(account);
     setAttachmentsPopupOpen(true);
@@ -149,15 +152,11 @@ const AccountsPage = ({
     try {
       setPopupLoading(true);
       setPopupError(null);
-
-      for (const attachmentData of attachmentDataArray) {
-        await attachmentService.uploadAttachment(attachmentData);
-      }
-
-      setSuccessMessage(
-        `${attachmentDataArray.length} attachment(s) uploaded successfully!`
-      );
-      setAttachmentsPopupOpen(false);
+      
+      // The upload is already handled in the popup component
+      // Just show success message
+      setSuccessMessage(`${attachmentDataArray.length} attachment(s) uploaded successfully!`);
+      
     } catch (error) {
       setPopupError(error.message || "Failed to upload attachments");
     } finally {
@@ -171,7 +170,8 @@ const AccountsPage = ({
       setPopupError(null);
 
       await attachmentService.deleteAttachment(attachmentId);
-      setSuccessMessage("Attachment deleted successfully!");
+      setSuccessMessage('Attachment deleted successfully!');
+      
     } catch (error) {
       setPopupError(error.message || "Failed to delete attachment");
     } finally {
@@ -379,7 +379,6 @@ const AccountsPage = ({
           entityType="account"
           entityId={selectedAccount?.AccountID}
           entityName={selectedAccount?.AccountName}
-          existingAttachments={selectedAccount?.attachments || []}
           loading={popupLoading}
           error={popupError}
         />

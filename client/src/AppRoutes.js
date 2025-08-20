@@ -15,6 +15,7 @@ const Contacts = lazy(() => import("./components/containers/ContactsContainer"))
 const Deals = lazy(() => import("./components/containers/DealsContainer"));
 const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
+const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
 
 const AccountsDetailsPage = lazy(() => import("./pages/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
@@ -198,6 +199,16 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      {/* --- Smart Work Routes --- */}
+      <Route
+        path="/smart-work"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.smartWork}>
+            <SmartWorkPage />
+          </PrivateRoute>
+        } 
+        />        
+      
       {/* --- Reports Routes --- */}
       <Route
         path="/reports"
@@ -207,8 +218,8 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      
-      
+      {/* --- Work Page Route --- */}
+           
 
 
       {/* Catch all */}

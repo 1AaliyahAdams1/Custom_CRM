@@ -24,4 +24,6 @@ export const ROUTE_ACCESS = {
   activitiesEdit: ["C-level", "Sales Manager", "Sales Representative"],
 
   reports: ["C-level", "Sales Manager", "Sales Representative"],
+
+  smartWork: ["C-level", "Sales Manager", "Sales Representative"],
 };
