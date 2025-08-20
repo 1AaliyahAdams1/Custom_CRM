@@ -15,6 +15,7 @@ import {
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { getContactDetails, updateContact, getContactsByAccountId } from "../../services/contactService";
+import { getAllAccounts } from "../../services/accountService";
 import {
   cityService,
   industryService,
@@ -39,20 +40,25 @@ const EditContactPage = () => {
     AccountID: "",
     AccountName: "",
     PersonID: "",
-    Title: "",
     first_name: "",
     middle_name: "",
     surname: "",
-    linkedin_link: "",
-    personal_email: "",
-    personal_mobile: "",
-    PersonCityID: "",
-    PersonStateProvinceID: "",
-    Still_employed: false,
+    Still_employed: "",
     JobTitleID: "",
+    JobTitleName: "",
     WorkEmail: "",
     WorkPhone: "",
-    Position: "",
+    CityID: "",
+    CityName: "",
+    StateProvinceID: "",
+    StateProvince_Name: "",
+    CountryID: "",
+    CountryName: "",
+    Active: "",
+    CreatedAt: "",
+    UpdatedAt: "",
+    personal_mobile: "",
+    personal_email: "",
     isNewPerson: true,
   });
 
@@ -99,20 +105,25 @@ const EditContactPage = () => {
           AccountID: contactData.AccountID || "",
           AccountName: contactData.AccountName || "",
           PersonID: contactData.PersonID || "",
-          Title: contactData.Title || "",
           first_name: contactData.first_name || "",
           middle_name: contactData.middle_name || "",
           surname: contactData.surname || "",
-          linkedin_link: contactData.linkedin_link || "",
-          personal_email: contactData.personal_email || "",
-          personal_mobile: contactData.personal_mobile || "",
-          PersonCityID: contactData.PersonCityID || "",
-          PersonStateProvinceID: contactData.PersonStateProvinceID || "",
           Still_employed: contactData.Still_employed || false,
           JobTitleID: contactData.JobTitleID || "",
-          PrimaryEmail: contactData.WorkEmail || "",
-          PrimaryPhone: contactData.WorkPhone || "",
-          Position: contactData.Position || "",
+          JobTitleName: contactData.JobTitleName || "",
+          WorkEmail: contactData.WorkEmail || "",
+          WorkPhone: contactData.WorkPhone || "", 
+          CityID: contactData.CityID || "",
+          CityName: contactData.CityName || "",
+          StateProvinceID: contactData.StateProvinceID || "",
+          StateProvince_Name: contactData.StateProvince_Name || "",
+          CountryID: contactData.CountryID || "",
+          CountryName: contactData.CountryName || "",
+          Active: contactData.Active || "",
+          CreatedAt: contactData.CreatedAt || "",
+          UpdatedAt: contactData.UpdatedAt || "",
+          personal_mobile: contactData.personal_mobile || "",
+          personal_email: contactData.personal_email || "",
           isNewPerson: contactData.isNewPerson || true,
         });
       } catch (error) {
@@ -273,7 +284,7 @@ const EditContactPage = () => {
           <Paper elevation={0} sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
-                {/* First Name - Required */}
+                {/* First Name */}
                 <Box>
                   <TextField
                     fullWidth
@@ -298,7 +309,7 @@ const EditContactPage = () => {
                   />
                 </Box>
 
-                {/* Surname - Required */}
+                {/* Surname */}
                 <Box>
                   <TextField
                     fullWidth
@@ -311,25 +322,25 @@ const EditContactPage = () => {
                   />
                 </Box>
 
-                {/* Account Name - Read Only */}
+                {/* Account Name */}
                 <SmartDropdown
                   label="Account"
                   name="AccountName"
                   value={formData.AccountID}
                   onChange={handleInputChange}
-                  service={industryService}
+                  service={{ getAll: async () => (await getAllAccounts()).data }}
                   displayField="AccountName"
                   valueField="AccountID"
                   disabled={saving}
                 />
 
-                {/* Title */}
+                {/* Job Title */}
                 <SmartDropdown
                   label="Job Title"
                   name="JobTitleID"
                   value={formData.JobTitleID}
                   onChange={handleInputChange}
-                  service={industryService}
+                  service={jobTitleService}
                   displayField="JobTitleName"
                   valueField="JobTitleID"
                   disabled={saving}
@@ -339,85 +350,46 @@ const EditContactPage = () => {
                 <SmartDropdown
                   label="City"
                   name="CityID"
-                  value={formData.PersonCityID}
+                  value={formData.CityID}
                   onChange={handleInputChange}
-                  service={industryService}
+                  service={cityService}
                   displayField="CityName"
                   valueField="CityID"
                   disabled={saving}
                 />
 
-                {/* LinkedIn Link */}
-                <Box /*sx={{ gridColumn: '1 / -1' }}*/>
-                  <TextField
-                    fullWidth
-                    label="LinkedIn Profile"
-                    name="linkedin_link"
-                    value={formData.linkedin_link}
-                    onChange={handleInputChange}
-                    type="url"
-                    disabled={saving}
-                  />
-                </Box>
-
                 {/* State/Province */}
                 <SmartDropdown
                   label="State/Province"
                   name="StateProvinceID"
-                  value={formData.PersonStateProvinceID}
+                  value={formData.StateProvinceID}
                   onChange={handleInputChange}
-                  service={industryService}
+                  service={stateProvinceService}
                   displayField="StateProvince_Name"
                   valueField="StateProvinceID"
                   disabled={saving}
                 />
 
-                {/* Primary Email */}
+                {/* Work Email */}
                 <Box>
                   <TextField
                     fullWidth
-                    label="Primary Email"
-                    name="PrimaryEmail"
-                    value={formData.PrimaryEmail}
+                    label="Email"
+                    name="WorkEmail"
+                    value={formData.WorkEmail}
                     onChange={handleInputChange}
                     type="email"
                     disabled={saving}
                   />
                 </Box>
 
-                {/* Work Phone */}
+                {/* Work Mobile */}
                 <Box>
                   <TextField
                     fullWidth
-                    label="Work Phone"
+                    label="Mobile"
                     name="WorkPhone"
                     value={formData.WorkPhone}
-                    onChange={handleInputChange}
-                    type="tel"
-                    disabled={saving}
-                  />
-                </Box>
-
-                {/* Personal Email */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Personal Email"
-                    name="personal_email"
-                    value={formData.personal_email}
-                    onChange={handleInputChange}
-                    type="email"
-                    disabled={saving}
-                  />
-                </Box>
-
-                {/* Personal Mobile */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Personal Mobile"
-                    name="personal_mobile"
-                    value={formData.personal_mobile}
                     onChange={handleInputChange}
                     type="tel"
                     disabled={saving}
