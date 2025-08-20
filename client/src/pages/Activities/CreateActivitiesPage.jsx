@@ -198,104 +198,93 @@ const CreateActivitiesPage = () => {
 
           <Paper elevation={0} sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
-                <Box sx={{ gridColumn: '1 / -1' }}>
-                  <SmartDropdown
-                    label="Account"
-                    name="AccountID"
-                    value={formData.AccountID}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    service={accountService}
-                    displayField="AccountName"
-                    valueField="AccountID"
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('AccountID')}
-                    helperText={getFieldError('AccountID')}
-                  />
-                </Box>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3 }}>
+                <SmartDropdown
+                  label="Account"
+                  name="AccountID"
+                  value={formData.AccountID}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  service={accountService}
+                  displayField="AccountName"
+                  valueField="AccountID"
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('AccountID')}
+                  helperText={getFieldError('AccountID')}
+                />
 
-                <Box>
-                  <SmartDropdown
-                    label="Activity Type"
-                    name="TypeID"
-                    value={formData.TypeID}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    service={activityTypeService}
-                    displayField="TypeName"
-                    valueField="TypeID"
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('TypeID')}
-                    helperText={getFieldError('TypeID')}
-                  />
-                </Box>
+                <SmartDropdown
+                  label="Activity Type"
+                  name="TypeID"
+                  value={formData.TypeID}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  service={activityTypeService}
+                  displayField="TypeName"
+                  valueField="TypeID"
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('TypeID')}
+                  helperText={getFieldError('TypeID')}
+                />
 
-                <Box>
-                  <SmartDropdown
-                    label="Priority Level"
-                    name="PriorityLevelID"
-                    value={formData.PriorityLevelID}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    service={priorityLevelService}
-                    displayField="PriorityLevelName"
-                    valueField="PriorityLevelID"
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('PriorityLevelID')}
-                    helperText={getFieldError('PriorityLevelID')}
-                  />
-                </Box>
+                <SmartDropdown
+                  label="Priority Level"
+                  name="PriorityLevelID"
+                  value={formData.PriorityLevelID}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  service={priorityLevelService}
+                  displayField="PriorityLevelName"
+                  valueField="PriorityLevelID"
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('PriorityLevelID')}
+                  helperText={getFieldError('PriorityLevelID')}
+                />
 
-                <Box>
-                  <TextField
-                    label="Due To Start"
-                    name="DueToStart"
-                    type="datetime-local"
-                    value={formData.DueToStart}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    fullWidth
-                    InputLabelProps={{ shrink: true }}
-                    error={isFieldInvalid('DueToStart')}
-                    helperText={getFieldError('DueToStart')}
-                  />
-                </Box>
+                <TextField
+                  label="Due To Start"
+                  name="DueToStart"
+                  type="datetime-local"
+                  value={formData.DueToStart}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  error={isFieldInvalid('DueToStart')}
+                  helperText={getFieldError('DueToStart')}
+                />
 
-                <Box>
-                  <TextField
-                    label="Due To End"
-                    name="DueToEnd"
-                    type="datetime-local"
-                    value={formData.DueToEnd}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    fullWidth
-                    InputLabelProps={{ shrink: true }}
-                    error={isFieldInvalid('DueToEnd')}
-                    helperText={getFieldError('DueToEnd')}
-                  />
-                </Box>
+                <TextField
+                  label="Due To End"
+                  name="DueToEnd"
+                  type="datetime-local"
+                  value={formData.DueToEnd}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  error={isFieldInvalid('DueToEnd')}
+                  helperText={getFieldError('DueToEnd')}
+                />
 
-                <Box sx={{ gridColumn: '1 / -1' }}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={formData.Completed}
-                        onChange={handleInputChange}
-                        name="Completed"
-                        disabled={isSubmitting}
-                      />
-                    }
-                    label="Completed"
-                  />
-                  {touched.Completed && fieldErrors.Completed && (
-                    <Box sx={{ color: '#ff4444', mt: 0.5 }}>{fieldErrors.Completed[0]}</Box>
-                  )}
-                </Box>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.Completed}
+                      onChange={handleInputChange}
+                      name="Completed"
+                      disabled={isSubmitting}
+                    />
+                  }
+                  label="Completed"
+                />
+                {touched.Completed && fieldErrors.Completed && (
+                  <Box sx={{ color: '#ff4444', mt: 0.5 }}>{fieldErrors.Completed[0]}</Box>
+                )}
               </Box>
             </form>
           </Paper>
+
         </Box>
       </Box>
     </ThemeProvider>
