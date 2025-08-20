@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Grid, Typography, Link as MuiLink, Alert, Button } from "@mui/material";
-import  {UniversalDetailView} from "../../components/DetailsView";
+import { UniversalDetailView } from "../../components/DetailsView";
 import { fetchAccountById, updateAccount, deactivateAccount } from "../../services/accountService";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
@@ -21,8 +21,8 @@ const accountMainFields = [
     label: "Industry",
     type: "select",
     options: [
-      "Technology", "Healthcare", "Finance", "Education", "Manufacturing",
-      "Retail", "Consulting", "Real Estate", "Non-profit"
+      "Technology/Software", "Entertainment/Media", "Healthcare & Life Sciences", "Financial Services", "Manufacturing", "Professional Services",
+      "Retail & E-commerce", "Education", "Real Estate & Construction", "Government & Non-profit", "Energy & Utilities", "Transportation & Logistics"
     ]
   },
   { key: "PrimaryPhone", label: "Phone", type: "tel" },
@@ -35,19 +35,23 @@ const accountMainFields = [
     key: "CityName",
     label: "City",
     type: "select",
-    options: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose"]
+    options: ["Los Angeles", "San Francisco", "New York City", "Austin", "Miami", "Toronto", "Vancouver", "London", "Glasgow", "Sydney", "Melbourne",
+      "Munich", "Berlin", "Tokyo", "Cape Town", "Johannesburg"
+    ]
   },
   {
     key: "CountryName",
     label: "Country",
     type: "select",
-    options: ["USA", "Canada", "UK", "Australia", "Germany", "France", "India"]
+    options: ["United States", "Canada", "United Kingdom", "Australia", "Germany", "Japan", "South Africa"]
   },
   {
-    key: "StateProvinceName",
+    key: "StateProvince_Name",
     label: "State/Province",
     type: "select",
-    options: ["California", "Texas", "Florida", "New York", "Illinois", "Pennsylvania", "Ohio", "Georgia", "North Carolina", "Michigan"]
+    options: ["California", "New York", "Texas", "Florida", "Ontario", "British Columbia", "England", "Scotland", "New South Wales", "Victoria",
+      "Bavaria", "Berlin", "Tokyo", "Western Cape", "Gauteng"
+    ]
   },
   { key: "annual_revenue", label: "Annual Revenue", type: "currency" },
   { key: "number_of_employees", label: "Number of Employees", type: "number" },
@@ -71,7 +75,7 @@ export default function AccountDetailView() {
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [popupLoading, setPopupLoading] = useState(false);
   const [popupError, setPopupError] = useState(null);
-  
+
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -133,13 +137,13 @@ export default function AccountDetailView() {
     try {
       setPopupLoading(true);
       setPopupError(null);
-      
+
       await noteService.createNote(noteData);
-      
+
       // Refresh account data to show new note
       const response = await fetchAccountById(id);
       setAccount(response.data);
-      
+
       setSuccessMessage('Note added successfully!');
       setNotesPopupOpen(false);
     } catch (error) {
@@ -153,13 +157,13 @@ export default function AccountDetailView() {
     try {
       setPopupLoading(true);
       setPopupError(null);
-      
+
       await noteService.deleteNote(noteId);
-      
+
       // Refresh account data
       const response = await fetchAccountById(id);
       setAccount(response.data);
-      
+
       setSuccessMessage('Note deleted successfully!');
     } catch (error) {
       setPopupError(error.message || 'Failed to delete note');
@@ -172,13 +176,13 @@ export default function AccountDetailView() {
     try {
       setPopupLoading(true);
       setPopupError(null);
-      
+
       await noteService.updateNote(noteData.NoteID, noteData);
-      
+
       // Refresh account data
       const response = await fetchAccountById(id);
       setAccount(response.data);
-      
+
       setSuccessMessage('Note updated successfully!');
     } catch (error) {
       setPopupError(error.message || 'Failed to update note');
@@ -197,16 +201,16 @@ export default function AccountDetailView() {
     try {
       setPopupLoading(true);
       setPopupError(null);
-      
+
       // Upload each file
       for (const attachmentData of attachmentDataArray) {
         await attachmentService.uploadAttachment(attachmentData);
       }
-      
+
       // Refresh account data to show new attachments
       const response = await fetchAccountById(id);
       setAccount(response.data);
-      
+
       setSuccessMessage(`${attachmentDataArray.length} attachment(s) uploaded successfully!`);
       setAttachmentsPopupOpen(false);
     } catch (error) {
@@ -220,13 +224,13 @@ export default function AccountDetailView() {
     try {
       setPopupLoading(true);
       setPopupError(null);
-      
+
       await attachmentService.deleteAttachment(attachmentId);
-      
+
       // Refresh account data
       const response = await fetchAccountById(id);
       setAccount(response.data);
-      
+
       setSuccessMessage('Attachment deleted successfully!');
     } catch (error) {
       setPopupError(error.message || 'Failed to delete attachment');

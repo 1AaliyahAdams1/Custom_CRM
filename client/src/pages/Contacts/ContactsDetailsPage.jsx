@@ -113,11 +113,11 @@ export default function ContactDetailView() {
         setLoading(true);
         setError(null);
         console.log("Fetching contact with ID:", contactId, "(original param:", id, ")");
-        
+
         // Fix: Handle the API response structure properly
         const response = await getContactDetails(contactId);
         console.log("Raw API response:", response);
-        
+
         // The response might be structured differently
         // Check if response has a data property or if it's the data directly
         let contactData;
@@ -128,7 +128,7 @@ export default function ContactDetailView() {
         } else {
           throw new Error('Invalid response format');
         }
-        
+
         console.log("Processed contact data:", contactData);
         setContact(contactData);
       } catch (error) {
@@ -175,7 +175,7 @@ export default function ContactDetailView() {
     if (!window.confirm('Are you sure you want to deactivate this contact?')) {
       return;
     }
-    
+
     try {
       console.log("Deactivating contact with ID:", id);
       await deactivateContact(id);
@@ -725,7 +725,7 @@ export default function ContactDetailView() {
           {successMessage}
         </Alert>
       )}
-      
+
       <UniversalDetailView
         title={getContactDisplayName()}
         subtitle={contact?.ContactID ? `Contact ID: ${contact.ContactID}` : undefined}

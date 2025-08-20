@@ -53,6 +53,7 @@ const EditAccount = () => {
   const [industries, setIndustries] = useState([]);
   const [countries, setCountries] = useState([]);
   const [stateProvinces, setStateProvinces] = useState([]);
+
   const [formData, setFormData] = useState({
     AccountName: "",
     CityID: "",
@@ -74,6 +75,7 @@ const EditAccount = () => {
     number_of_events_anually: "",
     ParentAccount: "",
   });
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -97,6 +99,7 @@ const EditAccount = () => {
     loadDropdownData();
   }, []);
 
+  // Fetch account data when component mounts
   useEffect(() => {
     const loadAccount = async () => {
       if (!id) {
@@ -150,6 +153,8 @@ const EditAccount = () => {
       setError(null);
       await updateAccount(id, formData);
       setSuccessMessage("Account updated successfully!");
+      console.log("Server id response:", id);
+      console.log("Server formdata response:", formData);
       setTimeout(() => navigate("/accounts"), 1500);
     } catch {
       setError("Failed to update account");

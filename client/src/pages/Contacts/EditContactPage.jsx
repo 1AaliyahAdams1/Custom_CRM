@@ -15,11 +15,11 @@ import {
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { getContactDetails, updateContact, getContactsByAccountId } from "../../services/contactService";
-import { 
-  cityService, 
-  industryService, 
-  countryService, 
-  stateProvinceService, 
+import {
+  cityService,
+  industryService,
+  countryService,
+  stateProvinceService,
   jobTitleService
 } from '../../services/dropdownServices';
 import SmartDropdown from '../../components/SmartDropdown';
@@ -89,7 +89,7 @@ const EditContactPage = () => {
   const [industries, setIndustries] = useState([]);
   const [countries, setCountries] = useState([]);
   const [stateProvinces, setStateProvinces] = useState([]);
-  
+
   const [formData, setFormData] = useState({
     ContactID: "",
     AccountID: "",
@@ -117,26 +117,25 @@ const EditContactPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-        const loadDropdownData = async () => {
-          try {
-            const [citiesData, industriesData, countriesData, stateProvincesData] = await Promise.all([
-              cityService.getAll(),
-              industryService.getAll(),
-              countryService.getAll(),
-              stateProvinceService.getAll()
-            ]);
+    const loadDropdownData = async () => {
+      try {
+        const [citiesData, industriesData, countriesData, stateProvincesData] = await Promise.all([
+          cityService.getAll(),
+          industryService.getAll(),
+          countryService.getAll(),
+          stateProvinceService.getAll()
+        ]);
+        setCities(citiesData);
+        setIndustries(industriesData);
+        setCountries(countriesData);
+        setStateProvinces(stateProvincesData);
+      } catch (error) {
+        console.error('Error loading dropdown data:', error);
+      }
+    };
 
-            setCities(citiesData);
-            setIndustries(industriesData);
-            setCountries(countriesData);
-            setStateProvinces(stateProvincesData);
-          } catch (error) {
-            console.error('Error loading dropdown data:', error);
-          }
-        };
-    
-        loadDropdownData();
-      }, []);
+    loadDropdownData();
+  }, []);
 
   // Fetch contact data when component mounts
   useEffect(() => {
@@ -146,14 +145,14 @@ const EditContactPage = () => {
         setLoading(false);
         return;
       }
-
       try {
-        setLoading(true);
-        setError(null);
-        const response = await getContactsByAccountId(id);
-        
-        // Populate form with fetched data
-        const contactData = response.data;
+        const response = await getContactDetails(id);
+        const redata = response.data;
+        console.log(redata)
+        const anotherResponse = await getContactsByAccountId(redata.AccountID);
+        console.log(anotherResponse)
+        const contactData = anotherResponse.data;
+        console.log(contactData)
         setFormData({
           ContactID: contactData.ContactID || "",
           AccountID: contactData.AccountID || "",
@@ -181,7 +180,6 @@ const EditContactPage = () => {
         setLoading(false);
       }
     };
-
     loadContact();
   }, [id]);
 
@@ -207,7 +205,7 @@ const EditContactPage = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!formData.first_name.trim() || !formData.surname.trim()) {
       setError("First name and surname are required");
@@ -217,21 +215,21 @@ const EditContactPage = () => {
     try {
       setSaving(true);
       setError(null);
-      
+
       // Add ContactID to formData for the update
       const updateData = {
         ...formData,
         ContactID: id
       };
-      
+
       await updateContact(id, updateData);
       setSuccessMessage("Contact updated successfully!");
-      
+
       // Navigate back to contacts page after a short delay
       setTimeout(() => {
         navigate("/contacts");
       }, 1500);
-      
+
     } catch (error) {
       console.error("Failed to update contact:", error);
       setError("Failed to update contact. Please try again.");
@@ -245,7 +243,7 @@ const EditContactPage = () => {
     navigate("/contacts");
   };
 
-   if (loading) {
+  if (loading) {
     return (
       <ThemeProvider theme={theme}>
         <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
@@ -277,12 +275,12 @@ const EditContactPage = () => {
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              
+
               <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
                 Edit Contact
               </Typography>
             </Box>
-            
+
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
@@ -368,7 +366,7 @@ const EditContactPage = () => {
                     disabled={saving}
                   />
                 </Box>
-                 {/* Contact ID - Read Only */}
+                {/* Contact ID - Read Only */}
                 <Box>
                   <TextField
                     fullWidth
@@ -393,7 +391,7 @@ const EditContactPage = () => {
                     disabled={saving}
                   />
                 </Box>
-               
+
 
                 {/* Account ID - Read Only */}
                 <Box>
@@ -408,11 +406,11 @@ const EditContactPage = () => {
                   />
                 </Box>
 
-                
+
 
                 {/* Title */}
                 <Box>
-                  
+
                   <SmartDropdown
                     label="Title"
                     name="Title"
@@ -437,7 +435,7 @@ const EditContactPage = () => {
                     disabled={saving}
                   />
                 </Box>
-                 {/* Position */}
+                {/* Position */}
                 <Box>
                   <TextField
                     fullWidth
@@ -460,7 +458,7 @@ const EditContactPage = () => {
                   />
                 </Box>
                 {/* LinkedIn Link */}
-                 <Box /*sx={{ gridColumn: '1 / -1' }}*/> 
+                <Box /*sx={{ gridColumn: '1 / -1' }}*/>
                   <TextField
                     fullWidth
                     label="LinkedIn Profile"
@@ -543,9 +541,9 @@ const EditContactPage = () => {
                     checked={formData.Still_employed}
                     onChange={handleInputChange}
                     disabled={saving}
-                    style={{ 
-                      marginRight: '12px', 
-                      width: '18px', 
+                    style={{
+                      marginRight: '12px',
+                      width: '18px',
                       height: '18px',
                       accentColor: '#050505'
                     }}
