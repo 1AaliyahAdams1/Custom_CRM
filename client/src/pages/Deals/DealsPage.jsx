@@ -133,16 +133,7 @@ const DealsPage = ({
           </Alert>
         )}
 
-        <Paper
-          elevation={0}
-          sx={{
-            width: '100%',
-            mb: 2,
-            border: '0px solid #e5e5e5',
-            borderRadius: '8px',
-            overflow: 'hidden'
-          }}
-        >
+        <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
           {/* Toolbar with search and filters */}
           <Toolbar
             sx={{

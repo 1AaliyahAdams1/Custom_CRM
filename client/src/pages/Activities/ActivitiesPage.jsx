@@ -19,7 +19,7 @@ import {
 import { Add, Clear } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../../utils/formatters';
-import TableView from '../../components/TableView'; 
+import TableView from '../../components/TableView';
 import theme from "../../components/Theme";
 
 
@@ -130,16 +130,7 @@ const ActivitiesPage = ({
           </Alert>
         )}
 
-        <Paper
-          elevation={0}
-          sx={{
-            width: "100%",
-            mb: 2,
-            border: "0px solid #e5e5e5",
-            borderRadius: "8px",
-            overflow: "hidden",
-          }}
-        >
+        <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
           {/* Toolbar*/}
           <Toolbar
             sx={{
@@ -201,7 +192,7 @@ const ActivitiesPage = ({
                 Add Activity
               </Button>
 
-              
+
             </Box>
           </Toolbar>
 
