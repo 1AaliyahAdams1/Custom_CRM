@@ -27,6 +27,10 @@ const EditAccount = () => {
   const { id } = useParams();
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  
   const [cities, setCities] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [countries, setCountries] = useState([]);
@@ -56,6 +60,19 @@ const EditAccount = () => {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const getFieldError = (fieldName) => {
+    return touched[fieldName] && fieldErrors[fieldName] ? (
+      <span style={{ display: 'flex', alignItems: 'center' }}>
+        <span style={{ color: '#ff4444', marginRight: '4px' }}>✗</span>
+        {fieldErrors[fieldName][0]}
+      </span>
+    ) : '';
+  };
+
+  const isFieldInvalid = (fieldName) => {
+    return touched[fieldName] && fieldErrors[fieldName] && fieldErrors[fieldName].length > 0;
+  };
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -193,38 +210,71 @@ const EditAccount = () => {
                   disabled={saving}
                 />
 
-                <SmartDropdown
-                  label="Country"
-                  name="CountryID"
-                  value={formData.CountryID}
-                  onChange={handleInputChange}
-                  service={countryService}
-                  displayField="CountryName"
-                  valueField="CountryID"
-                  disabled={saving}
-                />
+                <Box>
+                  <SmartDropdown
+                    label="Country"
+                    name="CountryID"
+                    value={formData.CountryID}
+                    onChange={handleInputChange}
+                    service={countryService}
+                    displayField="CountryName"
+                    valueField="CountryID"
+                    disabled={isSubmitting}
+                    error={isFieldInvalid('CountryID')}
+                    helperText={getFieldError('CountryID')}
+                  />
+                </Box>
 
-                <SmartDropdown
-                  label="State/Province"
-                  name="StateProvinceID"
-                  value={formData.StateProvinceID}
-                  onChange={handleInputChange}
-                  service={stateProvinceService}
-                  displayField="StateProvince_Name"
-                  valueField="StateProvinceID"
-                  disabled={saving}
-                />
+                <Box>
+                  <SmartDropdown
+                    label="State/Province"
+                    name="StateProvinceID"
+                    value={formData.StateProvinceID}
+                    onChange={handleInputChange}
+                    service={{
+                      getAll: async () => {
+                        return await stateProvinceService.getAllFiltered(formData.CountryID);
+                      }
+                    }}
+                    displayField="StateProvince_Name"
+                    valueField="StateProvinceID"
+                    disabled={isSubmitting || !formData.CountryID}
+                    placeholder={!formData.CountryID ? "Select a country first" : "Select a state/province"}
+                    error={isFieldInvalid('StateProvinceID')}
+                    helperText={getFieldError('StateProvinceID')}
+                    key={`state-${formData.CountryID}`} // Force re-render when country changes
+                  />
+                </Box>
 
-                <SmartDropdown
-                  label="City"
-                  name="CityID"
-                  value={formData.CityID}
-                  onChange={handleInputChange}
-                  service={cityService}
-                  displayField="CityName"
-                  valueField="CityID"
-                  disabled={saving}
-                />
+                <Box>
+                  <SmartDropdown
+                    label="City"
+                    name="CityID"
+                    value={formData.CityID}
+                    onChange={handleInputChange}
+                    service={{
+                      getAll: async () => {
+                        return await cityService.getAllFiltered(
+                          formData.StateProvinceID, 
+                          formData.CountryID
+                        );
+                      }
+                    }}
+                    displayField="CityName"
+                    valueField="CityID"
+                    disabled={isSubmitting || (!formData.StateProvinceID && !formData.CountryID)}
+                    placeholder={
+                      !formData.CountryID 
+                        ? "Select a country first" 
+                        : !formData.StateProvinceID 
+                          ? "Select a state/province first" 
+                          : "Select a city"
+                    }
+                    error={isFieldInvalid('CityID')}
+                    helperText={getFieldError('CityID')}
+                    key={`city-${formData.StateProvinceID}-${formData.CountryID}`} // Force re-render when dependencies change
+                  />
+                </Box>
 
                 <SmartDropdown
                   label="Industry"

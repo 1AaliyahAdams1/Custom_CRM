@@ -8,7 +8,9 @@ import {
   deactivateAccount,
 } from "../../services/accountService";
 import { noteService } from "../../services/noteService";
+import SmartDropdown from '../../components/SmartDropdown';
 import { attachmentService } from "../../services/attachmentService";
+
 
 const AccountsContainer = () => {
   const navigate = useNavigate();
