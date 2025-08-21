@@ -1,5 +1,5 @@
 // AccountsPage.jsx
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -9,10 +9,11 @@ import {
   Paper,
   Chip,
   Toolbar,
+  Snackbar,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
-import TableView from '../../components/TableView';
+import TableView from '../../components/tableFormat/TableView';
 import theme from "../../components/Theme";
 import { formatters } from '../../utils/formatters';
 
@@ -20,8 +21,6 @@ const AccountsPage = ({
   accounts = [],
   loading = false,
   error,
-  successMessage,
-  setSuccessMessage,
   selected = [],
   onSelectClick,
   onSelectAllClick,
@@ -33,63 +32,50 @@ const AccountsPage = ({
   onAddAttachment,
   onClaimAccount,
   onAssignUser,
-  tableConfig,
-  notesPopupOpen,
-  setNotesPopupOpen,
-  attachmentsPopupOpen,
-  setAttachmentsPopupOpen,
-  selectedAccount,
-  popupLoading,
-  popupError,
-  handleSaveNote,
-  handleDeleteNote,
-  handleEditNote,
-  handleUploadAttachment,
-  handleDeleteAttachment,
-  handleDownloadAttachment,
 }) => {
   const columns = [
-    { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
-    { field: 'CityName', headerName: 'City' },
-    { field: 'StateProvince_Name', headerName: 'State Province' },
-    { field: 'CountryName', headerName: 'Country' },
-    { field: 'street_address', headerName: 'Street', type: 'truncated', maxWidth: 200 },
-    { field: 'postal_code', headerName: 'Postal Code' },
-    { field: 'PrimaryPhone', headerName: 'Phone' },
-    { field: 'IndustryName', headerName: 'Industry' },
-    { field: 'fax', headerName: 'Fax' },
-    { field: 'email', headerName: 'Email' },
-    { field: 'Website', headerName: 'Website', type: 'link' },
-    { field: 'number_of_employees', headerName: '# Employees' },
-    { field: 'number_of_venues', headerName: '# Venues' },
-    { field: 'number_of_releases', headerName: '# Releases' },
-    { field: 'number_of_events_anually', headerName: '# Events Annually' },
-    { field: 'annual_revenue', headerName: 'Annual Revenue' },
-    { field: 'ParentAccountName', headerName: 'Parent Account' },
-    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime' },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime' },
+    { field: 'AccountName', headerName: 'Name', type: 'tooltip', defaultVisible: true },
+    { field: 'CityName', headerName: 'City', defaultVisible: true },
+    { field: 'StateProvince_Name', headerName: 'State Province', defaultVisible: false },
+    { field: 'CountryName', headerName: 'Country', defaultVisible: true },
+    { field: 'street_address', headerName: 'Street', type: 'truncated', maxWidth: 200, defaultVisible: false },
+    { field: 'postal_code', headerName: 'Postal Code', defaultVisible: false },
+    { field: 'PrimaryPhone', headerName: 'Phone', defaultVisible: true },
+    { field: 'IndustryName', headerName: 'Industry', defaultVisible: false },
+    { field: 'fax', headerName: 'Fax', defaultVisible: false },
+    { field: 'email', headerName: 'Email', defaultVisible: false },
+    { field: 'Website', headerName: 'Website', type: 'link', defaultVisible: false },
+    { field: 'number_of_employees', headerName: '# Employees', defaultVisible: false },
+    { field: 'number_of_venues', headerName: '# Venues', defaultVisible: false },
+    { field: 'number_of_releases', headerName: '# Releases', defaultVisible: false },
+    { field: 'number_of_events_anually', headerName: '# Events Annually', defaultVisible: false },
+    { field: 'annual_revenue', headerName: 'Annual Revenue', defaultVisible: false },
+    { field: 'ParentAccountName', headerName: 'Parent Account', defaultVisible: false },
+    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
+    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
     {
       field: 'ownerStatus',
       headerName: 'Ownership',
       type: 'chip',
       chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
       chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' },
+      defaultVisible: true,
     },
   ];
+
+  // Local state for status messages
+  const [statusMessage, setStatusMessage] = useState('');
+  const [statusSeverity, setStatusSeverity] = useState('success');
+
+  const showStatus = (message, severity = 'success') => {
+    setStatusMessage(message);
+    setStatusSeverity(severity);
+  };
 
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {successMessage && (
-          <Alert
-            severity="success"
-            sx={{ mb: 2 }}
-            onClose={() => setSuccessMessage && setSuccessMessage("")}
-          >
-            {successMessage}
-          </Alert>
-        )}
 
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
           <Toolbar sx={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e5e5', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, py: 2 }}>
@@ -107,7 +93,6 @@ const AccountsPage = ({
               >
                 Add Account
               </Button>
-
             </Box>
           </Toolbar>
 
@@ -117,7 +102,7 @@ const AccountsPage = ({
             <TableView
               data={accounts}
               columns={columns}
-              idField="AccountID" 
+              idField="AccountID"
               selected={selected}
               onSelectClick={onSelectClick}
               onSelectAllClick={onSelectAllClick}
@@ -127,8 +112,22 @@ const AccountsPage = ({
               onDelete={onDeactivate}
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
-              onClaimAccount={onClaimAccount}
-              onAssignUser={onAssignUser}
+              onClaimAccount={async (row) => {
+                try {
+                  await onClaimAccount?.(row);
+                  showStatus(`Account claimed: ${row.AccountName}`, 'success');
+                } catch (err) {
+                  showStatus(err.message || 'Failed to claim account', 'error');
+                }
+              }}
+              onAssignUser={async (userId, row) => {
+                try {
+                  await onAssignUser?.(userId, row);
+                  showStatus(`User assigned to ${row.AccountName}`, 'success');
+                } catch (err) {
+                  showStatus(err.message || 'Failed to assign user', 'error');
+                }
+              }}
               formatters={formatters}
               entityType="account"
             />
@@ -139,6 +138,18 @@ const AccountsPage = ({
             {selected.length > 0 && <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>{selected.length} selected</Typography>}
           </Box>
         </Paper>
+
+        {/* Status Snackbar */}
+        <Snackbar
+          open={!!statusMessage}
+          autoHideDuration={4000}
+          onClose={() => setStatusMessage('')}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert onClose={() => setStatusMessage('')} severity={statusSeverity} sx={{ width: '100%' }}>
+            {statusMessage}
+          </Alert>
+        </Snackbar>
       </Box>
     </ThemeProvider>
   );

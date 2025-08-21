@@ -8,19 +8,13 @@ import {
   Paper,
   Chip,
   Toolbar,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from "@mui/material";
 import {
   Add,
-  Clear,
 } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../../utils/formatters';
-import TableView from '../../components/TableView'; 
+import TableView from '../../components/tableFormat/TableView';
 import theme from "../../components/Theme";
 
 // Table configuration for deals

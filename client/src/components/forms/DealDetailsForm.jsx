@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Alert } from "@mui/material";
-import { UniversalDetailView } from "../../components/DetailsView";
+import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { fetchDealById, updateDeal, deactivateDeal } from "../../services/dealService";
 import { getAllAccounts } from "../../services/accountService";
 import { dealStageService } from "../../services/dropdownServices";
