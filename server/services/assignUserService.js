@@ -1,23 +1,27 @@
-// services/assignedUserService.js
-const assignedUserRepo = require("../data/assignedUserRepository");
+const assignedUserRepository = require("../data/assignedUserRepository");
 
-// Sales rep claims an account
-async function claimAccount(userId, accountId) {
-  const exists = await assignedUserRepo.findAssignedUser({ AccountID: accountId, UserID: userId });
-  if (exists) throw new Error("You have already claimed this account");
+async function assignUser(userId, accountId) {
 
-  return assignedUserRepo.createAssignedUser({ UserID: userId, AccountID: accountId });
+  const existingAssignment = await assignedUserRepository.findAssignedUser({
+    UserID: userId,
+    AccountID: accountId
+  });
+
+  if (existingAssignment) {
+    throw new Error("User is already assigned to this account");
+  }
+
+  await assignedUserRepository.createAssignedUser({
+    UserID: userId,
+    AccountID: accountId
+  });
 }
 
-// C-level assigns a specific user
-async function assignUser(userId, accountId) {
-  const exists = await assignedUserRepo.findAssignedUser({ AccountID: accountId, UserID: userId });
-  if (exists) throw new Error("User already assigned to this account");
-
-  return assignedUserRepo.createAssignedUser({ UserID: userId, AccountID: accountId });
+async function claimAccount(userId, accountId) {
+  await assignUser(userId, accountId);
 }
 
 module.exports = {
-  claimAccount,
   assignUser,
+  claimAccount
 };

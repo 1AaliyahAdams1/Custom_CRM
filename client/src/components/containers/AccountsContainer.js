@@ -27,7 +27,8 @@ const AccountsContainer = () => {
   const [refreshFlag, setRefreshFlag] = useState(false);
 
   const [selected, setSelected] = useState([]);
-
+  const [statusMessage, setStatusMessage] = useState('');
+  const [statusSeverity, setStatusSeverity] = useState('success');
   // Popups
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
@@ -103,37 +104,34 @@ const AccountsContainer = () => {
   const handleCreate = () => navigate("/accounts/create");
 
   // ---------------- CLAIM / ASSIGN ----------------
-const handleClaimAccount = async (account) => {
-  try {
-    const result = await claimAccount(account.AccountID); 
-    alert(result.message || "Account claimed!");
-    
-    setAccounts(prev =>
-      prev.map(a =>
-        a.AccountID === account.AccountID ? { ...a, ownerStatus: "owned" } : a
-      )
-    );
-  } catch (err) {
-    console.error("Failed to claim account:", err);
-    alert(err.response?.data?.message || err.message || "Failed to claim account");
-  }
-};
+  const handleClaimAccount = async (account) => {
+    try {
+      const result = await claimAccount(account.AccountID);
+      setStatusMessage(`Account claimed: ${account.AccountName}`);
+      setStatusSeverity('success');
+      setAccounts(prev =>
+        prev.map(a =>
+          a.AccountID === account.AccountID ? { ...a, ownerStatus: "owned" } : a
+        )
+      );
+    } catch (err) {
+      console.error("Failed to claim account:", err);
+      setStatusMessage(err.message || "Failed to claim account");
+      setStatusSeverity('error');
+    }
+  };
 
-
-const handleAssignUser = async (account) => {
-  if (!account) return;
-  try {
-    const userId = prompt("Enter user ID to assign:");
-    if (!userId) return;
-    const result = await assignUser(account.AccountID, userId);
-    alert(result.message || "User assigned successfully");
-    // Optionally update local state if needed
-  } catch (err) {
-    console.error("Failed to assign user:", err);
-    alert(err.response?.data?.message || "Failed to assign user");
-  }
-};
-
+  const handleAssignUser = async (employeeId, account) => {
+    try {
+      const result = await assignUser(account.AccountID, employeeId);
+      setSuccessMessage(`User assigned to ${account.AccountName}`);
+      // Optionally update local state if needed
+    } catch (err) {
+      console.error("Failed to assign user:", err);
+      setError(err.message || "Failed to assign user");
+      throw err; // Re-throw so the dialog can show the error
+    }
+  };
 
   // ---------------- SELECTION ----------------
   const handleSelectClick = (id) => {
@@ -213,6 +211,9 @@ const handleAssignUser = async (account) => {
       error={error}
       successMessage={successMessage}
       setSuccessMessage={setSuccessMessage}
+      statusMessage={statusMessage}
+      statusSeverity={statusSeverity}
+      setStatusMessage={setStatusMessage}
       selected={selected}
       onSelectClick={handleSelectClick}
       onSelectAllClick={handleSelectAllClick}

@@ -77,7 +77,7 @@ app.use("/sequences", sequenceRoutes);
 app.use('/work-page', workRoutes);
 app.use("/attachments", attachmentRoutes);
 app.use('/assign', assignUserRoutes);
-app.use("/api/employees", employeeRoutes);
+app.use("/employees", employeeRoutes);
 
 const PORT = process.env.PORT || 5000;
 const HOST = "0.0.0.0";

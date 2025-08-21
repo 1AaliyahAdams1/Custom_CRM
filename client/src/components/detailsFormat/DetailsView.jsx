@@ -1,3 +1,4 @@
+// UniversalDetailView.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -9,9 +10,6 @@ import {
   CircularProgress,
   Alert,
   TextField,
-  FormControl,
-  Select,
-  MenuItem,
   FormControlLabel,
   Switch,
   Checkbox,
@@ -24,6 +22,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import theme from "../Theme";
 import DetailsActions from "./DetailsActions";
 import SmartDropdown from "../../components/SmartDropdown";
+import AssignUserDialog from "../AssignUserDialog";
 import { claimAccount, assignUser } from "../../services/assignService";
 
 export function UniversalDetailView({
@@ -47,6 +46,9 @@ export function UniversalDetailView({
   const [tab, setTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(item || {});
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusSeverity, setStatusSeverity] = useState("success");
 
   useEffect(() => {
     if (item) setFormData(item);
@@ -63,45 +65,39 @@ export function UniversalDetailView({
     setIsEditing(false);
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
-  };
+  const handleCancel = () => setIsEditing(false);
 
   const handleDelete = async () => {
     if (onDelete) await onDelete(formData);
   };
 
-  const handleAddNote = () => {
-    if (onAddNote) onAddNote(formData);
-  };
-
-  const handleAddAttachment = () => {
-    if (onAddAttachment) onAddAttachment(formData);
-  };
+  const handleAddNote = () => onAddNote?.(formData);
+  const handleAddAttachment = () => onAddAttachment?.(formData);
 
   const handleClaimAccount = async () => {
     try {
-      const result = await claimAccount(formData.AccountID);
-      alert(result.message || "Account claimed!");
-      setFormData(prev => ({ ...prev, ownerStatus: "owned" }));
+      await claimAccount(formData.AccountID);
+      setStatusMessage(`Account claimed: ${formData.AccountName}`);
+      setStatusSeverity("success");
+      setFormData((prev) => ({ ...prev, ownerStatus: "owned" }));
     } catch (err) {
-      console.error("Failed to claim account:", err);
-      alert(err.response?.data?.message || err.message || "Failed to claim account");
+      setStatusMessage(err.message || "Failed to claim account");
+      setStatusSeverity("error");
     }
   };
 
-  const handleAssignUser = async () => {
+  const handleAssignUser = async (employeeId) => {
     try {
-      const userId = prompt("Enter user ID to assign:");
-      if (!userId) return;
-      const result = await assignUser(formData.AccountID, userId);
-      alert(result.message || "User assigned successfully");
+      await assignUser(formData.AccountID, employeeId);
+      setStatusMessage(`User assigned to ${formData.AccountName}`);
+      setStatusSeverity("success");
     } catch (err) {
-      console.error("Failed to assign user:", err);
-      alert(err.response?.data?.message || err.message || "Failed to assign user");
+      console.error(err);
+      setStatusMessage(err.message || "Failed to assign user");
+      setStatusSeverity("error");
+      throw err;
     }
   };
-
 
   const visibleFields = mainFields.filter(
     (field) =>
@@ -112,38 +108,22 @@ export function UniversalDetailView({
   );
 
   const renderField = (field) => {
-    const value = formData[field.key] || "";
+    const value = formData[field.key] ?? "";
 
     if (!isEditing) {
-      return (
-        <Box
-          sx={{
-            px: 2,
-            py: 1.5,
-            backgroundColor: "#f5f5f5",
-            borderRadius: 1,
-            display: "flex",
-            alignItems: "center",
-            wordBreak: "break-word",
-          }}
-        >
-          {field.type === "boolean" ? (
-            <Checkbox checked={Boolean(value)} disabled size="small" />
-          ) : field.type === "dropdown" && item?.[field.displayField] ? (
-            item[field.displayField]
-          ) : field.type === "link" && value ? (
-            <a href={value} target="_blank" rel="noopener noreferrer">{value}</a>
-          ) : field.type === "currency" && value ? (
-            `$${parseFloat(value).toLocaleString()}`
-          ) : field.type === "date" && value ? (
-            new Date(value).toLocaleDateString()
-          ) : field.type === "datetime" && value ? (
-            new Date(value).toLocaleString()
-          ) : (
-            value || "—"
-          )}
-        </Box>
-      );
+      if (field.type === "boolean") return <Checkbox checked={Boolean(value)} disabled size="small" />;
+      if (field.type === "link" && value)
+        return (
+          <a href={value} target="_blank" rel="noopener noreferrer">
+            {value}
+          </a>
+        );
+      if (field.type === "currency" && value) return `$${parseFloat(value).toLocaleString()}`;
+      if (field.type === "date" && value) return new Date(value).toLocaleDateString();
+      if (field.type === "datetime" && value) return new Date(value).toLocaleString();
+      if (field.type === "dropdown" && item?.[field.displayField]) return item[field.displayField];
+
+      return value || "-";
     }
 
     // Edit mode
@@ -185,7 +165,9 @@ export function UniversalDetailView({
             size="small"
             fullWidth
             required={field.required}
-            InputProps={field.type === "currency" ? { startAdornment: <span style={{ marginRight: 4 }}>$</span> } : undefined}
+            InputProps={
+              field.type === "currency" ? { startAdornment: <span style={{ marginRight: 4 }}>$</span> } : undefined
+            }
           />
         );
       case "date":
@@ -217,14 +199,8 @@ export function UniversalDetailView({
           <SmartDropdown
             label={field.label}
             name={field.key}
-            // If the stored value is a displayField string, keep it.
-            // SmartDropdown will map it to the correct option internally.
             value={value}
-            onChange={(e) => {
-              // Ensure we save the displayField string back in formData
-              const selected = e.target.value;
-              updateField(field.key, selected);
-            }}
+            onChange={(e) => updateField(field.key, e.target.value)}
             service={field.service}
             displayField={field.displayField}
             valueField={field.valueField}
@@ -280,6 +256,13 @@ export function UniversalDetailView({
   return (
     <ThemeProvider theme={activeTheme}>
       <Box sx={{ width: "100%", backgroundColor: "#fafafa", p: 3 }}>
+        {/* Status Message */}
+        {statusMessage && (
+          <Alert severity={statusSeverity} sx={{ mb: 2 }} onClose={() => setStatusMessage("")}>
+            {statusMessage}
+          </Alert>
+        )}
+
         {/* Header */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
@@ -318,7 +301,7 @@ export function UniversalDetailView({
               onDelete={handleDelete}
               onAddNote={handleAddNote}
               onAddAttachment={handleAddAttachment}
-              onAssignUser={handleAssignUser}
+              onAssignUser={() => setAssignDialogOpen(true)}
               onClaimAccount={handleClaimAccount}
             />
           </Box>
@@ -372,6 +355,14 @@ export function UniversalDetailView({
             </Paper>
           </Box>
         )}
+
+        {/* Assign User Dialog */}
+        <AssignUserDialog
+          open={assignDialogOpen}
+          onClose={() => setAssignDialogOpen(false)}
+          menuRow={formData}
+          onAssign={handleAssignUser}
+        />
       </Box>
     </ThemeProvider>
   );
