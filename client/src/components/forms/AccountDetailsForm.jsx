@@ -14,13 +14,15 @@ import {
   stateProvinceService
 } from '../../services/dropdownServices';
 
-const accountService = {getAll: async () => (await getAllAccounts()).data}
+const accountService = { getAll: async () => (await getAllAccounts()).data }
 
 // Define the main fields for the account form
 const accountMainFields = [
   { key: "AccountName", label: "Account Name", required: true, width: { xs: 12, md: 6 } },
-  { key: "ParentAccountName", label: "Parent Account", type: "dropdown", 
-    service: accountService, displayField: "ParentAccountName", valueField: "AccountID", width: { xs: 12, md: 6 } },
+  {
+    key: "ParentAccountName", label: "Parent Account", type: "dropdown",
+    service: accountService, displayField: "ParentAccountName", valueField: "AccountID", width: { xs: 12, md: 6 }
+  },
   { key: "CountryID", label: "Country", type: "dropdown", service: countryService, displayField: "CountryName", valueField: "CountryID", width: { xs: 12, md: 4 } },
   { key: "StateProvinceID", label: "State/Province", type: "dropdown", service: stateProvinceService, displayField: "StateProvince_Name", valueField: "StateProvinceID", width: { xs: 12, md: 4 } },
   { key: "CityID", label: "City", type: "dropdown", service: cityService, displayField: "CityName", valueField: "CityID", width: { xs: 12, md: 4 } },

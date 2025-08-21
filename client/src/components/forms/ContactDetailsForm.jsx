@@ -2,15 +2,23 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Tabs, Tab, Alert, Typography } from "@mui/material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
-import { getContactDetails, updateContact } from "../../services/contactService";
+import { getAllContacts, getContactDetails, updateContact } from "../../services/contactService";
+import { getAllAccounts } from "../../services/accountService";
+import {
+  cityService,
+  industryService,
+  countryService,
+  stateProvinceService,
+  jobTitleService
+} from '../../services/dropdownServices';
+
+const contactService = { getAll: async () => (await getAllContacts()).data }
 
 const contactMainFields = [
-  { key: "Title", label: "Title", type: "select", options: ["Mr.", "Ms.", "Mrs.", "Dr.", "Prof."], width: { xs: 12, md: 3 } },
   { key: "first_name", label: "First Name", required: true, width: { xs: 12, md: 3 } },
   { key: "middle_name", label: "Middle Name", width: { xs: 12, md: 3 } },
   { key: "surname", label: "Last Name", required: true, width: { xs: 12, md: 3 } },
-  { key: "JobTitleName", label: "Job Title", type: "select", options: ["CEO", "CTO", "CFO", "Manager", "Director", "VP", "Senior Manager", "Team Lead", "Developer", "Analyst", "Consultant", "Coordinator"] },
-  { key: "department", label: "Department", type: "select", options: ["Sales", "Marketing", "Engineering", "HR", "Finance", "Operations", "Customer Service", "Legal", "IT", "R&D"] },
+  { key: "JobTitleID", label: "Job Title", type: "dropdown", service: jobTitleService, displayField: "JobTitleName", valueField: "JobTitleID"},
   { key: "WorkEmail", label: "Work Email", type: "email", required: true },
   { key: "PersonalEmail", label: "Personal Email", type: "email" },
   { key: "WorkPhone", label: "Work Phone", type: "tel" },
@@ -20,16 +28,16 @@ const contactMainFields = [
   { key: "street_address2", label: "Street Address 2" },
   { key: "street_address3", label: "Street Address 3" },
   { key: "postal_code", label: "Postal Code" },
-  { key: "CityName", label: "City", type: "select", options: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose"] },
-  { key: "CountryName", label: "Country", type: "select", options: ["USA", "Canada", "UK", "Australia", "Germany", "France", "India"] },
-  { key: "StateProvinceName", label: "State/Province", type: "select", options: ["California", "Texas", "Florida", "New York", "Illinois", "Pennsylvania", "Ohio", "Georgia", "North Carolina", "Michigan"] },
-  { key: "status", label: "Status", type: "select", options: ["Active", "Inactive", "Lead", "Customer", "Prospect"] },
+  { key: "CityID", label: "City", type: "dropdown", service: cityService, displayField: "CityName", valueField: "CityID" },
+  { key: "CountryID", label: "Country", type: "dropdown", service: countryService, displayField: "CountryName", valueField: "CountryID" },
+  { key: "StateProvinceID", label: "State/Province", type: "dropdown", service: stateProvinceService, displayField: "StateProvince_Name", valueField: "StateProvinceID" },
+  // { key: "status", label: "Status", type: "select", options: ["Active", "Inactive", "Lead", "Customer", "Prospect"] },
   { key: "Active", label: "Active", type: "boolean" },
 ];
 
 export default function ContactDetailsForm() {
   const navigate = useNavigate();
-  const { id } = useParams(); // ✅ matches your route `/contacts/:id`
+  const { id } = useParams();
 
   const [contact, setContact] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +45,7 @@ export default function ContactDetailsForm() {
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-    console.log("🔍 Debug: useParams() =", { id });
+    console.log("Debug: useParams() =", { id });
 
     const loadContact = async () => {
       if (!id) {
