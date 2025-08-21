@@ -23,7 +23,7 @@ import { ArrowBack } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "../Theme";
 import DetailsActions from "./DetailsActions";
-import SmartDropdown from "../components/SmartDropdown";
+import SmartDropdown from "../../components/SmartDropdown";
 import { claimAccount, assignUser } from "../../services/assignService";
 
 export function UniversalDetailView({
