@@ -4,18 +4,27 @@ import { Box, Alert } from "@mui/material";
 import { UniversalDetailView } from "../../components/DetailsView";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
-import { fetchAccountById, updateAccount, deactivateAccount } from "../../services/accountService";
+import { fetchAccountById, updateAccount, deactivateAccount, getAllAccounts } from "../../services/accountService";
 import { noteService } from "../../services/noteService";
 import { attachmentService } from "../../services/attachmentService";
+import {
+  cityService,
+  industryService,
+  countryService,
+  stateProvinceService
+} from '../../services/dropdownServices';
+
+const accountService = {getAll: async () => (await getAllAccounts()).data}
 
 // Define the main fields for the account form
 const accountMainFields = [
   { key: "AccountName", label: "Account Name", required: true, width: { xs: 12, md: 6 } },
-  { key: "ParentAccount", label: "Parent Account", type: "text", width: { xs: 12, md: 6 } },
-  { key: "CountryName", label: "Country", type: "select", options: ["USA", "Canada", "UK", "Australia", "Germany", "France", "India"], width: { xs: 12, md: 4 } },
-  { key: "StateProvinceName", label: "State/Province", type: "select", options: ["California", "Texas", "Florida", "New York"], width: { xs: 12, md: 4 } },
-  { key: "CityName", label: "City", type: "text", width: { xs: 12, md: 4 } },
-  { key: "IndustryName", label: "Industry", type: "select", options: ["Technology", "Finance", "Healthcare", "Retail"], width: { xs: 12, md: 6 } },
+  { key: "ParentAccount", label: "Parent Account", type: "dropdown", 
+    service: accountService, displayField: "AccountName", valueField: "AccountID", width: { xs: 12, md: 6 } },
+  { key: "CountryID", label: "Country", type: "dropdown", service: countryService, displayField: "CountryName", valueField: "CountryID", width: { xs: 12, md: 4 } },
+  { key: "StateProvinceID", label: "State/Province", type: "dropdown", service: stateProvinceService, displayField: "StateProvince_Name", valueField: "StateProvinceID", width: { xs: 12, md: 4 } },
+  { key: "CityID", label: "City", type: "dropdown", service: cityService, displayField: "CityName", valueField: "CityID", width: { xs: 12, md: 4 } },
+  { key: "IndustryID", label: "Industry", type: "dropdown", service: industryService, displayField: "IndustryName", valueField: "IndustryID", width: { xs: 12, md: 4 } },
   { key: "street_address1", label: "Street Address 1", width: { xs: 12, md: 6 } },
   { key: "street_address2", label: "Street Address 2", width: { xs: 12, md: 6 } },
   { key: "street_address3", label: "Street Address 3", width: { xs: 12, md: 6 } },
@@ -31,7 +40,6 @@ const accountMainFields = [
   { key: "number_of_events_anually", label: "Number of Events Annually", type: "number", width: { xs: 12, md: 6 } },
   { key: "Active", label: "Active", type: "boolean", width: { xs: 12, md: 6 } },
 ];
-
 
 export default function AccountDetailsForm({ accountId }) {
   const navigate = useNavigate();

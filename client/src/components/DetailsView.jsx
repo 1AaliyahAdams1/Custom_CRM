@@ -23,6 +23,7 @@ import { ArrowBack } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "../components/Theme";
 import DetailsActions from "./DetailsActions";
+import SmartDropdown from "../components/SmartDropdown";
 
 export function UniversalDetailView({
   title,
@@ -57,7 +58,10 @@ export function UniversalDetailView({
     if (onSave) onSave(formData);
     setIsEditing(false);
   };
-  const handleCancel = () => setFormData(item);
+  const handleCancel = () => {
+    setFormData(item);
+    setIsEditing(false);
+  };
   const handleDelete = () => onDelete && onDelete();
   const handleAddNote = () => onAddNote && onAddNote(item);
   const handleAddAttachment = () => onAddAttachment && onAddAttachment(item);
@@ -90,6 +94,8 @@ export function UniversalDetailView({
         >
           {field.type === "boolean" ? (
             <Checkbox checked={Boolean(value)} disabled size="small" />
+          ) : field.type === "dropdown" && item?.[field.displayField] ? (
+            item[field.displayField]
           ) : field.type === "link" && value ? (
             <a href={value} target="_blank" rel="noopener noreferrer">{value}</a>
           ) : field.type === "currency" && value ? (
@@ -118,25 +124,6 @@ export function UniversalDetailView({
             fullWidth
             required={field.required}
           />
-        );
-      case "select":
-        return (
-          <FormControl size="small" fullWidth required={field.required}>
-            <Select
-              value={value}
-              onChange={(e) => updateField(field.key, e.target.value)}
-              displayEmpty
-            >
-              <MenuItem value="">
-                <em>Select {field.label}</em>
-              </MenuItem>
-              {field.options?.map((option) => (
-                <MenuItem key={option.value || option} value={option.value || option}>
-                  {option.label || option}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
         );
       case "boolean":
         return (
@@ -191,6 +178,27 @@ export function UniversalDetailView({
             fullWidth
             required={field.required}
             InputLabelProps={{ shrink: true }}
+          />
+        );
+      case "dropdown":
+        return (
+          <SmartDropdown
+            label={field.label}
+            name={field.key}
+            // If the stored value is a displayField string, keep it.
+            // SmartDropdown will map it to the correct option internally.
+            value={value}
+            onChange={(e) => {
+              // Ensure we save the displayField string back in formData
+              const selected = e.target.value;
+              updateField(field.key, selected);
+            }}
+            service={field.service}
+            displayField={field.displayField}
+            valueField={field.valueField}
+            required={field.required}
+            fullWidth
+            placeholder={field.placeholder || `Select ${field.label}`}
           />
         );
       default:
