@@ -25,9 +25,6 @@ const activitiesTableConfig = {
   columns: [
     { field: "ActivityType", headerName: "Activity Type", type: "tooltip" },
     { field: "AccountName", headerName: "Account Name", type: "tooltip" },
-    { field: "PriorityLevelName", headerName: "Priority" },
-    { field: "note", headerName: "Notes", type: "truncated", maxWidth: 150 },
-    { field: "attachment", headerName: "Attachments" },
     { field: "DueToStart", headerName: "Due To Start", type: "date" },
     { field: "DueToEnd", headerName: "Due To End", type: "date" },
     {
@@ -47,6 +44,11 @@ const activitiesTableConfig = {
     },
   ],
 };
+
+//REMOVED FROM TABLE FOR NOW
+//{ field: "PriorityLevelName", headerName: "PriorityLevel" },
+    //{ field: "note", headerName: "Notes", type: "truncated", maxWidth: 150 },
+    //{ field: "attachment", headerName: "Attachments" },
 
 const ActivitiesPage = ({
   activities = [], // Added default prop

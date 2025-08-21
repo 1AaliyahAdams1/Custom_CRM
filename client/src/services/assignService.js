@@ -10,15 +10,13 @@ export const claimAccount = async (accountId) => {
     }
 };
 
-export const assignUser = async (accountId, userId) => {
+export const assignUser = async (accountId, employeeId) => { 
     try {
-        const response = await api.post(`/assign/${accountId}/assign`, { userId });
+        const response = await api.post(`/assign/${accountId}/assign`, { employeeId }); 
         return response.data;
     } catch (err) {
         console.error("Failed to assign user:", err);
-        throw err?.response?.data || { message: err.message };
+        const errorMessage = err?.response?.data?.error || err?.response?.data?.message || err.message;
+        throw { message: errorMessage };
     }
 };
-
-
-

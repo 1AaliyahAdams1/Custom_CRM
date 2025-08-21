@@ -112,22 +112,8 @@ const AccountsPage = ({
               onDelete={onDeactivate}
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
-              onClaimAccount={async (row) => {
-                try {
-                  await onClaimAccount?.(row);
-                  showStatus(`Account claimed: ${row.AccountName}`, 'success');
-                } catch (err) {
-                  showStatus(err.message || 'Failed to claim account', 'error');
-                }
-              }}
-              onAssignUser={async (userId, row) => {
-                try {
-                  await onAssignUser?.(userId, row);
-                  showStatus(`User assigned to ${row.AccountName}`, 'success');
-                } catch (err) {
-                  showStatus(err.message || 'Failed to assign user', 'error');
-                }
-              }}
+              onClaimAccount={onClaimAccount}
+              onAssignUser={onAssignUser}
               formatters={formatters}
               entityType="account"
             />
