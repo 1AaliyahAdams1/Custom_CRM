@@ -3,11 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Box, Tabs, Tab, Alert, Typography } from "@mui/material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { fetchActivityById, updateActivity } from "../../services/activityService";
+import { priorityLevelService, activityTypeService } from '../../services/dropdownServices';
 
 const activityMainFields = [
-  { key: "TypeName", label: "Activity Type", required: true, type: "select", options: ["Call","Meeting","Email","Task","Follow-up","Demo","Presentation","Other"], width: { xs: 12, md: 6 } },
+  { key: "TypeID", label: "Activity Type", required: true, type: "dropdown", service: activityTypeService, displayField: "TypeName", valueField: "TypeID", width: { xs: 12, md: 6 } },
   { key: "AccountName", label: "Account", type: "text", disabled: true, width: { xs: 12, md: 6 } },
-  { key: "PriorityLevelName", label: "Priority", type: "select", options: ["Low","Medium","High","Urgent"], width: { xs: 12, md: 6 } },
+  { key: "PriorityLevelID", label: "Priority", type: "dropdown", service: priorityLevelService, displayField: "PriorityLevelName", valueField: "PriorityLevelID",  width: { xs: 12, md: 6 } },
   { key: "DueToStart", label: "Due To Start", type: "date", width: { xs: 12, md: 6 } }, // new
   { key: "DueToEnd", label: "Due To End", type: "date", width: { xs: 12, md: 6 } }, // new
   { key: "Completed", label: "Completed", type: "boolean", width: { xs: 12, md: 6 } },
@@ -25,7 +26,7 @@ export default function ActivityDetailsForm() {
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-    console.log("🔍 Debug: useParams() =", { id });
+    console.log("Debug: useParams() =", { id });
 
     const loadActivity = async () => {
       if (!id) {
@@ -38,7 +39,6 @@ export default function ActivityDetailsForm() {
         setLoading(true);
         const data = await fetchActivityById(id);
         console.log("Debug: fetchActivityById response:", data);
-
         setActivity(data?.data || data || null);
       } catch (err) {
         console.error("Error loading activity:", err);

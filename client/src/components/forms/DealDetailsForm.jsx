@@ -6,9 +6,11 @@ import { fetchDealById, updateDeal, deactivateDeal } from "../../services/dealSe
 import { getAllAccounts } from "../../services/accountService";
 import { dealStageService } from "../../services/dropdownServices";
 
+const accountService = {getAll: async () => (await getAllAccounts()).data}
+
 const dealMainFields = [
-  { key: "AccountID", label: "Account", type: "select", service: getAllAccounts, width: { xs: 12, md: 6 } },
-  { key: "DealStageID", label: "Deal Stage", type: "select", service: dealStageService, width: { xs: 12, md: 6 } },
+  { key: "AccountID", label: "Account", type: "dropdown", service: accountService, displayField: "AccountName", valueField: "AccountID", width: { xs: 12, md: 6 } },
+  { key: "DealStageID", label: "Deal Stage", type: "dropdown", service: dealStageService, displayField: "StageName", valueField: "DealStageID", width: { xs: 12, md: 6 } },
   { key: "DealName", label: "Deal Name", type: "text", required: true, width: { xs: 12, md: 6 } },
   { key: "Value", label: "Value", type: "number", width: { xs: 12, md: 6 } },
   { key: "CloseDate", label: "Close Date", type: "date", width: { xs: 12, md: 6 } },
