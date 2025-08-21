@@ -17,6 +17,26 @@ export const formatters = {
     return date.toLocaleDateString();
   },
 
+  CloseDate: (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (isNaN(date)) return "-";
+    return date.toLocaleDateString();
+  },
+
+  DueToStart: (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (isNaN(date)) return "-";
+    return date.toLocaleDateString();
+  },
+
+  DueToEnd: (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (isNaN(date)) return "-";
+    return date.toLocaleDateString();
+  },
   PriorityLevelID: (value) => {
     const priorities = {
       1: 'Low',

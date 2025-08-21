@@ -78,6 +78,25 @@ async function deleteAssignedUser(accountUserId) {
 }
 
 // ==========================================
+// Find AssignedUser by criteria (UserID + AccountID)
+// ==========================================
+async function findAssignedUser(criteria) {
+  const { UserID, AccountID } = criteria;
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .input("UserID", sql.Int, UserID)
+    .input("AccountID", sql.Int, AccountID)
+    .query(`
+      SELECT *
+      FROM AssignedUser
+      WHERE UserID = @UserID AND AccountID = @AccountID
+    `);
+  return result.recordset[0] || null; 
+}
+
+
+
+// ==========================================
 // Exports
 // ==========================================
 module.exports = {
@@ -88,4 +107,5 @@ module.exports = {
   deactivateAssignedUser,
   reactivateAssignedUser,
   deleteAssignedUser,
+  findAssignedUser,
 };

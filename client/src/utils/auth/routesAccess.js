@@ -1,5 +1,5 @@
 export const ROUTE_ACCESS = {
-  dashboard: ["C-level", "Sales Manager"],
+  dashboard: ["C-level", "Sales Manager", "Sales Representative"],
   
   roles: ["C-level"],
 
@@ -23,7 +23,7 @@ export const ROUTE_ACCESS = {
   activitiesCreate: ["C-level", "Sales Manager", "Sales Representative"],
   activitiesEdit: ["C-level", "Sales Manager", "Sales Representative"],
 
-  reports: ["C-level", "Sales Manager", "Sales Representative"],
+  reports: ["C-level", "Sales Manager"],
 
   smartWork: ["C-level", "Sales Manager", "Sales Representative"],
 };

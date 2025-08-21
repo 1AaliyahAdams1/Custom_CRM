@@ -1,26 +1,37 @@
 import React from "react";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography, useTheme } from "@mui/material";
 
 const LoadingScreen = ({ message = "Loading, please wait..." }) => {
+  const theme = useTheme();
+
   return (
     <Box
       sx={{
         height: "100vh",
-        bgcolor: "background.default",
+        bgcolor: theme.palette.grey[100], // Light silver background
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        color: "primary.main",
         px: 2,
         textAlign: "center",
       }}
     >
-      <CircularProgress color="primary" size={60} thickness={5} />
+      <CircularProgress
+        size={60}
+        thickness={5}
+        sx={{
+          color: theme.palette.grey[600], // Darker silver for spinner
+        }}
+      />
       <Typography
         variant="h6"
         component="p"
-        sx={{ mt: 3, fontWeight: "medium", color: "primary.main" }}
+        sx={{
+          mt: 3,
+          fontWeight: 500,
+          color: theme.palette.grey[800], // Dark text for contrast
+        }}
       >
         {message}
       </Typography>

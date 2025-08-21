@@ -9,7 +9,7 @@ const getAllActivities = async (onlyActive = true) => {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
       .input('OnlyActive', sql.Bit, onlyActive ? 1 : 0)
-      .execute("GetActivity"); 
+      .execute("GetActivity");
     return result.recordset;
   } catch (error) {
     console.error("Error fetching all activities:", error);
@@ -141,30 +141,40 @@ async function getActivitiesByUser(userId) {
       .input("UserID", sql.Int, userId)
       .query(`
         SELECT
-          act.[ActivityID],
-          act.[AccountID],
-          act.[TypeID],
-          act.[PriorityLevelID],
-          act.[DueToStart],
-          act.[DueToEnd],
-          act.[Completed],
-          act.[CreatedAt],
-          act.[UpdatedAt],
-          act.[Active],
-          act.[SequenceItemID]
+            act.[ActivityID],
+            act.[AccountID],
+            a.[AccountName],               
+            act.[TypeID],
+            at.[TypeName] AS ActivityType,  
+            act.[PriorityLevelID],
+            pl.[PriorityLevelName] AS PriorityLevel,   
+            act.[DueToStart],
+            act.[DueToEnd],
+            act.[Completed],
+            act.[CreatedAt],
+            act.[UpdatedAt],
+            act.[Active],
+            act.[SequenceItemID]
         FROM [CRM].[dbo].[Activity] act
-        JOIN [CRM].[dbo].[AssignedUser] au ON act.AccountID = au.AccountID AND au.Active = 1
-        JOIN [CRM].[dbo].[Account] a ON act.AccountID = a.AccountID AND a.Active = 1
+        JOIN [CRM].[dbo].[AssignedUser] au 
+            ON act.AccountID = au.AccountID AND au.Active = 1
+        JOIN [CRM].[dbo].[Account] a 
+            ON act.AccountID = a.AccountID AND a.Active = 1
+        LEFT JOIN [CRM].[dbo].[ActivityType] at 
+            ON act.TypeID = at.TypeID
+        LEFT JOIN [CRM].[dbo].[PriorityLevel] pl 
+            ON act.PriorityLevelID = pl.PriorityLevelID
         WHERE au.UserID = @UserID
           AND act.Active = 1;
       `);
 
     return result.recordset;
   } catch (error) {
-    console.error("Error fetching activities for user accounts:", error);
+    console.error("Error fetching activities for user:", error);
     throw error;
   }
 }
+
 
 
 //======================================
