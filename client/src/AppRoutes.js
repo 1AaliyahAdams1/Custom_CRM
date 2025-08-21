@@ -224,7 +224,7 @@ const AppRoutes = () => {
       <Route
         path="/rolemanagement"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.reports}>
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.roles}>
             <RoleManagement />
           </PrivateRoute>
         }

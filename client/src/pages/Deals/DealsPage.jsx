@@ -27,7 +27,7 @@ const dealsTableConfig = {
     { field: 'SymbolValue', headerName: 'Amount' },
     { field: 'LocalName', headerName: 'Currency symbol' },
     { field: 'CloseDate', headerName: 'Close Date', type: 'date' },
-    { field: 'Probability', headerName: 'Probability (%)', type: 'percentage' },
+    { field: 'Progression', headerName: 'Probability (%)', type: 'percentage' },
     {
       field: 'CreatedAt',
       headerName: 'Created',

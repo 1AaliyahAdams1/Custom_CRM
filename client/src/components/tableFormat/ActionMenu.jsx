@@ -35,68 +35,64 @@ const ActionMenu = ({
     onClose();
   };
 
-  // Memoized visible items to prevent flash
+  // Determine visible items
   const visibleItems = useMemo(() => {
     const defaultItems = [
       {
         label: 'Assign User',
-        icon: <PersonAdd sx={{ mr: 1 }} />,
+        icon: <PersonAdd sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onAssignUser),
         show: entityType === 'account' && !!onAssignUser && hasRole('C-level'),
       },
       {
         label: 'Claim Account',
-        icon: <Business sx={{ mr: 1 }} />,
+        icon: <Business sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onClaimAccount),
-        show: entityType === 'account'
-          && !!onClaimAccount
-          && hasRole('Sales Representative')
-          && menuRow?.ownerStatus !== 'owned',
-        sx: { color: '#f59e0b' },
+        show:
+          entityType === 'account' &&
+          !!onClaimAccount &&
+          hasRole('Sales Representative') &&
+          menuRow?.ownerStatus !== 'owned',
       },
       {
         label: 'View Details',
-        icon: <Info sx={{ mr: 1 }} />,
+        icon: <Info sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onView),
         show: !!onView,
       },
       {
         label: 'Edit',
-        icon: <Edit sx={{ mr: 1 }} />,
+        icon: <Edit sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onEdit),
         show: !!onEdit,
       },
       {
         label: 'Add Notes',
-        icon: <Note sx={{ mr: 1 }} />,
+        icon: <Note sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onAddNote),
         show: !!onAddNote,
-        sx: { color: '#2563eb' },
       },
       {
         label: 'Add Attachments',
-        icon: <AttachFile sx={{ mr: 1 }} />,
+        icon: <AttachFile sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onAddAttachment),
         show: !!onAddAttachment,
-        sx: { color: '#059669' },
       },
       {
         label: 'Delete',
-        icon: <Delete sx={{ mr: 1 }} />,
+        icon: <Delete sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(() => onDelete(menuRow[idField])),
         show: !!onDelete,
-        sx: { color: '#dc2626' },
-        disabled: menuRow => menuRow?.Active === false,
+        disabled: (menuRow) => menuRow?.Active === false,
       },
     ];
 
-    const items = menuItems.length > 0 ? menuItems : defaultItems;
+    const itemsToUse = menuItems.length > 0 ? menuItems : defaultItems;
 
-    // Filter visible once
-    return items.filter(item => item.show !== false);
+    return itemsToUse.filter((item) => item.show !== false);
   }, [
-    menuRow,
     entityType,
+    menuRow,
     onView,
     onEdit,
     onDelete,
@@ -116,7 +112,7 @@ const ActionMenu = ({
           key={idx}
           onClick={item.onClick}
           disabled={typeof item.disabled === 'function' ? item.disabled(menuRow) : item.disabled}
-          sx={item.sx}
+          sx={{ ...item.sx }}
         >
           {item.icon}
           {item.label}
