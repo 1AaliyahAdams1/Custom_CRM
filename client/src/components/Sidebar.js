@@ -27,6 +27,7 @@ import {
   ChevronRight,
   BarChart as BarChartIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
+  Inventory as InventoryIcon,
 
 } from "@mui/icons-material";
 
@@ -66,6 +67,12 @@ const navigation = [
     href: "/activities",
     icon: EventIcon,
     accessKey: "activities",
+  },
+  {
+    name: "Products",
+    href: "/products",
+    icon: InventoryIcon,
+    accessKey: "products",
   },
   {
     name: "Work Page",

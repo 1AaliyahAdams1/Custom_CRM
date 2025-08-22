@@ -26,4 +26,7 @@ export const ROUTE_ACCESS = {
   reports: ["C-level", "Sales Manager"],
 
   smartWork: ["C-level", "Sales Manager", "Sales Representative"],
+
+  products: ["C-level", "Sales Manager", "Sales Representative"],
+  productsCreate: ["C-level", "Sales Manager"],
 };
