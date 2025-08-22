@@ -230,7 +230,7 @@ const NotesPopup = ({
             fullWidth
             variant="outlined"
             error={!!validationError}
-            helperText={`${noteContent.length}/${maxLength} characters`}
+            helpertext={`${noteContent.length}/${maxLength} characters`}
             disabled={loading || localLoading}
           />
         </Box>
