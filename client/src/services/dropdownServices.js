@@ -11,6 +11,7 @@ export const stateProvinceService = {
       return [];
     }
   },
+
   getByCountry: async (countryId) => {
     try {
       const response = await api.get('/states', {
@@ -19,6 +20,32 @@ export const stateProvinceService = {
       return response.data || [];
     } catch (error) {
       console.error('Error loading state/provinces by country:', error);
+      return [];
+    }
+  },
+
+  // Enhanced method for filtering by country
+  getAllFiltered: async (countryId = null) => {
+    try {
+      const response = await api.get('/states');
+      const allStates = response.data || [];
+
+      console.log("countryId for filtering",countryId)
+
+      if (!countryId) {
+        return allStates;
+      }
+
+      // Filter states by country - assuming the state objects have CountryID or similar field
+      console.log("countryId for filtering",countryId)
+      console.log("allstates for filtering",allStates)
+      return allStates.filter(state =>
+        state.CountryID === parseInt(countryId) ||
+        state.countryId === parseInt(countryId) ||
+        state.country_id === parseInt(countryId)
+      );
+    } catch (error) {
+      console.error('Error loading filtered state/provinces:', error);
       return [];
     }
   },
@@ -45,6 +72,39 @@ export const cityService = {
       return response.data || [];
     } catch (error) {
       console.error('Error loading cities:', error);
+      return [];
+    }
+  },
+  // Enhanced method for filtering by state/province and country
+  getAllFiltered: async (stateProvinceId = null, countryId = null) => {
+    try {
+      const response = await api.get('/cities');
+      const allCities = response.data || [];
+
+      if (!stateProvinceId && !countryId) {
+        return allCities;
+      }
+
+      return allCities.filter(city => {
+        // First check state/province match (most specific)
+        if (stateProvinceId) {
+          console.log("stateProvinceId for filtering",stateProvinceId)
+          return city.StateProvinceID === parseInt(stateProvinceId) ||
+            city.stateProvinceId === parseInt(stateProvinceId) ||
+            city.state_province_id === parseInt(stateProvinceId);
+        }
+
+        // Fall back to country match if no state/province specified
+        if (countryId) {
+          return city.CountryID === parseInt(countryId) ||
+            city.countryId === parseInt(countryId) ||
+            city.country_id === parseInt(countryId);
+        }
+
+        return true;
+      });
+    } catch (error) {
+      console.error('Error loading filtered cities:', error);
       return [];
     }
   },

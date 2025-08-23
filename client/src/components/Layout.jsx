@@ -10,20 +10,22 @@ const Layout = ({ children }) => {
   const showLayout = !hideLayout && user;
 
   return (
-    <>
-      {showLayout && <Header />}
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
       {showLayout && <Sidebar />}
-      <main
-        style={{
-          marginLeft: showLayout ? "40px" : 0,
-          marginRight: showLayout ? "40px" : 0,
-          marginTop: showLayout ? "40px" : 0,
-          padding: "20px",
-        }}
-      >
-        {children}
-      </main>
-    </>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {showLayout && <Header />}
+        <main
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '20px',
+            backgroundColor: '#fafafa',
+          }}
+        >
+          {children}
+        </main>
+      </div>
+    </div>
   );
 };
 

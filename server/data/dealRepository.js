@@ -230,23 +230,34 @@ async function getDealsByUser(userId) {
     const result = await pool.request()
       .input("UserID", sql.Int, userId)
       .query(`
-        SELECT
-          d.[DealID],
-          d.[AccountID],
-          d.[DealStageID],
-          d.[DealName],
-          d.[Value],
-          d.[CloseDate],
-          d.[Probability],
-          d.[CurrencyID],
-          d.[CreatedAt],
-          d.[UpdatedAt],
-          d.[Active]
-        FROM [CRM].[dbo].[Deal] d
-        JOIN [CRM].[dbo].[AssignedUser] au ON d.AccountID = au.AccountID AND au.Active = 1
-        JOIN [CRM].[dbo].[Account] a ON d.AccountID = a.AccountID AND a.Active = 1
-        WHERE au.UserID = @UserID
-          AND d.Active = 1;
+SELECT
+    d.[DealID],
+    d.[DealName],
+    d.[AccountID],
+    a.[AccountName],              
+    d.[DealStageID],
+    ds.[StageName],            
+    d.[Value],
+    c.[Symbol],               
+    c.LocalName,
+    c.[Prefix],                    
+    d.[CloseDate],
+    d.[Probability] AS Progression,
+    d.[CreatedAt],
+    d.[UpdatedAt],
+    d.[Active]
+FROM [CRM].[dbo].[Deal] d
+JOIN [CRM].[dbo].[AssignedUser] au 
+    ON d.AccountID = au.AccountID AND au.Active = 1
+JOIN [CRM].[dbo].[Account] a 
+    ON d.AccountID = a.AccountID AND a.Active = 1
+LEFT JOIN [CRM].[dbo].[DealStage] ds 
+    ON d.DealStageID = ds.DealStageID
+LEFT JOIN [CRM].[dbo].[Currency] c 
+    ON d.CurrencyID = c.CurrencyID
+WHERE au.UserID = @UserID
+  AND d.Active = 1;
+
       `);
 
     return result.recordset;

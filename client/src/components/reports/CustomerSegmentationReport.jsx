@@ -11,136 +11,53 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Paper,
   CircularProgress,
   Alert,
-  LinearProgress
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { getCustomerSegmentationReport } from '../../services/reportService';
 
 const CustomerSegmentationReport = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [segmentationData, setSegmentationData] = useState({
-    segments: [],
-    industries: [],
-    totalCustomers: 0,
-    totalRevenue: 0,
-    topSegment: '',
-    growthLeader: ''
-  });
+  const [segmentationData, setSegmentationData] = useState(null);
+  const [segmentType, setSegmentType] = useState('Industry');
 
-  // Fetch data on component mount
+  const segmentTypes = [
+    { value: 'Industry', label: 'Industry' },
+    { value: 'Size', label: 'Company Size' },
+    { value: 'Country', label: 'Country' },
+    { value: 'StateProvince', label: 'State/Province' },
+    { value: 'City', label: 'City' }
+  ];
+
+  // Fetch data when component mounts or segmentType changes
   useEffect(() => {
     const fetchSegmentationData = async () => {
       try {
         setLoading(true);
-        const data = await getCustomerSegmentationReport();
+        setError(null);
+        const data = await getCustomerSegmentationReport(segmentType);
+        console.log('Segmentation API Response:', data);
         setSegmentationData(data);
       } catch (err) {
+        console.error('Segmentation API Error:', err);
         setError('Failed to load customer segmentation data');
-        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchSegmentationData();
-  }, []);
+  }, [segmentType]);
 
-  // Default data for development/fallback
-  const defaultSegments = [
-    {
-      id: 1,
-      segment: "Enterprise",
-      customerCount: 45,
-      avgDealSize: 125000,
-      totalRevenue: 5625000,
-      growthRate: 15.2,
-      tier: "high"
-    },
-    {
-      id: 2,
-      segment: "Mid-Market",
-      customerCount: 128,
-      avgDealSize: 45000,
-      totalRevenue: 5760000,
-      growthRate: 8.7,
-      tier: "medium"
-    },
-    {
-      id: 3,
-      segment: "Small Business",
-      customerCount: 324,
-      avgDealSize: 12000,
-      totalRevenue: 3888000,
-      growthRate: 22.1,
-      tier: "high"
-    },
-    {
-      id: 4,
-      segment: "Startup",
-      customerCount: 89,
-      avgDealSize: 8500,
-      totalRevenue: 756500,
-      growthRate: -3.2,
-      tier: "low"
-    }
-  ];
-
-  const defaultIndustries = [
-    { name: "Technology", percentage: 35, customers: 198 },
-    { name: "Healthcare", percentage: 22, customers: 127 },
-    { name: "Finance", percentage: 18, customers: 104 },
-    { name: "Manufacturing", percentage: 15, customers: 87 },
-    { name: "Retail", percentage: 10, customers: 70 }
-  ];
-
-  // Use API data if available, otherwise use default data
-  
-  const segments = (segmentationData.segments && segmentationData.segments.length > 0)
-    ? segmentationData.segments
-    : defaultSegments;
-  const industries = (segmentationData.industries && segmentationData.industries.length > 0)
-    ? segmentationData.industries
-    : defaultIndustries;
-
-  const getTierChip = (tier) => {
-    const tierColors = {
-      high: { bg: '#e8f5e8', color: '#2e7d32' },
-      medium: { bg: '#fff3cd', color: '#f57c00' },
-      low: { bg: '#ffebee', color: '#d32f2f' }
-    };
-
-    const colors = tierColors[tier] || { bg: '#f5f5f5', color: '#616161' };
-    const label = tier === 'high' ? 'High Value' : tier === 'medium' ? 'Medium Value' : 'Low Value';
-
-    return (
-      <Chip
-        label={label}
-        sx={{
-          backgroundColor: colors.bg,
-          color: colors.color,
-          fontWeight: 500,
-        }}
-        size="small"
-      />
-    );
+  const handleSegmentTypeChange = (event) => {
+    setSegmentType(event.target.value);
   };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
-  // Calculate totals
-  const totalCustomers = segmentationData.totalCustomers || segments.reduce((sum, segment) => sum + segment.customerCount, 0);
-  const totalRevenue = segmentationData.totalRevenue || segments.reduce((sum, segment) => sum + segment.totalRevenue, 0);
-  const topSegment = segmentationData.topSegment || "Mid-Market";
-  const growthLeader = segmentationData.growthLeader || "Small Business";
 
   if (loading) {
     return (
@@ -158,56 +75,156 @@ const CustomerSegmentationReport = () => {
     );
   }
 
-  
-return (
-  <Card sx={{ height: 'fit-content' }}>
-    <CardContent>
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-        Segments by Size
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Customer segments and their performance metrics
-      </Typography>
-      
-      <TableContainer component={Paper} variant="outlined">
-        <Table size="small">
-          <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell sx={{ fontWeight: 600 }}>Segment</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Customers</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Avg Deal</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Growth</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Tier</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {segments.map((segment) => (
-              <TableRow key={segment.id} hover>
-                <TableCell sx={{ fontWeight: 500 }}>
-                  {segment.segment}
-                </TableCell>
-                <TableCell>{segment.customerCount}</TableCell>
-                <TableCell>{formatCurrency(segment.avgDealSize)}</TableCell>
-                <TableCell>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: segment.growthRate >= 0 ? '#2e7d32' : '#d32f2f',
-                      fontWeight: 500
-                    }}
-                  >
-                    {segment.growthRate >= 0 ? '+' : ''}{segment.growthRate}%
-                  </Typography>
-                </TableCell>
-                <TableCell>{getTierChip(segment.tier)}</TableCell>
-              </TableRow>
+  if (!segmentationData || !segmentationData.data || segmentationData.data.length === 0) {
+    return (
+      <Box>
+        <Alert severity="info">No segmentation data available for {segmentType}</Alert>
+      </Box>
+    );
+  }
+
+  const { data: segments, summary, segmentTypeInfo } = segmentationData;
+
+  return (
+    <Box>
+      {/* Segment Type Selector */}
+      <Box sx={{ mb: 3 }}>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>Segment Type</InputLabel>
+          <Select
+            value={segmentType}
+            label="Segment Type"
+            onChange={handleSegmentTypeChange}
+          >
+            {segmentTypes.map((type) => (
+              <MenuItem key={type.value} value={type.value}>
+                {type.label}
+              </MenuItem>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </CardContent>
-  </Card>
-);
+          </Select>
+        </FormControl>
+      </Box>
+
+      {/* Summary Cards */}
+      {summary && (
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="text.secondary" gutterBottom>
+                  Total Customers
+                </Typography>
+                <Typography variant="h4" component="div">
+                  {summary.totalCustomers || 0}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="text.secondary" gutterBottom>
+                  Total Segments
+                </Typography>
+                <Typography variant="h4" component="div">
+                  {summary.segmentCount || 0}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="text.secondary" gutterBottom>
+                  Largest Segment
+                </Typography>
+                <Typography variant="h6" component="div" sx={{ fontSize: '1.2rem' }}>
+                  {summary.largestSegment ? summary.largestSegment.segment : 'N/A'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {summary.largestSegment ? `${summary.largestSegment.customerCount} customers` : 'N/A'}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="text.secondary" gutterBottom>
+                  Avg per Segment
+                </Typography>
+                <Typography variant="h4" component="div">
+                  {summary.formattedAverageCustomersPerSegment || Math.round(summary.averageCustomersPerSegment || 0)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
+      {/* Segment Type Information */}
+      {segmentTypeInfo && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              About {segmentType} Segmentation
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {segmentTypeInfo.description}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Use Case:</strong> {segmentTypeInfo.useCase}
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Segments Table */}
+      <Card sx={{ height: 'fit-content' }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Customer Segments by {segmentType}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Distribution of customers across different {segmentType.toLowerCase()} segments
+          </Typography>
+          
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>{segmentType}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Customer Count</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Percentage</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {segments.map((segment, index) => (
+                  <TableRow key={index} hover>
+                    <TableCell sx={{ fontWeight: 500 }}>
+                      {segment.segment}
+                    </TableCell>
+                    <TableCell>{segment.customerCount}</TableCell>
+                    <TableCell>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#2e7d32',
+                          fontWeight: 500
+                        }}
+                      >
+                        {segment.formattedPercentage || `${segment.percentage?.toFixed(1)}%`}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+    </Box>
+  );
 };
 
 export default CustomerSegmentationReport;

@@ -1,5 +1,5 @@
 // src/AppRoutes.jsx
-import React, { lazy } from "react";
+import { lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import PrivateRoute from "./components/auth/PrivateRoute";
@@ -9,30 +9,29 @@ import { ROUTE_ACCESS } from "./utils/auth/routesAccess";
 import Unauthorized from "./pages/Unauthorized";
 
 // Lazy load pages
-// const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Accounts = lazy(() => import("./components/containers/AccountsContainer"));
 const Contacts = lazy(() => import("./components/containers/ContactsContainer"));
-const Deals = lazy(() => import("./pages/DealsPage"));
-const Activities = lazy(() => import("./pages/ActivitiesPage"));
+const Deals = lazy(() => import("./components/containers/DealsContainer"));
+const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
 const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
+const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 
+const AccountsDetailsPage = lazy(() => import("./pages/Accounts/AccountsDetailsPage"));
+const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsPage"));
+const DealsDetailsPage = lazy(() => import("./pages/Deals/DealsDetailsPage"));
+const ActivitiesDetailsPage = lazy(() => import("./pages/Activities/ActivitiesDetailsPage"));
 
+const CreateAccountPage = lazy(() => import("./pages/Accounts/CreateAccountPage"));
+const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPage"));
+const CreateDealPage = lazy(() => import("./pages/Deals/CreateDealPage"));
+const CreateActivitiesPage = lazy(() => import("./pages/Activities/CreateActivitiesPage"));
 
-const AccountsDetailsPage = lazy(() => import("./pages/AccountsDetailsPage"));
-const ContactsDetailsPage = lazy(() => import("./pages/ContactsDetailsPage"));
-const DealsDetailsPage = lazy(() => import("./pages/DealsDetailsPage"));
-const ActivitiesDetailsPage = lazy(() => import("./pages/ActivitiesDetailsPage"));
-
-const CreateAccountPage = lazy(() => import("./pages/CreateAccountPage"));
-const CreateContactsPage = lazy(() => import("./pages/CreateContactsPage"));
-const CreateDealPage = lazy(() => import("./pages/CreateDealPage"));
-const CreateActivitiesPage = lazy(() => import("./pages/CreateActivitiesPage"));
-
-const EditAccountPage = lazy(() => import("./pages/EditAccountPage"));
-const EditContactPage = lazy(() => import("./pages/EditContactPage"));
-const EditDealPage = lazy(() => import("./pages/EditDealPage"));
-const EditActivityPage = lazy(() => import("./pages/EditActivityPage"));
+const EditAccountPage = lazy(() => import("./pages/Accounts/EditAccountPage"));
+const EditContactPage = lazy(() => import("./pages/Contacts/EditContactPage"));
+const EditDealPage = lazy(() => import("./pages/Deals/EditDealPage"));
+const EditActivityPage = lazy(() => import("./pages/Activities/EditActivityPage"));
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
@@ -47,7 +46,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* Protected routes with dynamic allowedRoles from ROUTE_ACCESS
+      {/* Protected routes with dynamic allowedRoles from ROUTE_ACCESS */}
       <Route
         path="/dashboard"
         element={
@@ -55,7 +54,7 @@ const AppRoutes = () => {
             <Dashboard />
           </PrivateRoute>
         }
-      /> */}
+      />
 
       {/* --- Accounts Routes --- */}
       <Route
@@ -100,7 +99,7 @@ const AppRoutes = () => {
             <EditAccountPage />
           </PrivateRoute>
         }
-        
+
       />
       {/* --- Contacts Routes --- */}
       <Route
@@ -135,7 +134,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-        {/* --- Deal Routes --- */}
+      {/* --- Deal Routes --- */}
       <Route
         path="/deals"
         element={
@@ -168,7 +167,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-        {/* --- Activity Routes --- */}
+      {/* --- Activity Routes --- */}
       <Route
         path="/activities"
         element={
@@ -208,9 +207,9 @@ const AppRoutes = () => {
           <PrivateRoute allowedRoles={ROUTE_ACCESS.smartWork}>
             <SmartWorkPage />
           </PrivateRoute>
-        } 
-        />        
-      
+        }
+      />
+
       {/* --- Reports Routes --- */}
       <Route
         path="/reports"
@@ -220,9 +219,16 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      {/* --- Work Page Route --- */}
-           
+      {/* --- Role Management Route --- */}
 
+      <Route
+        path="/rolemanagement"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.roles}>
+            <RoleManagement />
+          </PrivateRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<NotFoundPage />} />
