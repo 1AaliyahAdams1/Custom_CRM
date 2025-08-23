@@ -75,7 +75,7 @@ app.use("/reports", reportRoutes);
 app.use("/countries", countryRoutes)
 app.use("/auth", authRoutes);
 app.use("/sequences", sequenceRoutes);
-app.use('/work-page', workRoutes);
+app.use('/work', workRoutes);
 app.use("/attachments", attachmentRoutes);
 app.use('/assign', assignUserRoutes);
 app.use("/employees", employeeRoutes);
