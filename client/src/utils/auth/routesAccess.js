@@ -29,4 +29,10 @@ export const ROUTE_ACCESS = {
 
   products: ["C-level", "Sales Manager", "Sales Representative"],
   productsCreate: ["C-level", "Sales Manager"],
+
+  country : ["C-level", "Sales Manager", "Sales Representative"],
+  countryCreate : ["C-level", "Sales Manager"],
+
+  city: ["C-level", "Sales Manager", "Sales Representative"],
+  cityCreate: ["C-level", "Sales Manager"],
 };
