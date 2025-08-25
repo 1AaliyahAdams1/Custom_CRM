@@ -27,9 +27,13 @@ import {
   ChevronRight,
   BarChart as BarChartIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
+  Inventory as InventoryIcon,
+  Flag as FlagIcon,
+ 
 
 } from "@mui/icons-material";
-
+import LocationCityIcon from '@mui/icons-material/LocationCity';
+import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { useAuth } from "../hooks/auth/useAuth";
 import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
 
@@ -59,6 +63,12 @@ const navigation = [
     icon: HandshakeIcon,
     accessKey: "deals",
   },
+  {
+    name: "Deal Stages",
+    href: "/deal-stages",
+    icon: HandshakeIcon,
+    accessKey: "dealStage",
+  },
 
 
   {
@@ -66,6 +76,18 @@ const navigation = [
     href: "/activities",
     icon: EventIcon,
     accessKey: "activities",
+  },
+  {
+    name: "Activity Types",
+    href: "/activity-types",
+    icon: EventIcon,
+    accessKey: "activityTypes",
+  },
+  {
+    name: "Products",
+    href: "/products",
+    icon: InventoryIcon,
+    accessKey: "products",
   },
   {
     name: "Work Page",
@@ -80,10 +102,40 @@ const navigation = [
     accessKey: "reports",
   },
   {
+    name: "Countries",
+    href: "/country",
+    icon: FlagIcon,
+    accessKey: 'country',
+  },
+  {
+    name:" Cities",
+    href: "/city",
+    icon: LocationCityIcon,
+    accessKey: 'city',
+  },
+  {
+    name: "State/Province",
+    href: "/state-province",
+    icon: LocationCityIcon,
+    accessKey: 'stateProvince',
+  },
+  {
+    name: "Industry",
+    href: "/industry",
+    icon: BusinessIcon,
+    accessKey: 'industry',
+  },
+  {
     name: "Role Management",
     href: "/rolemanagement",
     icon: AdminPanelSettingsIcon,
     accessKey: 'roles',
+  },
+  { 
+    name: "Priority Levels",
+    href: "/priority-levels", 
+    icon: PriorityHighIcon,
+    accessKey: 'priority',
   },
 
   {
