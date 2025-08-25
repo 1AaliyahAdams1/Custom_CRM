@@ -14,10 +14,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   FormControlLabel,
   Switch,
   IconButton,
@@ -39,9 +35,8 @@ import TableView from '../../components/tableFormat/TableView';
 import theme from "../../components/Theme";
 import { formatters } from '../../utils/formatters';
 
-const StateProvincePage = ({
-  statesProvinces = [],
-  countries = [], // For dropdown in add state/province popup
+const ActivityTypePage = ({
+  activityTypes = [],
   loading = false,
   error,
   setError,
@@ -69,7 +64,7 @@ const StateProvincePage = ({
   setNotesPopupOpen,
   attachmentsPopupOpen,
   setAttachmentsPopupOpen,
-  selectedStateProvince,
+  selectedActivityType,
   popupLoading,
   popupError,
   handleSaveNote,
@@ -79,72 +74,73 @@ const StateProvincePage = ({
   handleDeleteAttachment,
   handleDownloadAttachment,
 }) => {
-  // Add State/Province Dialog State
-  const [addStateProvinceDialogOpen, setAddStateProvinceDialogOpen] = useState(false);
-  const [newStateProvince, setNewStateProvince] = useState({
-    StateProvince_Name: '',
-    CountryID: '',
-    Active: true
+  // Add Activity Type Dialog State
+  const [addActivityTypeDialogOpen, setAddActivityTypeDialogOpen] = useState(false);
+  const [newActivityType, setNewActivityType] = useState({
+    TypeName: '',
+    Description: '',
+    IsActive: true
   });
-  const [addStateProvinceLoading, setAddStateProvinceLoading] = useState(false);
+  const [addActivityTypeLoading, setAddActivityTypeLoading] = useState(false);
 
   const columns = [
-    { field: 'StateProvince_Name', headerName: 'State/Province Name', type: 'tooltip', defaultVisible: true },
-    { field: 'CountryName', headerName: 'Country', defaultVisible: true },
+    { field: 'TypeName', headerName: 'Type Name', type: 'tooltip', defaultVisible: true },
+    { field: 'Description', headerName: 'Description', type: 'tooltip', defaultVisible: true },
     { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
     {
-      field: 'Active',
+      field: 'IsActive',
       headerName: 'Status',
       type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999' },
+      chipLabels: { true: 'Active', false: 'Inactive', 1: 'Active', 0: 'Inactive' },
+      chipColors: { true: '#079141ff', false: '#999999', 1: '#079141ff', 0: '#999999' },
       defaultVisible: true,
     },
   ];
 
-  // Enhanced menu items for states/provinces
-  const getMenuItems = (stateProvince) => {
+  // Enhanced menu items for activity types
+  const getMenuItems = (activityType) => {
     const baseItems = [
       {
         label: 'View Details',
         icon: <InfoIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onView && onView(stateProvince),
+        onClick: () => onView && onView(activityType),
         show: !!onView,
       },
       {
         label: 'Edit',
         icon: <EditIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onEdit && onEdit(stateProvince),
+        onClick: () => onEdit && onEdit(activityType),
         show: !!onEdit,
       },
       {
         label: 'Add Notes',
         icon: <NoteIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onAddNote && onAddNote(stateProvince),
+        onClick: () => onAddNote && onAddNote(activityType),
         show: !!onAddNote,
       },
       {
         label: 'Add Attachments',
         icon: <AttachFileIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onAddAttachment && onAddAttachment(stateProvince),
+        onClick: () => onAddAttachment && onAddAttachment(activityType),
         show: !!onAddAttachment,
       },
     ];
 
     // Add reactivate/deactivate based on current status
-    if (stateProvince.Active) {
+    const isActive = activityType.IsActive === true || activityType.IsActive === 1;
+    if (isActive) {
       baseItems.push({
         label: 'Deactivate',
         icon: <PowerOffIcon sx={{ mr: 1, color: '#ff9800' }} />,
-        onClick: () => onDeactivate && onDeactivate(stateProvince.StateProvinceID),
+        onClick: () => onDeactivate && onDeactivate(activityType.TypeID),
         show: !!onDeactivate,
       });
     } else {
       baseItems.push({
         label: 'Reactivate',
         icon: <PowerIcon sx={{ mr: 1, color: '#4caf50' }} />,
-        onClick: () => onReactivate && onReactivate(stateProvince.StateProvinceID),
+        onClick: () => onReactivate && onReactivate(activityType.TypeID),
         show: !!onReactivate,
       });
     }
@@ -153,75 +149,81 @@ const StateProvincePage = ({
     baseItems.push({
       label: 'Delete',
       icon: <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />,
-      onClick: () => onDelete && onDelete(stateProvince.StateProvinceID),
+      onClick: () => onDelete && onDelete(activityType.TypeID),
       show: !!onDelete,
     });
 
     return baseItems;
   };
 
-  // Custom formatters for state/province-specific fields
-  const stateProvinceFormatters = {
+  // Custom formatters for activity type-specific fields
+  const activityTypeFormatters = {
     ...formatters,
-    Active: (value) => {
+    IsActive: (value) => {
+      const isActive = value === true || value === 1;
       return (
         <Chip
-          label={value ? 'Active' : 'Inactive'}
+          label={isActive ? 'Active' : 'Inactive'}
           size="small"
           sx={{
-            backgroundColor: value ? '#079141ff' : '#999999',
+            backgroundColor: isActive ? '#079141ff' : '#999999',
             color: '#fff',
             fontWeight: 500,
           }}
         />
       );
     },
-    CountryName: (value) => {
-      return value || 'N/A';
+    Description: (value) => {
+      return value || 'No description';
     }
   };
 
-  // Handle Add State/Province Dialog
-  const handleOpenAddStateProvinceDialog = () => {
-    setAddStateProvinceDialogOpen(true);
-    setNewStateProvince({
-      StateProvince_Name: '',
-      CountryID: '',
-      Active: true
+  // Handle Add Activity Type Dialog
+  const handleOpenAddActivityTypeDialog = () => {
+    setAddActivityTypeDialogOpen(true);
+    setNewActivityType({
+      TypeName: '',
+      Description: '',
+      IsActive: true
     });
   };
 
-  const handleCloseAddStateProvinceDialog = () => {
-    setAddStateProvinceDialogOpen(false);
-    setNewStateProvince({
-      StateProvince_Name: '',
-      CountryID: '',
-      Active: true
+  const handleCloseAddActivityTypeDialog = () => {
+    setAddActivityTypeDialogOpen(false);
+    setNewActivityType({
+      TypeName: '',
+      Description: '',
+      IsActive: true
     });
   };
 
-  const handleAddStateProvince = async () => {
-    if (!newStateProvince.StateProvince_Name.trim() || !newStateProvince.CountryID) {
-      setError && setError('State/Province name and country are required');
+  const handleAddActivityType = async () => {
+    if (!newActivityType.TypeName.trim()) {
+      setError && setError('Activity type name is required');
       return;
     }
 
-    setAddStateProvinceLoading(true);
+    if (!newActivityType.Description.trim()) {
+      setError && setError('Activity type description is required');
+      return;
+    }
+
+    setAddActivityTypeLoading(true);
     try {
       if (onCreate) {
-        await onCreate(newStateProvince);
-        handleCloseAddStateProvinceDialog();
-        setSuccessMessage && setSuccessMessage('State/Province added successfully');
+        await onCreate(newActivityType);
+        handleCloseAddActivityTypeDialog();
+        setSuccessMessage && setSuccessMessage('Activity type added successfully');
       }
     } catch (error) {
-      setError && setError('Failed to add state/province');
+      setError && setError('Failed to add activity type');
     } finally {
-      setAddStateProvinceLoading(false);
+      setAddActivityTypeLoading(false);
     }
   };
 
   const handleInputChange = (field, value) => {
-    setNewStateProvince(prev => ({
+    setNewActivityType(prev => ({
       ...prev,
       [field]: value
     }));
@@ -261,7 +263,7 @@ const StateProvincePage = ({
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
               <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
-                States/Provinces
+                Activity Types
               </Typography>
               {selected.length > 0 && (
                 <Chip 
@@ -275,9 +277,9 @@ const StateProvincePage = ({
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={handleOpenAddStateProvinceDialog}
+                onClick={handleOpenAddActivityTypeDialog}
               >
-                Add State/Province
+                Add Activity Type
               </Button>
               {selected.length > 0 && (
                 <Button
@@ -297,9 +299,9 @@ const StateProvincePage = ({
             </Box>
           ) : (
             <TableView
-              data={statesProvinces}
+              data={activityTypes}
               columns={columns}
-              idField="StateProvinceID"
+              idField="TypeID"
               selected={selected}
               onSelectClick={onSelectClick}
               onSelectAllClick={onSelectAllClick}
@@ -310,8 +312,8 @@ const StateProvincePage = ({
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
               onAssignUser={onAssignUser}
-              formatters={stateProvinceFormatters}
-              entityType="stateProvince"
+              formatters={activityTypeFormatters}
+              entityType="activityType"
               getMenuItems={getMenuItems}
             />
           )}
@@ -325,7 +327,7 @@ const StateProvincePage = ({
             alignItems: 'center' 
           }}>
             <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {statesProvinces.length} states/provinces
+              Showing {activityTypes.length} activity types
             </Typography>
             {selected.length > 0 && (
               <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
@@ -335,10 +337,10 @@ const StateProvincePage = ({
           </Box>
         </Paper>
 
-        {/* Add State/Province Dialog */}
+        {/* Add Activity Type Dialog */}
         <Dialog 
-          open={addStateProvinceDialogOpen} 
-          onClose={handleCloseAddStateProvinceDialog}
+          open={addActivityTypeDialogOpen} 
+          onClose={handleCloseAddActivityTypeDialog}
           maxWidth="sm"
           fullWidth
         >
@@ -348,43 +350,42 @@ const StateProvincePage = ({
             alignItems: 'center',
             borderBottom: '1px solid #e5e5e5'
           }}>
-            Add New State/Province
-            <IconButton onClick={handleCloseAddStateProvinceDialog} size="small">
+            Add New Activity Type
+            <IconButton onClick={handleCloseAddActivityTypeDialog} size="small">
               <CloseIcon />
             </IconButton>
           </DialogTitle>
           <DialogContent sx={{ pt: 3 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <TextField
-                label="State/Province Name"
-                value={newStateProvince.StateProvince_Name}
-                onChange={(e) => handleInputChange('StateProvince_Name', e.target.value)}
+                label="Activity Type Name"
+                value={newActivityType.TypeName}
+                onChange={(e) => handleInputChange('TypeName', e.target.value)}
                 fullWidth
                 required
                 variant="outlined"
-                helperText="Enter the full name of the state or province"
+                helperText="Enter the name of the activity type (e.g., Call, Email, Meeting)"
+                inputProps={{ maxLength: 50 }}
               />
 
-              <FormControl fullWidth required>
-                <InputLabel>Country</InputLabel>
-                <Select
-                  value={newStateProvince.CountryID}
-                  onChange={(e) => handleInputChange('CountryID', e.target.value)}
-                  label="Country"
-                >
-                  {countries.map((country) => (
-                    <MenuItem key={country.CountryID} value={country.CountryID}>
-                      {country.CountryName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <TextField
+                label="Description"
+                value={newActivityType.Description}
+                onChange={(e) => handleInputChange('Description', e.target.value)}
+                fullWidth
+                required
+                multiline
+                rows={3}
+                variant="outlined"
+                helperText="Enter a description for this activity type"
+                inputProps={{ maxLength: 255 }}
+              />
 
               <FormControlLabel
                 control={
                   <Switch
-                    checked={newStateProvince.Active}
-                    onChange={(e) => handleInputChange('Active', e.target.checked)}
+                    checked={newActivityType.IsActive}
+                    onChange={(e) => handleInputChange('IsActive', e.target.checked)}
                     color="primary"
                   />
                 }
@@ -393,15 +394,15 @@ const StateProvincePage = ({
             </Box>
           </DialogContent>
           <DialogActions sx={{ p: 3, borderTop: '1px solid #e5e5e5' }}>
-            <Button onClick={handleCloseAddStateProvinceDialog} color="inherit">
+            <Button onClick={handleCloseAddActivityTypeDialog} color="inherit">
               Cancel
             </Button>
             <Button
-              onClick={handleAddStateProvince}
+              onClick={handleAddActivityType}
               variant="contained"
-              disabled={addStateProvinceLoading || !newStateProvince.StateProvince_Name.trim() || !newStateProvince.CountryID}
+              disabled={addActivityTypeLoading || !newActivityType.TypeName.trim() || !newActivityType.Description.trim()}
             >
-              {addStateProvinceLoading ? <CircularProgress size={20} /> : 'Add State/Province'}
+              {addActivityTypeLoading ? <CircularProgress size={20} /> : 'Add Activity Type'}
             </Button>
           </DialogActions>
         </Dialog>
@@ -426,4 +427,4 @@ const StateProvincePage = ({
   );
 };
 
-export default StateProvincePage;
+export default ActivityTypePage;

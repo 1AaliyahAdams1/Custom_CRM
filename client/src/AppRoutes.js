@@ -20,8 +20,14 @@ const ProductsContainer = lazy(() => import("./components/containers/ProductsCon
 const Reports = lazy(() => import("./pages/ReportsPage"));
 const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
 const RoleManagement = lazy(() => import("./pages/RoleManagement"));
+
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
 const CityPage = lazy(() => import("./pages/City/CityPage"));
+const StateProvincePage = lazy(() => import("./pages/StateProvince/StateProvincePage"));
+const IndustryPage = lazy(() => import("./pages/Industry/IndustryPage"));
+const PriorityLevelsPage = lazy(() => import("./pages/PriorityLevelsPage"));
+const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
+const DealStagePage = lazy(() => import("./pages/Deals/DealStagePage"));
 
 const AccountsDetailsPage = lazy(() => import("./pages/Accounts/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsPage"));
@@ -175,6 +181,14 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/deal-stages"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealStage}>
+            <DealStagePage />
+          </PrivateRoute>
+        }
+      />
       {/* --- Activity Routes --- */}
       <Route
         path="/activities"
@@ -205,6 +219,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.activitiesEdit}>
             <EditActivityPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/activity-types"    
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activityTypes}>
+            <ActivityTypePage />
           </PrivateRoute>
         }
       />
@@ -251,7 +273,24 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      
+      {/* --- State/Province Routes --- */}
+      <Route
+        path="/state-province"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.stateProvince}>
+            <StateProvincePage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Industry Routes --- */}
+      <Route
+        path="/industry"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.industry}>
+            <IndustryPage />
+          </PrivateRoute>
+        }
+      />
       {/* --- Smart Work Routes --- */}
       <Route
         path="/smart-work"
@@ -271,6 +310,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      
       {/* --- Role Management Route --- */}
 
       <Route
@@ -278,6 +318,15 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.roles}>
             <RoleManagement />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Priority Levels Route --- */}
+      <Route
+        path="/priority-levels"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.priority}>
+            <PriorityLevelsPage />
           </PrivateRoute>
         }
       />

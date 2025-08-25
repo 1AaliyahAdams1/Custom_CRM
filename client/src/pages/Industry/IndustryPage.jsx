@@ -14,10 +14,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   FormControlLabel,
   Switch,
   IconButton,
@@ -39,9 +35,8 @@ import TableView from '../../components/tableFormat/TableView';
 import theme from "../../components/Theme";
 import { formatters } from '../../utils/formatters';
 
-const StateProvincePage = ({
-  statesProvinces = [],
-  countries = [], // For dropdown in add state/province popup
+const IndustryPage = ({
+  industries = [],
   loading = false,
   error,
   setError,
@@ -69,7 +64,7 @@ const StateProvincePage = ({
   setNotesPopupOpen,
   attachmentsPopupOpen,
   setAttachmentsPopupOpen,
-  selectedStateProvince,
+  selectedIndustry,
   popupLoading,
   popupError,
   handleSaveNote,
@@ -79,18 +74,16 @@ const StateProvincePage = ({
   handleDeleteAttachment,
   handleDownloadAttachment,
 }) => {
-  // Add State/Province Dialog State
-  const [addStateProvinceDialogOpen, setAddStateProvinceDialogOpen] = useState(false);
-  const [newStateProvince, setNewStateProvince] = useState({
-    StateProvince_Name: '',
-    CountryID: '',
+  // Add Industry Dialog State
+  const [addIndustryDialogOpen, setAddIndustryDialogOpen] = useState(false);
+  const [newIndustry, setNewIndustry] = useState({
+    IndustryName: '',
     Active: true
   });
-  const [addStateProvinceLoading, setAddStateProvinceLoading] = useState(false);
+  const [addIndustryLoading, setAddIndustryLoading] = useState(false);
 
   const columns = [
-    { field: 'StateProvince_Name', headerName: 'State/Province Name', type: 'tooltip', defaultVisible: true },
-    { field: 'CountryName', headerName: 'Country', defaultVisible: true },
+    { field: 'IndustryName', headerName: 'Industry Name', type: 'tooltip', defaultVisible: true },
     { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
     {
@@ -103,48 +96,48 @@ const StateProvincePage = ({
     },
   ];
 
-  // Enhanced menu items for states/provinces
-  const getMenuItems = (stateProvince) => {
+  // Enhanced menu items for industries
+  const getMenuItems = (industry) => {
     const baseItems = [
       {
         label: 'View Details',
         icon: <InfoIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onView && onView(stateProvince),
+        onClick: () => onView && onView(industry),
         show: !!onView,
       },
       {
         label: 'Edit',
         icon: <EditIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onEdit && onEdit(stateProvince),
+        onClick: () => onEdit && onEdit(industry),
         show: !!onEdit,
       },
       {
         label: 'Add Notes',
         icon: <NoteIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onAddNote && onAddNote(stateProvince),
+        onClick: () => onAddNote && onAddNote(industry),
         show: !!onAddNote,
       },
       {
         label: 'Add Attachments',
         icon: <AttachFileIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onAddAttachment && onAddAttachment(stateProvince),
+        onClick: () => onAddAttachment && onAddAttachment(industry),
         show: !!onAddAttachment,
       },
     ];
 
     // Add reactivate/deactivate based on current status
-    if (stateProvince.Active) {
+    if (industry.Active) {
       baseItems.push({
         label: 'Deactivate',
         icon: <PowerOffIcon sx={{ mr: 1, color: '#ff9800' }} />,
-        onClick: () => onDeactivate && onDeactivate(stateProvince.StateProvinceID),
+        onClick: () => onDeactivate && onDeactivate(industry.IndustryID),
         show: !!onDeactivate,
       });
     } else {
       baseItems.push({
         label: 'Reactivate',
         icon: <PowerIcon sx={{ mr: 1, color: '#4caf50' }} />,
-        onClick: () => onReactivate && onReactivate(stateProvince.StateProvinceID),
+        onClick: () => onReactivate && onReactivate(industry.IndustryID),
         show: !!onReactivate,
       });
     }
@@ -153,15 +146,15 @@ const StateProvincePage = ({
     baseItems.push({
       label: 'Delete',
       icon: <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />,
-      onClick: () => onDelete && onDelete(stateProvince.StateProvinceID),
+      onClick: () => onDelete && onDelete(industry.IndustryID),
       show: !!onDelete,
     });
 
     return baseItems;
   };
 
-  // Custom formatters for state/province-specific fields
-  const stateProvinceFormatters = {
+  // Custom formatters for industry-specific fields
+  const industryFormatters = {
     ...formatters,
     Active: (value) => {
       return (
@@ -176,52 +169,50 @@ const StateProvincePage = ({
         />
       );
     },
-    CountryName: (value) => {
+    IndustryName: (value) => {
       return value || 'N/A';
     }
   };
 
-  // Handle Add State/Province Dialog
-  const handleOpenAddStateProvinceDialog = () => {
-    setAddStateProvinceDialogOpen(true);
-    setNewStateProvince({
-      StateProvince_Name: '',
-      CountryID: '',
+  // Handle Add Industry Dialog
+  const handleOpenAddIndustryDialog = () => {
+    setAddIndustryDialogOpen(true);
+    setNewIndustry({
+      IndustryName: '',
       Active: true
     });
   };
 
-  const handleCloseAddStateProvinceDialog = () => {
-    setAddStateProvinceDialogOpen(false);
-    setNewStateProvince({
-      StateProvince_Name: '',
-      CountryID: '',
+  const handleCloseAddIndustryDialog = () => {
+    setAddIndustryDialogOpen(false);
+    setNewIndustry({
+      IndustryName: '',
       Active: true
     });
   };
 
-  const handleAddStateProvince = async () => {
-    if (!newStateProvince.StateProvince_Name.trim() || !newStateProvince.CountryID) {
-      setError && setError('State/Province name and country are required');
+  const handleAddIndustry = async () => {
+    if (!newIndustry.IndustryName.trim()) {
+      setError && setError('Industry name is required');
       return;
     }
 
-    setAddStateProvinceLoading(true);
+    setAddIndustryLoading(true);
     try {
       if (onCreate) {
-        await onCreate(newStateProvince);
-        handleCloseAddStateProvinceDialog();
-        setSuccessMessage && setSuccessMessage('State/Province added successfully');
+        await onCreate(newIndustry);
+        handleCloseAddIndustryDialog();
+        setSuccessMessage && setSuccessMessage('Industry added successfully');
       }
     } catch (error) {
-      setError && setError('Failed to add state/province');
+      setError && setError('Failed to add industry');
     } finally {
-      setAddStateProvinceLoading(false);
+      setAddIndustryLoading(false);
     }
   };
 
   const handleInputChange = (field, value) => {
-    setNewStateProvince(prev => ({
+    setNewIndustry(prev => ({
       ...prev,
       [field]: value
     }));
@@ -261,7 +252,7 @@ const StateProvincePage = ({
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
               <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
-                States/Provinces
+                Industries
               </Typography>
               {selected.length > 0 && (
                 <Chip 
@@ -275,9 +266,9 @@ const StateProvincePage = ({
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={handleOpenAddStateProvinceDialog}
+                onClick={handleOpenAddIndustryDialog}
               >
-                Add State/Province
+                Add Industry
               </Button>
               {selected.length > 0 && (
                 <Button
@@ -297,9 +288,9 @@ const StateProvincePage = ({
             </Box>
           ) : (
             <TableView
-              data={statesProvinces}
+              data={industries}
               columns={columns}
-              idField="StateProvinceID"
+              idField="IndustryID"
               selected={selected}
               onSelectClick={onSelectClick}
               onSelectAllClick={onSelectAllClick}
@@ -310,8 +301,8 @@ const StateProvincePage = ({
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
               onAssignUser={onAssignUser}
-              formatters={stateProvinceFormatters}
-              entityType="stateProvince"
+              formatters={industryFormatters}
+              entityType="industry"
               getMenuItems={getMenuItems}
             />
           )}
@@ -325,7 +316,7 @@ const StateProvincePage = ({
             alignItems: 'center' 
           }}>
             <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {statesProvinces.length} states/provinces
+              Showing {industries.length} industries
             </Typography>
             {selected.length > 0 && (
               <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
@@ -335,10 +326,10 @@ const StateProvincePage = ({
           </Box>
         </Paper>
 
-        {/* Add State/Province Dialog */}
+        {/* Add Industry Dialog */}
         <Dialog 
-          open={addStateProvinceDialogOpen} 
-          onClose={handleCloseAddStateProvinceDialog}
+          open={addIndustryDialogOpen} 
+          onClose={handleCloseAddIndustryDialog}
           maxWidth="sm"
           fullWidth
         >
@@ -348,42 +339,28 @@ const StateProvincePage = ({
             alignItems: 'center',
             borderBottom: '1px solid #e5e5e5'
           }}>
-            Add New State/Province
-            <IconButton onClick={handleCloseAddStateProvinceDialog} size="small">
+            Add New Industry
+            <IconButton onClick={handleCloseAddIndustryDialog} size="small">
               <CloseIcon />
             </IconButton>
           </DialogTitle>
           <DialogContent sx={{ pt: 3 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <TextField
-                label="State/Province Name"
-                value={newStateProvince.StateProvince_Name}
-                onChange={(e) => handleInputChange('StateProvince_Name', e.target.value)}
+                label="Industry Name"
+                value={newIndustry.IndustryName}
+                onChange={(e) => handleInputChange('IndustryName', e.target.value)}
                 fullWidth
                 required
                 variant="outlined"
-                helperText="Enter the full name of the state or province"
+                helperText="Enter the name of the industry (e.g., Technology, Healthcare, Finance)"
+                inputProps={{ maxLength: 255 }}
               />
-
-              <FormControl fullWidth required>
-                <InputLabel>Country</InputLabel>
-                <Select
-                  value={newStateProvince.CountryID}
-                  onChange={(e) => handleInputChange('CountryID', e.target.value)}
-                  label="Country"
-                >
-                  {countries.map((country) => (
-                    <MenuItem key={country.CountryID} value={country.CountryID}>
-                      {country.CountryName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
 
               <FormControlLabel
                 control={
                   <Switch
-                    checked={newStateProvince.Active}
+                    checked={newIndustry.Active}
                     onChange={(e) => handleInputChange('Active', e.target.checked)}
                     color="primary"
                   />
@@ -393,15 +370,15 @@ const StateProvincePage = ({
             </Box>
           </DialogContent>
           <DialogActions sx={{ p: 3, borderTop: '1px solid #e5e5e5' }}>
-            <Button onClick={handleCloseAddStateProvinceDialog} color="inherit">
+            <Button onClick={handleCloseAddIndustryDialog} color="inherit">
               Cancel
             </Button>
             <Button
-              onClick={handleAddStateProvince}
+              onClick={handleAddIndustry}
               variant="contained"
-              disabled={addStateProvinceLoading || !newStateProvince.StateProvince_Name.trim() || !newStateProvince.CountryID}
+              disabled={addIndustryLoading || !newIndustry.IndustryName.trim()}
             >
-              {addStateProvinceLoading ? <CircularProgress size={20} /> : 'Add State/Province'}
+              {addIndustryLoading ? <CircularProgress size={20} /> : 'Add Industry'}
             </Button>
           </DialogActions>
         </Dialog>
@@ -426,4 +403,4 @@ const StateProvincePage = ({
   );
 };
 
-export default StateProvincePage;
+export default IndustryPage;
