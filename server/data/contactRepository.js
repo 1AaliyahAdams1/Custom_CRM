@@ -18,9 +18,9 @@ async function getAllContacts(onlyActive = true) {
 // =======================
 // Get all contacts
 // =======================
-async function getAllContactDetails() {
+async function getAllContactDetails(onlyActive = true) {
   const pool = await sql.connect(dbConfig);
-  const result = await pool.request().execute("GetContactDetails");
+  const result = await pool.request().input("OnlyActive", sql.Bit, onlyActive ? 1 : 0).execute("GetContactDetails");
   return result.recordset;
 }
 
@@ -205,6 +205,40 @@ async function getContactsByAccountId(accountName) {
   return result.recordset;
 }
 
+async function getContactsByUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT 
+        c.[ContactID], c.[AccountID], a.[AccountName], 
+        c.[PersonID], p.[first_name], p.[middle_name], 
+        p.[surname], c.[Still_employed], c.[JobTitleID], 
+        jt.[JobTitleName], c.[WorkEmail], c.[WorkPhone], 
+        p.[CityID], ci.[CityName], ci.[StateProvinceID],
+        sp.[StateProvince_Name], sp.[CountryID], co.[CountryName], 
+        c.[Active], c.[CreatedAt], c.[UpdatedAt]
+        FROM [CRM].[dbo].[Contact] c
+        INNER JOIN [CRM].[dbo].[Account] a ON c.AccountID = a.AccountID
+        INNER JOIN [CRM].[dbo].[Person] p ON c.PersonID = p.PersonID
+        JOIN [CRM].[dbo].[AssignedUser] au ON c.AccountID = au.AccountID AND au.Active = 1
+        LEFT JOIN [CRM].[dbo].[City] ci ON p.CityID = ci.CityID
+        LEFT JOIN [CRM].[dbo].[StateProvince] sp ON ci.StateProvinceID = sp.StateProvinceID
+        LEFT JOIN [CRM].[dbo].[Country] co ON sp.CountryID = co.CountryID
+        LEFT JOIN [CRM].[dbo].[JobTitle] jt ON c.JobTitleID = jt.JobTitleID 
+        WHERE au.UserID = @UserID
+        AND c.Active = 1;
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Error fetching contacts for user accounts:", error);
+    throw error;
+  }
+}
+
+
 module.exports = {
   getAllContacts,
   getAllContactDetails,
@@ -215,4 +249,5 @@ module.exports = {
   reactivateContact,
   deleteContact,
   getContactsByAccountId,
+  getContactsByUser
 };

@@ -70,6 +70,21 @@ async function deleteDeal(req, res) {
   }
 }
 
+async function getDealsByUser(req, res) {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    const deals = await dealService.getDealsByUser(userId);
+    res.json(deals);
+  } catch (err) {
+    console.error("Error fetching deals by user:", err);
+    res.status(500).json({ error: "Failed to get deals" });
+  }
+}
+
 module.exports = {
   getAllDeals,
   getDealById,
@@ -78,4 +93,5 @@ module.exports = {
   deactivateDeal,
   reactivateDeal,
   deleteDeal,
+  getDealsByUser
 };

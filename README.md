@@ -53,63 +53,68 @@ To pull changes from GitHub into your branch:
 Install dependencies in the terminal:
 
 COMMANDS for Root folder [Custom_CRM]
-> powershell -ExecutionPolicy Bypass -command "npm install react@18.2.0 react-dom@18.2.0"
+> npm install react@18.2.0 react-dom@18.2.0
 
-> powershell -ExecutionPolicy Bypass -command "npm install"
+> npm install
 
-> powershell -ExecutionPolicy Bypass -command "npm install concurrently --save-dev"
+> npm install concurrently --save-dev
 
-> powershell -ExecutionPolicy Bypass -command "npm install mssql cors dotenv bcrypt"
+> npm install mssql cors dotenv bcrypt
 
-> powershell -ExecutionPolicy Bypass -command "npm install express@4.18.2"
+> npm install express@4.18.2
+
+> npm install express-validator
 
 
 COMMANDS for Client folder [client]
 > C:\Desktop\Custom_CRM\client [CHANGE THIS COMMAND TO MATCH YOUR FILE DIRECTORY]
 
-> powershell -ExecutionPolicy Bypass -command "npm install react@18.2.0 react-dom@18.2.0"
+> npm install react@18.2.0 react-dom@18.2.0
 
-> powershell -ExecutionPolicy Bypass -command "npm install"
+> npm install
 
-> powershell -ExecutionPolicy Bypass -command "npm install react-scripts@5.0.1 --save"
+> npm install react-scripts@5.0.1 --save
 
-> powershell -ExecutionPolicy Bypass -command "npm install react-router-dom@6"
+> npm install react-router-dom@6
 
-> powershell -ExecutionPolicy Bypass -command "npm install npm  @mui/material@^7.2.0 @mui/icons-material@^7.2.0 @mui/x-data-grid@^8.6.0 axios@^1.10.0"
+> npm install npm  @mui/material@^7.2.0 @mui/icons-material@^7.2.0 @mui/x-data-grid@^8.6.0 axios@^1.10.0
 
-> powershell -ExecutionPolicy Bypass -command "npm install @emotion/react @emotion/styled"
+> npm install @emotion/react @emotion/styled
 
-= Here are the COMMANDS for synfusion components, run this in the terminal =
-DO THIS IN CLIENT FOLDER ALSO
-
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-grids"
+> npm install @syncfusion/ej2-react-grids
 
 [For DataGrid]
 
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-dropdowns"
+> npm install @syncfusion/ej2-react-dropdowns
 
 [For DropDownList, ComboBox]
 
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-schedule"
+> npm install @syncfusion/ej2-react-schedule
 
 [For Scheduler]
 
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-buttons"
+> npm install @syncfusion/ej2-react-buttons
 
 [For Buttons]
 
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-inputs"
+>npm install @syncfusion/ej2-react-inputs
 
 [For TextBox, NumericTextBox, etc.]
 
-> powershell -ExecutionPolicy Bypass -command "npm install @syncfusion/ej2-react-notifications"
+> npm install @syncfusion/ej2-react-notifications
+
+> npm install @syncfusion/ej2-react-charts
+
+> npm install xlsx
+
+> npm install multer
 =====================================================================================================
 COMMAND to run program:
 MAKE SURE YOU ARE ON THE ROOT FOLDER [Custom_CRM] WHEN YOU RUN THIS COMMAND
-> powershell -ExecutionPolicy Bypass -command "npm run dev"  
+> npm run dev
 
 =====================================================================================================
-WHEN YOU PROGRAM IS RUNNING EVEN THO YOU CLOSED THE TERMINAL:
+WHEN YOU PROGRAM IS RUNNING EVEN WHEN YOU CLOSED THE TERMINAL:
 This command finds if the port is being used
 > netstat -ano | findstr :3000
 

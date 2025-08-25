@@ -37,7 +37,7 @@ const NotFoundPage = () => {
 
       {/* Button to navigate back to homepage */}
       <Button variant="contained" onClick={() => navigate("/Dashboard")}>
-        Go to Home
+        Back
       </Button>
     </Box>
   );

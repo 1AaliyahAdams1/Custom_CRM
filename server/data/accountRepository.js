@@ -9,7 +9,7 @@ async function getAllAccounts() {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
       .execute('GetAllAccounts');
-    
+
     return result.recordset;
   } catch (err) {
     console.error("Database error in getAllAccounts:", err);
@@ -41,7 +41,9 @@ async function createAccount(accountData, changedBy) {
       number_of_releases = null,
       number_of_events_anually = null,
       ParentAccount = null,
-      Active = true
+      Active = true,
+      StateProvinceID = null,
+      CountryID = null
     } = accountData;
 
     // Call your CreateAccount stored procedure
@@ -65,6 +67,8 @@ async function createAccount(accountData, changedBy) {
       .input("ParentAccount", sql.Int, ParentAccount)
       .input("Active", sql.Bit, Active)
       .input("ChangedBy", sql.Int, changedBy)
+      .input("StateProvinceID", sql.Int, StateProvinceID)
+      .input("CountryID", sql.Int, CountryID)
       .input("ActionTypeID", sql.Int, 1) // 1 = Create action type id
       .execute("CreateAccount");
 
@@ -85,7 +89,7 @@ async function createAccount(accountData, changedBy) {
 async function updateAccount(id, accountData, changedBy = 1) {
   try {
     const pool = await sql.connect(dbConfig);
-    
+
     // First get the existing account details
     const existingResult = await pool.request()
       .input("AccountID", sql.Int, id)
@@ -94,7 +98,7 @@ async function updateAccount(id, accountData, changedBy = 1) {
     if (existingResult.recordset.length === 0) {
       throw new Error("Account not found");
     }
-    
+
     const existing = existingResult.recordset[0];
 
     const {
@@ -114,34 +118,38 @@ async function updateAccount(id, accountData, changedBy = 1) {
       number_of_venues = existing.number_of_venues,
       number_of_releases = existing.number_of_releases,
       number_of_events_anually = existing.number_of_events_anually,
-      ParentAccount = existing.ParentAccount
+      ParentAccount = existing.ParentAccount,
+      StateProvinceID = existing.StateProvinceID,
+      CountryID = existing.CountryID
     } = accountData;
 
     // Use the UpdateAccount stored procedure
     await pool.request()
       .input("AccountID", sql.Int, id)
       .input("AccountName", sql.NVarChar, AccountName)
+      .input("CountryID", sql.Int, CountryID)
       .input("CityID", sql.Int, CityID)
+      .input("StateProvinceID", sql.Int, StateProvinceID)
       .input("street_address1", sql.NVarChar, street_address1)
       .input("street_address2", sql.NVarChar, street_address2)
       .input("street_address3", sql.NVarChar, street_address3)
       .input("postal_code", sql.NVarChar, postal_code)
       .input("PrimaryPhone", sql.NVarChar, PrimaryPhone)
       .input("IndustryID", sql.Int, IndustryID)
-      .input("Website", sql.NVarChar, Website)
-      .input("fax", sql.NVarChar, fax)
-      .input("email", sql.VarChar, email)
-      .input("number_of_employees", sql.Int, number_of_employees)
-      .input("annual_revenue", sql.Decimal, annual_revenue)
-      .input("number_of_venues", sql.SmallInt, number_of_venues)
-      .input("number_of_releases", sql.SmallInt, number_of_releases)
-      .input("number_of_events_anually", sql.SmallInt, number_of_events_anually)
-      .input("ParentAccount", sql.Int, ParentAccount)
-      .input("Active", sql.Bit, existing.Active)
-      .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
-      .input("UpdatedAt", sql.SmallDateTime, new Date())
-      .input("ChangedBy", sql.Int, changedBy)
-      .input("ActionTypeID", sql.Int, 2)
+      .input('Website', sql.NVarChar, Website)
+      .input('fax', sql.NVarChar, fax)
+      .input('email', sql.VarChar, email)
+      .input('number_of_employees', sql.Int, number_of_employees)
+      .input('annual_revenue', sql.Decimal, annual_revenue)
+      .input('number_of_venues', sql.Int, number_of_venues)
+      .input('number_of_releases', sql.SmallInt, number_of_releases)
+      .input('number_of_events_anually', sql.SmallInt, number_of_events_anually)
+      .input('ParentAccount', sql.Int, ParentAccount)
+      .input('Active', sql.Bit, 1)
+      .input('CreatedAt', sql.SmallDateTime, new Date())
+      .input('UpdatedAt', sql.SmallDateTime, new Date())
+      .input('ChangedBy', sql.Int, changedBy)
+      .input('ActionTypeID', sql.Int, 1)
       .execute('UpdateAccount');
 
     return { message: "Account updated", AccountID: id };
@@ -157,12 +165,12 @@ async function updateAccount(id, accountData, changedBy = 1) {
 async function deactivateAccount(account, changedBy, actionTypeId) {
   try {
     const pool = await sql.connect(dbConfig);
-    
+
     // First update the account status in the main table
     await pool.request()
       .input('AccountID', sql.Int, account.AccountID)
       .query('UPDATE Account SET Active = 0, UpdatedAt = GETDATE() WHERE AccountID = @AccountID');
-    
+
     // Then log the deactivation
     await pool.request()
       .input('AccountID', sql.Int, account.AccountID)
@@ -187,9 +195,11 @@ async function deactivateAccount(account, changedBy, actionTypeId) {
       .input('CreatedAt', sql.SmallDateTime, account.CreatedAt)
       .input('UpdatedAt', sql.SmallDateTime, new Date())
       .input('ChangedBy', sql.Int, changedBy)
+      .input("StateProvinceID", sql.Int, account.StateProvinceID)
+      .input("CountryID", sql.Int, account.CountryID)
       .input('ActionTypeID', sql.Int, actionTypeId)
       .execute('DeactivateAccount');
-      
+
     return { message: "Account deactivated", AccountID: account.AccountID };
   } catch (err) {
     console.error("Database error in deactivateAccount:", err);
@@ -244,11 +254,13 @@ async function reactivateAccount(id, changedBy) {
       .input("number_of_releases", sql.SmallInt, existing.number_of_releases)
       .input("number_of_events_anually", sql.SmallInt, existing.number_of_events_anually)
       .input("ParentAccount", sql.Int, existing.ParentAccount)
-      .input("Active", sql.Bit, true) 
+      .input("Active", sql.Bit, true)
       .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
       .input("UpdatedAt", sql.SmallDateTime, new Date())
       .input("ChangedBy", sql.Int, changedBy)
-      .input("ActionTypeID", sql.Int, 8) 
+      .input("StateProvinceID", sql.Int, StateProvinceID)
+      .input("CountryID", sql.Int, CountryID)
+      .input("ActionTypeID", sql.Int, 8)
       .execute('ReactivateAccount');
 
     return { message: "Account reactivated", AccountID: id };
@@ -320,13 +332,108 @@ async function deleteAccount(id, changedBy) {
       .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
       .input("UpdatedAt", sql.SmallDateTime, new Date())
       .input("ChangedBy", sql.Int, changedBy)
-      .input("ActionTypeID", sql.Int, 3) 
+      .input("StateProvinceID", sql.Int, StateProvinceID)
+      .input("CountryID", sql.Int, CountryID)
+      .input("ActionTypeID", sql.Int, 3)
       .execute('DeleteAccount');
 
     return { message: "Account permanently deleted", AccountID: id };
   } catch (err) {
     console.error("Database error in deleteAccount:", err);
     throw err;
+  }
+}
+
+async function getActiveAccountsByUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT 
+          a.[AccountID],
+          a.[AccountName],
+          a.[CityID],
+          a.[street_address1],
+          a.[street_address2],
+          a.[street_address3],
+          a.[postal_code],
+          a.[PrimaryPhone],
+          a.[IndustryID],
+          a.[Website],
+          a.[fax],
+          a.[email],
+          a.[number_of_employees],
+          a.[annual_revenue],
+          a.[number_of_venues],
+          a.[number_of_releases],
+          a.[number_of_events_anually],
+          a.[ParentAccount],
+          a.[Active],
+          a.[CreatedAt],
+          a.[UpdatedAt],
+          a.[StateProvinceID],
+          a.[CountryID],
+          co.[CountryName],
+          c.CityName
+        FROM [CRM].[dbo].[Account] a
+        LEFT JOIN [CRM].[dbo].[City] c ON a.CityID = c.CityID
+        LEFT JOIN Country co ON a.CountryID = co.CountryID
+        JOIN [CRM].[dbo].[AssignedUser] au ON a.AccountID = au.AccountID AND au.Active = 1
+        WHERE a.Active = 1
+          AND au.UserID = @UserID
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Error fetching accounts by user:", error);
+    throw error;
+  }
+}
+
+async function getActiveUnassignedAccounts() {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .query(`
+        SELECT 
+          a.[AccountID],
+          a.[AccountName],
+          a.[CityID],
+          a.[street_address1],
+          a.[street_address2],
+          a.[street_address3],
+          a.[postal_code],
+          a.[PrimaryPhone],
+          a.[IndustryID],
+          a.[Website],
+          a.[fax],
+          a.[email],
+          a.[number_of_employees],
+          a.[annual_revenue],
+          a.[number_of_venues],
+          a.[number_of_releases],
+          a.[number_of_events_anually],
+          a.[ParentAccount],
+          a.[Active],
+          a.[CreatedAt],
+          a.[UpdatedAt],
+          a.[StateProvinceID],
+          a.[CountryID],
+          co.[CountryName],
+          c.CityName
+        FROM [CRM].[dbo].[Account] a
+        LEFT JOIN [CRM].[dbo].[City] c ON a.CityID = c.CityID
+        LEFT JOIN Country co ON a.CountryID = co.CountryID
+        LEFT JOIN [CRM].[dbo].[AssignedUser] au ON a.AccountID = au.AccountID AND au.Active = 1
+        WHERE a.Active = 1
+          AND au.UserID IS NULL
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Error fetching unassigned accounts:", error);
+    throw error;
   }
 }
 
@@ -339,8 +446,11 @@ module.exports = {
   getInactiveAccounts,
   createAccount,
   updateAccount,
-  deactivateAccount, 
+  deactivateAccount,
   reactivateAccount,
-  deleteAccount, 
-  getAccountDetails
+  deleteAccount,
+  getAccountDetails,
+  getActiveAccountsByUser,
+  getActiveUnassignedAccounts
+
 };

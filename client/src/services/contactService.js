@@ -1,36 +1,39 @@
-import axios from "axios";
+import api from '../utils/api';
 
-const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
-const CONTACTS_API = `${BASE_URL}/contacts`;
+const RESOURCE = '/contacts';
 
-// Get all contacts
 export async function getAllContacts(onlyActive = true) {
   try {
-    const response = await axios.get(CONTACTS_API, {
-      params: { onlyActive }
-    });
+    console.log('Calling getAllContacts with onlyActive:', onlyActive);
+    const response = await api.get(RESOURCE, { params: { onlyActive } });
+    console.log('getAllContacts response:', response);
+    console.log('getAllContacts response.data:', response.data);
+    
     return response.data;
   } catch (error) {
-    console.error("Error fetching contacts:", error);
+    console.error('Error fetching contacts:', error);
     throw error;
   }
 }
 
-// Get contact details by ID
 export async function getContactDetails(contactId) {
   try {
-    const response = await axios.get(`${CONTACTS_API}/${contactId}`);
-    return response.data;
+    console.log('Calling getContactDetails with ID:', contactId);
+    const response = await api.get(`${RESOURCE}/${contactId}`);
+    console.log('getContactDetails response:', response);
+    
+    return response;
   } catch (error) {
     console.error(`Error fetching contact ${contactId}:`, error);
     throw error;
   }
 }
 
-// Get contacts by account name
 export async function getContactsByAccountId(accountName) {
   try {
-    const response = await axios.get(`${CONTACTS_API}/account/${accountName}`);
+    console.log('Calling getContactsByAccountId with accountName:', accountName);
+    const response = await api.get(`${RESOURCE}/account/${accountName}`);
+    console.log('getContactsByAccountId response:', response);
     return response.data;
   } catch (error) {
     console.error(`Error fetching contacts for account ${accountName}:`, error);
@@ -38,21 +41,23 @@ export async function getContactsByAccountId(accountName) {
   }
 }
 
-// Create a new contact
 export async function createContact(contactData) {
   try {
-    const response = await axios.post(CONTACTS_API, contactData);
+    console.log('Calling createContact with data:', contactData);
+    const response = await api.post(RESOURCE, contactData);
+    console.log('createContact response:', response);
     return response.data;
   } catch (error) {
-    console.error("Error creating contact:", error);
+    console.error('Error creating contact:', error);
     throw error;
   }
 }
 
-// Update a contact
 export async function updateContact(contactId, contactData) {
   try {
-    const response = await axios.put(`${CONTACTS_API}/${contactId}`, contactData);
+    console.log('Calling updateContact with ID:', contactId, 'data:', contactData);
+    const response = await api.put(`${RESOURCE}/${contactId}`, contactData);
+    console.log('updateContact response:', response);
     return response.data;
   } catch (error) {
     console.error(`Error updating contact ${contactId}:`, error);
@@ -60,10 +65,11 @@ export async function updateContact(contactId, contactData) {
   }
 }
 
-// Deactivate a contact 
 export async function deactivateContact(contactId) {
   try {
-    const response = await axios.patch(`${CONTACTS_API}/${contactId}/deactivate`);
+    console.log('Calling deactivateContact with ID:', contactId);
+    const response = await api.patch(`${RESOURCE}/${contactId}/deactivate`);
+    console.log('deactivateContact response:', response);
     return response.data;
   } catch (error) {
     console.error(`Error deactivating contact ${contactId}:`, error);
@@ -71,10 +77,11 @@ export async function deactivateContact(contactId) {
   }
 }
 
-// Reactivate a contact
 export async function reactivateContact(contactId) {
   try {
-    const response = await axios.patch(`${CONTACTS_API}/${contactId}/reactivate`);
+    console.log('Calling reactivateContact with ID:', contactId);
+    const response = await api.patch(`${RESOURCE}/${contactId}/reactivate`);
+    console.log('reactivateContact response:', response);
     return response.data;
   } catch (error) {
     console.error(`Error reactivating contact ${contactId}:`, error);
@@ -82,13 +89,28 @@ export async function reactivateContact(contactId) {
   }
 }
 
-// Delete a contact
 export async function deleteContact(contactId) {
   try {
-    const response = await axios.delete(`${CONTACTS_API}/${contactId}/delete`);
+    console.log('Calling deleteContact with ID:', contactId);
+    const response = await api.delete(`${RESOURCE}/${contactId}/delete`);
+    console.log('deleteContact response:', response);
     return response.data;
   } catch (error) {
     console.error(`Error deleting contact ${contactId}:`, error);
+    throw error;
+  }
+}
+
+export async function fetchContactsByUser(userId) {
+  try {
+    console.log('Calling fetchContactsByUser with userId:', userId);
+    const response = await api.get(`/contacts/user/${userId}`);
+    console.log('fetchContactsByUser response:', response);
+    console.log('fetchContactsByUser response.data:', response.data);
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching contacts by user ${userId}:`, error);
     throw error;
   }
 }

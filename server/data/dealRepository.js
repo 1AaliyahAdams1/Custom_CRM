@@ -224,7 +224,49 @@ async function deleteDeal(dealId, data, changedBy = 1, actionTypeId = 5) {
   }
 }
 
-//This is a test comment
+async function getDealsByUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+SELECT
+    d.[DealID],
+    d.[DealName],
+    d.[AccountID],
+    a.[AccountName],              
+    d.[DealStageID],
+    ds.[StageName],            
+    d.[Value],
+    c.[Symbol],               
+    c.LocalName,
+    c.[Prefix],                    
+    d.[CloseDate],
+    d.[Probability] AS Progression,
+    d.[CreatedAt],
+    d.[UpdatedAt],
+    d.[Active]
+FROM [CRM].[dbo].[Deal] d
+JOIN [CRM].[dbo].[AssignedUser] au 
+    ON d.AccountID = au.AccountID AND au.Active = 1
+JOIN [CRM].[dbo].[Account] a 
+    ON d.AccountID = a.AccountID AND a.Active = 1
+LEFT JOIN [CRM].[dbo].[DealStage] ds 
+    ON d.DealStageID = ds.DealStageID
+LEFT JOIN [CRM].[dbo].[Currency] c 
+    ON d.CurrencyID = c.CurrencyID
+WHERE au.UserID = @UserID
+  AND d.Active = 1;
+
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Error fetching deals for user accounts:", error);
+    throw error;
+  }
+}
+
 
 module.exports = {
   getAllDeals,
@@ -234,4 +276,5 @@ module.exports = {
   deactivateDeal,
   reactivateDeal,
   deleteDeal,
+  getDealsByUser
 };

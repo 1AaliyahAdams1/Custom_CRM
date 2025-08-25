@@ -1,25 +1,51 @@
-// services/dropdownServices.js
-import axios from "axios";
-
-const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL_ALT;
+import api from '../utils/api';
 
 // State/Province Service
 export const stateProvinceService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/stateprovinces`);
+      const response = await api.get('/states');
       return response.data || [];
     } catch (error) {
       console.error('Error loading state/provinces:', error);
       return [];
     }
   },
+
   getByCountry: async (countryId) => {
     try {
-      const response = await axios.get(`${BASE_URL}/stateprovinces?countryId=${countryId}`);
+      const response = await api.get('/states', {
+        params: { countryId },
+      });
       return response.data || [];
     } catch (error) {
       console.error('Error loading state/provinces by country:', error);
+      return [];
+    }
+  },
+
+  // Enhanced method for filtering by country
+  getAllFiltered: async (countryId = null) => {
+    try {
+      const response = await api.get('/states');
+      const allStates = response.data || [];
+
+      console.log("countryId for filtering",countryId)
+
+      if (!countryId) {
+        return allStates;
+      }
+
+      // Filter states by country - assuming the state objects have CountryID or similar field
+      console.log("countryId for filtering",countryId)
+      console.log("allstates for filtering",allStates)
+      return allStates.filter(state =>
+        state.CountryID === parseInt(countryId) ||
+        state.countryId === parseInt(countryId) ||
+        state.country_id === parseInt(countryId)
+      );
+    } catch (error) {
+      console.error('Error loading filtered state/provinces:', error);
       return [];
     }
   },
@@ -29,7 +55,7 @@ export const stateProvinceService = {
 export const countryService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/countries`);
+      const response = await api.get('/countries');
       return response.data || [];
     } catch (error) {
       console.error('Error loading countries:', error);
@@ -42,10 +68,43 @@ export const countryService = {
 export const cityService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/cities`);
+      const response = await api.get('/cities');
       return response.data || [];
     } catch (error) {
       console.error('Error loading cities:', error);
+      return [];
+    }
+  },
+  // Enhanced method for filtering by state/province and country
+  getAllFiltered: async (stateProvinceId = null, countryId = null) => {
+    try {
+      const response = await api.get('/cities');
+      const allCities = response.data || [];
+
+      if (!stateProvinceId && !countryId) {
+        return allCities;
+      }
+
+      return allCities.filter(city => {
+        // First check state/province match (most specific)
+        if (stateProvinceId) {
+          console.log("stateProvinceId for filtering",stateProvinceId)
+          return city.StateProvinceID === parseInt(stateProvinceId) ||
+            city.stateProvinceId === parseInt(stateProvinceId) ||
+            city.state_province_id === parseInt(stateProvinceId);
+        }
+
+        // Fall back to country match if no state/province specified
+        if (countryId) {
+          return city.CountryID === parseInt(countryId) ||
+            city.countryId === parseInt(countryId) ||
+            city.country_id === parseInt(countryId);
+        }
+
+        return true;
+      });
+    } catch (error) {
+      console.error('Error loading filtered cities:', error);
       return [];
     }
   },
@@ -55,7 +114,7 @@ export const cityService = {
 export const industryService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/industries`);
+      const response = await api.get('/industries');
       return response.data || [];
     } catch (error) {
       console.error('Error loading industries:', error);
@@ -68,7 +127,7 @@ export const industryService = {
 export const jobTitleService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/jobtitles`);
+      const response = await api.get('/jobtitles');
       return response.data || [];
     } catch (error) {
       console.error('Error loading job titles:', error);
@@ -81,7 +140,7 @@ export const jobTitleService = {
 export const activityTypeService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/activitytypes`);
+      const response = await api.get('/activitytypes');
       return response.data || [];
     } catch (error) {
       console.error('Error loading activity types:', error);
@@ -94,7 +153,7 @@ export const activityTypeService = {
 export const dealStageService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/dealstages`);
+      const response = await api.get('/dealstages');
       return response.data || [];
     } catch (error) {
       console.error('Error loading deal stages:', error);
@@ -107,8 +166,8 @@ export const dealStageService = {
 export const priorityLevelService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/prioritylevels`);
-      console.log('Priority levels response:', response.data); 
+      const response = await api.get('/prioritylevels');
+      console.log('Priority levels response:', response.data);
       return response.data || [];
     } catch (error) {
       console.error('Error loading priority levels:', error);
@@ -121,7 +180,7 @@ export const priorityLevelService = {
 export const productService = {
   getAll: async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/products`);
+      const response = await api.get('/products');
       return response.data || [];
     } catch (error) {
       console.error('Error loading products:', error);

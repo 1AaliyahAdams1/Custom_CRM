@@ -67,6 +67,23 @@ const deleteActivity = async (req, res) => {
   }
 };
 
+
+const getActivitiesByUser = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: "Valid User ID is required" });
+    }
+
+    const data = await activityService.getActivitiesByUser(userId);
+    res.status(200).json(data);
+  } catch (err) {
+    console.error(`Error fetching activities for user ${req.params.userId}:`, err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getAllActivities,
   getActivityByID,
@@ -75,4 +92,5 @@ module.exports = {
   deactivateActivity,
   reactivateActivity,
   deleteActivity,
+  getActivitiesByUser
 };

@@ -4,8 +4,6 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-
-
 import { registerLicense } from '@syncfusion/ej2-base';
 
 // Import Syncfusion CSS themes
@@ -18,9 +16,8 @@ import '@syncfusion/ej2-react-schedule/styles/material.css';
 import '@syncfusion/ej2-react-layouts/styles/material.css';
 import '@syncfusion/ej2-react-popups/styles/material.css';
 import '@syncfusion/ej2-react-notifications/styles/material.css';
-//import '@syncfusion/ej2-react-progressbar/styles/material.css'; why is this one giving issues???
 
-
+// Don't import chart styles - they're included in the base styles - also breaks code if you import it :(
 
 // Registering Syncfusion license key from .env
 registerLicense(process.env.REACT_APP_LICENSE);
