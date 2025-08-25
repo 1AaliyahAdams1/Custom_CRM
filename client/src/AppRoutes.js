@@ -20,6 +20,8 @@ const ProductsContainer = lazy(() => import("./components/containers/ProductsCon
 const Reports = lazy(() => import("./pages/ReportsPage"));
 const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
 const RoleManagement = lazy(() => import("./pages/RoleManagement"));
+const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
+const CityPage = lazy(() => import("./pages/City/CityPage"));
 
 const AccountsDetailsPage = lazy(() => import("./pages/Accounts/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsPage"));
@@ -31,6 +33,8 @@ const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPag
 const CreateDealPage = lazy(() => import("./pages/Deals/CreateDealPage"));
 const CreateActivitiesPage = lazy(() => import("./pages/Activities/CreateActivitiesPage"));
 const CreateProduct = lazy(() => import("./pages/Products/CreateProductPage"));
+const AddCountryPage = lazy(() => import("./pages/Country/AddCountryPage"));
+
 
 const EditAccountPage = lazy(() => import("./pages/Accounts/EditAccountPage"));
 const EditContactPage = lazy(() => import("./pages/Contacts/EditContactPage"));
@@ -221,6 +225,33 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      {/* --- Country Routes --- */}
+      <Route
+        path="/country"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.country}>
+            <CountryContainer />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/countries/add"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.countryCreate}>
+            <AddCountryPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- City Routes --- */}
+      <Route
+        path="/city"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.city}>
+            <CityPage />
+          </PrivateRoute>
+        }
+      />
+      
       {/* --- Smart Work Routes --- */}
       <Route
         path="/smart-work"

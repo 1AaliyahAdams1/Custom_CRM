@@ -28,9 +28,11 @@ import {
   BarChart as BarChartIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   Inventory as InventoryIcon,
+  Flag as FlagIcon,
+ 
 
 } from "@mui/icons-material";
-
+import LocationCityIcon from '@mui/icons-material/LocationCity';
 import { useAuth } from "../hooks/auth/useAuth";
 import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
 
@@ -85,6 +87,18 @@ const navigation = [
     href: "/reports",
     icon: BarChartIcon,
     accessKey: "reports",
+  },
+  {
+    name: "Countries",
+    href: "/country",
+    icon: FlagIcon,
+    accessKey: 'country',
+  },
+  {
+    name:" Cities",
+    href: "/city",
+    icon: LocationCityIcon,
+    accessKey: 'city',
   },
   {
     name: "Role Management",
