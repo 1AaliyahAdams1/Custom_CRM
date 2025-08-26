@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   Box,
   Grid,
@@ -18,10 +18,15 @@ import {
 } from '@mui/material';
 import { getActivitiesVsOutcomesReport } from '../../services/reportService';
 
-const ActivitiesOutcomeReport = () => {
+const ActivitiesOutcomeReport = forwardRef((props, ref) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reportData, setReportData] = useState(null);
+
+  // Expose reportData to parent component
+  useImperativeHandle(ref, () => ({
+    getReportData: () => reportData
+  }));
 
   // Fetch data on component mount
   useEffect(() => {
@@ -269,6 +274,8 @@ const ActivitiesOutcomeReport = () => {
       </Card>
     </Box>
   );
-};
+});
+
+ActivitiesOutcomeReport.displayName = 'ActivitiesOutcomeReport';
 
 export default ActivitiesOutcomeReport;

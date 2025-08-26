@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   Box,
   Grid,
@@ -21,11 +21,16 @@ import {
 } from '@mui/material';
 import { getCustomerSegmentationReport } from '../../services/reportService';
 
-const CustomerSegmentationReport = () => {
+const CustomerSegmentationReport = forwardRef((props, ref) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [segmentationData, setSegmentationData] = useState(null);
   const [segmentType, setSegmentType] = useState('Industry');
+
+  // Expose reportData to parent component
+  useImperativeHandle(ref, () => ({
+    getReportData: () => segmentationData
+  }));
 
   const segmentTypes = [
     { value: 'Industry', label: 'Industry' },
@@ -225,6 +230,8 @@ const CustomerSegmentationReport = () => {
       </Card>
     </Box>
   );
-};
+});
+
+CustomerSegmentationReport.displayName = 'CustomerSegmentationReport';
 
 export default CustomerSegmentationReport;

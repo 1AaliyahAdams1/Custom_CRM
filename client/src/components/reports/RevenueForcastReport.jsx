@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   Box,
   Grid,
@@ -18,10 +18,15 @@ import {
 } from '@mui/material';
 import { getRevenueForecastReport } from '../../services/reportService';
 
-const RevenueForecastReport = () => {
+const RevenueForecastReport = forwardRef((props, ref) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [forecastData, setForecastData] = useState(null);
+
+  // Expose reportData to parent component
+  useImperativeHandle(ref, () => ({
+    getReportData: () => forecastData
+  }));
 
   // Fetch data on component mount
   useEffect(() => {
@@ -225,6 +230,8 @@ const RevenueForecastReport = () => {
       </Card>
     </Box>
   );
-};
+});
+
+RevenueForecastReport.displayName = 'RevenueForecastReport';
 
 export default RevenueForecastReport;

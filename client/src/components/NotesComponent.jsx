@@ -25,7 +25,9 @@ import {
   Note,
   Delete,
   Edit,
+  Refresh,
 } from '@mui/icons-material';
+import { noteService } from '../services/noteService';
 
 /**
  * Reusable Notes Popup Component
@@ -39,7 +41,6 @@ import {
  * @param {string} props.entityType - Type of entity (e.g., 'account', 'contact', 'deal')
  * @param {string|number} props.entityId - ID of the entity
  * @param {string} props.entityName - Name of the entity for display
- * @param {Array} props.existingNotes - Array of existing notes to display
  * @param {boolean} props.loading - Loading state
  * @param {string} props.error - Error message
  * @param {string} props.mode - 'create' | 'view' | 'edit' (default: 'create')
@@ -47,7 +48,6 @@ import {
  * @param {boolean} props.showExistingNotes - Whether to show list of existing notes (default: true)
  * @param {string} props.maxLength - Maximum length for note content (default: 1000)
  * @param {boolean} props.required - Whether note content is required (default: true)
- * @param {Object} props.customTheme - Optional custom theme
  */
 const NotesPopup = ({
   open,
@@ -58,7 +58,6 @@ const NotesPopup = ({
   entityType = 'entity',
   entityId,
   entityName,
-  existingNotes = [],
   loading = false,
   error = null,
   mode = 'create',
@@ -66,12 +65,14 @@ const NotesPopup = ({
   showExistingNotes = true,
   maxLength = 1000,
   required = true,
-  customTheme,
 }) => {
   const [noteContent, setNoteContent] = useState('');
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [localLoading, setLocalLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [existingNotes, setExistingNotes] = useState([]);
+  const [fetchingNotes, setFetchingNotes] = useState(false);
+  const [notesError, setNotesError] = useState('');
 
   // Initialize form data when dialog opens or initialNote changes
   useEffect(() => {
@@ -84,8 +85,29 @@ const NotesPopup = ({
         setEditingNoteId(null);
       }
       setValidationError('');
+      
+      // Fetch existing notes when dialog opens
+      if (entityId && entityType && showExistingNotes) {
+        fetchExistingNotes();
+      }
     }
-  }, [open, mode, initialNote]);
+  }, [open, mode, initialNote, entityId, entityType, showExistingNotes]);
+
+  // Fetch existing notes
+  const fetchExistingNotes = async () => {
+    try {
+      setFetchingNotes(true);
+      setNotesError('');
+      const notes = await noteService.getNotesByEntity(entityType, entityId);
+      setExistingNotes(notes || []);
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+      setNotesError('Failed to load existing notes');
+      setExistingNotes([]);
+    } finally {
+      setFetchingNotes(false);
+    }
+  };
 
   // Validation
   const validateNote = () => {
@@ -116,10 +138,27 @@ const NotesPopup = ({
         ...(editingNoteId && { NoteID: editingNoteId }),
       };
 
-      await onSave(noteData);
-      handleClose();
+      if (editingNoteId) {
+        // Update existing note
+        await noteService.updateNote(editingNoteId, noteData);
+        if (onEdit) await onEdit(noteData);
+      } else {
+        // Create new note
+        await noteService.createNote(noteData);
+        if (onSave) await onSave(noteData);
+      }
+
+      // Refresh the notes list
+      await fetchExistingNotes();
+      
+      // Reset form
+      setNoteContent('');
+      setEditingNoteId(null);
+      setValidationError('');
+
     } catch (error) {
       console.error('Failed to save note:', error);
+      setValidationError(error.message || 'Failed to save note');
     } finally {
       setLocalLoading(false);
     }
@@ -132,15 +171,22 @@ const NotesPopup = ({
   };
 
   const handleDeleteNote = async (noteId) => {
-    if (onDelete) {
-      setLocalLoading(true);
-      try {
-        await onDelete(noteId);
-      } catch (error) {
-        console.error('Failed to delete note:', error);
-      } finally {
-        setLocalLoading(false);
-      }
+    if (!window.confirm('Are you sure you want to delete this note?')) {
+      return;
+    }
+
+    setLocalLoading(true);
+    try {
+      await noteService.deleteNote(noteId);
+      if (onDelete) await onDelete(noteId);
+      
+      // Refresh the notes list
+      await fetchExistingNotes();
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+      setNotesError(error.message || 'Failed to delete note');
+    } finally {
+      setLocalLoading(false);
     }
   };
 
@@ -148,7 +194,12 @@ const NotesPopup = ({
     setNoteContent('');
     setEditingNoteId(null);
     setValidationError('');
+    setNotesError('');
     onClose();
+  };
+
+  const handleRefreshNotes = () => {
+    fetchExistingNotes();
   };
 
   const formatDate = (dateString) => {
@@ -215,6 +266,12 @@ const NotesPopup = ({
           </Alert>
         )}
 
+        {notesError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {notesError}
+          </Alert>
+        )}
+
         {/* Note Input */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
@@ -236,39 +293,53 @@ const NotesPopup = ({
         </Box>
 
         {/* Existing Notes Section */}
-        {showExistingNotes && existingNotes.length > 0 && (
+        {showExistingNotes && (
           <Box>
-            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
-              Existing Notes ({existingNotes.length})
-            </Typography>
-            <List sx={{ maxHeight: 300, overflow: 'auto' }}>
-              {existingNotes.map((note, index) => (
-                <React.Fragment key={note.NoteID || index}>
-                  <ListItem
-                    sx={{
-                      backgroundColor: '#f9fafb',
-                      borderRadius: 1,
-                      mb: 1,
-                      border: '1px solid #e5e7eb',
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <ListItemText
-                      primary={
-                        <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
-                          {note.Content}
-                        </Typography>
-                      }
-                      secondary={
-                        <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                          Created: {formatDate(note.CreatedAt)}
-                          {note.CreatedBy && ` by ${note.CreatedBy}`}
-                        </Typography>
-                      }
-                    />
-                    <ListItemSecondaryAction>
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        {onEdit && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                Existing Notes ({existingNotes.length})
+              </Typography>
+              <IconButton 
+                size="small" 
+                onClick={handleRefreshNotes}
+                disabled={fetchingNotes || localLoading}
+              >
+                <Refresh />
+              </IconButton>
+            </Box>
+
+            {fetchingNotes ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : existingNotes.length > 0 ? (
+              <List sx={{ maxHeight: 300, overflow: 'auto' }}>
+                {existingNotes.map((note, index) => (
+                  <React.Fragment key={note.NoteID || index}>
+                    <ListItem
+                      sx={{
+                        backgroundColor: '#f9fafb',
+                        borderRadius: 1,
+                        mb: 1,
+                        border: '1px solid #e5e7eb',
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <ListItemText
+                        primary={
+                          <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                            {note.Content}
+                          </Typography>
+                        }
+                        secondary={
+                          <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                            Created: {formatDate(note.CreatedAt)}
+                            {note.CreatedBy && ` by ${note.CreatedBy}`}
+                          </Typography>
+                        }
+                      />
+                      <ListItemSecondaryAction>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
                           <IconButton
                             size="small"
                             onClick={() => handleEditNote(note)}
@@ -276,8 +347,6 @@ const NotesPopup = ({
                           >
                             <Edit fontSize="small" />
                           </IconButton>
-                        )}
-                        {onDelete && (
                           <IconButton
                             size="small"
                             onClick={() => handleDeleteNote(note.NoteID)}
@@ -286,21 +355,19 @@ const NotesPopup = ({
                           >
                             <Delete fontSize="small" />
                           </IconButton>
-                        )}
-                      </Box>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                </React.Fragment>
-              ))}
-            </List>
-          </Box>
-        )}
-
-        {showExistingNotes && existingNotes.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 3 }}>
-            <Typography variant="body2" sx={{ color: '#6b7280' }}>
-              No notes found for this {entityType}.
-            </Typography>
+                        </Box>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  </React.Fragment>
+                ))}
+              </List>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 3 }}>
+                <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                  No notes found for this {entityType}.
+                </Typography>
+              </Box>
+            )}
           </Box>
         )}
       </DialogContent>
