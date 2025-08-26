@@ -148,3 +148,32 @@ export const getActivitiesVsOutcomesReport = async () => {
     throw new Error("Failed to fetch activities vs outcomes report");
   }
 };
+
+// ==================
+// DASHBOARD SUMMARY 
+// ==================
+export const getDashboardSummary = async (startDate, endDate) => {
+  try {
+    const response = await api.get("/reports/dashboard-summary", {
+      params: {
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate })
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching dashboard summary:", error);
+    throw new Error("Failed to fetch dashboard summary");
+  }
+};
+
+const reportService = {
+  getSalesPipelineReport,
+  getRevenueForecastReport,
+  getClosedDealsByPeriodReport,
+  getCustomerSegmentationReport,
+  getActivitiesVsOutcomesReport,
+  getDashboardSummary
+};
+
+export default reportService;

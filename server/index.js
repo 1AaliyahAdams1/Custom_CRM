@@ -44,6 +44,10 @@ const authRoutes = require("./routes/auth/authRoutes");
 const sequenceRoutes = require('./routes/sequenceRoutes');
 const workRoutes = require('./routes/workRoutes');
 const attachmentRoutes = require("./routes/attachmentRoutes");
+const assignUserRoutes = require("./routes/assignUserRoutes");  
+const employeeRoutes = require("./routes/employeeRoutes"); 
+
+const noteRoutes = require("./routes/noteRoutes");
 
 
 
@@ -71,8 +75,11 @@ app.use("/reports", reportRoutes);
 app.use("/countries", countryRoutes)
 app.use("/auth", authRoutes);
 app.use("/sequences", sequenceRoutes);
-app.use('/work-page', workRoutes);
+app.use('/work', workRoutes);
 app.use("/attachments", attachmentRoutes);
+app.use('/assign', assignUserRoutes);
+app.use("/employees", employeeRoutes);
+app.use("/notes", noteRoutes);
 
 const PORT = process.env.PORT || 5000;
 const HOST = "0.0.0.0";

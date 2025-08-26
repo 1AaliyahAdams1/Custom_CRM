@@ -15,6 +15,7 @@ import {
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { getContactDetails, updateContact, getContactsByAccountId } from "../../services/contactService";
+<<<<<<< HEAD
 import { 
   cityService, 
   industryService, 
@@ -23,64 +24,19 @@ import {
   jobTitleService
 } from '../../services/dropdownServices';
 import SmartDropdown from '../../components/SmartDropdown';
+=======
+import { getAllAccounts } from "../../services/accountService";
+import {
+  cityService,
+  industryService,
+  countryService,
+  stateProvinceService,
+  jobTitleService
+} from '../../services/dropdownServices';
+import SmartDropdown from '../../components/SmartDropdown';
+import theme from "../../components/Theme";
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
 
-// Monochrome theme 
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-  },
-  components: {
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          border: '1px solid #e5e5e5',
-          borderRadius: '8px',
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            backgroundColor: '#ffffff',
-            '& fieldset': { borderColor: '#e5e5e5' },
-            '&:hover fieldset': { borderColor: '#cccccc' },
-            '&.Mui-focused fieldset': { borderColor: '#050505' },
-          },
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        outlined: {
-          borderColor: '#e5e5e5',
-          color: '#050505',
-          '&:hover': {
-            borderColor: '#cccccc',
-            backgroundColor: '#f5f5f5',
-          },
-        },
-      },
-    },
-  },
-});
 
 const EditContactPage = () => {
   const navigate = useNavigate();
@@ -89,25 +45,31 @@ const EditContactPage = () => {
   const [industries, setIndustries] = useState([]);
   const [countries, setCountries] = useState([]);
   const [stateProvinces, setStateProvinces] = useState([]);
-  
+
   const [formData, setFormData] = useState({
     ContactID: "",
     AccountID: "",
+    AccountName: "",
     PersonID: "",
-    Title: "",
     first_name: "",
     middle_name: "",
     surname: "",
-    linkedin_link: "",
-    personal_email: "",
-    personal_mobile: "",
-    PersonCityID: "",
-    PersonStateProvinceID: "",
-    Still_employed: false,
+    Still_employed: "",
     JobTitleID: "",
-    PrimaryEmail: "",
-    PrimaryPhone: "",
-    Position: "",
+    JobTitleName: "",
+    WorkEmail: "",
+    WorkPhone: "",
+    CityID: "",
+    CityName: "",
+    StateProvinceID: "",
+    StateProvince_Name: "",
+    CountryID: "",
+    CountryName: "",
+    Active: "",
+    CreatedAt: "",
+    UpdatedAt: "",
+    personal_mobile: "",
+    personal_email: "",
     isNewPerson: true,
   });
 
@@ -117,26 +79,25 @@ const EditContactPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-        const loadDropdownData = async () => {
-          try {
-            const [citiesData, industriesData, countriesData, stateProvincesData] = await Promise.all([
-              cityService.getAll(),
-              industryService.getAll(),
-              countryService.getAll(),
-              stateProvinceService.getAll()
-            ]);
+    const loadDropdownData = async () => {
+      try {
+        const [citiesData, industriesData, countriesData, stateProvincesData] = await Promise.all([
+          cityService.getAll(),
+          industryService.getAll(),
+          countryService.getAll(),
+          stateProvinceService.getAll()
+        ]);
+        setCities(citiesData);
+        setIndustries(industriesData);
+        setCountries(countriesData);
+        setStateProvinces(stateProvincesData);
+      } catch (error) {
+        console.error('Error loading dropdown data:', error);
+      }
+    };
 
-            setCities(citiesData);
-            setIndustries(industriesData);
-            setCountries(countriesData);
-            setStateProvinces(stateProvincesData);
-          } catch (error) {
-            console.error('Error loading dropdown data:', error);
-          }
-        };
-    
-        loadDropdownData();
-      }, []);
+    loadDropdownData();
+  }, []);
 
   // Fetch contact data when component mounts
   useEffect(() => {
@@ -146,32 +107,34 @@ const EditContactPage = () => {
         setLoading(false);
         return;
       }
-
       try {
-        setLoading(true);
-        setError(null);
-        const response = await getContactsByAccountId(id);
-        
-        // Populate form with fetched data
+        const response = await getContactDetails(id);
         const contactData = response.data;
+        console.log(contactData)
         setFormData({
           ContactID: contactData.ContactID || "",
           AccountID: contactData.AccountID || "",
+          AccountName: contactData.AccountName || "",
           PersonID: contactData.PersonID || "",
-          Title: contactData.Title || "",
           first_name: contactData.first_name || "",
           middle_name: contactData.middle_name || "",
           surname: contactData.surname || "",
-          linkedin_link: contactData.linkedin_link || "",
-          personal_email: contactData.personal_email || "",
-          personal_mobile: contactData.personal_mobile || "",
-          PersonCityID: contactData.PersonCityID || "",
-          PersonStateProvinceID: contactData.PersonStateProvinceID || "",
           Still_employed: contactData.Still_employed || false,
           JobTitleID: contactData.JobTitleID || "",
-          PrimaryEmail: contactData.PrimaryEmail || "",
-          PrimaryPhone: contactData.PrimaryPhone || "",
-          Position: contactData.Position || "",
+          JobTitleName: contactData.JobTitleName || "",
+          WorkEmail: contactData.WorkEmail || "",
+          WorkPhone: contactData.WorkPhone || "", 
+          CityID: contactData.CityID || "",
+          CityName: contactData.CityName || "",
+          StateProvinceID: contactData.StateProvinceID || "",
+          StateProvince_Name: contactData.StateProvince_Name || "",
+          CountryID: contactData.CountryID || "",
+          CountryName: contactData.CountryName || "",
+          Active: contactData.Active || "",
+          CreatedAt: contactData.CreatedAt || "",
+          UpdatedAt: contactData.UpdatedAt || "",
+          personal_mobile: contactData.personal_mobile || "",
+          personal_email: contactData.personal_email || "",
           isNewPerson: contactData.isNewPerson || true,
         });
       } catch (error) {
@@ -181,7 +144,6 @@ const EditContactPage = () => {
         setLoading(false);
       }
     };
-
     loadContact();
   }, [id]);
 
@@ -207,7 +169,7 @@ const EditContactPage = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!formData.first_name.trim() || !formData.surname.trim()) {
       setError("First name and surname are required");
@@ -217,21 +179,21 @@ const EditContactPage = () => {
     try {
       setSaving(true);
       setError(null);
-      
+
       // Add ContactID to formData for the update
       const updateData = {
         ...formData,
         ContactID: id
       };
-      
+
       await updateContact(id, updateData);
       setSuccessMessage("Contact updated successfully!");
-      
+
       // Navigate back to contacts page after a short delay
       setTimeout(() => {
         navigate("/contacts");
       }, 1500);
-      
+
     } catch (error) {
       console.error("Failed to update contact:", error);
       setError("Failed to update contact. Please try again.");
@@ -245,7 +207,7 @@ const EditContactPage = () => {
     navigate("/contacts");
   };
 
-   if (loading) {
+  if (loading) {
     return (
       <ThemeProvider theme={theme}>
         <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
@@ -277,12 +239,12 @@ const EditContactPage = () => {
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              
+
               <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
                 Edit Contact
               </Typography>
             </Box>
-            
+
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
@@ -333,7 +295,7 @@ const EditContactPage = () => {
           <Paper elevation={0} sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
-                {/* First Name - Required */}
+                {/* First Name */}
                 <Box>
                   <TextField
                     fullWidth
@@ -342,17 +304,6 @@ const EditContactPage = () => {
                     value={formData.first_name}
                     onChange={handleInputChange}
                     required
-                    disabled={saving}
-                  />
-                </Box>
-                {/* Person ID */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Person ID"
-                    name="PersonID"
-                    value={formData.PersonID}
-                    onChange={handleInputChange}
                     disabled={saving}
                   />
                 </Box>
@@ -368,20 +319,8 @@ const EditContactPage = () => {
                     disabled={saving}
                   />
                 </Box>
-                 {/* Contact ID - Read Only */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Contact ID"
-                    name="ContactID"
-                    value={formData.ContactID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                    InputProps={{ readOnly: true }}
-                  />
-                </Box>
 
-                {/* Surname - Required */}
+                {/* Surname */}
                 <Box>
                   <TextField
                     fullWidth
@@ -393,141 +332,75 @@ const EditContactPage = () => {
                     disabled={saving}
                   />
                 </Box>
-               
 
-                {/* Account ID - Read Only */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Account ID"
-                    name="AccountID"
-                    value={formData.AccountID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                    InputProps={{ readOnly: true }}
-                  />
-                </Box>
+                {/* Account Name */}
+                <SmartDropdown
+                  label="Account"
+                  name="AccountName"
+                  value={formData.AccountID}
+                  onChange={handleInputChange}
+                  service={{ getAll: async () => (await getAllAccounts()).data }}
+                  displayField="AccountName"
+                  valueField="AccountID"
+                  disabled={saving}
+                />
 
-                
+                {/* Job Title */}
+                <SmartDropdown
+                  label="Job Title"
+                  name="JobTitleID"
+                  value={formData.JobTitleID}
+                  onChange={handleInputChange}
+                  service={jobTitleService}
+                  displayField="JobTitleName"
+                  valueField="JobTitleID"
+                  disabled={saving}
+                />
 
-                {/* Title */}
-                <Box>
-                  
-                  <SmartDropdown
-                    label="Title"
-                    name="Title"
-                    value={formData.Title}
-                    onChange={handleInputChange}
-                    service={jobTitleService}
-                    displayField="name"
-                    valueField="id"
-                    disabled={saving}
+                {/* City */}
+                <SmartDropdown
+                  label="City"
+                  name="CityID"
+                  value={formData.CityID}
+                  onChange={handleInputChange}
+                  service={cityService}
+                  displayField="CityName"
+                  valueField="CityID"
+                  disabled={saving}
+                />
 
-                  />
-                </Box>
+                {/* State/Province */}
+                <SmartDropdown
+                  label="State/Province"
+                  name="StateProvinceID"
+                  value={formData.StateProvinceID}
+                  onChange={handleInputChange}
+                  service={stateProvinceService}
+                  displayField="StateProvince_Name"
+                  valueField="StateProvinceID"
+                  disabled={saving}
+                />
 
-                {/* Job Title ID */}
+                {/* Work Email */}
                 <Box>
                   <TextField
                     fullWidth
-                    label="Job Title ID"
-                    name="JobTitleID"
-                    value={formData.JobTitleID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Box>
-                 {/* Position */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Position"
-                    name="Position"
-                    value={formData.Position}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Box>
-                {/* Person City ID */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Person City ID"
-                    name="PersonCityID"
-                    value={formData.PersonCityID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Box>
-                {/* LinkedIn Link */}
-                 <Box /*sx={{ gridColumn: '1 / -1' }}*/> 
-                  <TextField
-                    fullWidth
-                    label="LinkedIn Profile"
-                    name="linkedin_link"
-                    value={formData.linkedin_link}
-                    onChange={handleInputChange}
-                    type="url"
-                    disabled={saving}
-                  />
-                </Box>
-                {/* Person State/Province ID */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Person State/Province ID"
-                    name="PersonStateProvinceID"
-                    value={formData.PersonStateProvinceID}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-                </Box>
-
-                {/* Primary Email */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Primary Email"
-                    name="PrimaryEmail"
-                    value={formData.PrimaryEmail}
+                    label="Email"
+                    name="WorkEmail"
+                    value={formData.WorkEmail}
                     onChange={handleInputChange}
                     type="email"
                     disabled={saving}
                   />
                 </Box>
 
-                {/* Primary Phone */}
+                {/* Work Mobile */}
                 <Box>
                   <TextField
                     fullWidth
-                    label="Primary Phone"
-                    name="PrimaryPhone"
-                    value={formData.PrimaryPhone}
-                    onChange={handleInputChange}
-                    type="tel"
-                    disabled={saving}
-                  />
-                </Box>
-                {/* Personal Email */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Personal Email"
-                    name="personal_email"
-                    value={formData.personal_email}
-                    onChange={handleInputChange}
-                    type="email"
-                    disabled={saving}
-                  />
-                </Box>
-
-                {/* Personal Mobile */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Personal Mobile"
-                    name="personal_mobile"
-                    value={formData.personal_mobile}
+                    label="Mobile"
+                    name="WorkPhone"
+                    value={formData.WorkPhone}
                     onChange={handleInputChange}
                     type="tel"
                     disabled={saving}
@@ -543,9 +416,9 @@ const EditContactPage = () => {
                     checked={formData.Still_employed}
                     onChange={handleInputChange}
                     disabled={saving}
-                    style={{ 
-                      marginRight: '12px', 
-                      width: '18px', 
+                    style={{
+                      marginRight: '12px',
+                      width: '18px',
                       height: '18px',
                       accentColor: '#050505'
                     }}

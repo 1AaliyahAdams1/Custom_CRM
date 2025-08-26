@@ -1,199 +1,203 @@
-import React from 'react';
-// import {
-//   Card,
-//   CardContent,
-//   Typography,
-//   Chip,
-//   Box,
-//   Container,
-//   Grid,
-//   Paper
-// } from '@mui/material';
-// import '@syncfusion/ej2-icons/styles/material.css';
+import React, { useState, useEffect } from 'react';
+import { Box, Container, Grid, Paper, Typography, ThemeProvider, CircularProgress, Alert } from '@mui/material';
+import '@syncfusion/ej2-icons/styles/material.css';
+import theme from '../components/Theme'; 
 
-// // Import dashboard components
-// import SalesPipelineChart from '../components/dashboardCharts/SalesPipelineChart';
-// import RevenueChart from '../components/dashboardCharts/RevenueForecastChart';
-// import CustomerSegmentChart from '../components/dashboardCharts/CustomerSegmentationChart';
-// import ActivitiesChart from '../components/dashboardCharts/ActivitiesOutcomesChart';
-// import ClosedDealsChart from '../components/dashboardCharts/ClosedDealsChart';
-// import MetricsGrid from '../components/dashboardCharts/MetricsGrid';
+import SalesPipelineChart from '../components/dashboardCharts/SalesPipelineChart';
+import RevenueChart from '../components/dashboardCharts/RevenueForecastChart';
+import CustomerSegmentChart from '../components/dashboardCharts/CustomerSegmentationChart';
+import ActivitiesChart from '../components/dashboardCharts/ActivitiesOutcomesChart';
+import ClosedDealsChart from '../components/dashboardCharts/ClosedDealsChart';
+import WelcomeBanner from '../components/WelcomeBanner';
+import WIPBanner from '../components/WIPBanner';
+import EnhancedMetricsGrid from '../components/dashboardCharts/MetricsGrid';
 
-// const Dashboard = () => {
-//   return (
-//     <Box
-//       sx={{
-//         minHeight: '100vh',
-//         background: 'rgba(250, 250, 250, 1)',
-//         padding: 3
-//       }}
-//     >
-//       <Container maxWidth="xl">
-//         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-//           {/* Header */}
-//           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-//             <Box>
-//               <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold', color: 'black', mb: 1 }}>
-//                 CRM Dashboard
-//               </Typography>
-//               <Typography variant="body1" sx={{ color: 'black' }}>
-//                 Comprehensive view of your sales performance and pipeline
-//               </Typography>
-//             </Box>
-//             <Chip
-//               label={`Last updated: ${new Date().toLocaleDateString()}`}
-//               variant="outlined"
-//               sx={{
-//                 color: 'black',
-//                 borderColor: 'black',
-//                 backgroundColor: 'rgba(255, 255, 255, 0.1)'
-//               }}
-//             />
-//           </Box>
+// Import the API services
+import { getDashboardSummary } from '../services/reportService';
 
-//           {/* Key Metrics Grid */}
-//           <Box sx={{ mb: 4 }}>
-//             <MetricsGrid />
-//           </Box>
+const Dashboard = () => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-//           {/* Charts Grid */}
-//           <Grid container spacing={3}>
-//             {/* Sales Pipeline */}
-//             <Grid item xs={12} lg={6}>
-//               <Paper
-//                 elevation={3}
-//                 sx={{
-//                   background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%)',
-//                   backdropFilter: 'blur(10px)',
-//                   borderRadius: 2,
-//                   overflow: 'hidden',
-//                   height: '100%'
-//                 }}
-//               >
-//                 <Box sx={{ p: 2, pb: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-//                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//                     <span className="e-icons e-funnel-chart" style={{ color: '#1976d2', fontSize: '20px' }} />
-//                     <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
-//                       Sales Pipeline
-//                     </Typography>
-//                   </Box>
-//                 </Box>
-//                 <CardContent sx={{ pt: 2 }}>
-//                   <SalesPipelineChart />
-//                 </CardContent>
-//               </Paper>
-//             </Grid>
+  // Fetch dashboard data on component mount
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('Fetching dashboard data...');
+       
+        const data = await getDashboardSummary();
+        console.log('Dashboard data received:', data);
+        setDashboardData(data);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Failed to load dashboard data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-//             {/* Revenue Trends */}
-//             <Grid item xs={12} lg={6}>
-//               <Paper
-//                 elevation={3}
-//                 sx={{
-//                   background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%)',
-//                   backdropFilter: 'blur(10px)',
-//                   borderRadius: 2,
-//                   overflow: 'hidden',
-//                   height: '100%'
-//                 }}
-//               >
-//                 <Box sx={{ p: 2, pb: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-//                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//                     <span className="e-icons e-line-chart" style={{ color: '#2e7d32', fontSize: '20px' }} />
-//                     <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
-//                       Revenue Trends
-//                     </Typography>
-//                   </Box>
-//                 </Box>
-//                 <CardContent sx={{ pt: 2 }}>
-//                   <RevenueChart />
-//                 </CardContent>
-//               </Paper>
-//             </Grid>
+    fetchDashboardData();
+  }, []);
 
-//             {/* Customer Segments */}
-//             <Grid item xs={12} lg={6}>
-//               <Paper
-//                 elevation={3}
-//                 sx={{
-//                   background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%)',
-//                   backdropFilter: 'blur(10px)',
-//                   borderRadius: 2,
-//                   overflow: 'hidden',
-//                   height: '100%'
-//                 }}
-//               >
-//                 <Box sx={{ p: 2, pb: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-//                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//                     <span className="e-icons e-people" style={{ color: '#ed6c02', fontSize: '20px' }} />
-//                     <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
-//                       Customer Segments
-//                     </Typography>
-//                   </Box>
-//                 </Box>
-//                 <CardContent sx={{ pt: 2 }}>
-//                   <CustomerSegmentChart />
-//                 </CardContent>
-//               </Paper>
-//             </Grid>
+  const ChartContainer = ({ title, icon, children, fullWidth = false }) => (
+    <Grid item xs={12} lg={fullWidth ? 12 : 6}>
+      <Paper
+        elevation={3}
+        sx={{
+          backgroundColor: theme.palette.background.paper,
+          border: '1px solid ' + theme.palette.divider,
+          borderRadius: 3,
+          overflow: 'hidden',
+          height: '100%',
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+          }
+        }}
+      >
+        <Box
+          sx={{
+            p: 3,
+            pb: 2,
+            borderBottom: '1px solid ' + theme.palette.divider,
+            backgroundColor: theme.palette.background.default
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 2,
+                backgroundColor: theme.palette.divider,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <span className={`e-icons ${icon}`} style={{ color: theme.palette.text.primary, fontSize: '18px' }} />
+            </Box>
+            <Typography
+              variant="h6"
+              component="h3"
+              sx={{ fontWeight: 600, color: theme.palette.text.primary }}
+            >
+              {title}
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ p: 3, pt: 2 }}>
+          {children}
+        </Box>
+      </Paper>
+    </Grid>
+  );
 
-//             Activities Performance
-//             <Grid item xs={12} lg={6}>
-//               <Paper
-//                 elevation={3}
-//                 sx={{
-//                   background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%)',
-//                   backdropFilter: 'blur(10px)',
-//                   borderRadius: 2,
-//                   overflow: 'hidden',
-//                   height: '100%'
-//                 }}
-//               >
-//                 <Box sx={{ p: 2, pb: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-//                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//                     <span className="e-icons e-bar-chart" style={{ color: '#9c27b0', fontSize: '20px' }} />
-//                     <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
-//                       Activities Performance
-//                     </Typography>
-//                   </Box>
-//                 </Box>
-//                 <CardContent sx={{ pt: 2 }}>
-//                   <ActivitiesChart />
-//                 </CardContent>
-//               </Paper>
-//             </Grid>
+  if (loading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <Box sx={{ 
+          minHeight: '100vh', 
+          backgroundColor: theme.palette.background.default, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center' 
+        }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <CircularProgress size={60} />
+            <Typography variant="h6" sx={{ mt: 2, color: theme.palette.text.primary }}>
+              Loading Dashboard...
+            </Typography>
+          </Box>
+        </Box>
+      </ThemeProvider>
+    );
+  }
 
-//             {/* Closed Deals Analysis - Full Width */}
-//             <Grid item xs={12}>
-//               <Paper
-//                 elevation={3}
-//                 sx={{
-//                   background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%)',
-//                   backdropFilter: 'blur(10px)',
-//                   borderRadius: 2,
-//                   overflow: 'hidden'
-//                 }}
-//               >
-//                 <Box sx={{ p: 2, pb: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-//                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//                     <span className="e-icons e-target" style={{ color: '#1976d2', fontSize: '20px' }} />
-//                     <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
-//                       Closed Deals Analysis
-//                     </Typography>
-//                   </Box>
-//                   <Typography variant="body2" sx={{ color: 'rgba(0, 0, 0, 0.6)', mt: 0.5 }}>
-//                     Deal value distribution and salesperson performance overview
-//                   </Typography>
-//                 </Box>
-//                 <CardContent sx={{ pt: 2 }}>
-//                   <ClosedDealsChart />
-//                 </CardContent>
-//               </Paper>
-//             </Grid>
-//           </Grid>
-//         </Box>
-//       </Container>
-//     </Box>
-//   );
-// };
+  if (error) {
+    return (
+      <ThemeProvider theme={theme}>
+        <Box sx={{ minHeight: '100vh', backgroundColor: theme.palette.background.default, p: 3 }}>
+          <Container maxWidth="xl">
+            <WIPBanner />
+            <WelcomeBanner />
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+            <EnhancedMetricsGrid dashboardData={null} />
+            <Grid container spacing={3}>
+              <ChartContainer title="Sales Pipeline" icon="e-funnel-chart">
+                <SalesPipelineChart data={null} />
+              </ChartContainer>
+              <ChartContainer title="Revenue Forecast" icon="e-line-chart">
+                <RevenueChart data={null} />
+              </ChartContainer>
+              <ChartContainer title="Customer Segments" icon="e-people">
+                <CustomerSegmentChart data={null} />
+              </ChartContainer>
+              <ChartContainer title="Activities Performance" icon="e-bar-chart">
+                <ActivitiesChart data={null} />
+              </ChartContainer>
+              <ChartContainer title="Closed Deals Analysis" icon="e-target" fullWidth>
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2, fontSize: '0.875rem' }}>
+                    Deal value distribution and performance overview
+                  </Typography>
+                  <ClosedDealsChart data={null} />
+                </Box>
+              </ChartContainer>
+            </Grid>
+          </Container>
+        </Box>
+      </ThemeProvider>
+    );
+  }
 
-// export default Dashboard;
+  return (
+    <ThemeProvider theme={theme}>
+      <Box sx={{ minHeight: '100vh', backgroundColor: theme.palette.background.default, p: 3 }}>
+        <Container maxWidth="xl">
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <WIPBanner />
+            <WelcomeBanner />
+            <EnhancedMetricsGrid dashboardData={dashboardData} />
+            <Grid container spacing={3}>
+              <ChartContainer title="Sales Pipeline" icon="e-funnel-chart">
+                <SalesPipelineChart data={dashboardData?.salesPipeline} />
+              </ChartContainer>
+              <ChartContainer title="Revenue Forecast" icon="e-line-chart">
+                <RevenueChart data={dashboardData?.revenue} />
+              </ChartContainer>
+              <ChartContainer title="Customer Segments" icon="e-people">
+                <CustomerSegmentChart data={dashboardData?.customers} />
+              </ChartContainer>
+              <ChartContainer title="Activities Performance" icon="e-bar-chart">
+                <ActivitiesChart data={dashboardData?.activities} />
+              </ChartContainer>
+              <ChartContainer title="Closed Deals Analysis" icon="e-target" fullWidth>
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2, fontSize: '0.875rem' }}>
+                    Deal value distribution and performance overview
+                  </Typography>
+                  <ClosedDealsChart data={dashboardData?.closedDeals} />
+                </Box>
+              </ChartContainer>
+            </Grid>
+            <Box sx={{ mt: 4, textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: '0.8rem' }}>
+                Dashboard last updated: {dashboardData?.timestamp ? new Date(dashboardData.timestamp).toLocaleString() : new Date().toLocaleString()}
+              </Typography>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
+    </ThemeProvider>
+  );
+};
+
+export default Dashboard;

@@ -1,6 +1,6 @@
 import { createTheme} from "@mui/material/styles";
 
-// Monochrome theme for MUI components
+
 const theme = createTheme({
   palette: {
     mode: 'light',
@@ -21,39 +21,79 @@ const theme = createTheme({
       secondary: '#666666',
     },
     divider: '#e5e5e5',
+    error: {
+      main: '#ff4444',
+      contrastText: '#ffffff',
+    },
   },
   components: {
-    MuiTableHead: {
+    MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundColor: '#f0f0f0',
+          border: '1px solid #e5e5e5',
+          borderRadius: '8px',
         },
       },
     },
-    MuiTableRow: {
+    MuiTextField: {
       styleOverrides: {
         root: {
-          '&:hover': {
-            backgroundColor: '#f5f5f5',
+          '& .MuiOutlinedInput-root': {
+            backgroundColor: '#ffffff',
+            '& fieldset': { borderColor: '#e5e5e5' },
+            '&:hover fieldset': { borderColor: '#cccccc' },
+            '&.Mui-focused fieldset': { borderColor: '#050505' },
+            '&.Mui-error fieldset': { 
+              borderColor: '#ff4444',
+              borderWidth: '2px',
+            },
           },
-          '&.Mui-selected': {
-            backgroundColor: '#e0e0e0',
-            '&:hover': {
-              backgroundColor: '#d5d5d5',
+          '& .Mui-error': {
+            '& .MuiSvgIcon-root': {
+              color: '#ff4444',
+            },
+            '& .MuiFormhelpertext-root': {
+              color: '#ff4444',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginLeft: '0',
             },
           },
         },
       },
     },
-    MuiChip: {
+    MuiSelect: {
       styleOverrides: {
         root: {
-          borderRadius: '4px',
-          fontWeight: 500,
+          '&.Mui-error': {
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#ff4444',
+              borderWidth: '2px',
+            },
+          },
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        outlined: {
+          borderColor: '#e5e5e5',
+          color: '#050505',
+          '&:hover': {
+            borderColor: '#cccccc',
+            backgroundColor: '#f5f5f5',
+          },
+        },
+      },
+    },
+    MuiFormhelpertext: {
+      styleOverrides: {
+        root: {
+          marginLeft: '0',
         },
       },
     },
   },
 });
-
 export default theme;

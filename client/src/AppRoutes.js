@@ -1,5 +1,5 @@
 // src/AppRoutes.jsx
-import React, { lazy } from "react";
+import { lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import PrivateRoute from "./components/auth/PrivateRoute";
@@ -14,8 +14,20 @@ const Accounts = lazy(() => import("./components/containers/AccountsContainer"))
 const Contacts = lazy(() => import("./components/containers/ContactsContainer"));
 const Deals = lazy(() => import("./components/containers/DealsContainer"));
 const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
+
+
+const ProductsContainer = lazy(() => import("./components/containers/ProductsContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
 const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
+const RoleManagement = lazy(() => import("./pages/RoleManagement"));
+
+const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
+const CityPage = lazy(() => import("./pages/City/CityPage"));
+const StateProvincePage = lazy(() => import("./pages/StateProvince/StateProvincePage"));
+const IndustryPage = lazy(() => import("./pages/Industry/IndustryPage"));
+const PriorityLevelsPage = lazy(() => import("./pages/PriorityLevelsPage"));
+const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
+const DealStagePage = lazy(() => import("./pages/Deals/DealStagePage"));
 
 const AccountsDetailsPage = lazy(() => import("./pages/Accounts/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsPage"));
@@ -26,6 +38,9 @@ const CreateAccountPage = lazy(() => import("./pages/Accounts/CreateAccountPage"
 const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPage"));
 const CreateDealPage = lazy(() => import("./pages/Deals/CreateDealPage"));
 const CreateActivitiesPage = lazy(() => import("./pages/Activities/CreateActivitiesPage"));
+const CreateProduct = lazy(() => import("./pages/Products/CreateProductPage"));
+const AddCountryPage = lazy(() => import("./pages/Country/AddCountryPage"));
+
 
 const EditAccountPage = lazy(() => import("./pages/Accounts/EditAccountPage"));
 const EditContactPage = lazy(() => import("./pages/Contacts/EditContactPage"));
@@ -98,7 +113,7 @@ const AppRoutes = () => {
             <EditAccountPage />
           </PrivateRoute>
         }
-        
+
       />
       {/* --- Contacts Routes --- */}
       <Route
@@ -133,7 +148,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-        {/* --- Deal Routes --- */}
+      {/* --- Deal Routes --- */}
       <Route
         path="/deals"
         element={
@@ -166,7 +181,15 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-        {/* --- Activity Routes --- */}
+      <Route
+        path="/deal-stages"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealStage}>
+            <DealStagePage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Activity Routes --- */}
       <Route
         path="/activities"
         element={
@@ -199,6 +222,75 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/activity-types"    
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activityTypes}>
+            <ActivityTypePage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Products Routes --- */}
+      <Route
+        path="/products"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.products}>
+            <ProductsContainer />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/products/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.productsCreate}>
+              <CreateProduct />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Country Routes --- */}
+      <Route
+        path="/country"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.country}>
+            <CountryContainer />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/countries/add"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.countryCreate}>
+            <AddCountryPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- City Routes --- */}
+      <Route
+        path="/city"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.city}>
+            <CityPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- State/Province Routes --- */}
+      <Route
+        path="/state-province"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.stateProvince}>
+            <StateProvincePage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Industry Routes --- */}
+      <Route
+        path="/industry"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.industry}>
+            <IndustryPage />
+          </PrivateRoute>
+        }
+      />
       {/* --- Smart Work Routes --- */}
       <Route
         path="/smart-work"
@@ -206,9 +298,9 @@ const AppRoutes = () => {
           <PrivateRoute allowedRoles={ROUTE_ACCESS.smartWork}>
             <SmartWorkPage />
           </PrivateRoute>
-        } 
-        />        
-      
+        }
+      />
+
       {/* --- Reports Routes --- */}
       <Route
         path="/reports"
@@ -218,9 +310,26 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      {/* --- Work Page Route --- */}
-           
+      
+      {/* --- Role Management Route --- */}
 
+      <Route
+        path="/rolemanagement"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.roles}>
+            <RoleManagement />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Priority Levels Route --- */}
+      <Route
+        path="/priority-levels"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.priority}>
+            <PriorityLevelsPage />
+          </PrivateRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<NotFoundPage />} />

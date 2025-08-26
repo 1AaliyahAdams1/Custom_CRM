@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 // AccountsPage.jsx
 import React from "react";
+=======
+
+import React, { useState } from "react";
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
 import {
   Box,
   Typography,
@@ -9,10 +14,18 @@ import {
   Paper,
   Chip,
   Toolbar,
+<<<<<<< HEAD
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import TableView from '../../components/TableView';
+=======
+  Snackbar,
+} from "@mui/material";
+import { Add } from "@mui/icons-material";
+import { ThemeProvider } from "@mui/material/styles";
+import TableView from '../../components/tableFormat/TableView';
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
 import theme from "../../components/Theme";
 import { formatters } from '../../utils/formatters';
 
@@ -20,8 +33,11 @@ const AccountsPage = ({
   accounts = [],
   loading = false,
   error,
+<<<<<<< HEAD
   successMessage,
   setSuccessMessage,
+=======
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
   selected = [],
   onSelectClick,
   onSelectAllClick,
@@ -33,54 +49,57 @@ const AccountsPage = ({
   onAddAttachment,
   onClaimAccount,
   onAssignUser,
-  tableConfig,
-  notesPopupOpen,
-  setNotesPopupOpen,
-  attachmentsPopupOpen,
-  setAttachmentsPopupOpen,
-  selectedAccount,
-  popupLoading,
-  popupError,
-  handleSaveNote,
-  handleDeleteNote,
-  handleEditNote,
-  handleUploadAttachment,
-  handleDeleteAttachment,
-  handleDownloadAttachment,
 }) => {
   const columns = [
-    { field: 'AccountName', headerName: 'Name', type: 'tooltip' },
-    { field: 'CityName', headerName: 'City' },
-    { field: 'StateProvince_Name', headerName: 'State Province' },
-    { field: 'CountryName', headerName: 'Country' },
-    { field: 'street_address', headerName: 'Street', type: 'truncated', maxWidth: 200 },
-    { field: 'postal_code', headerName: 'Postal Code' },
-    { field: 'PrimaryPhone', headerName: 'Phone' },
-    { field: 'IndustryName', headerName: 'Industry' },
-    { field: 'fax', headerName: 'Fax' },
-    { field: 'email', headerName: 'Email' },
-    { field: 'Website', headerName: 'Website', type: 'link' },
-    { field: 'number_of_employees', headerName: '# Employees' },
-    { field: 'number_of_venues', headerName: '# Venues' },
-    { field: 'number_of_releases', headerName: '# Releases' },
-    { field: 'number_of_events_anually', headerName: '# Events Annually' },
-    { field: 'annual_revenue', headerName: 'Annual Revenue' },
-    { field: 'ParentAccountName', headerName: 'Parent Account' },
-    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime' },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime' },
+    { field: 'AccountName', headerName: 'Name', type: 'tooltip', defaultVisible: true },
+    { field: 'CityName', headerName: 'City', defaultVisible: true },
+    { field: 'StateProvince_Name', headerName: 'State Province', defaultVisible: false },
+    { field: 'CountryName', headerName: 'Country', defaultVisible: true },
+    { field: 'street_address', headerName: 'Street', type: 'truncated', maxWidth: 200, defaultVisible: false },
+    { field: 'postal_code', headerName: 'Postal Code', defaultVisible: false },
+    { field: 'PrimaryPhone', headerName: 'Phone', defaultVisible: true },
+    { field: 'IndustryName', headerName: 'Industry', defaultVisible: false },
+    { field: 'fax', headerName: 'Fax', defaultVisible: false },
+    { field: 'email', headerName: 'Email', defaultVisible: false },
+    { field: 'Website', headerName: 'Website', type: 'link', defaultVisible: false },
+    { field: 'number_of_employees', headerName: '# Employees', defaultVisible: false },
+    { field: 'number_of_venues', headerName: '# Venues', defaultVisible: false },
+    { field: 'number_of_releases', headerName: '# Releases', defaultVisible: false },
+    { field: 'number_of_events_anually', headerName: '# Events Annually', defaultVisible: false },
+    { field: 'annual_revenue', headerName: 'Annual Revenue', defaultVisible: false },
+    { field: 'ParentAccountName', headerName: 'Parent Account', defaultVisible: false },
+    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
+    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
     {
       field: 'ownerStatus',
       headerName: 'Ownership',
       type: 'chip',
       chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
       chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' },
+<<<<<<< HEAD
     },
   ];
 
+=======
+      defaultVisible: true,
+    },
+  ];
+
+  // Local state for status messages
+  const [statusMessage, setStatusMessage] = useState('');
+  const [statusSeverity, setStatusSeverity] = useState('success');
+
+  const showStatus = (message, severity = 'success') => {
+    setStatusMessage(message);
+    setStatusSeverity(severity);
+  };
+
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+<<<<<<< HEAD
         {successMessage && (
           <Alert
             severity="success"
@@ -90,6 +109,8 @@ const AccountsPage = ({
             {successMessage}
           </Alert>
         )}
+=======
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
 
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
           <Toolbar sx={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e5e5', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, py: 2 }}>
@@ -107,7 +128,10 @@ const AccountsPage = ({
               >
                 Add Account
               </Button>
+<<<<<<< HEAD
 
+=======
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
             </Box>
           </Toolbar>
 
@@ -117,7 +141,11 @@ const AccountsPage = ({
             <TableView
               data={accounts}
               columns={columns}
+<<<<<<< HEAD
               idField="AccountID" 
+=======
+              idField="AccountID"
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
               selected={selected}
               onSelectClick={onSelectClick}
               onSelectAllClick={onSelectAllClick}
@@ -139,6 +167,21 @@ const AccountsPage = ({
             {selected.length > 0 && <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>{selected.length} selected</Typography>}
           </Box>
         </Paper>
+<<<<<<< HEAD
+=======
+
+        {/* Status Snackbar */}
+        <Snackbar
+          open={!!statusMessage}
+          autoHideDuration={4000}
+          onClose={() => setStatusMessage('')}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert onClose={() => setStatusMessage('')} severity={statusSeverity} sx={{ width: '100%' }}>
+            {statusMessage}
+          </Alert>
+        </Snackbar>
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
       </Box>
     </ThemeProvider>
   );

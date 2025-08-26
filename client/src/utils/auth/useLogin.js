@@ -1,6 +1,8 @@
+// src/utils/auth/useLogin.js
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login as loginService } from "../../services/auth/authService";
+import { fetchActiveAccountsByUser } from "../../services/accountService"; // ✅ existing service
 
 export default function useLogin() {
   const [error, setError] = useState("");
@@ -9,41 +11,46 @@ export default function useLogin() {
   const login = async (identifier, password) => {
     setError("");
     try {
+      // Call backend login
       const response = await loginService(identifier, password);
-      
+
       console.log("=== Login Response Debug ===");
       console.log("Full response:", response);
-      console.log("Token:", response.token);
-      console.log("User:", response.user);
-      console.log("Roles:", response.roles);
 
       // Save token
       localStorage.setItem("token", response.token);
-      
-      // Store user with roles in multiple formats for compatibility
+
+      // Fetch accounts owned by this user and extract only IDs
+      let ownedAccountIds = [];
+      try {
+        const accounts = await fetchActiveAccountsByUser(response.user.UserID);
+        ownedAccountIds = accounts.map(account => account.id); // ✅ map to IDs
+        console.log("Owned account IDs:", ownedAccountIds);
+      } catch (err) {
+        console.error("Failed to fetch owned accounts:", err);
+      }
+
+      // Build user object for localStorage
       const userToStore = {
         ...response.user,
-        roles: response.roles || [], // Array format for AuthContext
-        RoleNames: Array.isArray(response.roles) 
-          ? response.roles.join(", ") // String format for backward compatibility
-          : (response.roles || "")
+        roles: response.roles || [],
+        RoleNames: Array.isArray(response.roles)
+          ? response.roles.join(", ")
+          : (response.roles || ""),
+        ownedAccountIds, // ✅ store only IDs
       };
-      
+
       console.log("Storing user data:", userToStore);
+
+      // Save in localStorage
       localStorage.setItem("user", JSON.stringify(userToStore));
 
-      // Verify what was stored
-      console.log("Verification - stored user:", JSON.parse(localStorage.getItem("user")));
-      console.log("Verification - stored token:", localStorage.getItem("token"));
+      // Trigger storage event so other components refresh
+      window.dispatchEvent(new Event("storage"));
 
-      // Trigger storage event for Header component and other listeners
-      window.dispatchEvent(new Event('storage'));
-
-      console.log("Login successful, reloading page...");
-      
-      // Instead of navigating, reload the entire page to ensure fresh context
+      // Redirect to dashboard
       window.location.href = "/dashboard";
-      
+
       return true;
     } catch (err) {
       console.error("Login error:", err);

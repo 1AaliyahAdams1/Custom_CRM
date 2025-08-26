@@ -14,10 +14,20 @@ import {
 } from '@mui/material';
 import { Add, Clear, FilterList } from '@mui/icons-material';
 
+<<<<<<< HEAD:client/src/components/FiltersDialog.jsx
 const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
   const [filters, setFilters] = useState({});
+=======
+const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {} }) => {
+  const [filters, setFilters] = useState(currentFilters);
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495:client/src/components/tableFormat/FiltersDialog.jsx
   const [selectedColumn, setSelectedColumn] = useState('');
   const [filterValue, setFilterValue] = useState('');
+
+  // Sync local filters with parent's currentFilters
+  useEffect(() => {
+    setFilters(currentFilters || {});
+  }, [currentFilters]);
 
   // Initialize selected column when columns are available
   useEffect(() => {
@@ -26,12 +36,10 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
     }
   }, [columns, selectedColumn]);
 
-  // Reset filters when columns change
+  // Sync internal state with current filters from parent
   useEffect(() => {
-    if (columns && columns.length > 0) {
-      setFilters({});
-    }
-  }, [columns]);
+    setFilters(currentFilters);
+  }, [currentFilters]);
 
   const handleAddFilter = () => {
     if (selectedColumn && filterValue.trim()) {
@@ -39,7 +47,11 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
       setFilters(newFilters);
       setFilterValue('');
       
+<<<<<<< HEAD:client/src/components/FiltersDialog.jsx
       // Auto-apply filters after adding
+=======
+      // Apply filters
+>>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495:client/src/components/tableFormat/FiltersDialog.jsx
       applyFilters(newFilters);
     }
   };
@@ -49,7 +61,7 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
     delete newFilters[field];
     setFilters(newFilters);
     
-    // Auto-apply filters after removing
+    // Apply filters
     applyFilters(newFilters);
   };
 
@@ -60,10 +72,11 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
   };
 
   const handleClearAllFilters = () => {
-    setFilters({});
+    const emptyFilters = {};
+    setFilters(emptyFilters);
     setFilterValue('');
     if (onApplyFilters) {
-      onApplyFilters({});
+      onApplyFilters(emptyFilters);
     }
   };
 

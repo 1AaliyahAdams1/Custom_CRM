@@ -1,64 +1,65 @@
-const sql = require("mssql");
-const dbConfig = require("../dbConfig");
+const { sql, poolPromise } = require("../dbConfig");
 
 // =======================
 // Helper: get EntityTypeID by TypeName
 // =======================
 async function getEntityTypeId(typeName) {
   try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("TypeName", sql.VarChar(100), typeName)
-      .query("SELECT EntityTypeID FROM EntityType WHERE TypeName = @TypeName AND Active = 1");
+    const pool = await poolPromise;
+    const request = pool.request();
+    request.input("TypeName", sql.VarChar(100), typeName);
+    const result = await request.query(
+      "SELECT EntityTypeID FROM EntityType WHERE TypeName = @TypeName AND Active = 1"
+    );
 
     if (result.recordset.length === 0) {
       throw new Error(`EntityType '${typeName}' not found or inactive`);
     }
     return result.recordset[0].EntityTypeID;
   } catch (error) {
-    console.error("Error fetching EntityTypeID:", error);
+    console.error("Database error in getEntityTypeId:", error);
     throw error;
   }
 }
-
 
 // =======================
 // Get notes for entity
 // =======================
 async function getNotes(entityId, entityTypeName) {
   try {
-    const pool = await sql.connect(dbConfig);
+    const pool = await poolPromise;
+    const request = pool.request();
     const entityTypeId = await getEntityTypeId(entityTypeName);
 
-    const result = await pool.request()
-      .input("EntityID", sql.Int, entityId)
-      .input("EntityTypeID", sql.Int, entityTypeId)
-      .execute("getNotes");
+    request.input("EntityID", sql.Int, entityId);
+    request.input("TypeName", sql.VarChar(100), entityTypeName);
+    request.input("EntityTypeID", sql.Int, entityTypeId);
 
-    return result.recordset;
+    const result = await request.execute("getNotes");
+    return result.recordset || [];
   } catch (error) {
-    console.error("Error fetching notes:", error);
+    console.error("Database error in getNotes:", error);
     throw error;
   }
 }
 
 // =======================
-// Add note
+// Create note
 // =======================
-async function addNote(entityId, entityTypeName, content) {
+async function createNote(entityId, entityTypeName, content, userId) {
   try {
-    const pool = await sql.connect(dbConfig);
+    const pool = await poolPromise;
+    const request = pool.request();
     const entityTypeId = await getEntityTypeId(entityTypeName);
 
-    await pool.request()
-      .input("EntityID", sql.Int, entityId)
-      .input("EntityTypeID", sql.Int, entityTypeId)
-      .input("Content", sql.VarChar(255), content)
-      .execute("createNote");
+    request.input("EntityID", sql.Int, entityId);
+    request.input("EntityTypeID", sql.Int, entityTypeId);
+    request.input("Content", sql.VarChar(255), content);
 
+    await request.execute("createNote"); // no recordset expected
     return { message: `Note added to ${entityTypeName} successfully` };
   } catch (error) {
-    console.error("Error adding note:", error);
+    console.error("Database error in createNote:", error);
     throw error;
   }
 }
@@ -66,21 +67,21 @@ async function addNote(entityId, entityTypeName, content) {
 // =======================
 // Update note
 // =======================
-async function updateNote(noteId, entityId, entityTypeName, content) {
+async function updateNote(noteId, entityId, entityTypeName, content, userId) {
   try {
-    const pool = await sql.connect(dbConfig);
+    const pool = await poolPromise;
+    const request = pool.request();
     const entityTypeId = await getEntityTypeId(entityTypeName);
 
-    await pool.request()
-      .input("NoteID", sql.Int, noteId)
-      .input("EntityID", sql.Int, entityId)
-      .input("EntityTypeID", sql.Int, entityTypeId)
-      .input("Content", sql.VarChar(255), content)
-      .execute("updateNote");
+    request.input("NoteID", sql.Int, noteId);
+    request.input("EntityID", sql.Int, entityId);
+    request.input("EntityTypeID", sql.Int, entityTypeId);
+    request.input("Content", sql.VarChar(255), content);
 
+    await request.execute("updateNote");
     return { message: "Note updated successfully" };
   } catch (error) {
-    console.error("Error updating note:", error);
+    console.error("Database error in updateNote:", error);
     throw error;
   }
 }
@@ -88,16 +89,15 @@ async function updateNote(noteId, entityId, entityTypeName, content) {
 // =======================
 // Deactivate note
 // =======================
-async function deactivateNote(noteId) {
+async function deactivateNote(noteId, userId) {
   try {
-    const pool = await sql.connect(dbConfig);
-    await pool.request()
-      .input("NoteID", sql.Int, noteId)
-      .execute("deactivateNote");
-
+    const pool = await poolPromise;
+    const request = pool.request();
+    request.input("NoteID", sql.Int, noteId);
+    await request.execute("deactivateNote");
     return { message: "Note deactivated successfully" };
   } catch (error) {
-    console.error("Error deactivating note:", error);
+    console.error("Database error in deactivateNote:", error);
     throw error;
   }
 }
@@ -105,16 +105,15 @@ async function deactivateNote(noteId) {
 // =======================
 // Reactivate note
 // =======================
-async function reactivateNote(noteId) {
+async function reactivateNote(noteId, userId) {
   try {
-    const pool = await sql.connect(dbConfig);
-    await pool.request()
-      .input("NoteID", sql.Int, noteId)
-      .execute("reactivateNote");
-
+    const pool = await poolPromise;
+    const request = pool.request();
+    request.input("NoteID", sql.Int, noteId);
+    await request.execute("reactivateNote");
     return { message: "Note reactivated successfully" };
   } catch (error) {
-    console.error("Error reactivating note:", error);
+    console.error("Database error in reactivateNote:", error);
     throw error;
   }
 }
@@ -122,26 +121,22 @@ async function reactivateNote(noteId) {
 // =======================
 // Delete note
 // =======================
-async function deleteNote(noteId) {
+async function deleteNote(noteId, userId) {
   try {
-    const pool = await sql.connect(dbConfig);
-    await pool.request()
-      .input("NoteID", sql.Int, noteId)
-      .execute("deleteNote");
-
+    const pool = await poolPromise;
+    const request = pool.request();
+    request.input("NoteID", sql.Int, noteId);
+    await request.execute("deleteNote");
     return { message: "Note deleted successfully" };
   } catch (error) {
-    console.error("Error deleting note:", error);
+    console.error("Database error in deleteNote:", error);
     throw error;
   }
 }
 
-// =======================
-// Exports
-// =======================
 module.exports = {
   getNotes,
-  addNote,
+  createNote,
   updateNote,
   deactivateNote,
   reactivateNote,
