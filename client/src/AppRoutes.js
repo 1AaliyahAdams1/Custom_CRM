@@ -22,8 +22,8 @@ const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
 const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
-const CityPage = lazy(() => import("./pages/City/CityPage"));
-const StateProvincePage = lazy(() => import("./pages/StateProvince/StateProvincePage"));
+const CityPage = lazy(() => import("./pages/GeographicData/CityPage"));
+const StateProvincePage = lazy(() => import("./pages/GeographicData/StateProvincePage"));
 const IndustryPage = lazy(() => import("./pages/Industry/IndustryPage"));
 const PriorityLevelsPage = lazy(() => import("./pages/PriorityLevelsPage"));
 const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
@@ -39,7 +39,7 @@ const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPag
 const CreateDealPage = lazy(() => import("./pages/Deals/CreateDealPage"));
 const CreateActivitiesPage = lazy(() => import("./pages/Activities/CreateActivitiesPage"));
 const CreateProduct = lazy(() => import("./pages/Products/CreateProductPage"));
-const AddCountryPage = lazy(() => import("./pages/Country/AddCountryPage"));
+
 
 
 const EditAccountPage = lazy(() => import("./pages/Accounts/EditAccountPage"));
@@ -256,14 +256,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      <Route
-        path="/countries/add"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.countryCreate}>
-            <AddCountryPage />
-          </PrivateRoute>
-        }
-      />
+      
       {/* --- City Routes --- */}
       <Route
         path="/city"
