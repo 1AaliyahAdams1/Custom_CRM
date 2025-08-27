@@ -20,54 +20,21 @@ import {
   stateProvinceService 
 } from '../../services/dropdownServices';
 import SmartDropdown from '../../components/SmartDropdown';
-<<<<<<< HEAD
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-  }
-});
-=======
 import theme from "../../components/Theme";
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
 
 const EditAccount = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
-<<<<<<< HEAD
-=======
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
   
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
   const [cities, setCities] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [countries, setCountries] = useState([]);
   const [stateProvinces, setStateProvinces] = useState([]);
-<<<<<<< HEAD
-=======
-
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
   const [formData, setFormData] = useState({
     AccountName: "",
     CityID: "",
@@ -89,11 +56,6 @@ const EditAccount = () => {
     number_of_events_anually: "",
     ParentAccount: "",
   });
-<<<<<<< HEAD
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-=======
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -111,7 +73,6 @@ const EditAccount = () => {
     return touched[fieldName] && fieldErrors[fieldName] && fieldErrors[fieldName].length > 0;
   };
 
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
@@ -132,10 +93,7 @@ const EditAccount = () => {
     loadDropdownData();
   }, []);
 
-<<<<<<< HEAD
-=======
   // Fetch account data when component mounts
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
   useEffect(() => {
     const loadAccount = async () => {
       if (!id) {
@@ -189,11 +147,8 @@ const EditAccount = () => {
       setError(null);
       await updateAccount(id, formData);
       setSuccessMessage("Account updated successfully!");
-<<<<<<< HEAD
-=======
       console.log("Server id response:", id);
       console.log("Server formdata response:", formData);
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
       setTimeout(() => navigate("/accounts"), 1500);
     } catch {
       setError("Failed to update account");
@@ -233,27 +188,6 @@ const EditAccount = () => {
           <Paper elevation={0} sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
-<<<<<<< HEAD
-                <TextField fullWidth label="Account Name" name="AccountName" value={formData.AccountName} onChange={handleInputChange} disabled={saving} />
-                <SmartDropdown label="Parent Account" name="ParentAccount" value={formData.ParentAccount} onChange={handleInputChange} service={{ getAll: async () => (await getAllAccounts()).data }} displayField="AccountName" valueField="" disabled={saving} />
-                <SmartDropdown label="Country" name="CountryID" value={formData.CountryID} onChange={handleInputChange} service={countryService} displayField="name" valueField="id" disabled={saving} />
-                <SmartDropdown label="State/Province" name="StateProvinceID" value={formData.StateProvinceID} onChange={handleInputChange} service={stateProvinceService} displayField="name" valueField="id" disabled={saving} />
-                <SmartDropdown label="City" name="CityID" value={formData.CityID} onChange={handleInputChange} service={cityService} displayField="name" valueField="id" disabled={saving} />
-                <SmartDropdown label="Industry" name="IndustryID" value={formData.IndustryID} onChange={handleInputChange} service={industryService} displayField="name" valueField="id" disabled={saving} />
-                <TextField fullWidth label="Street Address 1" name="street_address1" value={formData.street_address1} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Street Address 2" name="street_address2" value={formData.street_address2} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Street Address 3" name="street_address3" value={formData.street_address3} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Postal Code" name="postal_code" value={formData.postal_code} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Primary Phone" name="PrimaryPhone" value={formData.PrimaryPhone} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Email" name="email" value={formData.email} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Fax" name="fax" value={formData.fax} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Website" name="Website" value={formData.Website} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Annual Revenue" name="annual_revenue" value={formData.annual_revenue} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Number of Employees" name="number_of_employees" value={formData.number_of_employees} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Number of Releases" name="number_of_releases" value={formData.number_of_releases} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Number of Events Annually" name="number_of_events_anually" value={formData.number_of_events_anually} onChange={handleInputChange} disabled={saving} />
-                <TextField fullWidth label="Number of Venues" name="number_of_venues" value={formData.number_of_venues} onChange={handleInputChange} disabled={saving} />
-=======
 
                 <TextField sx={{ gridColumn: '1 / -1' }}
                   fullWidth
@@ -474,7 +408,6 @@ const EditAccount = () => {
                   disabled={saving}
                 />
 
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
               </Box>
             </form>
           </Paper>

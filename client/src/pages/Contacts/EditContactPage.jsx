@@ -15,16 +15,6 @@ import {
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { getContactDetails, updateContact, getContactsByAccountId } from "../../services/contactService";
-<<<<<<< HEAD
-import { 
-  cityService, 
-  industryService, 
-  countryService, 
-  stateProvinceService, 
-  jobTitleService
-} from '../../services/dropdownServices';
-import SmartDropdown from '../../components/SmartDropdown';
-=======
 import { getAllAccounts } from "../../services/accountService";
 import {
   cityService,
@@ -35,7 +25,6 @@ import {
 } from '../../services/dropdownServices';
 import SmartDropdown from '../../components/SmartDropdown';
 import theme from "../../components/Theme";
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
 
 
 const EditContactPage = () => {

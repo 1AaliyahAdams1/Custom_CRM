@@ -1,4 +1,3 @@
-// data/reports/activitiesOutcomesReportRepo.js
 const { sql, poolPromise } = require("../../dbConfig");
 
 // =======================
@@ -8,7 +7,6 @@ async function getActivitiesVsOutcomes() {
 try {
     const pool = await poolPromise;
     
-    // FIX: Use pool.request() instead of request variable
     const result = await pool.request().execute("GetActivitiesVsOutcomes");
     return result.recordset;
 } catch (error) {

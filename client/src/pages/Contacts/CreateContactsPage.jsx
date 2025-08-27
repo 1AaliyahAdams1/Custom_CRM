@@ -20,10 +20,7 @@ import { createContact } from '../../services/contactService';
 import { getAllPersons, createPerson } from '../../services/personService';
 import { getAllAccounts } from '../../services/accountService';
 import { cityService, jobTitleService } from '../../services/dropdownServices';
-<<<<<<< HEAD
-=======
 import theme from "../../components/Theme";
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
 
 
 const CreateContactsPage = () => {

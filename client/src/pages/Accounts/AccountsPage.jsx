@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-// AccountsPage.jsx
-import React from "react";
-=======
 
 import React, { useState } from "react";
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
 import {
   Box,
   Typography,
@@ -14,18 +9,11 @@ import {
   Paper,
   Chip,
   Toolbar,
-<<<<<<< HEAD
-} from "@mui/material";
-import { Add } from "@mui/icons-material";
-import { ThemeProvider } from "@mui/material/styles";
-import TableView from '../../components/TableView';
-=======
   Snackbar,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import TableView from '../../components/tableFormat/TableView';
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
 import theme from "../../components/Theme";
 import { formatters } from '../../utils/formatters';
 
@@ -33,11 +21,6 @@ const AccountsPage = ({
   accounts = [],
   loading = false,
   error,
-<<<<<<< HEAD
-  successMessage,
-  setSuccessMessage,
-=======
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
   selected = [],
   onSelectClick,
   onSelectAllClick,
@@ -76,11 +59,6 @@ const AccountsPage = ({
       type: 'chip',
       chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
       chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' },
-<<<<<<< HEAD
-    },
-  ];
-
-=======
       defaultVisible: true,
     },
   ];
@@ -94,23 +72,10 @@ const AccountsPage = ({
     setStatusSeverity(severity);
   };
 
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-<<<<<<< HEAD
-        {successMessage && (
-          <Alert
-            severity="success"
-            sx={{ mb: 2 }}
-            onClose={() => setSuccessMessage && setSuccessMessage("")}
-          >
-            {successMessage}
-          </Alert>
-        )}
-=======
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
 
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
           <Toolbar sx={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e5e5', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, py: 2 }}>
@@ -128,10 +93,6 @@ const AccountsPage = ({
               >
                 Add Account
               </Button>
-<<<<<<< HEAD
-
-=======
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
             </Box>
           </Toolbar>
 
@@ -141,11 +102,7 @@ const AccountsPage = ({
             <TableView
               data={accounts}
               columns={columns}
-<<<<<<< HEAD
-              idField="AccountID" 
-=======
               idField="AccountID"
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
               selected={selected}
               onSelectClick={onSelectClick}
               onSelectAllClick={onSelectAllClick}
@@ -167,8 +124,6 @@ const AccountsPage = ({
             {selected.length > 0 && <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>{selected.length} selected</Typography>}
           </Box>
         </Paper>
-<<<<<<< HEAD
-=======
 
         {/* Status Snackbar */}
         <Snackbar
@@ -181,7 +136,6 @@ const AccountsPage = ({
             {statusMessage}
           </Alert>
         </Snackbar>
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495
       </Box>
     </ThemeProvider>
   );

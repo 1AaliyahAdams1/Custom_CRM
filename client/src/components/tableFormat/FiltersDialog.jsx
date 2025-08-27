@@ -14,13 +14,8 @@ import {
 } from '@mui/material';
 import { Add, Clear, FilterList } from '@mui/icons-material';
 
-<<<<<<< HEAD:client/src/components/FiltersDialog.jsx
-const FiltersDialog = ({ columns, onApplyFilters, deals = [] }) => {
-  const [filters, setFilters] = useState({});
-=======
 const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {} }) => {
   const [filters, setFilters] = useState(currentFilters);
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495:client/src/components/tableFormat/FiltersDialog.jsx
   const [selectedColumn, setSelectedColumn] = useState('');
   const [filterValue, setFilterValue] = useState('');
 
@@ -47,11 +42,7 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
       setFilters(newFilters);
       setFilterValue('');
       
-<<<<<<< HEAD:client/src/components/FiltersDialog.jsx
-      // Auto-apply filters after adding
-=======
       // Apply filters
->>>>>>> cff0b1721b8f056cc48682b3d4508773311a8495:client/src/components/tableFormat/FiltersDialog.jsx
       applyFilters(newFilters);
     }
   };
