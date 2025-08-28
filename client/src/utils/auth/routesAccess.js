@@ -51,5 +51,7 @@ export const ROUTE_ACCESS = {
   priority: ["C-level", "Sales Manager", "Sales Representative"],
   priorityCreate: ["C-level", "Sales Manager"],
 
+  settings: ["C-level", "Sales Manager", "Sales Representative"],
+
   
 };
