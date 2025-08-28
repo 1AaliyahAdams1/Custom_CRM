@@ -29,6 +29,7 @@ import {
   AdminPanelSettings as AdminPanelSettingsIcon,
   Inventory as InventoryIcon,
   Flag as FlagIcon,
+  Settings as SettingsApplicationsIcon,
  
 
 } from "@mui/icons-material";
@@ -120,8 +121,8 @@ const navigation = [
   {
     name: "Settings",
     href: "/settings",
-    icon: SettingsIcon,
-    allowedRoles: ["Admin"], // Keep this one as is since it's not in routesAccess
+    icon: SettingsApplicationsIcon,
+    accessKey: 'settings', // Keep this one as is since it's not in routesAccess
   },
 ];
 
