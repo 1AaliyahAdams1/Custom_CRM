@@ -49,6 +49,7 @@ const EditActivityPage = lazy(() => import("./pages/Activities/EditActivityPage"
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 const AppRoutes = () => {
   console.log("AppRoutes component is rendering");
@@ -320,6 +321,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.priority}>
             <PriorityLevelsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.settings}>
+            <SettingsPage />
           </PrivateRoute>
         }
       />
