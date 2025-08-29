@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -12,20 +12,10 @@ import {
   Tab,
 } from "@mui/material";
 import {
-  Info as InfoIcon,
-  Edit as EditIcon,
-  Note as NoteIcon,
-  AttachFile as AttachFileIcon,
-  PowerOff as PowerOffIcon,
-  Power as PowerIcon,
-  Delete as DeleteIcon,
-  Close as CloseIcon,
-  Percent as PercentIcon,
-  Timeline as TimelineIcon,
+  Add,
 } from "@mui/icons-material";
-
-import { Add } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
+import { formatters } from '../../utils/formatters';
 import TableView from '../../components/tableFormat/TableView';
 import theme from "../../components/Theme";
 import DealStagePage from './DealStagePage';
@@ -72,20 +62,14 @@ const dealsTableConfig = {
 const DealsPage = ({ 
   deals = [],
   loading = false,
-  error,
-  setError,
-  successMessage,
+  error = null,
+  successMessage = "",
+  searchTerm = "",
+  statusFilter = "",
   setSuccessMessage,
-  statusMessage,
-  statusSeverity,
-  setStatusMessage,
-  selected = [],
-  onSelectClick,
-  onSelectAllClick,
+  setSearchTerm,
+  setStatusFilter,
   onDeactivate,
-  onReactivate,
-  onDelete,
-  onBulkDeactivate,
   onEdit,
   onView,
   onCreate,
@@ -170,26 +154,11 @@ const DealsPage = ({
     setSelected(newSelected);
   };
 
-  const handleInputChange = (field, value) => {
-    setNewDealStage(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleProgressionChange = (e) => {
-    const value = parseFloat(e.target.value);
-    if (!isNaN(value) && value >= 0 && value <= 100) {
-      handleInputChange('Progression', value);
-    } else if (e.target.value === '') {
-      handleInputChange('Progression', 0);
-    }
-  };
-
-  const handleDisplayOrderChange = (e) => {
-    const value = e.target.value;
-    if (value === '' || (!isNaN(value) && parseInt(value) >= 0)) {
-      handleInputChange('Display_order', value);
+  const handleSelectAllClick = (event) => {
+    if (event.target.checked) {
+      setSelected(processedDeals.map(deal => deal.DealID));
+    } else {
+      setSelected([]);
     }
   };
 
@@ -394,132 +363,9 @@ const DealsPage = ({
             </TabPanel>
           ))}
         </Paper>
-
-        {/* Add Deal Stage Dialog */}
-        <Dialog 
-          open={addDealStageDialogOpen} 
-          onClose={handleCloseAddDealStageDialog}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            borderBottom: '1px solid #e5e5e5'
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <TimelineIcon sx={{ color: '#1976d2' }} />
-              Add New Deal Stage
-            </Box>
-            <IconButton onClick={handleCloseAddDealStageDialog} size="small">
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ pt: 3 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField
-                label="Stage Name"
-                value={newDealStage.StageName}
-                onChange={(e) => handleInputChange('StageName', e.target.value)}
-                fullWidth
-                required
-                variant="outlined"
-                helperText="Enter the name of the deal stage (e.g., Prospecting, Qualification, Proposal)"
-                inputProps={{ maxLength: 100 }}
-              />
-
-              <FormControl fullWidth required>
-                <InputLabel>Progression</InputLabel>
-                <OutlinedInput
-                  value={newDealStage.Progression}
-                  onChange={handleProgressionChange}
-                  type="number"
-                  inputProps={{ 
-                    min: 0, 
-                    max: 100, 
-                    step: 0.01 
-                  }}
-                  endAdornment={<InputAdornment position="end">%</InputAdornment>}
-                  label="Progression"
-                />
-                <Typography variant="caption" sx={{ mt: 0.5, color: '#666' }}>
-                  Enter progression percentage (0-100)
-                </Typography>
-              </FormControl>
-
-              <TextField
-                label="Display Order (Optional)"
-                value={newDealStage.Display_order}
-                onChange={handleDisplayOrderChange}
-                fullWidth
-                variant="outlined"
-                type="number"
-                helperText="Enter display order for sorting stages (leave empty for auto-assignment)"
-                inputProps={{ min: 1 }}
-              />
-
-              <TextField
-                label="Description (Optional)"
-                value={newDealStage.Description}
-                onChange={(e) => handleInputChange('Description', e.target.value)}
-                fullWidth
-                multiline
-                rows={3}
-                variant="outlined"
-                helperText="Enter a description for this deal stage"
-                inputProps={{ maxLength: 500 }}
-              />
-
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={newDealStage.IsActive}
-                    onChange={(e) => handleInputChange('IsActive', e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Active"
-              />
-            </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 3, borderTop: '1px solid #e5e5e5' }}>
-            <Button onClick={handleCloseAddDealStageDialog} color="inherit">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddDealStage}
-              variant="contained"
-              disabled={
-                addDealStageLoading || 
-                !newDealStage.StageName.trim() || 
-                newDealStage.Progression < 0 || 
-                newDealStage.Progression > 100
-              }
-            >
-              {addDealStageLoading ? <CircularProgress size={20} /> : 'Add Deal Stage'}
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Status Snackbar */}
-        <Snackbar
-          open={!!statusMessage}
-          autoHideDuration={4000}
-          onClose={() => setStatusMessage && setStatusMessage('')}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          <Alert 
-            onClose={() => setStatusMessage && setStatusMessage('')} 
-            severity={statusSeverity} 
-            sx={{ width: '100%' }}
-          >
-            {statusMessage}
-          </Alert>
-        </Snackbar>
       </Box>
     </ThemeProvider>
   );
 };
 
-export default DealStagePage;
+export default DealsPage;
