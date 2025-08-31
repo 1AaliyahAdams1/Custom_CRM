@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Menu, MenuItem } from '@mui/material';
+import { Menu, MenuItem, Tooltip } from '@mui/material';
 import { Info, Edit, Delete, Note, AttachFile, Business, PersonAdd } from '@mui/icons-material';
 
 const ActionMenu = ({
@@ -17,6 +17,7 @@ const ActionMenu = ({
   onClaimAccount,
   onAssignUser,
   menuItems = [],
+  tooltips = {}, // Generic tooltips passed from parent
 }) => {
   // Get current user roles once
   const roles = useMemo(() => {
@@ -35,7 +36,12 @@ const ActionMenu = ({
     onClose();
   };
 
-  // Determine visible items
+  // Generic tooltip messages that work for any entity type
+  const getTooltip = (action, defaultMessage) => {
+    return tooltips?.actionMenu?.[action] || defaultMessage;
+  };
+
+  // Determine visible items with generic tooltips
   const visibleItems = useMemo(() => {
     const defaultItems = [
       {
@@ -43,6 +49,7 @@ const ActionMenu = ({
         icon: <PersonAdd sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onAssignUser),
         show: entityType === 'account' && !!onAssignUser && hasRole('C-level'),
+        tooltip: getTooltip('assignUser', 'Assign a team member to this record'),
       },
       {
         label: 'Claim Account',
@@ -53,30 +60,35 @@ const ActionMenu = ({
           !!onClaimAccount &&
           hasRole('Sales Representative') &&
           menuRow?.ownerStatus !== 'owned',
+        tooltip: getTooltip('claimAccount', 'Claim ownership of this record'),
       },
       {
         label: 'View Details',
         icon: <Info sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onView),
         show: !!onView,
+        tooltip: getTooltip('view', 'View detailed information for this record'),
       },
       {
         label: 'Edit',
         icon: <Edit sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onEdit),
         show: !!onEdit,
+        tooltip: getTooltip('edit', 'Edit this record\'s information'),
       },
       {
         label: 'Add Notes',
         icon: <Note sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onAddNote),
         show: !!onAddNote,
+        tooltip: getTooltip('addNote', 'Add internal notes or comments'),
       },
       {
         label: 'Add Attachments',
         icon: <AttachFile sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onAddAttachment),
         show: !!onAddAttachment,
+        tooltip: getTooltip('addAttachment', 'Attach files or documents'),
       },
       {
         label: 'Delete',
@@ -84,6 +96,9 @@ const ActionMenu = ({
         onClick: () => handleClick(() => onDelete(menuRow[idField])),
         show: !!onDelete,
         disabled: (menuRow) => menuRow?.Active === false,
+        tooltip: menuRow?.Active === false 
+          ? 'Record is already deactivated' 
+          : getTooltip('delete', 'Delete or deactivate this record'),
       },
     ];
 
@@ -103,20 +118,30 @@ const ActionMenu = ({
     menuItems,
     hasRole,
     idField,
+    tooltips,
   ]);
 
   return (
     <Menu anchorEl={anchorEl} open={open} onClose={onClose}>
       {visibleItems.map((item, idx) => (
-        <MenuItem
-          key={idx}
-          onClick={item.onClick}
-          disabled={typeof item.disabled === 'function' ? item.disabled(menuRow) : item.disabled}
-          sx={{ ...item.sx }}
+        <Tooltip 
+          key={idx} 
+          title={item.tooltip} 
+          placement="left" 
+          arrow
+          enterDelay={500}
         >
-          {item.icon}
-          {item.label}
-        </MenuItem>
+          <span>
+            <MenuItem
+              onClick={item.onClick}
+              disabled={typeof item.disabled === 'function' ? item.disabled(menuRow) : item.disabled}
+              sx={{ ...item.sx }}
+            >
+              {item.icon}
+              {item.label}
+            </MenuItem>
+          </span>
+        </Tooltip>
       ))}
     </Menu>
   );
