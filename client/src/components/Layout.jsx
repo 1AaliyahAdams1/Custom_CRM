@@ -10,7 +10,7 @@ const Layout = ({ children }) => {
   const showLayout = !hideLayout && user;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', margin: 0, padding: 0 }}>
       {showLayout && <Sidebar />}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {showLayout && <Header />}
@@ -20,6 +20,7 @@ const Layout = ({ children }) => {
             overflowY: 'auto',
             padding: '20px',
             backgroundColor: '#fafafa',
+            margin: 0,
           }}
         >
           {children}
