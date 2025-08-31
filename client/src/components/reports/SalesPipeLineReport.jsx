@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   Box,
   Card,
@@ -17,10 +17,15 @@ import {
 } from '@mui/material';
 import { getSalesPipelineReport } from '../../services/reportService';
 
-const SalesPipelineReport = () => {
+const SalesPipelineReport = forwardRef((props, ref) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pipelineData, setPipelineData] = useState(null);
+
+  // Expose reportData to parent component
+  useImperativeHandle(ref, () => ({
+    getReportData: () => pipelineData
+  }));
 
   // Fetch data on component mount
   useEffect(() => {
@@ -159,6 +164,8 @@ const SalesPipelineReport = () => {
       </Card>
     </Box>
   );
-};
+});
+
+SalesPipelineReport.displayName = 'SalesPipelineReport';
 
 export default SalesPipelineReport;

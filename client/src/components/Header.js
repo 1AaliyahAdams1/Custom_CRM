@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../services/auth/authService";
 import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -33,11 +34,12 @@ const Header = () => {
           Entertainment.FM CRM
         </Typography>
 
-        <Box display="flex" alignItems="center" gap={2}>
+        <Box display="flex" alignItems="center" gap={1}>
           {user ? (
             <>
+              <AccountCircleIcon sx={{ color: "#fff" }} />
               <Typography sx={{ color: "#fff" }}>
-                {user.FirstName} {user.LastName}
+                {user.Username}
               </Typography>
               <Button onClick={handleLogout} sx={{ color: "#fff" }}>
                 Logout

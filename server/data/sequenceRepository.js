@@ -202,6 +202,93 @@ async function updateActivityOrder(userId, activityOrderData) {
   }
 }
 
+/*// Generate activities for an account based on its sequence
+async function generateActivitiesForAccount(accountId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    
+    // First, check if activities already exist for this account
+    const existingActivitiesResult = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .query(`SELECT COUNT(*) as ActivityCount FROM Activity WHERE AccountID = @AccountID AND Active = 1`);
+    
+    if (existingActivitiesResult.recordset[0].ActivityCount > 0) {
+      console.log(`Activities already exist for account ${accountId}, skipping generation`);
+      return { success: true, message: `Activities already exist for account ${accountId}` };
+    }
+    
+    // Get account and its sequence
+    const accountResult = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT a.AccountID, a.AccountName, a.SequenceID, a.CreatedAt as AccountCreatedAt
+        FROM Account a 
+        WHERE a.AccountID = @AccountID AND a.Active = 1
+      `);
+
+    if (accountResult.recordset.length === 0) {
+      throw new Error('Account not found or inactive');
+    }
+
+    const account = accountResult.recordset[0];
+    
+    if (!account.SequenceID) {
+      throw new Error('Account has no sequence assigned');
+    }
+
+    const baseDate = new Date(account.AccountCreatedAt);
+
+    // Get sequence items
+    const sequenceItemsResult = await pool.request()
+      .input("SequenceID", sql.Int, account.SequenceID)
+      .query(`
+        SELECT si.SequenceItemID, si.ActivityTypeID, si.SequenceItemDescription, 
+               si.DaysFromStart, 1 as PriorityLevelID
+        FROM SequenceItem si
+        WHERE si.SequenceID = @SequenceID AND si.Active = 1
+        ORDER BY si.DaysFromStart
+      `);
+
+    if (sequenceItemsResult.recordset.length === 0) {
+      throw new Error('No active sequence items found');
+    }
+
+    console.log(`Generating ${sequenceItemsResult.recordset.length} activities for account ${account.AccountName}`);
+
+    // Generate activities for each sequence item
+    let activitiesCreated = 0;
+    for (const item of sequenceItemsResult.recordset) {
+      const dueDate = new Date(baseDate);
+      dueDate.setDate(dueDate.getDate() + item.DaysFromStart);
+
+      const endDate = new Date(dueDate);
+      endDate.setHours(endDate.getHours() + 1); // 1 hour duration
+
+      await pool.request()
+        .input("AccountID", sql.Int, accountId)
+        .input("TypeID", sql.Int, item.ActivityTypeID)
+        .input("PriorityLevelID", sql.Int, 1) // Default to priority 1
+        .input("DueToStart", sql.DateTime, dueDate)
+        .input("DueToEnd", sql.DateTime, endDate)
+        .input("SequenceItemID", sql.Int, item.SequenceItemID)
+        .query(`
+          INSERT INTO Activity (AccountID, TypeID, PriorityLevelID, DueToStart, DueToEnd, 
+                               Completed, SequenceItemID, CreatedAt, UpdatedAt, Active)
+          VALUES (@AccountID, @TypeID, @PriorityLevelID, @DueToStart, @DueToEnd, 
+                  0, @SequenceItemID, GETDATE(), GETDATE(), 1)
+        `);
+      
+      activitiesCreated++;
+    }
+
+    console.log(`Successfully created ${activitiesCreated} activities for account ${accountId}`);
+    return { success: true, message: `Generated ${activitiesCreated} activities for account ${accountId}` };
+  } catch (err) {
+    console.error("Error generating activities:", err);
+    throw err;
+  }
+}*/
+
 
 // =======================
 // Exports
@@ -212,4 +299,5 @@ module.exports = {
   getUserSequences,
   completeActivity,
   updateActivityOrder,
+  //generateActivitiesForAccount,//
 };

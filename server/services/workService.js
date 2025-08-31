@@ -1,12 +1,15 @@
 const sequenceRepo = require("../data/sequenceRepository");
 
-const userId = 1;
-
 //======================================
 // Get Work Page Data (Enhanced activities for UI)
 //======================================
 async function getWorkPageData(userId, sortCriteria = 'dueDate') {
   try {
+    // Validate userId
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
     const allActivities = await sequenceRepo.getActivitiesByUser(userId);
     
     // Work page specific logic: filter to incomplete only
@@ -42,7 +45,7 @@ async function getWorkPageData(userId, sortCriteria = 'dueDate') {
     };
   } catch (error) {
     console.error('Error in getWorkPageData:', error);
-    throw new Error('Failed to fetch work page data');
+    throw new Error(`Failed to fetch work page data: ${error.message}`);
   }
 }
 
@@ -51,7 +54,12 @@ async function getWorkPageData(userId, sortCriteria = 'dueDate') {
 //======================================
 async function completeActivityAndGetNext(activityId, userId, notes = '') {
   try {
-    // Complete the activity (uses function that needs to be added to sequences repo)
+    // Validate inputs
+    if (!activityId || !userId) {
+      throw new Error('Activity ID and User ID are required');
+    }
+
+    // Complete the activity
     const completionResult = await sequenceRepo.completeActivity(activityId, userId, notes);
     
     if (!completionResult.success) {
@@ -77,7 +85,7 @@ async function completeActivityAndGetNext(activityId, userId, notes = '') {
     };
   } catch (error) {
     console.error('Error in completeActivityAndGetNext:', error);
-    throw new Error('Failed to complete activity');
+    throw new Error(`Failed to complete activity: ${error.message}`);
   }
 }
 
@@ -86,6 +94,11 @@ async function completeActivityAndGetNext(activityId, userId, notes = '') {
 //======================================
 async function getDayViewActivities(userId, date = new Date()) {
   try {
+    // Validate inputs
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
     // Use existing repo to get all activities
     const allActivities = await sequenceRepo.getActivitiesByUser(userId);
     
@@ -99,7 +112,7 @@ async function getDayViewActivities(userId, date = new Date()) {
     const hourlyGroups = {};
     dayActivities.forEach(activity => {
       const hour = new Date(activity.DueToStart).getHours();
-      const timeSlot = `${hour}:00`;
+      const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
       if (!hourlyGroups[timeSlot]) {
         hourlyGroups[timeSlot] = [];
       }
@@ -114,7 +127,7 @@ async function getDayViewActivities(userId, date = new Date()) {
     };
   } catch (error) {
     console.error('Error in getDayViewActivities:', error);
-    throw new Error('Failed to fetch day view activities');
+    throw new Error(`Failed to fetch day view activities: ${error.message}`);
   }
 }
 
@@ -123,12 +136,16 @@ async function getDayViewActivities(userId, date = new Date()) {
 //======================================
 async function updateActivityOrder(userId, activityOrderData) {
   try {
-    // This would need to be added to sequences repo
+    // Validate inputs
+    if (!userId || !activityOrderData || !Array.isArray(activityOrderData)) {
+      throw new Error('User ID and activity order data array are required');
+    }
+
     const result = await sequenceRepo.updateActivityOrder(userId, activityOrderData);
     return result;
   } catch (error) {
     console.error('Error in updateActivityOrder:', error);
-    throw new Error('Failed to update activity order');
+    throw new Error(`Failed to update activity order: ${error.message}`);
   }
 }
 
@@ -137,6 +154,11 @@ async function updateActivityOrder(userId, activityOrderData) {
 //======================================
 async function getActivitiesByStatus(userId, status) {
   try {
+    // Validate inputs
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
     const allActivities = await sequenceRepo.getActivitiesByUser(userId);
     const incompleteActivities = allActivities.filter(a => !a.Completed);
     
@@ -152,7 +174,7 @@ async function getActivitiesByStatus(userId, status) {
     return enhancedActivities.filter(a => a.Status === status);
   } catch (error) {
     console.error('Error in getActivitiesByStatus:', error);
-    throw new Error('Failed to fetch activities by status');
+    throw new Error(`Failed to fetch activities by status: ${error.message}`);
   }
 }
 

@@ -9,14 +9,25 @@ import { ROUTE_ACCESS } from "./utils/auth/routesAccess";
 import Unauthorized from "./pages/Unauthorized";
 
 // Lazy load pages
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+// const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Accounts = lazy(() => import("./components/containers/AccountsContainer"));
 const Contacts = lazy(() => import("./components/containers/ContactsContainer"));
 const Deals = lazy(() => import("./components/containers/DealsContainer"));
 const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
+
+
+const ProductsContainer = lazy(() => import("./components/containers/ProductsContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
 const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
 const RoleManagement = lazy(() => import("./pages/RoleManagement"));
+
+const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
+const CityPage = lazy(() => import("./pages/GeographicData/CityPage"));
+const StateProvincePage = lazy(() => import("./pages/GeographicData/StateProvincePage"));
+const IndustryPage = lazy(() => import("./pages/Industry/IndustryPage"));
+const PriorityLevelsPage = lazy(() => import("./pages/PriorityLevelsPage"));
+const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
+const DealStagePage = lazy(() => import("./pages/Deals/DealStagePage"));
 
 const AccountsDetailsPage = lazy(() => import("./pages/Accounts/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsPage"));
@@ -27,6 +38,9 @@ const CreateAccountPage = lazy(() => import("./pages/Accounts/CreateAccountPage"
 const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPage"));
 const CreateDealPage = lazy(() => import("./pages/Deals/CreateDealPage"));
 const CreateActivitiesPage = lazy(() => import("./pages/Activities/CreateActivitiesPage"));
+const CreateProduct = lazy(() => import("./pages/Products/CreateProductPage"));
+
+
 
 const EditAccountPage = lazy(() => import("./pages/Accounts/EditAccountPage"));
 const EditContactPage = lazy(() => import("./pages/Contacts/EditContactPage"));
@@ -35,6 +49,7 @@ const EditActivityPage = lazy(() => import("./pages/Activities/EditActivityPage"
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 const AppRoutes = () => {
   console.log("AppRoutes component is rendering");
@@ -46,7 +61,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* Protected routes with dynamic allowedRoles from ROUTE_ACCESS */}
+      {/* Protected routes with dynamic allowedRoles from ROUTE_ACCESS
       <Route
         path="/dashboard"
         element={
@@ -54,7 +69,7 @@ const AppRoutes = () => {
             <Dashboard />
           </PrivateRoute>
         }
-      />
+      /> */}
 
       {/* --- Accounts Routes --- */}
       <Route
@@ -167,6 +182,14 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/deal-stages"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealStage}>
+            <DealStagePage />
+          </PrivateRoute>
+        }
+      />
       {/* --- Activity Routes --- */}
       <Route
         path="/activities"
@@ -200,6 +223,68 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/activity-types"    
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activityTypes}>
+            <ActivityTypePage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Products Routes --- */}
+      <Route
+        path="/products"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.products}>
+            <ProductsContainer />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/products/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.productsCreate}>
+              <CreateProduct />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Country Routes --- */}
+      <Route
+        path="/country"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.country}>
+            <CountryContainer />
+          </PrivateRoute>
+        }
+      />
+      
+      {/* --- City Routes --- */}
+      <Route
+        path="/city"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.city}>
+            <CityPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- State/Province Routes --- */}
+      <Route
+        path="/state-province"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.stateProvince}>
+            <StateProvincePage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Industry Routes --- */}
+      <Route
+        path="/industry"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.industry}>
+            <IndustryPage />
+          </PrivateRoute>
+        }
+      />
       {/* --- Smart Work Routes --- */}
       <Route
         path="/smart-work"
@@ -219,6 +304,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      
       {/* --- Role Management Route --- */}
 
       <Route
@@ -226,6 +312,23 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.roles}>
             <RoleManagement />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Priority Levels Route --- */}
+      <Route
+        path="/priority-levels"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.priority}>
+            <PriorityLevelsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.settings}>
+            <SettingsPage />
           </PrivateRoute>
         }
       />

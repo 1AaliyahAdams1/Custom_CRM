@@ -52,7 +52,6 @@ async function getSalesPipelineReport(startDate = null, endDate = null) {
 // ==============================
 
 // Get Revenue Forecast Report
-
 async function getRevenueForecastReport(startDate = null, endDate = null, stageName = 'Closed Won') {
   try {
     const rawData = await revenueForecastRepo.getRevenueForecast(startDate, endDate, stageName);
@@ -546,6 +545,10 @@ function getSegmentTypeInfo(segmentType) {
   };
 }
 
+// ==============================
+// ACTIVITIES VS OUTCOMES REPORT FUNCTIONS
+// ==============================
+
 // Get Activities vs Outcomes Report
 async function getActivitiesVsOutcomesReport() {
   try {
@@ -686,9 +689,13 @@ async function getActivitiesVsOutcomesReport() {
   }
 }
 
-// Helper function to format currency
-function formatCurrency(amount, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', {
+// ==============================
+// HELPER FUNCTIONS
+// ==============================
+
+// Helper function to format currency in South African Rands (ZAR)
+function formatCurrency(amount, currency = 'ZAR') {
+  return new Intl.NumberFormat('en-ZA', {
     style: 'currency',
     currency: currency,
     minimumFractionDigits: 2
@@ -702,7 +709,7 @@ function formatPeriod(period) {
   const [year, month] = period.split('-');
   const date = new Date(parseInt(year), parseInt(month) - 1, 1);
   
-  return date.toLocaleDateString('en-US', { 
+  return date.toLocaleDateString('en-ZA', { 
     year: 'numeric', 
     month: 'short' 
   });

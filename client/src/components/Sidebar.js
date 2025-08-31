@@ -27,9 +27,14 @@ import {
   ChevronRight,
   BarChart as BarChartIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
+  Inventory as InventoryIcon,
+  Flag as FlagIcon,
+  Settings as SettingsApplicationsIcon,
+ 
 
 } from "@mui/icons-material";
-
+import LocationCityIcon from '@mui/icons-material/LocationCity';
+import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { useAuth } from "../hooks/auth/useAuth";
 import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
 
@@ -59,6 +64,7 @@ const navigation = [
     icon: HandshakeIcon,
     accessKey: "deals",
   },
+  
 
 
   {
@@ -66,6 +72,13 @@ const navigation = [
     href: "/activities",
     icon: EventIcon,
     accessKey: "activities",
+  },
+  
+  {
+    name: "Products",
+    href: "/products",
+    icon: InventoryIcon,
+    accessKey: "products",
   },
   {
     name: "Work Page",
@@ -80,17 +93,36 @@ const navigation = [
     accessKey: "reports",
   },
   {
+    name: "Geographic Data",
+    href: "/country",
+    icon: FlagIcon,
+    accessKey: 'country',
+  },
+  
+  {
+    name: "Industry",
+    href: "/industry",
+    icon: BusinessIcon,
+    accessKey: 'industry',
+  },
+  {
     name: "Role Management",
     href: "/rolemanagement",
     icon: AdminPanelSettingsIcon,
     accessKey: 'roles',
   },
+  { 
+    name: "Priority Levels",
+    href: "/priority-levels", 
+    icon: PriorityHighIcon,
+    accessKey: 'priority',
+  },
 
   {
     name: "Settings",
     href: "/settings",
-    icon: SettingsIcon,
-    allowedRoles: ["Admin"], // Keep this one as is since it's not in routesAccess
+    icon: SettingsApplicationsIcon,
+    accessKey: 'settings', // Keep this one as is since it's not in routesAccess
   },
 ];
 

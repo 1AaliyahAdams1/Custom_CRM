@@ -1,5 +1,4 @@
 import React from 'react';
-import { Box } from '@mui/material';
 import {
   AccumulationChartComponent,
   AccumulationSeriesCollectionDirective,
@@ -11,22 +10,37 @@ import {
   PieSeries
 } from '@syncfusion/ej2-react-charts';
 
-const CustomerSegmentChart = () => {
-  const segmentData = [
-    { segment: 'Enterprise', customers: 45, percentage: 28, revenue: 5625000 },
-    { segment: 'Mid-Market', customers: 128, percentage: 35, revenue: 5760000 },
-    { segment: 'Small Business', customers: 324, percentage: 32, revenue: 3888000 },
-    { segment: 'Startup', customers: 89, percentage: 5, revenue: 756500 }
-  ];
+const CustomerSegmentChart = ({ data }) => {
+  // Transform real data if available, otherwise use fallback
+  const getChartData = () => {
+    if (data?.data && Array.isArray(data.data)) {
+      return data.data.map(segment => ({
+        x: segment.segment,
+        y: segment.customerCount,
+        text: `${segment.customerCount} customers`,
+        percentage: segment.formattedPercentage
+      }));
+    }
+    
+    // Fallback data
+    return [
+      { x: 'Enterprise', y: 45, text: '45 customers', percentage: '28%' },
+      { x: 'Mid-Market', y: 128, text: '128 customers', percentage: '35%' },
+      { x: 'Small Business', y: 324, text: '324 customers', percentage: '32%' },
+      { x: 'Startup', y: 89, text: '89 customers', percentage: '5%' }
+    ];
+  };
+
+  const chartData = getChartData();
 
   const tooltip = {
     enable: true,
-    format: '<b>${point.x}</b><br/>Revenue: <b>$${point.y}M</b><br/>Customers: <b>${point.text}</b>'
+    format: '<b>{point.x}</b><br/>Revenue: <b>$${point.y}M</b><br/>Customers: <b>{point.text}</b>' 
   };
 
   const dataLabel = {
     visible: true,
-    name: 'x',
+    name: 'percentage',
     position: 'Inside',
     font: { fontWeight: '600', color: 'white', size: '12px' }
   };
@@ -36,17 +50,13 @@ const CustomerSegmentChart = () => {
     position: 'Right'
   };
 
-  const chartData = segmentData.map(item => ({
-    x: item.segment,
-    y: (item.revenue / 1000000).toFixed(1),
-    text: item.customers.toString()
-  }));
-
   const palette = [
     'hsl(217, 91%, 60%)',  // Primary Blue
     'hsl(142, 76%, 36%)',  // Success Green  
     'hsl(32, 95%, 44%)',   // Warning Orange
-    'hsl(271, 81%, 56%)'   // Purple
+    'hsl(271, 81%, 56%)',  // Purple
+    'hsl(0, 84%, 60%)',    // Error Red
+    'hsl(291, 64%, 42%)'   // Dark Purple
   ];
 
   return (
@@ -55,7 +65,7 @@ const CustomerSegmentChart = () => {
         id="customer-segment-pie-chart"
         tooltip={tooltip}
         legendSettings={legend}
-        width = "600px"
+        width="600px"
         height="100%"
         background="transparent"
         theme="Material"
@@ -73,7 +83,7 @@ const CustomerSegmentChart = () => {
             dataLabel={dataLabel}
             palettes={palette}
             explode={true}
-            explodeIndex={1}
+            explodeIndex={0}
             explodeOffset="8%"
             startAngle={0}
             endAngle={360}
