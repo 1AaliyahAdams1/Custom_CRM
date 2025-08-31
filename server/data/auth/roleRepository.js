@@ -3,33 +3,14 @@ const { dbConfig } = require("../../dbConfig");
 
 async function getUserRoles(userId) {
   try {
-    console.log("=== getUserRoles Backend Debug ===");
-    console.log("UserID received:", userId);
-    
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
       .input("UserID", sql.Int, userId)
-      .query(`
-        SELECT R.RoleName
-        FROM Users U
-        JOIN UserRole UR ON U.UserID = UR.UserID AND UR.Active = 1
-        JOIN Roles R ON UR.RoleID = R.RoleID AND R.Active = 1
-        WHERE U.UserID = @UserID AND U.Active = 1
-      `);
+      .execute("GetUserRoles");
 
-    console.log("SQL Query result:", result.recordset);
-    
-    const roles = result.recordset.map(row => row.RoleName);
-    console.log("Mapped roles:", roles);
-    
-    return roles;
+    return result.recordset.map(row => row.RoleName);
   } catch (error) {
     console.error("Error fetching user roles:", error);
-    console.error("Error details:", {
-      message: error.message,
-      code: error.code,
-      state: error.state
-    });
     throw error;
   }
 }

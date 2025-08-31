@@ -48,13 +48,24 @@ const ContactsContainer = () => {
 
       if (isCLevel) {
         const allContacts = await getAllContacts();
+        console.log("getAllContacts() returned:", allContacts);
         data = allContacts;
       } else if (isSalesRep && userId) {
         const userContacts = await fetchContactsByUser(userId);
+        console.log("fetchContactsByUser() returned:", userContacts);
         data = userContacts;
       }
 
       if (!Array.isArray(data)) {
+        throw new Error("Invalid response format - expected array");
+      }
+
+      console.log("Raw contacts data from API:", data);
+      console.log("Sample contact (first item):", data[0]);
+
+      // Ensure data is an array
+      if (!Array.isArray(data)) {
+        console.error("API did not return an array:", data);
         throw new Error("Invalid response format - expected array");
       }
 
@@ -70,6 +81,8 @@ const ContactsContainer = () => {
           .join(" "),
       }));
 
+      console.log("Processed contacts data:", processedData);
+      console.log("First processed contact ContactID:", processedData[0]?.ContactID);
       setContacts(processedData);
     } catch (err) {
       console.error("Failed to load contacts:", err);
@@ -85,7 +98,12 @@ const ContactsContainer = () => {
 
   // ---------------- FILTERED CONTACTS ----------------
   const filteredContacts = useMemo(() => {
-    return contacts.filter((contact) => {
+    console.log("Filtering contacts. Raw contacts:", contacts);
+    console.log("Search term:", searchTerm, "Employment filter:", employmentStatusFilter);
+    
+    const filtered = contacts.filter((contact) => {
+      console.log("Filtering contact:", contact, "ContactID:", contact.ContactID);
+      
       const matchesSearch =
         (contact.ContactID && contact.ContactID.toString().includes(searchTerm)) ||
         (contact.AccountID && contact.AccountID.toString().includes(searchTerm)) ||
