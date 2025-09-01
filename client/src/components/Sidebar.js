@@ -29,6 +29,7 @@ import {
   AdminPanelSettings as AdminPanelSettingsIcon,
   Inventory as InventoryIcon,
   Flag as FlagIcon,
+  Settings as SettingsApplicationsIcon,
  
 
 } from "@mui/icons-material";
@@ -63,12 +64,7 @@ const navigation = [
     icon: HandshakeIcon,
     accessKey: "deals",
   },
-  {
-    name: "Deal Stages",
-    href: "/deal-stages",
-    icon: HandshakeIcon,
-    accessKey: "dealStage",
-  },
+  
 
 
   {
@@ -77,12 +73,7 @@ const navigation = [
     icon: EventIcon,
     accessKey: "activities",
   },
-  {
-    name: "Activity Types",
-    href: "/activity-types",
-    icon: EventIcon,
-    accessKey: "activityTypes",
-  },
+  
   {
     name: "Products",
     href: "/products",
@@ -102,23 +93,12 @@ const navigation = [
     accessKey: "reports",
   },
   {
-    name: "Countries",
+    name: "Geographic Data",
     href: "/country",
     icon: FlagIcon,
     accessKey: 'country',
   },
-  {
-    name:" Cities",
-    href: "/city",
-    icon: LocationCityIcon,
-    accessKey: 'city',
-  },
-  {
-    name: "State/Province",
-    href: "/state-province",
-    icon: LocationCityIcon,
-    accessKey: 'stateProvince',
-  },
+  
   {
     name: "Industry",
     href: "/industry",
@@ -141,8 +121,8 @@ const navigation = [
   {
     name: "Settings",
     href: "/settings",
-    icon: SettingsIcon,
-    allowedRoles: ["Admin"], // Keep this one as is since it's not in routesAccess
+    icon: SettingsApplicationsIcon,
+    accessKey: 'settings', // Keep this one as is since it's not in routesAccess
   },
 ];
 

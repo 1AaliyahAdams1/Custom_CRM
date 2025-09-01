@@ -35,7 +35,6 @@ const EditAccount = () => {
   const [industries, setIndustries] = useState([]);
   const [countries, setCountries] = useState([]);
   const [stateProvinces, setStateProvinces] = useState([]);
-
   const [formData, setFormData] = useState({
     AccountName: "",
     CityID: "",

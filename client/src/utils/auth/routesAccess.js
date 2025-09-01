@@ -1,5 +1,6 @@
 import { act } from "react";
 
+
 export const ROUTE_ACCESS = {
   dashboard: ["C-level", "Sales Manager", "Sales Representative"],
   
@@ -21,6 +22,7 @@ export const ROUTE_ACCESS = {
   dealsEdit: ["C-level", "Sales Manager", "Sales Representative"],
   dealStage: ["C-level", "Sales Manager", "Sales Representative"],
   dealStageCreate: ["C-level", "Sales Manager"],
+
 
   activities: ["C-level", "Sales Manager", "Sales Representative"], 
   activitiesDetails: ["C-level", "Sales Manager", "Sales Representative"],
@@ -50,6 +52,8 @@ export const ROUTE_ACCESS = {
 
   priority: ["C-level", "Sales Manager", "Sales Representative"],
   priorityCreate: ["C-level", "Sales Manager"],
+
+  settings: ["C-level", "Sales Manager", "Sales Representative"],
 
   
 };
