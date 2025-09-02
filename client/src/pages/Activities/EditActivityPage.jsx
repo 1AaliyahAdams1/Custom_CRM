@@ -16,7 +16,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import theme from "../../components/Theme";
 import SmartDropdown from '../../components/SmartDropdown';
 import { fetchActivityById, updateActivity } from "../../services/activityService";
-import { getAllAccounts } from "../../services/accountService";
+import { fetchAccountById, getAllAccounts } from "../../services/accountService";
 import { priorityLevelService, activityTypeService } from '../../services/dropdownServices';
 
 const EditActivityPage = () => {
@@ -43,8 +43,10 @@ const EditActivityPage = () => {
       try {
         const response = await fetchActivityById(id);
         const activityData = response.data;
+        const accountresponse = await fetchAccountById(id);
+        const accountData = accountresponse.data;
         setFormData({
-          AccountID: activityData.AccountID || "",
+          AccountID: accountData.AccountID || "",
           TypeID: activityData.TypeID || "",
           PriorityLevelID: activityData.PriorityLevelID || "",
           DueToStart: activityData.DueToStart || "",
