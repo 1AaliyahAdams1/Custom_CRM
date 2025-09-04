@@ -25,7 +25,7 @@ const CountryContainer = lazy(() => import("./components/containers/CountryConta
 const CityPage = lazy(() => import("./pages/GeographicData/CityPage"));
 const StateProvincePage = lazy(() => import("./pages/GeographicData/StateProvincePage"));
 const IndustryContainer = lazy(() => import("./components/containers/IndustryContainer"));
-const PriorityLevelsPage = lazy(() => import("./pages/PriorityLevelsPage"));
+const PriorityLevelContainer = lazy(() => import("./components/containers/PriorityLevelContainer"));
 const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
 const DealStagePage = lazy(() => import("./pages/Deals/DealStagePage"));
 
@@ -327,12 +327,11 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      {/* --- Priority Levels Route --- */}
       <Route
         path="/priority-levels"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.priority}>
-            <PriorityLevelsPage />
+            <PriorityLevelContainer />
           </PrivateRoute>
         }
       />

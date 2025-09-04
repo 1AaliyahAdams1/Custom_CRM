@@ -3,7 +3,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api
 
 class PriorityLevelService {
   constructor() {
-    this.baseURL = `${API_BASE_URL}/priority-levels`;
+    this.baseURL = `${API_BASE_URL}/prioritylevels`;
   }
 
   // Helper method for making API requests

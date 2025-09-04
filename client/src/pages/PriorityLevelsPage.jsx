@@ -90,24 +90,7 @@ const PriorityLevelPage = ({
   const [addPriorityLevelLoading, setAddPriorityLevelLoading] = useState(false);
 
   const columns = [
-    { field: 'PriorityName', headerName: 'Priority Name', type: 'tooltip', defaultVisible: true },
-    { field: 'Description', headerName: 'Description', type: 'tooltip', defaultVisible: true },
-    { 
-      field: 'PriorityOrder', 
-      headerName: 'Order', 
-      type: 'number', 
-      defaultVisible: true,
-      width: 100
-    },
-    { 
-      field: 'Color', 
-      headerName: 'Color', 
-      type: 'color', 
-      defaultVisible: true,
-      width: 120
-    },
-    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: false },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
+    { field: 'PriorityLevelName', headerName: 'Priority Name', type: 'tooltip', defaultVisible: true },
     {
       field: 'IsActive',
       headerName: 'Status',
