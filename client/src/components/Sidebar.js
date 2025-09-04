@@ -30,8 +30,6 @@ import {
   Inventory as InventoryIcon,
   Flag as FlagIcon,
   Settings as SettingsApplicationsIcon,
- 
-
 } from "@mui/icons-material";
 import LocationCityIcon from '@mui/icons-material/LocationCity';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
@@ -64,16 +62,12 @@ const navigation = [
     icon: HandshakeIcon,
     accessKey: "deals",
   },
-  
-
-
   {
     name: "Activities",
     href: "/activities",
     icon: EventIcon,
     accessKey: "activities",
   },
-  
   {
     name: "Products",
     href: "/products",
@@ -98,7 +92,6 @@ const navigation = [
     icon: FlagIcon,
     accessKey: 'country',
   },
-  
   {
     name: "Industry",
     href: "/industry",
@@ -117,13 +110,12 @@ const navigation = [
     icon: PriorityHighIcon,
     accessKey: 'priority',
   },
-
-  {
-    name: "Settings",
-    href: "/settings",
-    icon: SettingsApplicationsIcon,
-    accessKey: 'settings', // Keep this one as is since it's not in routesAccess
-  },
+  // {
+  //   name: "Settings",
+  //   href: "/settings",
+  //   icon: SettingsApplicationsIcon,
+  //   accessKey: 'settings',
+  // },
 ];
 
 const DRAWER_WIDTH_EXPANDED = 200;
@@ -190,11 +182,11 @@ export function AppSidebar() {
           minHeight: 44,
           px: isCollapsed ? 1.5 : 2,
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.12) : "transparent",
-          color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
+          backgroundColor: isActive ? alpha('#2196F3', 0.2) : "transparent",
+          color: isActive ? '#2196F3' : '#ffffff',
           "&:hover": {
-            backgroundColor: alpha(theme.palette.primary.main, 0.08),
-            color: theme.palette.primary.main,
+            backgroundColor: alpha('#2196F3', 0.15),
+            color: '#2196F3',
             transform: "translateX(2px)",
           },
         }}
@@ -236,8 +228,8 @@ export function AppSidebar() {
           componentsProps={{
             tooltip: {
               sx: {
-                backgroundColor: theme.palette.grey[800],
-                color: theme.palette.common.white,
+                backgroundColor: '#333333',
+                color: '#ffffff',
                 fontSize: "0.75rem",
                 fontWeight: 500,
               },
@@ -263,14 +255,57 @@ export function AppSidebar() {
           width: drawerWidth,
           boxSizing: "border-box",
           transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          backgroundColor: theme.palette.background.paper,
-          borderRight: `1px solid ${theme.palette.divider}`,
-          top: "64px",
-          height: "calc(100vh - 64px)",
+          backgroundColor: '#000000', // Black background
+          borderRight: `1px solid #333333`, // Darker border
+          top: 0, // Changed from "64px" to 0
+          height: "100vh", // Changed from "calc(100vh - 64px)" to "100vh"
           overflowX: "hidden",
         },
       }}
     >
+      {/* Brand Header */}
+      {!isCollapsed && (
+        <Box
+          sx={{
+            p: 2,
+            pb: 1,
+            borderBottom: `1px solid #333333`,
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              color: '#ffffff',
+              fontSize: "1.1rem",
+              textAlign: "center",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Entertainment.FM
+          </Typography>
+          <Typography
+            variant="subtitle2"
+            // sx={{
+            //   color: '#2196F3',
+            //   fontSize: "0.75rem",
+            //   textAlign: "center",
+            //   fontWeight: 500,
+            //   mt: 0.5,
+            // }}sx={{
+            sx= {{fontWeight: 700,
+              color:'#2196F3',
+              fontSize: "1.1rem",
+              textAlign: "center",
+              letterSpacing: "0.5px",
+            }}
+
+          >
+            CRM System
+          </Typography>
+        </Box>
+      )}
+
       {/* Sidebar Header with Toggle Button */}
       <Box
         sx={{
@@ -278,21 +313,22 @@ export function AppSidebar() {
           alignItems: "center",
           justifyContent: isCollapsed ? "center" : "space-between",
           p: 2,
-          minHeight: 64,
+          minHeight: isCollapsed ? 64 : 48,
         }}
       >
         {!isCollapsed && (
           <Typography
-            variant="h6"
+            variant="subtitle1"
             sx={{
               fontWeight: 600,
-              color: theme.palette.text.primary,
-              fontSize: "1rem",
+              color: '#ffffff',
+              fontSize: "0.9rem",
               opacity: isCollapsed ? 0 : 1,
               transition: "opacity 0.3s ease",
+              textAlign: "center",
             }}
           >
-            Navigation
+            Navigation Panel
           </Typography>
         )}
 
@@ -300,10 +336,10 @@ export function AppSidebar() {
           onClick={toggleSidebar}
           size="small"
           sx={{
-            backgroundColor: alpha(theme.palette.primary.main, 0.08),
-            color: theme.palette.primary.main,
+            backgroundColor: alpha('#2196F3', 0.15),
+            color: '#2196F3',
             "&:hover": {
-              backgroundColor: alpha(theme.palette.primary.main, 0.12),
+              backgroundColor: alpha('#2196F3', 0.25),
             },
           }}
         >
@@ -311,7 +347,7 @@ export function AppSidebar() {
         </IconButton>
       </Box>
 
-      <Divider sx={{ mx: 1 }} />
+      <Divider sx={{ mx: 1, borderColor: '#333333', display: isCollapsed ? 'none' : 'block' }} />
 
       {/* Navigation Items */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", pt: 1 }}>
@@ -325,8 +361,8 @@ export function AppSidebar() {
         <Box
           sx={{
             p: 2,
-            borderTop: `1px solid ${theme.palette.divider}`,
-            backgroundColor: alpha(theme.palette.background.default, 0.5),
+            borderTop: `1px solid #333333`, // Darker border
+            backgroundColor: alpha('#000000', 0.8), // Slightly transparent black
           }}
         >
           <Typography
@@ -334,7 +370,7 @@ export function AppSidebar() {
             sx={{
               display: "block",
               textAlign: "center",
-              color: theme.palette.text.secondary,
+              color: '#cccccc', // Light gray for footer text
               fontWeight: 500,
               opacity: isCollapsed ? 0 : 1,
               transition: "opacity 0.3s ease",
