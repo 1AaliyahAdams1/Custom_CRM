@@ -100,15 +100,15 @@ const CountryPage = ({
   handleUploadAttachment,
   handleDeleteAttachment,
   handleDownloadAttachment,
-  
+
   // City props (pass through to CityPage)
   cityProps = {},
-  
+
   // State/Province props (pass through to StateProvincePage)
   stateProvinceProps = {},
 }) => {
   const [currentTab, setCurrentTab] = useState(0);
-  
+
   // Add Country Dialog State
   const [addCountryDialogOpen, setAddCountryDialogOpen] = useState(false);
   const [newCountry, setNewCountry] = useState({
@@ -338,10 +338,10 @@ const CountryPage = ({
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
           {/* Tabs Header */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs 
-              value={currentTab} 
+            <Tabs
+              value={currentTab}
               onChange={handleTabChange}
-              sx={{ 
+              sx={{
                 backgroundColor: '#fff',
                 '& .MuiTab-root': {
                   textTransform: 'none',
@@ -355,8 +355,8 @@ const CountryPage = ({
               }}
             >
               {userTabs.map((tab, index) => (
-                <Tab 
-                  key={tab.id} 
+                <Tab
+                  key={tab.id}
                   label={tab.label}
                   sx={{
                     color: currentTab === index ? '#050505' : '#666666',
@@ -373,7 +373,7 @@ const CountryPage = ({
           {/* Tab Content */}
           {userTabs.map((tab, index) => (
             <TabPanel key={tab.id} value={currentTab} index={index}>
-              
+
               {/* Countries Tab Content */}
               {tab.component === 'countries' && (
                 <>
@@ -537,15 +537,15 @@ const CountryPage = ({
         </Paper>
 
         {/* Add Country Dialog */}
-        <Dialog 
-          open={addCountryDialogOpen} 
+        <Dialog
+          open={addCountryDialogOpen}
           onClose={handleCloseAddCountryDialog}
           maxWidth="sm"
           fullWidth
         >
-          <DialogTitle sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <DialogTitle sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             borderBottom: '1px solid #e5e5e5'
           }}>
@@ -622,8 +622,8 @@ const CountryPage = ({
               onClick={handleAddCountry}
               variant="contained"
               disabled={
-                addCountryLoading || 
-                !newCountry.CountryName.trim() || 
+                addCountryLoading ||
+                !newCountry.CountryName.trim() ||
                 !newCountry.CountryCode.trim() ||
                 newCountry.CountryCode.length > 5
               }
@@ -640,9 +640,9 @@ const CountryPage = ({
           onClose={() => setStatusMessage && setStatusMessage('')}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
-          <Alert 
-            onClose={() => setStatusMessage && setStatusMessage('')} 
-            severity={statusSeverity} 
+          <Alert
+            onClose={() => setStatusMessage && setStatusMessage('')}
+            severity={statusSeverity}
             sx={{ width: '100%' }}
           >
             {statusMessage}
