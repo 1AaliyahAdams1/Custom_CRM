@@ -22,7 +22,7 @@ const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 
 // Updated to use the new Geography Container
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
-const IndustryPage = lazy(() => import("./pages/Industry/IndustryPage"));
+const IndustryContainer = lazy(() => import("./components/containers/IndustryContainer"));
 const PriorityLevelsPage = lazy(() => import("./pages/PriorityLevelsPage"));
 const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
 const DealStagePage = lazy(() => import("./pages/Deals/DealStagePage"));
@@ -220,7 +220,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/activity-types"    
+        path="/activity-types"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.activityTypes}>
             <ActivityTypePage />
@@ -240,11 +240,11 @@ const AppRoutes = () => {
         path="/products/create"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.productsCreate}>
-              <CreateProduct />
+            <CreateProduct />
           </PrivateRoute>
         }
       />
-      
+
       {/* --- Geography Routes (Updated) --- */}
       {/* Main geography route - shows countries by default */}
       <Route
@@ -255,7 +255,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      
+
       {/* Geography sub-routes - all use the same container but with different tabs */}
       <Route
         path="/country/states"
@@ -265,7 +265,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      
+
       <Route
         path="/country/city"
         element={
@@ -274,24 +274,24 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      
+
       {/* Legacy routes - redirect to new structure */}
       <Route
         path="/city"
         element={<Navigate to="/country/city" replace />}
       />
-      
+
       <Route
         path="/states"
         element={<Navigate to="/country/states" replace />}
       />
-      
+
       {/* --- Industry Routes --- */}
       <Route
         path="/industry"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.industry}>
-            <IndustryPage />
+            <IndustryContainer />
           </PrivateRoute>
         }
       />
@@ -314,7 +314,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      
+
       {/* --- Role Management Route --- */}
 
       <Route

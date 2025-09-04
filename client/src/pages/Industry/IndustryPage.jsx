@@ -71,8 +71,6 @@ const IndustryPage = ({
 
   const columns = [
     { field: 'IndustryName', headerName: 'Industry Name', type: 'tooltip', defaultVisible: true },
-    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
     {
       field: 'Active',
       headerName: 'Status',
