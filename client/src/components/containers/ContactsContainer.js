@@ -63,12 +63,6 @@ const ContactsContainer = () => {
       console.log("Raw contacts data from API:", data);
       console.log("Sample contact (first item):", data[0]);
 
-      // Ensure data is an array
-      if (!Array.isArray(data)) {
-        console.error("API did not return an array:", data);
-        throw new Error("Invalid response format - expected array");
-      }
-
       // Add PersonFullName for search
       const processedData = data.map((contact) => ({
         ...contact,
@@ -99,29 +93,49 @@ const ContactsContainer = () => {
   // ---------------- FILTERED CONTACTS ----------------
   const filteredContacts = useMemo(() => {
     console.log("Filtering contacts. Raw contacts:", contacts);
-    console.log("Search term:", searchTerm, "Employment filter:", employmentStatusFilter);
+    console.log("Search term:", `"${searchTerm}"`, "Employment filter:", `"${employmentStatusFilter}"`);
+    
+    // If no search term and no filter, return all contacts
+    if (!searchTerm.trim() && !employmentStatusFilter) {
+      console.log("No filters applied, returning all contacts:", contacts.length);
+      return contacts;
+    }
     
     const filtered = contacts.filter((contact) => {
       console.log("Filtering contact:", contact, "ContactID:", contact.ContactID);
       
-      const matchesSearch =
-        (contact.ContactID && contact.ContactID.toString().includes(searchTerm)) ||
-        (contact.AccountID && contact.AccountID.toString().includes(searchTerm)) ||
-        (contact.PersonID && contact.PersonID.toString().includes(searchTerm)) ||
-        (contact.WorkEmail && contact.WorkEmail.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (contact.WorkPhone && contact.WorkPhone.includes(searchTerm)) ||
-        (contact.JobTitleID && contact.JobTitleID.toString().includes(searchTerm)) ||
-        (contact.PersonFullName && contact.PersonFullName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (contact.AccountName && contact.AccountName.toLowerCase().includes(searchTerm.toLowerCase()));
+      // Search matching - only apply if searchTerm is not empty
+      let matchesSearch = true;
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase();
+        matchesSearch = 
+          (contact.ContactID && contact.ContactID.toString().includes(searchTerm)) ||
+          (contact.AccountID && contact.AccountID.toString().includes(searchTerm)) ||
+          (contact.PersonID && contact.PersonID.toString().includes(searchTerm)) ||
+          (contact.WorkEmail && contact.WorkEmail.toLowerCase().includes(searchLower)) ||
+          (contact.WorkPhone && contact.WorkPhone.includes(searchTerm)) ||
+          (contact.JobTitleID && contact.JobTitleID.toString().includes(searchTerm)) ||
+          (contact.PersonFullName && contact.PersonFullName.toLowerCase().includes(searchLower)) ||
+          (contact.AccountName && contact.AccountName.toLowerCase().includes(searchLower));
+      }
 
-      const matchesEmploymentStatus =
-        !employmentStatusFilter ||
-        (employmentStatusFilter === "employed" && contact.Still_employed === true) ||
-        (employmentStatusFilter === "not_employed" && contact.Still_employed === false) ||
-        (employmentStatusFilter === "unknown" && contact.Still_employed == null);
+      // Employment status matching - only apply if filter is selected
+      let matchesEmploymentStatus = true;
+      if (employmentStatusFilter) {
+        matchesEmploymentStatus =
+          (employmentStatusFilter === "employed" && contact.Still_employed === true) ||
+          (employmentStatusFilter === "not_employed" && contact.Still_employed === false) ||
+          (employmentStatusFilter === "unknown" && contact.Still_employed == null);
+      }
 
-      return matchesSearch && matchesEmploymentStatus;
+      const matches = matchesSearch && matchesEmploymentStatus;
+      console.log("Contact", contact.ContactID, "matches:", matches, "search:", matchesSearch, "employment:", matchesEmploymentStatus);
+      
+      return matches;
     });
+    
+    console.log("Filtered contacts result:", filtered.length, "contacts");
+    return filtered;
   }, [contacts, searchTerm, employmentStatusFilter]);
 
   // ---------------- SELECTION HANDLERS ----------------
@@ -134,7 +148,7 @@ const ContactsContainer = () => {
   };
 
   const handleSelectAllClick = (event) => {
-    if (event.target.checked) setSelected(contacts.map((c) => c.ContactID));
+    if (event.target.checked) setSelected(filteredContacts.map((c) => c.ContactID));
     else setSelected([]);
   };
 
@@ -277,6 +291,8 @@ const ContactsContainer = () => {
       return date.toLocaleDateString();
     },
   };
+
+  console.log("About to render ContactsPage with filteredContacts:", filteredContacts.length);
 
   return (
     <ContactsPage
