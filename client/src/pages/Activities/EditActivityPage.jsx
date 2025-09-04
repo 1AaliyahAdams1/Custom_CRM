@@ -46,12 +46,10 @@ const EditActivityPage = () => {
       }
 
       try {
-        console.log("Loading activity with ID:", id);
 
         // Fetch the activity data first
         const activityResponse = await fetchActivityById(id);
         const activityData = activityResponse.data;
-        console.log("Activity data loaded:", activityData);
 
         // Format dates for datetime-local inputs
         const formatDateTimeLocal = (dateString) => {
@@ -147,15 +145,6 @@ const EditActivityPage = () => {
 
           {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
           {successMessage && <Alert severity="success" sx={{ mb: 3 }}>{successMessage}</Alert>}
-
-          {/* Temporary debug section */}
-          <Paper elevation={0} sx={{ p: 2, mb: 2, backgroundColor: '#f0f0f0' }}>
-            <Typography variant="h6">Debug Info:</Typography>
-            <Box sx={{ fontSize: '12px', fontFamily: 'monospace' }}>
-              <div><strong>Current FormData:</strong></div>
-              <pre>{JSON.stringify(formData, null, 2)}</pre>
-            </Box>
-          </Paper>
 
           <Paper elevation={0} sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
