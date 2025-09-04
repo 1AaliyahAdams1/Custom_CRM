@@ -56,7 +56,7 @@ const CountryContainer = () => {
       } else if (filters.currencyId) {
         data = await getCountriesByCurrency(filters.currencyId);
       } else if (filters.onlyActive) {
-        data = await getActiveCountries();
+        data = await getAllCountries();
       } else {
         data = await getAllCountries(filters.onlyActive);
       }
