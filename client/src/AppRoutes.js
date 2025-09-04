@@ -15,15 +15,13 @@ const Contacts = lazy(() => import("./components/containers/ContactsContainer"))
 const Deals = lazy(() => import("./components/containers/DealsContainer"));
 const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
 
-
 const ProductsContainer = lazy(() => import("./components/containers/ProductsContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
 const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
 const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 
+// Updated to use the new Geography Container
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
-const CityPage = lazy(() => import("./pages/GeographicData/CityPage"));
-const StateProvincePage = lazy(() => import("./pages/GeographicData/StateProvincePage"));
 const IndustryPage = lazy(() => import("./pages/Industry/IndustryPage"));
 const PriorityLevelsPage = lazy(() => import("./pages/PriorityLevelsPage"));
 const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
@@ -39,8 +37,6 @@ const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPag
 const CreateDealPage = lazy(() => import("./pages/Deals/CreateDealPage"));
 const CreateActivitiesPage = lazy(() => import("./pages/Activities/CreateActivitiesPage"));
 const CreateProduct = lazy(() => import("./pages/Products/CreateProductPage"));
-
-
 
 const EditAccountPage = lazy(() => import("./pages/Accounts/EditAccountPage"));
 const EditContactPage = lazy(() => import("./pages/Contacts/EditContactPage"));
@@ -248,7 +244,9 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      {/* --- Country Routes --- */}
+      
+      {/* --- Geography Routes (Updated) --- */}
+      {/* Main geography route - shows countries by default */}
       <Route
         path="/country"
         element={
@@ -258,24 +256,36 @@ const AppRoutes = () => {
         }
       />
       
-      {/* --- City Routes --- */}
+      {/* Geography sub-routes - all use the same container but with different tabs */}
       <Route
-        path="/city"
+        path="/country/states"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.states}>
+            <CountryContainer />
+          </PrivateRoute>
+        }
+      />
+      
+      <Route
+        path="/country/city"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.city}>
-            <CityPage />
+            <CountryContainer />
           </PrivateRoute>
         }
       />
-      {/* --- State/Province Routes --- */}
+      
+      {/* Legacy routes - redirect to new structure */}
       <Route
-        path="/state-province"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.stateProvince}>
-            <StateProvincePage />
-          </PrivateRoute>
-        }
+        path="/city"
+        element={<Navigate to="/country/city" replace />}
       />
+      
+      <Route
+        path="/states"
+        element={<Navigate to="/country/states" replace />}
+      />
+      
       {/* --- Industry Routes --- */}
       <Route
         path="/industry"

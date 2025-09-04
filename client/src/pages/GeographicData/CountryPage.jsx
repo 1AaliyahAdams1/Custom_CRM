@@ -106,9 +106,11 @@ const CountryPage = ({
 
   // State/Province props (pass through to StateProvincePage)
   stateProvinceProps = {},
-}) => {
-  const [currentTab, setCurrentTab] = useState(0);
 
+  // Tab management
+  currentTab = 0,
+  onTabChange,
+}) => {
   // Add Country Dialog State
   const [addCountryDialogOpen, setAddCountryDialogOpen] = useState(false);
   const [newCountry, setNewCountry] = useState({
@@ -138,12 +140,11 @@ const CountryPage = ({
     },
   ];
 
-  // Use all available tabs
-  const userTabs = availableTabs;
-
   // Handle tab change
   const handleTabChange = (event, newValue) => {
-    setCurrentTab(newValue);
+    if (onTabChange) {
+      onTabChange(newValue);
+    }
   };
 
   const columns = [
@@ -335,6 +336,7 @@ const CountryPage = ({
           p: 3,
         }}
       >
+        {/* Main Paper Container */}
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
           {/* Tabs Header */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -354,7 +356,7 @@ const CountryPage = ({
                 }
               }}
             >
-              {userTabs.map((tab, index) => (
+              {availableTabs.map((tab, index) => (
                 <Tab
                   key={tab.id}
                   label={tab.label}
@@ -371,7 +373,7 @@ const CountryPage = ({
           </Box>
 
           {/* Tab Content */}
-          {userTabs.map((tab, index) => (
+          {availableTabs.map((tab, index) => (
             <TabPanel key={tab.id} value={currentTab} index={index}>
 
               {/* Countries Tab Content */}
@@ -388,7 +390,7 @@ const CountryPage = ({
                     <Alert
                       severity="success"
                       sx={{ m: 2 }}
-                      onClose={() => setSuccessMessage("")}
+                      onClose={() => setSuccessMessage && setSuccessMessage("")}
                     >
                       {successMessage}
                     </Alert>
@@ -520,16 +522,12 @@ const CountryPage = ({
 
               {/* States/Provinces Tab Content */}
               {tab.component === 'statesProvinces' && (
-                <Box sx={{ p: 0 }}>
-                  <StateProvincePage {...stateProvinceProps} />
-                </Box>
+                <StateProvincePage {...stateProvinceProps} />
               )}
 
               {/* Cities Tab Content */}
               {tab.component === 'cities' && (
-                <Box sx={{ p: 0 }}>
-                  <CityPage {...cityProps} />
-                </Box>
+                <CityPage {...cityProps} />
               )}
 
             </TabPanel>
