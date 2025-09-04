@@ -1,10 +1,12 @@
 const workService = require("../services/workService");
+const sequenceRepo = require("../data/sequenceRepository");
 
 // Get work page activities with sorting and filtering
 async function getActivities(req, res) {
   try {
     const userId = parseInt(req.params.userId);
     const sortCriteria = req.query.sort || 'dueDate';
+    const filterCriteria = req.query.filter || 'all';
 
     if (!userId || isNaN(userId)) {
       return res.status(400).json({ 
@@ -13,9 +15,9 @@ async function getActivities(req, res) {
       });
     }
 
-    console.log(`Fetching work page data for user ${userId} with sort: ${sortCriteria}`);
+    console.log(`Fetching work page data for user ${userId} with sort: ${sortCriteria}, filter: ${filterCriteria}`);
     
-    const workPageData = await workService.getWorkPageData(userId, sortCriteria);
+    const workPageData = await workService.getWorkPageData(userId, sortCriteria, filterCriteria);
     
     console.log(`Retrieved ${workPageData.totalActivities} activities for user ${userId}`);
     
@@ -28,6 +30,39 @@ async function getActivities(req, res) {
     console.error('Error in getActivities controller:', error);
     res.status(500).json({ 
       error: 'Failed to fetch activities',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+// Get single activity for workspace tab
+async function getActivityForWorkspace(req, res) {
+  try {
+    const activityId = parseInt(req.params.activityId);
+    const userId = parseInt(req.params.userId);
+
+    if (!activityId || !userId || isNaN(activityId) || isNaN(userId)) {
+      return res.status(400).json({ 
+        error: 'Valid Activity ID and User ID are required',
+        received: { activityId: req.params.activityId, userId: req.params.userId }
+      });
+    }
+
+    console.log(`Fetching activity ${activityId} for workspace for user ${userId}`);
+    
+    const activity = await workService.getActivityForWorkspace(activityId, userId);
+    
+    res.status(200).json({
+      success: true,
+      data: activity,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in getActivityForWorkspace controller:', error);
+    const statusCode = error.message.includes('not found') ? 404 : 500;
+    res.status(statusCode).json({ 
+      error: 'Failed to fetch activity',
       message: error.message,
       timestamp: new Date().toISOString()
     });
@@ -63,6 +98,108 @@ async function completeActivity(req, res) {
     console.error('Error in completeActivity controller:', error);
     res.status(500).json({ 
       error: 'Failed to complete activity',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+// Update activity in workspace
+async function updateActivity(req, res) {
+  try {
+    const activityId = parseInt(req.params.activityId);
+    const userId = parseInt(req.params.userId); // Get from params for consistency
+    const updateData = req.body; // The entire body is the update data
+
+    if (!activityId || !userId || isNaN(activityId) || isNaN(userId)) {
+      return res.status(400).json({ 
+        error: 'Valid Activity ID and User ID are required',
+        received: { activityId: req.params.activityId, userId: req.params.userId }
+      });
+    }
+
+    console.log(`Updating activity ${activityId} for user ${userId}`, updateData);
+    
+    const result = await workService.updateActivityInWorkspace(activityId, userId, updateData);
+    
+    console.log(`Activity ${activityId} updated successfully`);
+    
+    res.status(200).json({
+      success: true,
+      data: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in updateActivity controller:', error);
+    res.status(500).json({ 
+      error: 'Failed to update activity',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+// Soft delete activity
+async function deleteActivity(req, res) {
+  try {
+    const activityId = parseInt(req.params.activityId);
+    const userId = parseInt(req.params.userId); // Get from params for consistency
+
+    if (!activityId || !userId || isNaN(activityId) || isNaN(userId)) {
+      return res.status(400).json({ 
+        error: 'Valid Activity ID and User ID are required',
+        received: { activityId: req.params.activityId, userId: req.params.userId }
+      });
+    }
+
+    console.log(`Soft deleting activity ${activityId} for user ${userId}`);
+    
+    const result = await workService.deleteActivityInWorkspace(activityId, userId);
+    
+    console.log(`Activity ${activityId} soft deleted successfully`);
+    
+    res.status(200).json({
+      success: true,
+      data: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in deleteActivity controller:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete activity',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+// Get next activity for workflow
+async function getNextActivity(req, res) {
+  try {
+    const userId = parseInt(req.params.userId);
+    const currentActivityId = req.query.currentActivityId ? parseInt(req.query.currentActivityId) : null;
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ 
+        error: 'Valid User ID is required',
+        received: req.params.userId
+      });
+    }
+
+    console.log(`Fetching next activity for user ${userId}, excluding activity ${currentActivityId}`);
+    
+    const nextActivity = await workService.getNextActivityForWorkflow(userId, currentActivityId);
+    
+    res.status(200).json({
+      success: true,
+      data: nextActivity,
+      hasNext: !!nextActivity,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in getNextActivity controller:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch next activity',
       message: error.message,
       timestamp: new Date().toISOString()
     });
@@ -111,58 +248,11 @@ async function getDayView(req, res) {
   }
 }
 
-// Update activity order (drag & drop)
-async function reorderActivities(req, res) {
-  try {
-    const userId = parseInt(req.body.userId);
-    const { activityOrder } = req.body;
-
-    if (!userId || !activityOrder || !Array.isArray(activityOrder) || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid User ID and activity order array are required',
-        received: { userId: req.body.userId, activityOrderType: typeof activityOrder }
-      });
-    }
-
-    // Validate activityOrder array structure
-    const isValidOrder = activityOrder.every(item => 
-      item.activityId && item.order !== undefined && 
-      !isNaN(parseInt(item.activityId)) && !isNaN(parseInt(item.order))
-    );
-
-    if (!isValidOrder) {
-      return res.status(400).json({ 
-        error: 'Invalid activity order format. Expected array of {activityId, order}',
-        received: activityOrder
-      });
-    }
-
-    console.log(`Reordering ${activityOrder.length} activities for user ${userId}`);
-    
-    const result = await workService.updateActivityOrder(userId, activityOrder);
-    
-    console.log(`Activity reorder completed successfully`);
-    
-    res.status(200).json({
-      success: true,
-      data: result,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in reorderActivities controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to reorder activities',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-}
-
 // Get activities by status filter
 async function getActivitiesByStatus(req, res) {
   try {
     const userId = parseInt(req.params.userId);
-    const status = req.params.status; // 'overdue', 'urgent', 'normal', 'all'
+    const status = req.params.status; // 'overdue', 'urgent', 'normal', 'all', 'completed', etc.
 
     if (!userId || isNaN(userId)) {
       return res.status(400).json({ 
@@ -171,7 +261,7 @@ async function getActivitiesByStatus(req, res) {
       });
     }
 
-    const validStatuses = ['overdue', 'urgent', 'normal', 'all'];
+    const validStatuses = ['overdue', 'urgent', 'normal', 'all', 'completed', 'high-priority', 'today', 'pending'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ 
         error: 'Invalid status filter',
@@ -205,10 +295,102 @@ async function getActivitiesByStatus(req, res) {
   }
 }
 
+// Get activity metadata (priority levels, activity types for editing)
+async function getActivityMetadata(req, res) {
+  try {
+    console.log('Fetching activity metadata for editing forms');
+    
+    const metadata = await workService.getActivityMetadata();
+    
+    res.status(200).json({
+      success: true,
+      data: metadata,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in getActivityMetadata controller:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch activity metadata',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+// Get user sequences for workspace context
+async function getUserSequences(req, res) {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ 
+        error: 'Valid User ID is required',
+        received: req.params.userId
+      });
+    }
+
+    console.log(`Fetching sequences for user ${userId} workspace context`);
+    
+    const sequences = await workService.getUserSequencesForWorkspace(userId);
+    
+    console.log(`Retrieved ${sequences.length} sequences for user ${userId}`);
+    
+    res.status(200).json({
+      success: true,
+      data: sequences,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in getUserSequences controller:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch user sequences',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+// Get work dashboard summary
+async function getWorkDashboard(req, res) {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ 
+        error: 'Valid User ID is required',
+        received: req.params.userId
+      });
+    }
+
+    console.log(`Fetching work dashboard summary for user ${userId}`);
+    
+    const dashboardData = await workService.getWorkDashboardSummary(userId);
+    
+    res.status(200).json({
+      success: true,
+      data: dashboardData,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in getWorkDashboard controller:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch work dashboard',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
 module.exports = {
   getActivities,
+  getActivityForWorkspace,
   completeActivity,
+  updateActivity,
+  deleteActivity,
+  getNextActivity,
   getDayView,
-  reorderActivities,
-  getActivitiesByStatus
+  getActivitiesByStatus,
+  getActivityMetadata,
+  getUserSequences,
+  getWorkDashboard
 };

@@ -22,6 +22,8 @@ const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 
 // Updated to use the new Geography Container
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
+const CityPage = lazy(() => import("./pages/GeographicData/CityPage"));
+const StateProvincePage = lazy(() => import("./pages/GeographicData/StateProvincePage"));
 const IndustryContainer = lazy(() => import("./components/containers/IndustryContainer"));
 const PriorityLevelsPage = lazy(() => import("./pages/PriorityLevelsPage"));
 const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));

@@ -1,4 +1,5 @@
-import api from "../utils/api";
+// client/src/api/reportService.js
+import api from '../utils/api'; // Based on your existing API service structure
 
 // ==============================
 // SALES PIPELINE REPORT
@@ -56,71 +57,6 @@ export const getClosedDealsByPeriodReport = async (stageName = 'Closed Won', sta
   }
 };
 
-export const getClosedDealsByAccountReport = async (stageName = 'Closed Won', startDate, endDate) => {
-  try {
-    const response = await api.get("/reports/closed-deals/account", {
-      params: { 
-        stageName,
-        ...(startDate && { startDate }),
-        ...(endDate && { endDate })
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching closed deals by account report:", error);
-    throw new Error("Failed to fetch closed deals by account report");
-  }
-};
-
-export const getClosedDealsByRoleReport = async (stageName = 'Closed Won', roleName = 'Sales Representative', startDate, endDate) => {
-  try {
-    const response = await api.get("/reports/closed-deals/role", {
-      params: { 
-        stageName,
-        roleName,
-        ...(startDate && { startDate }),
-        ...(endDate && { endDate })
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching closed deals by role report:", error);
-    throw new Error("Failed to fetch closed deals by role report");
-  }
-};
-
-export const getClosedDealsByTeamReport = async (stageName = 'Closed Won', startDate, endDate) => {
-  try {
-    const response = await api.get("/reports/closed-deals/team", {
-      params: { 
-        stageName,
-        ...(startDate && { startDate }),
-        ...(endDate && { endDate })
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching closed deals by team report:", error);
-    throw new Error("Failed to fetch closed deals by team report");
-  }
-};
-
-export const getClosedDealsByProductReport = async (stageName = 'Closed Won', startDate, endDate) => {
-  try {
-    const response = await api.get("/reports/closed-deals/product", {
-      params: { 
-        stageName,
-        ...(startDate && { startDate }),
-        ...(endDate && { endDate })
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching closed deals by product report:", error);
-    throw new Error("Failed to fetch closed deals by product report");
-  }
-};
-
 // ==============================
 // CUSTOMER SEGMENTATION REPORT
 // ==============================
@@ -167,6 +103,7 @@ export const getDashboardSummary = async (startDate, endDate) => {
   }
 };
 
+// Default export for convenience
 const reportService = {
   getSalesPipelineReport,
   getRevenueForecastReport,
