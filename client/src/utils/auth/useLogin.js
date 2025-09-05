@@ -37,7 +37,7 @@ export default function useLogin() {
         RoleNames: Array.isArray(response.roles)
           ? response.roles.join(", ")
           : (response.roles || ""),
-        ownedAccountIds, // ✅ store only IDs
+        ownedAccountIds, 
       };
 
       console.log("Storing user data:", userToStore);
