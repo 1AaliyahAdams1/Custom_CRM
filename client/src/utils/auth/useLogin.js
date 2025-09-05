@@ -49,7 +49,8 @@ export default function useLogin() {
       window.dispatchEvent(new Event("storage"));
 
       // Redirect to dashboard
-      window.location.href = "/dashboard";
+      //Changed to accounts for now
+      window.location.href = "/accounts";
 
       return true;
     } catch (err) {

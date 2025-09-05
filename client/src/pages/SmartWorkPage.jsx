@@ -26,6 +26,7 @@ import {
   Grid,
   Switch,
   FormControlLabel,
+  CircularProgress,
 } from "@mui/material";
 import {
   Close,
@@ -41,59 +42,7 @@ import {
 } from "@mui/icons-material";
 import theme from "../components/Theme";
 import WIPBanner from '../components/WIPBanner';
-
-
-// Mock data
-const mockActivities = [
-  {
-    id: "1",
-    title: "Review quarterly reports",
-    description: "Analyze Q3 performance metrics and prepare summary",
-    type: "task",
-    priority: "high",
-    status: "pending",
-    dueDate: new Date(Date.now() + 86400000),
-    estimatedDuration: 60,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    title: "Team standup meeting",
-    description: "Daily sync with development team",
-    type: "meeting",
-    priority: "medium",
-    status: "pending",
-    dueDate: new Date(Date.now() + 3600000),
-    estimatedDuration: 30,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    title: "Client follow-up call",
-    description: "Follow up on project proposal with ABC Corp",
-    type: "call",
-    priority: "high",
-    status: "overdue",
-    dueDate: new Date(Date.now() - 86400000),
-    estimatedDuration: 45,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "4",
-    title: "Update project documentation",
-    description: "Review and update API documentation",
-    type: "task",
-    priority: "low",
-    status: "completed",
-    dueDate: new Date(),
-    estimatedDuration: 90,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+import * as workService from '../services/workService';
 
 // Icons
 const getActivityIcon = (type) => {
@@ -138,7 +87,9 @@ const getStatusColor = (status) => {
 };
 
 function SmartWork() {
-  const [activities, setActivities] = useState(mockActivities);
+  // State
+  const [activities, setActivities] = useState([]);
+  const [workPageData, setWorkPageData] = useState(null);
   const [workTabs, setWorkTabs] = useState([]);
   const [activeTabId, setActiveTabId] = useState(0);
   const [dropzonePosition] = useState("left");
@@ -147,20 +98,53 @@ function SmartWork() {
   const [selectedActivityId, setSelectedActivityId] = useState(null);
   const [completionNotes, setCompletionNotes] = useState("");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sortCriteria, setSortCriteria] = useState('dueDate');
+  
+  // Replace this with actual user ID from your auth system
+  const userId = 1; // You should get this from your auth context/store
 
   const showToast = (message, severity = "info") => {
     setSnackbar({ open: true, message, severity });
   };
 
+  // Load activities from API
+  const loadActivities = async (sort = sortCriteria) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const data = await workService.getWorkPageData(userId, sort);
+      const transformedData = workService.transformWorkPageData(data);
+      
+      setWorkPageData(transformedData);
+      setActivities(transformedData.activities || []);
+      
+      console.log('Loaded activities:', transformedData.activities?.length || 0);
+    } catch (err) {
+      console.error('Error loading activities:', err);
+      setError(err.message);
+      showToast(`Error loading activities: ${err.message}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadActivities();
+  }, [userId]);
+
   // Auto-open next activity
   useEffect(() => {
-    if (workTabs.length === 0 && isAutoAdvance && activities.length > 0) {
+    if (workTabs.length === 0 && isAutoAdvance && activities.length > 0 && !loading) {
       const nextActivity = activities.find(
         (a) => a.status === "pending" || a.status === "overdue"
       );
       if (nextActivity) handleActivityClick(nextActivity);
     }
-  }, [workTabs, isAutoAdvance, activities]);
+  }, [workTabs, isAutoAdvance, activities, loading]);
 
   const handleActivityClick = (activity) => {
     const existingTab = workTabs.find((tab) => tab.activityId === activity.id);
@@ -214,34 +198,58 @@ function SmartWork() {
     }
   };
 
-  const handleCompleteActivity = () => {
+  const handleCompleteActivity = async () => {
     if (!selectedActivityId) return;
 
-    setActivities((prev) =>
-      prev.map((a) =>
-        a.id === selectedActivityId
-          ? { ...a, status: "completed", notes: completionNotes, updatedAt: new Date() }
-          : a
-      )
-    );
+    try {
+      setLoading(true);
+      
+      // Call API to complete activity
+      const result = await workService.completeActivity(
+        parseInt(selectedActivityId), 
+        userId, 
+        completionNotes
+      );
 
-    const tabIndex = workTabs.findIndex((t) => t.activityId === selectedActivityId);
-    if (tabIndex !== -1) handleCloseTab(tabIndex);
+      // Update local state
+      setActivities((prev) =>
+        prev.map((a) =>
+          a.id === selectedActivityId
+            ? { ...a, status: "completed", notes: completionNotes, updatedAt: new Date() }
+            : a
+        )
+      );
 
-    setCompleteDialogOpen(false);
-    setCompletionNotes("");
-    setSelectedActivityId(null);
-    showToast("Activity completed successfully!", "success");
+      const tabIndex = workTabs.findIndex((t) => t.activityId === selectedActivityId);
+      if (tabIndex !== -1) handleCloseTab(tabIndex);
 
-    if (isAutoAdvance) {
-      setTimeout(() => {
-        const nextActivity = activities.find(
-          (a) => a.status === "pending" || a.status === "overdue"
-        );
-        if (nextActivity && nextActivity.id !== selectedActivityId) {
-          handleActivityClick(nextActivity);
-        }
-      }, 500);
+      setCompleteDialogOpen(false);
+      setCompletionNotes("");
+      setSelectedActivityId(null);
+      showToast("Activity completed successfully!", "success");
+
+      // Auto-advance to next activity
+      if (isAutoAdvance && result.nextActivity) {
+        setTimeout(() => {
+          // Reload activities to get fresh data
+          loadActivities();
+        }, 500);
+      } else if (isAutoAdvance) {
+        setTimeout(() => {
+          const nextActivity = activities.find(
+            (a) => (a.status === "pending" || a.status === "overdue") && 
+            a.id !== selectedActivityId
+          );
+          if (nextActivity) {
+            handleActivityClick(nextActivity);
+          }
+        }, 500);
+      }
+    } catch (err) {
+      console.error('Error completing activity:', err);
+      showToast(`Error completing activity: ${err.message}`, "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -255,14 +263,48 @@ function SmartWork() {
     else showToast("All activities are either completed or already open", "warning");
   };
 
+  const handleRefresh = () => {
+    setWorkTabs([]);
+    loadActivities();
+    showToast("Activities refreshed", "info");
+  };
+
+  const handleSortChange = (newSort) => {
+    setSortCriteria(newSort);
+    loadActivities(newSort);
+  };
+
+  // Loading state
+  if (loading && activities.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Loading activities...</Typography>
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error && activities.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+        <Typography color="error" variant="h6">Error loading activities</Typography>
+        <Typography color="text.secondary" sx={{ mb: 2 }}>{error}</Typography>
+        <Button variant="contained" onClick={() => loadActivities()}>Retry</Button>
+      </Box>
+    );
+  }
+
   const pendingActivities = activities.filter(
     (a) => a.status === "pending" || a.status === "overdue"
   );
+  
   const completedToday = activities.filter((a) => {
     const today = new Date();
     const completedDate = new Date(a.updatedAt);
     return a.status === "completed" && completedDate.toDateString() === today.toDateString();
   }).length;
+  
   const currentActivity =
     workTabs.length > 0 && workTabs[activeTabId]
       ? activities.find((a) => a.id === workTabs[activeTabId].activityId)
@@ -303,15 +345,12 @@ function SmartWork() {
             <Button
               variant="outlined"
               size="small"
-              startIcon={<Refresh />}
+              startIcon={loading ? <CircularProgress size={16} /> : <Refresh />}
               sx={{ color: theme.palette.primary.main, borderColor: theme.palette.divider }}
-              onClick={() => {
-                setWorkTabs([]);
-                setActivities(mockActivities);
-                showToast("Workspace reset", "info");
-              }}
+              onClick={handleRefresh}
+              disabled={loading}
             >
-              Reset
+              Refresh
             </Button>
           </Box>
         </Toolbar>
@@ -349,10 +388,22 @@ function SmartWork() {
                           {activity.estimatedDuration}min
                         </Typography>
                       </Box>
+                      {activity.accountName && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                          Account: {activity.accountName}
+                        </Typography>
+                      )}
                     </Box>
                   </ListItemButton>
                 </ListItem>
               ))}
+              {pendingActivities.length === 0 && !loading && (
+                <ListItem>
+                  <Typography color="text.secondary" sx={{ textAlign: 'center', width: '100%' }}>
+                    No pending activities
+                  </Typography>
+                </ListItem>
+              )}
             </List>
           </Paper>
         )}
@@ -433,6 +484,14 @@ function SmartWork() {
                           <Typography variant="body2" color="text.secondary">Estimated Duration</Typography>
                           <Typography variant="body1">{currentActivity.estimatedDuration} minutes</Typography>
                         </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="body2" color="text.secondary">Account</Typography>
+                          <Typography variant="body1">{currentActivity.accountName || 'N/A'}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="body2" color="text.secondary">Sequence</Typography>
+                          <Typography variant="body1">{currentActivity.sequenceName || 'N/A'}</Typography>
+                        </Grid>
                       </Grid>
 
                       {currentActivity.notes && (
@@ -456,6 +515,7 @@ function SmartWork() {
                             setCompleteDialogOpen(true);
                           }}
                           sx={{ mr: 2 }}
+                          disabled={loading}
                         >
                           Complete
                         </Button>
@@ -491,7 +551,7 @@ function SmartWork() {
               <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                 Select an activity from the sidebar to get started
               </Typography>
-              <Button variant="contained" onClick={handleAddTab} startIcon={<Add />}>
+              <Button variant="contained" onClick={handleAddTab} startIcon={<Add />} disabled={loading}>
                 Open Next Activity
               </Button>
             </Box>
@@ -523,8 +583,13 @@ function SmartWork() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCompleteDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" color="success" onClick={handleCompleteActivity}>
-            Mark Complete
+          <Button 
+            variant="contained" 
+            color="success" 
+            onClick={handleCompleteActivity}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={20} /> : 'Mark Complete'}
           </Button>
         </DialogActions>
       </Dialog>

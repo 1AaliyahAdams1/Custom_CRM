@@ -7,14 +7,22 @@ import {
   fetchActiveUnassignedAccounts,
   deactivateAccount,
 } from "../../services/accountService";
-import {
-  claimAccount,
-  assignUser,
-} from "../../services/assignService";
-import { noteService } from "../../services/noteService";
-import SmartDropdown from '../../components/SmartDropdown';
-import { attachmentService } from "../../services/attachmentService";
-
+import { claimAccount, assignUser } from "../../services/assignService";
+import { 
+  createNote, 
+  updateNote, 
+  deleteNote, 
+  getNotesByEntity 
+} from "../../services/noteService";
+import { 
+  uploadAttachment, 
+  getAttachmentsByEntity, 
+  deleteAttachment, 
+  downloadAttachment 
+} from "../../services/attachmentService";
+import ConfirmDialog from "../../components/ConfirmDialog";
+import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent";
 
 const AccountsContainer = () => {
   const navigate = useNavigate();
@@ -27,14 +35,17 @@ const AccountsContainer = () => {
   const [refreshFlag, setRefreshFlag] = useState(false);
 
   const [selected, setSelected] = useState([]);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [statusSeverity, setStatusSeverity] = useState('success');
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusSeverity, setStatusSeverity] = useState("success");
+
   // Popups
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
-  const [popupLoading, setPopupLoading] = useState(false);
-  const [popupError, setPopupError] = useState(null);
+
+  // Delete confirm dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState(null);
 
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -53,7 +64,7 @@ const AccountsContainer = () => {
       if (isCLevel) {
         const response = await getAllAccounts();
         accountsData = response.data || [];
-        accountsData.forEach(acc => (acc.ownerStatus = "n/a"));
+        accountsData.forEach((acc) => (acc.ownerStatus = "n/a"));
       } else if (isSalesRep) {
         const assignedRes = await fetchActiveAccountsByUser(userId);
         const unassignedRes = await fetchActiveUnassignedAccounts();
@@ -61,20 +72,18 @@ const AccountsContainer = () => {
         const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
         const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
 
-        assignedAccounts.forEach(acc => (acc.ownerStatus = "owned"));
-        unassignedAccounts.forEach(acc => (acc.ownerStatus = "unowned"));
+        assignedAccounts.forEach((acc) => (acc.ownerStatus = "owned"));
+        unassignedAccounts.forEach((acc) => (acc.ownerStatus = "unowned"));
 
-        // Remove duplicates by AccountID
         const map = new Map();
-        [...assignedAccounts, ...unassignedAccounts].forEach(acc => {
+        [...assignedAccounts, ...unassignedAccounts].forEach((acc) => {
           if (acc.AccountID) map.set(acc.AccountID, acc);
         });
         accountsData = Array.from(map.values());
       }
 
       setAccounts(accountsData);
-    } catch (err) {
-      console.error("Failed to load accounts:", err);
+    } catch {
       setError("Failed to load accounts. Please try again.");
     } finally {
       setLoading(false);
@@ -86,50 +95,58 @@ const AccountsContainer = () => {
   }, [refreshFlag]);
 
   // ---------------- ACCOUNT ACTIONS ----------------
-  const handleDeactivate = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this account?")) return;
+  const handleDeactivateClick = (account) => {
+    setAccountToDelete(account);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeactivate = async () => {
+    if (!accountToDelete) return;
     setError(null);
     try {
-      await deactivateAccount(id);
+      await deactivateAccount(accountToDelete.AccountID);
       setSuccessMessage("Account deleted successfully.");
-      setRefreshFlag(flag => !flag);
-    } catch (err) {
-      console.error("Failed to delete account:", err);
+      setRefreshFlag((flag) => !flag);
+    } catch {
       setError("Failed to delete account. Please try again.");
+    } finally {
+      setDeleteDialogOpen(false);
+      setAccountToDelete(null);
     }
   };
 
-  const handleEdit = (account) => navigate(`/accounts/edit/${account.AccountID}`, { state: { account } });
-  const handleView = (account) => account?.AccountID && navigate(`/accounts/${account.AccountID}`);
+  const handleEdit = (account) =>
+    navigate(`/accounts/edit/${account.AccountID}`, { state: { account } });
+
+  const handleView = (account) =>
+    account?.AccountID && navigate(`/accounts/${account.AccountID}`);
+
   const handleCreate = () => navigate("/accounts/create");
 
   // ---------------- CLAIM / ASSIGN ----------------
   const handleClaimAccount = async (account) => {
     try {
-      const result = await claimAccount(account.AccountID);
+      await claimAccount(account.AccountID);
       setStatusMessage(`Account claimed: ${account.AccountName}`);
-      setStatusSeverity('success');
-      setAccounts(prev =>
-        prev.map(a =>
+      setStatusSeverity("success");
+      setAccounts((prev) =>
+        prev.map((a) =>
           a.AccountID === account.AccountID ? { ...a, ownerStatus: "owned" } : a
         )
       );
     } catch (err) {
-      console.error("Failed to claim account:", err);
       setStatusMessage(err.message || "Failed to claim account");
-      setStatusSeverity('error');
+      setStatusSeverity("error");
     }
   };
 
   const handleAssignUser = async (employeeId, account) => {
     try {
-      const result = await assignUser(account.AccountID, employeeId);
+      await assignUser(account.AccountID, employeeId);
       setSuccessMessage(`User assigned to ${account.AccountName}`);
-      // Optionally update local state if needed
     } catch (err) {
-      console.error("Failed to assign user:", err);
       setError(err.message || "Failed to assign user");
-      throw err; // Re-throw so the dialog can show the error
+      throw err;
     }
   };
 
@@ -138,107 +155,157 @@ const AccountsContainer = () => {
     const selectedIndex = selected.indexOf(id);
     let newSelected = [];
     if (selectedIndex === -1) newSelected = [...selected, id];
-    else newSelected = selected.filter(sid => sid !== id);
+    else newSelected = selected.filter((sid) => sid !== id);
     setSelected(newSelected);
   };
 
   const handleSelectAllClick = (event) => {
-    if (event.target.checked) setSelected(accounts.map(a => a.AccountID));
+    if (event.target.checked) setSelected(accounts.map((a) => a.AccountID));
     else setSelected([]);
   };
 
   // ---------------- NOTES ----------------
-  const handleAddNote = (account) => { setSelectedAccount(account); setNotesPopupOpen(true); setPopupError(null); };
+  const handleAddNote = (account) => {
+    setSelectedAccount(account);
+    setNotesPopupOpen(true);
+  };
+
   const handleSaveNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.createNote(noteData);
+      const notePayload = {
+        EntityID: selectedAccount.AccountID,
+        EntityType: "Account",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
-      setRefreshFlag(flag => !flag);
-    } catch (err) { setPopupError(err.message || "Failed to save note"); }
-    finally { setPopupLoading(false); }
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to save note");
+    }
   };
-  const handleDeleteNote = async (noteId) => {
-    try {
-      setPopupLoading(true);
-      await noteService.deleteNote(noteId);
-      setSuccessMessage("Note deleted successfully!");
-      setRefreshFlag(flag => !flag);
-    } catch (err) { setPopupError(err.message || "Failed to delete note"); }
-    finally { setPopupLoading(false); }
-  };
+
   const handleEditNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.updateNote(noteData.NoteID, noteData);
+      await updateNote(noteData.NoteID, noteData);
       setSuccessMessage("Note updated successfully!");
-      setRefreshFlag(flag => !flag);
-    } catch (err) { setPopupError(err.message || "Failed to update note"); }
-    finally { setPopupLoading(false); }
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to update note");
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await deleteNote(noteId);
+      setSuccessMessage("Note deleted successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to delete note");
+    }
   };
 
   // ---------------- ATTACHMENTS ----------------
-  const handleAddAttachment = (account) => { setSelectedAccount(account); setAttachmentsPopupOpen(true); setPopupError(null); };
-  const handleUploadAttachment = async (attachments) => {
-    try {
-      setPopupLoading(true);
-      for (const att of attachments) await attachmentService.uploadAttachment(att);
-      setSuccessMessage(`${attachments.length} attachment(s) uploaded successfully!`);
-      setAttachmentsPopupOpen(false);
-      setRefreshFlag(flag => !flag);
-    } catch (err) { setPopupError(err.message || "Failed to upload attachments"); }
-    finally { setPopupLoading(false); }
+  const handleAddAttachment = (account) => {
+    setSelectedAccount(account);
+    setAttachmentsPopupOpen(true);
   };
+
+  const handleUploadAttachment = async (files) => {
+    try {
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedAccount.AccountID,
+          entityTypeName: "Account"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
+      setAttachmentsPopupOpen(false);
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to upload attachments");
+    }
+  };
+
   const handleDeleteAttachment = async (attachmentId) => {
     try {
-      setPopupLoading(true);
-      await attachmentService.deleteAttachment(attachmentId);
+      await deleteAttachment(attachmentId);
       setSuccessMessage("Attachment deleted successfully!");
-      setRefreshFlag(flag => !flag);
-    } catch (err) { setPopupError(err.message || "Failed to delete attachment"); }
-    finally { setPopupLoading(false); }
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to delete attachment");
+    }
   };
+
   const handleDownloadAttachment = async (attachment) => {
-    try { await attachmentService.downloadAttachment(attachment); }
-    catch (err) { setPopupError(err.message || "Failed to download attachment"); }
+    try {
+      await downloadAttachment(attachment);
+    } catch (err) {
+      setError(err.message || "Failed to download attachment");
+    }
   };
 
   return (
-    <AccountsPage
-      accounts={accounts}
-      loading={loading}
-      error={error}
-      successMessage={successMessage}
-      setSuccessMessage={setSuccessMessage}
-      statusMessage={statusMessage}
-      statusSeverity={statusSeverity}
-      setStatusMessage={setStatusMessage}
-      selected={selected}
-      onSelectClick={handleSelectClick}
-      onSelectAllClick={handleSelectAllClick}
-      onDeactivate={handleDeactivate}
-      onEdit={handleEdit}
-      onView={handleView}
-      onCreate={handleCreate}
-      onAddNote={handleAddNote}
-      onAddAttachment={handleAddAttachment}
-      onClaimAccount={handleClaimAccount}
-      onAssignUser={handleAssignUser}
-      notesPopupOpen={notesPopupOpen}
-      setNotesPopupOpen={setNotesPopupOpen}
-      attachmentsPopupOpen={attachmentsPopupOpen}
-      setAttachmentsPopupOpen={setAttachmentsPopupOpen}
-      selectedAccount={selectedAccount}
-      popupLoading={popupLoading}
-      popupError={popupError}
-      handleSaveNote={handleSaveNote}
-      handleDeleteNote={handleDeleteNote}
-      handleEditNote={handleEditNote}
-      handleUploadAttachment={handleUploadAttachment}
-      handleDeleteAttachment={handleDeleteAttachment}
-      handleDownloadAttachment={handleDownloadAttachment}
-    />
+    <>
+      <AccountsPage
+        accounts={accounts}
+        loading={loading}
+        error={error}
+        successMessage={successMessage}
+        setSuccessMessage={setSuccessMessage}
+        statusMessage={statusMessage}
+        statusSeverity={statusSeverity}
+        setStatusMessage={setStatusMessage}
+        selected={selected}
+        onSelectClick={handleSelectClick}
+        onSelectAllClick={handleSelectAllClick}
+        onDeactivate={handleDeactivateClick} 
+        onEdit={handleEdit}
+        onView={handleView}
+        onCreate={handleCreate}
+        onAddNote={handleAddNote}
+        onAddAttachment={handleAddAttachment}
+        onClaimAccount={handleClaimAccount}
+        onAssignUser={handleAssignUser}
+      />
+
+      {/* Notes Popup */}
+      <NotesPopup
+        open={notesPopupOpen}
+        onClose={() => setNotesPopupOpen(false)}
+        onSave={handleSaveNote}
+        onEdit={handleEditNote}
+        onDelete={handleDeleteNote}
+        entityType="Account"
+        entityId={selectedAccount?.AccountID}
+        entityName={selectedAccount?.AccountName}
+        showExistingNotes={true}
+      />
+
+      {/* Attachments Popup */}
+      <AttachmentsPopup
+        open={attachmentsPopupOpen}
+        onClose={() => setAttachmentsPopupOpen(false)}
+        entityType="Account"
+        entityId={selectedAccount?.AccountID}
+        entityName={selectedAccount?.AccountName}
+        onUpload={handleUploadAttachment}
+        onDelete={handleDeleteAttachment}
+        onDownload={handleDownloadAttachment}
+      />
+
+      {/* Confirm delete dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Delete Account"
+        description={`Are you sure you want to delete "${accountToDelete?.AccountName}"?`}
+        onConfirm={confirmDeactivate}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
+    </>
   );
 };
 

@@ -27,77 +27,121 @@ import {
   ChevronRight,
   BarChart as BarChartIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
-
+  Inventory as InventoryIcon,
+  Flag as FlagIcon,
+  Settings as SettingsApplicationsIcon,
 } from "@mui/icons-material";
-
+import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { useAuth } from "../hooks/auth/useAuth";
 import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
 
+
 // Navigation items configuration using centralized route access
 const navigation = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: BarChartIcon,
-    accessKey: "dashboard",
-  },
+  // {
+  //   name: "Dashboard",
+  //   href: "/dashboard",
+  //   icon: DashboardIcon,
+  //   accessKey: "dashboard",
+  //   section: "Main",
+  // },
   {
     name: "Accounts",
     href: "/accounts",
     icon: BusinessIcon,
     accessKey: "accounts",
+    section: "CRM Management",
   },
   {
     name: "Contacts",
     href: "/contacts",
     icon: PeopleIcon,
     accessKey: "contacts",
+    section: "CRM Management",
   },
   {
     name: "Deals",
     href: "/deals",
     icon: HandshakeIcon,
     accessKey: "deals",
+    section: "CRM Management",
   },
-
-
   {
     name: "Activities",
     href: "/activities",
     icon: EventIcon,
     accessKey: "activities",
+    section: "CRM Management",
   },
   {
-    name: "Work Page",
-    href: "/smart-work",
-    icon: WorkspacesOutlineIcon,
-    accessKey: "smartWork",
+    name: "Products",
+    href: "/products",
+    icon: InventoryIcon,
+    accessKey: "products",
+    section: "CRM Management",
   },
+  // {
+  //   name: "Work Page",
+  //   href: "/smart-work",
+  //   icon: WorkspacesOutlineIcon,
+  //   accessKey: "smartWork",
+  //   section: "CRM Management",
+  // },
   {
     name: "Reports",
     href: "/reports",
     icon: BarChartIcon,
     accessKey: "reports",
+    section: "Analysis & Reports",
   },
   {
-    name: "Role Management",
-    href: "/rolemanagement",
-    icon: AdminPanelSettingsIcon,
-    accessKey: 'roles',
+    name: "Geographic Data",
+    href: "/countries",
+    icon: FlagIcon,
+    accessKey: "country",
+    section: "Misc",
   },
-
   {
-    name: "Settings",
-    href: "/settings",
-    icon: SettingsIcon,
-    allowedRoles: ["Admin"], // Keep this one as is since it's not in routesAccess
+    name: "Industry",
+    href: "/industries",
+    icon: BusinessIcon,
+    accessKey: "industry",
+    section: "Misc",
+  },
+  // {
+  //   name: "Role Management",
+  //   href: "/rolemanagement",
+  //   icon: AdminPanelSettingsIcon,
+  //   accessKey: "roles",
+  //   section: "Admin",
+  // },
+  {
+    name: "Priority Levels",
+    href: "/priority-levels",
+    icon: PriorityHighIcon,
+    accessKey: "priority",
+    section: "Misc",
   },
 ];
+
 
 const DRAWER_WIDTH_EXPANDED = 200;
 const DRAWER_WIDTH_COLLAPSED = 64;
 
 export function AppSidebar() {
+  // Get unique sections from navigation
+  const sections = [...new Set(navigation.map(item => item.section))];
+
+  // Track collapsed state per section
+  const [collapsedSections, setCollapsedSections] = useState({});
+
+  // Toggle section collapse
+  const toggleSection = (section) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -158,11 +202,11 @@ export function AppSidebar() {
           minHeight: 44,
           px: isCollapsed ? 1.5 : 2,
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.12) : "transparent",
-          color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
+          backgroundColor: isActive ? alpha('#2196F3', 0.2) : "transparent",
+          color: isActive ? '#2196F3' : '#ffffff',
           "&:hover": {
-            backgroundColor: alpha(theme.palette.primary.main, 0.08),
-            color: theme.palette.primary.main,
+            backgroundColor: alpha('#2196F3', 0.15),
+            color: '#2196F3',
             transform: "translateX(2px)",
           },
         }}
@@ -204,8 +248,8 @@ export function AppSidebar() {
           componentsProps={{
             tooltip: {
               sx: {
-                backgroundColor: theme.palette.grey[800],
-                color: theme.palette.common.white,
+                backgroundColor: '#333333',
+                color: '#ffffff',
                 fontSize: "0.75rem",
                 fontWeight: 500,
               },
@@ -231,47 +275,83 @@ export function AppSidebar() {
           width: drawerWidth,
           boxSizing: "border-box",
           transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          backgroundColor: theme.palette.background.paper,
-          borderRight: `1px solid ${theme.palette.divider}`,
-          top: "64px",
-          height: "calc(100vh - 64px)",
+          backgroundColor: "#000000",
+          borderRight: `1px solid #333333`,
+          top: 0,
+          height: "100vh",
           overflowX: "hidden",
+          display: "flex",
+          flexDirection: "column",
         },
       }}
     >
-      {/* Sidebar Header with Toggle Button */}
+      {/* Brand Header */}
+      {!isCollapsed && (
+        <Box
+          sx={{
+            p: 2,
+            pb: 1,
+            borderBottom: `1px solid #333333`,
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              color: "#ffffff",
+              fontSize: "1.1rem",
+              textAlign: "center",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Entertainment.FM
+          </Typography>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 700,
+              color: "#2196F3",
+              fontSize: "1.1rem",
+              textAlign: "center",
+              letterSpacing: "0.5px",
+            }}
+          >
+            CRM System
+          </Typography>
+        </Box>
+      )}
+
+      {/* Sidebar Header with Toggle */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: isCollapsed ? "center" : "space-between",
           p: 2,
-          minHeight: 64,
+          minHeight: isCollapsed ? 64 : 48,
         }}
       >
         {!isCollapsed && (
           <Typography
-            variant="h6"
+            variant="subtitle1"
             sx={{
               fontWeight: 600,
-              color: theme.palette.text.primary,
-              fontSize: "1rem",
-              opacity: isCollapsed ? 0 : 1,
-              transition: "opacity 0.3s ease",
+              color: "#ffffff",
+              fontSize: "0.9rem",
+              textAlign: "center",
             }}
           >
-            Navigation
+            Navigation Panel
           </Typography>
         )}
-
         <IconButton
           onClick={toggleSidebar}
           size="small"
           sx={{
-            backgroundColor: alpha(theme.palette.primary.main, 0.08),
-            color: theme.palette.primary.main,
+            backgroundColor: alpha("#2196F3", 0.15),
+            color: "#2196F3",
             "&:hover": {
-              backgroundColor: alpha(theme.palette.primary.main, 0.12),
+              backgroundColor: alpha("#2196F3", 0.25),
             },
           }}
         >
@@ -279,13 +359,79 @@ export function AppSidebar() {
         </IconButton>
       </Box>
 
-      <Divider sx={{ mx: 1 }} />
+      <Divider sx={{ mx: 1, borderColor: "#333333", display: isCollapsed ? "none" : "block" }} />
 
-      {/* Navigation Items */}
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", pt: 1 }}>
-        <List sx={{ flex: 1, px: 0 }}>
-          {navigation.map((item) => renderNavigationItem(item))}
-        </List>
+      {/* Navigation List - scrollable */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          px: 0,
+          "&::-webkit-scrollbar": {
+            width: "6px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "rgba(255, 255, 255, 0.2)",
+            borderRadius: "3px",
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "transparent",
+          },
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(255,255,255,0.2) transparent",
+        }}
+      >
+        {sections.map(section => {
+          const isSectionCollapsed = collapsedSections[section];
+
+          return (
+            <Box key={section} sx={{ mb: 2 }}>
+              {/* Section header */}
+              {!isCollapsed && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    px: 2,
+                    pt: 1,
+                    pb: 0.5,
+                    cursor: "pointer",
+                    userSelect: "none",
+                  }}
+                  onClick={() => toggleSection(section)}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      color: alpha("#ffffff", 0.6),
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    {section}
+                  </Typography>
+                  <IconButton size="small" sx={{ color: alpha("#ffffff", 0.6) }}>
+                    {isSectionCollapsed ? <ChevronRight /> : <ChevronLeft />}
+                  </IconButton>
+                </Box>
+              )}
+
+              {/* Section items */}
+              {!isSectionCollapsed && (
+                <List sx={{ px: 0 }}>
+                  {navigation
+                    .filter(item => item.section === section)
+                    .map(item => renderNavigationItem(item))}
+                </List>
+              )}
+
+              {/* Optional divider between sections */}
+              {!isCollapsed && <Divider sx={{ mx: 1, borderColor: "#333333" }} />}
+            </Box>
+          );
+        })}
       </Box>
 
       {/* Footer */}
@@ -293,8 +439,8 @@ export function AppSidebar() {
         <Box
           sx={{
             p: 2,
-            borderTop: `1px solid ${theme.palette.divider}`,
-            backgroundColor: alpha(theme.palette.background.default, 0.5),
+            borderTop: `1px solid #333333`,
+            backgroundColor: alpha("#000000", 0.8),
           }}
         >
           <Typography
@@ -302,10 +448,8 @@ export function AppSidebar() {
             sx={{
               display: "block",
               textAlign: "center",
-              color: theme.palette.text.secondary,
+              color: "#cccccc",
               fontWeight: 500,
-              opacity: isCollapsed ? 0 : 1,
-              transition: "opacity 0.3s ease",
             }}
           >
             2025 CRM Prototype v2
@@ -313,6 +457,7 @@ export function AppSidebar() {
         </Box>
       )}
     </Drawer>
+
   );
 }
 

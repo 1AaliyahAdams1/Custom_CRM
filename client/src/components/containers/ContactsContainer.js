@@ -6,8 +6,22 @@ import {
   fetchContactsByUser,
   deactivateContact,
 } from "../../services/contactService";
-import { noteService } from "../../services/noteService";
-import { attachmentService } from "../../services/attachmentService";
+import { 
+  createNote, 
+  updateNote, 
+  deleteNote, 
+  getNotesByEntity 
+} from "../../services/noteService";
+import { 
+  uploadAttachment, 
+  getAttachmentsByEntity, 
+  deleteAttachment, 
+  downloadAttachment 
+} from "../../services/attachmentService";
+import ConfirmDialog from "../../components/ConfirmDialog";
+import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent";
+import { formatters } from '../../utils/formatters';
 
 const ContactsContainer = () => {
   const navigate = useNavigate();
@@ -24,12 +38,12 @@ const ContactsContainer = () => {
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
-  const [popupLoading, setPopupLoading] = useState(false);
-  const [popupError, setPopupError] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState(null);
 
   // Filters
-  const [searchTerm, setSearchTerm] = useState("");
-  const [employmentStatusFilter, setEmploymentStatusFilter] = useState("");
+  const [searchTerm] = useState("");
+  const [employmentStatusFilter] = useState("");
 
   // User roles
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -69,10 +83,8 @@ const ContactsContainer = () => {
           .filter((part) => part.trim() !== "")
           .join(" "),
       }));
-
       setContacts(processedData);
     } catch (err) {
-      console.error("Failed to load contacts:", err);
       setError("Failed to load contacts. Please try again.");
     } finally {
       setLoading(false);
@@ -85,25 +97,37 @@ const ContactsContainer = () => {
 
   // ---------------- FILTERED CONTACTS ----------------
   const filteredContacts = useMemo(() => {
-    return contacts.filter((contact) => {
-      const matchesSearch =
-        (contact.ContactID && contact.ContactID.toString().includes(searchTerm)) ||
-        (contact.AccountID && contact.AccountID.toString().includes(searchTerm)) ||
-        (contact.PersonID && contact.PersonID.toString().includes(searchTerm)) ||
-        (contact.WorkEmail && contact.WorkEmail.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (contact.WorkPhone && contact.WorkPhone.includes(searchTerm)) ||
-        (contact.JobTitleID && contact.JobTitleID.toString().includes(searchTerm)) ||
-        (contact.PersonFullName && contact.PersonFullName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (contact.AccountName && contact.AccountName.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (!searchTerm.trim() && !employmentStatusFilter) {
+      return contacts;
+    }
 
-      const matchesEmploymentStatus =
-        !employmentStatusFilter ||
-        (employmentStatusFilter === "employed" && contact.Still_employed === true) ||
-        (employmentStatusFilter === "not_employed" && contact.Still_employed === false) ||
-        (employmentStatusFilter === "unknown" && contact.Still_employed == null);
+    const filtered = contacts.filter((contact) => {
+      let matchesSearch = true;
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase();
+        matchesSearch =
+          (contact.ContactID && contact.ContactID.toString().includes(searchTerm)) ||
+          (contact.AccountID && contact.AccountID.toString().includes(searchTerm)) ||
+          (contact.PersonID && contact.PersonID.toString().includes(searchTerm)) ||
+          (contact.WorkEmail && contact.WorkEmail.toLowerCase().includes(searchLower)) ||
+          (contact.WorkPhone && contact.WorkPhone.includes(searchTerm)) ||
+          (contact.JobTitleID && contact.JobTitleID.toString().includes(searchTerm)) ||
+          (contact.PersonFullName && contact.PersonFullName.toLowerCase().includes(searchLower)) ||
+          (contact.AccountName && contact.AccountName.toLowerCase().includes(searchLower));
+      }
+
+      let matchesEmploymentStatus = true;
+      if (employmentStatusFilter) {
+        matchesEmploymentStatus =
+          (employmentStatusFilter === "employed" && contact.Still_employed === true) ||
+          (employmentStatusFilter === "not_employed" && contact.Still_employed === false) ||
+          (employmentStatusFilter === "unknown" && contact.Still_employed == null);
+      }
 
       return matchesSearch && matchesEmploymentStatus;
     });
+
+    return filtered;
   }, [contacts, searchTerm, employmentStatusFilter]);
 
   // ---------------- SELECTION HANDLERS ----------------
@@ -116,26 +140,38 @@ const ContactsContainer = () => {
   };
 
   const handleSelectAllClick = (event) => {
-    if (event.target.checked) setSelected(contacts.map((c) => c.ContactID));
+    if (event.target.checked) setSelected(filteredContacts.map((c) => c.ContactID));
     else setSelected([]);
   };
 
-  // ---------------- CONTACT HANDLERS ----------------
-  const handleDeactivate = async (id) => {
-    if (!id) {
-      setError("Cannot delete contact - missing ID");
-      return;
-    }
-    if (!window.confirm("Are you sure you want to delete this contact?")) return;
-
+  // ---------------- CONFIRM/CANCEL HANDLERS -----------
+  const confirmDelete = async () => {
     try {
-      await deactivateContact(id);
+      await deactivateContact(contactToDelete);
       setSuccessMessage("Contact deleted successfully.");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       console.error("Failed to delete contact:", err);
       setError("Failed to delete contact. Please try again.");
+    } finally {
+      setConfirmOpen(false);
+      setContactToDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setContactToDelete(null);
+  };
+
+  // ---------------- CONTACT HANDLERS ----------------
+  const handleDeactivate = (id) => {
+    if (!id) {
+      setError("Cannot delete contact - missing ID");
+      return;
+    }
+    setContactToDelete(id);
+    setConfirmOpen(true);
   };
 
   const handleEdit = (contact) => {
@@ -161,47 +197,42 @@ const ContactsContainer = () => {
     if (!contact.ContactID) return;
     setSelectedContact(contact);
     setNotesPopupOpen(true);
-    setPopupError(null);
   };
 
   const handleSaveNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.createNote(noteData);
+      const notePayload = {
+        EntityID: selectedContact.ContactID,
+        EntityType: "Contact",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to save note");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to save note");
     }
   };
 
   const handleDeleteNote = async (noteId) => {
     try {
-      setPopupLoading(true);
-      await noteService.deleteNote(noteId);
+      await deleteNote(noteId);
       setSuccessMessage("Note deleted successfully!");
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to delete note");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to delete note");
     }
   };
 
   const handleEditNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.updateNote(noteData.NoteID, noteData);
+      await updateNote(noteData.NoteID, noteData);
       setSuccessMessage("Note updated successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to update note");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to update note");
     }
   };
 
@@ -210,88 +241,98 @@ const ContactsContainer = () => {
     if (!contact.ContactID) return;
     setSelectedContact(contact);
     setAttachmentsPopupOpen(true);
-    setPopupError(null);
   };
 
-  const handleUploadAttachment = async (attachments) => {
+  const handleUploadAttachment = async (files) => {
     try {
-      setPopupLoading(true);
-      for (const attachment of attachments) {
-        await attachmentService.uploadAttachment(attachment);
-      }
-      setSuccessMessage(`${attachments.length} attachment(s) uploaded successfully!`);
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedContact.ContactID,
+          entityTypeName: "Contact"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
       setAttachmentsPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to upload attachments");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to upload attachments");
     }
   };
 
   const handleDeleteAttachment = async (attachmentId) => {
     try {
-      setPopupLoading(true);
-      await attachmentService.deleteAttachment(attachmentId);
+      await deleteAttachment(attachmentId);
       setSuccessMessage("Attachment deleted successfully!");
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to delete attachment");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to delete attachment");
     }
   };
 
   const handleDownloadAttachment = async (attachment) => {
     try {
-      await attachmentService.downloadAttachment(attachment);
+      await downloadAttachment(attachment);
     } catch (err) {
-      setPopupError(err.message || "Failed to download attachment");
+      setError(err.message || "Failed to download attachment");
     }
   };
 
-  // ---------------- FORMATTERS ----------------
-  const formatters = {
-    CreatedAt: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
-  };
-
   return (
-    <ContactsPage
-      contacts={filteredContacts}
-      loading={loading}
-      error={error}
-      successMessage={successMessage}
-      setSuccessMessage={setSuccessMessage}
-      selected={selected}
-      onSelectClick={handleSelectClick}
-      onSelectAllClick={handleSelectAllClick}
-      onDeactivate={handleDeactivate}
-      onEdit={handleEdit}
-      onView={handleView}
-      onCreate={handleCreate}
-      onAddNote={handleAddNote}
-      onAddAttachment={handleAddAttachment}
-      notesPopupOpen={notesPopupOpen}
-      setNotesPopupOpen={setNotesPopupOpen}
-      attachmentsPopupOpen={attachmentsPopupOpen}
-      setAttachmentsPopupOpen={setAttachmentsPopupOpen}
-      selectedContact={selectedContact}
-      popupLoading={popupLoading}
-      popupError={popupError}
-      handleSaveNote={handleSaveNote}
-      handleDeleteNote={handleDeleteNote}
-      handleEditNote={handleEditNote}
-      handleUploadAttachment={handleUploadAttachment}
-      handleDeleteAttachment={handleDeleteAttachment}
-      handleDownloadAttachment={handleDownloadAttachment}
-      formatters={formatters}
-      totalCount={contacts.length}
-    />
+    <>
+      <ContactsPage
+        contacts={filteredContacts}
+        loading={loading}
+        error={error}
+        successMessage={successMessage}
+        setSuccessMessage={setSuccessMessage}
+        selected={selected}
+        onSelectClick={handleSelectClick}
+        onSelectAllClick={handleSelectAllClick}
+        onDeactivate={handleDeactivate}
+        onEdit={handleEdit}
+        onView={handleView}
+        onCreate={handleCreate}
+        onAddNote={handleAddNote}
+        onAddAttachment={handleAddAttachment}
+        formatters={formatters}
+        totalCount={contacts.length}
+      />
+
+      {/* Notes Popup */}
+      <NotesPopup
+        open={notesPopupOpen}
+        onClose={() => setNotesPopupOpen(false)}
+        onSave={handleSaveNote}
+        onEdit={handleEditNote}
+        onDelete={handleDeleteNote}
+        entityType="Contact"
+        entityId={selectedContact?.ContactID}
+        entityName={selectedContact?.PersonFullName}
+        showExistingNotes={true}
+      />
+
+      {/* Attachments Popup */}
+      <AttachmentsPopup
+        open={attachmentsPopupOpen}
+        onClose={() => setAttachmentsPopupOpen(false)}
+        entityType="Contact"
+        entityId={selectedContact?.ContactID}
+        entityName={selectedContact?.PersonFullName}
+        onUpload={handleUploadAttachment}
+        onDelete={handleDeleteAttachment}
+        onDownload={handleDownloadAttachment}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete Contact?"
+        description="Are you sure you want to delete this contact? This action cannot be undone."
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
+    </>
   );
 };
 

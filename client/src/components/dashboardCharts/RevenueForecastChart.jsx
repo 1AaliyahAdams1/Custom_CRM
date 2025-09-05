@@ -1,5 +1,4 @@
 import React from 'react';
-import { Box } from '@mui/material';
 import {
   ChartComponent,
   SeriesCollectionDirective,
@@ -14,15 +13,29 @@ import {
   SplineSeries
 } from '@syncfusion/ej2-react-charts';
 
-const RevenueChart = () => {
-  const revenueData = [
-    { month: 'Jan', predicted: 1250000, actual: 1180000 },
-    { month: 'Feb', predicted: 1350000, actual: 1420000 },
-    { month: 'Mar', predicted: 1450000, actual: 1380000 },
-    { month: 'Apr', predicted: 1520000, actual: 1580000 },
-    { month: 'May', predicted: 1680000, actual: 1620000 },
-    { month: 'Jun', predicted: 1750000, actual: null }
-  ];
+const RevenueChart = ({ data }) => {
+  // Transform real data if available
+  const getChartData = () => {
+    if (data?.data && Array.isArray(data.data)) {
+      return data.data.map(period => ({
+        month: period.periodFormatted,
+        predicted: period.forecastRevenue / 1000, // Convert to thousands
+        actual: period.actualRevenue / 1000       // Convert to thousands
+      }));
+    }
+    
+    // Fallback data
+    return [
+      { month: 'Jan', predicted: 1250, actual: 1180 },
+      { month: 'Feb', predicted: 1350, actual: 1420 },
+      { month: 'Mar', predicted: 1450, actual: 1380 },
+      { month: 'Apr', predicted: 1520, actual: 1580 },
+      { month: 'May', predicted: 1680, actual: 1620 },
+      { month: 'Jun', predicted: 1750, actual: null }
+    ];
+  };
+
+  const chartData = getChartData();
 
   const primaryXAxis = {
     valueType: 'Category',
@@ -33,24 +46,22 @@ const RevenueChart = () => {
   };
 
   const primaryYAxis = {
-    title: 'Revenue (USD)',
-    labelFormat: '${value}',
+    title: 'Revenue (Thousands ZAR)',
+    labelFormat: 'R{value}K',
     lineStyle: { width: 0 },
     majorGridLines: { width: 1, color: '#e0e0e0' },
     majorTickLines: { width: 0 },
-    minimum: 1000000,
-    maximum: 2000000,
-    interval: 200000
+    minimum: 0
   };
 
   const tooltip = {
     enable: true,
     shared: true,
-    format: '<b>${point.x}</b><br/>${series.name}: <b>${point.y}</b>'
+    format: '<b>{point.x}</b><br/>{series.name}: <b>R{point.y}K</b>'
   };
 
-  const actualData = revenueData.filter(item => item.actual !== null);
-  const predictedData = revenueData;
+  const actualData = chartData.filter(item => item.actual !== null && item.actual !== undefined);
+  const predictedData = chartData;
 
   return (
     <div className="w-full h-80">
@@ -59,7 +70,7 @@ const RevenueChart = () => {
         primaryXAxis={primaryXAxis}
         primaryYAxis={primaryYAxis}
         tooltip={tooltip}
-        width ="600px"
+        width="600px"
         height="100%"
         background="transparent"
         theme="Material"
@@ -86,7 +97,7 @@ const RevenueChart = () => {
             xName="month"
             yName="predicted"
             type="Spline"
-            name="Predicted Revenue"
+            name="Forecast Revenue"
             width={2}
             dashArray="5,5"
             marker={{

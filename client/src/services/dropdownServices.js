@@ -37,15 +37,13 @@ export const stateProvinceService = {
       }
 
       // Filter states by country - assuming the state objects have CountryID or similar field
-      console.log("countryId for filtering",countryId)
-      console.log("allstates for filtering",allStates)
+
       return allStates.filter(state =>
         state.CountryID === parseInt(countryId) ||
         state.countryId === parseInt(countryId) ||
         state.country_id === parseInt(countryId)
       );
     } catch (error) {
-      console.error('Error loading filtered state/provinces:', error);
       return [];
     }
   },
@@ -58,7 +56,6 @@ export const countryService = {
       const response = await api.get('/countries');
       return response.data || [];
     } catch (error) {
-      console.error('Error loading countries:', error);
       return [];
     }
   },
@@ -71,7 +68,6 @@ export const cityService = {
       const response = await api.get('/cities');
       return response.data || [];
     } catch (error) {
-      console.error('Error loading cities:', error);
       return [];
     }
   },
@@ -88,7 +84,6 @@ export const cityService = {
       return allCities.filter(city => {
         // First check state/province match (most specific)
         if (stateProvinceId) {
-          console.log("stateProvinceId for filtering",stateProvinceId)
           return city.StateProvinceID === parseInt(stateProvinceId) ||
             city.stateProvinceId === parseInt(stateProvinceId) ||
             city.state_province_id === parseInt(stateProvinceId);
@@ -188,3 +183,13 @@ export const productService = {
     }
   },
 };
+
+export async function currencyService() {
+  try {
+    const response = await api.get('/currency');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching currencies:', error);
+    throw error;
+  }
+}

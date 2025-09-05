@@ -1,79 +1,87 @@
-// ==========================================
-// 1. NOTES SERVICE
-// ==========================================
+import api from "../utils/api";
 
-export const noteService = {
-  async createNote(noteData) {
-    try {
-      const response = await fetch('/api/notes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(noteData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create note');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating note:', error);
-      throw error;
-    }
-  },
+const RESOURCE = "/notes";
 
-  async updateNote(noteId, noteData) {
-    try {
-      const response = await fetch(`/api/notes/${noteId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(noteData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update note');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error updating note:', error);
-      throw error;
-    }
-  },
+export const createNote = async (noteData) => {
+  if (!noteData?.EntityID) throw new Error("EntityID is required");
+  if (!noteData?.EntityType) throw new Error("EntityType is required");
+  if (!noteData?.Content) throw new Error("Note content is required");
 
-  async deleteNote(noteId) {
-    try {
-      const response = await fetch(`/api/notes/${noteId}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete note');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error deleting note:', error);
-      throw error;
-    }
-  },
-
-  async getNotesByEntity(entityType, entityId) {
-    try {
-      const response = await fetch(`/api/notes?entityType=${entityType}&entityId=${entityId}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch notes');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching notes:', error);
-      throw error;
-    }
+  try {
+    return await api.post(RESOURCE, {
+      EntityID: noteData.EntityID,
+      EntityTypeName: noteData.EntityType,
+      Content: noteData.Content,
+    });
+  } catch (error) {
+    console.error("Error creating note:", error?.response || error);
+    throw error;
   }
 };
+
+export const updateNote = async (noteId, noteData) => {
+  if (!noteId) throw new Error("Note ID is required");
+  if (!noteData?.EntityID || !noteData?.EntityType || !noteData?.Content) {
+    throw new Error("EntityID, EntityType, and Content are required to update a note");
+  }
+
+  try {
+    return await api.put(`${RESOURCE}/${noteId}`, {
+      EntityID: noteData.EntityID,
+      EntityTypeName: noteData.EntityType,
+      Content: noteData.Content,
+    });
+  } catch (error) {
+    console.error(`Error updating note ${noteId}:`, error?.response || error);
+    throw error;
+  }
+};
+
+export const deleteNote = async (noteId) => {
+  if (!noteId) throw new Error("Note ID is required");
+
+  try {
+    return await api.delete(`${RESOURCE}/${noteId}`);
+  } catch (error) {
+    console.error(`Error deleting note ${noteId}:`, error?.response || error);
+    throw error;
+  }
+};
+
+export const deactivateNote = async (noteId) => {
+  if (!noteId) throw new Error("Note ID is required");
+
+  try {
+    return await api.patch(`${RESOURCE}/${noteId}/deactivate`);
+  } catch (error) {
+    console.error(`Error deactivating note ${noteId}:`, error?.response || error);
+    throw error;
+  }
+};
+
+export const reactivateNote = async (noteId) => {
+  if (!noteId) throw new Error("Note ID is required");
+
+  try {
+    return await api.patch(`${RESOURCE}/${noteId}/reactivate`);
+  } catch (error) {
+    console.error(`Error reactivating note ${noteId}:`, error?.response || error);
+    throw error;
+  }
+};
+
+export const getNotesByEntity = async (entityType, entityId) => {
+  if (!entityType) throw new Error("EntityType is required");
+  if (!entityId) throw new Error("EntityID is required");
+
+  try {
+    const response = await api.get(RESOURCE, {
+      params: { entityId, entityTypeName: entityType },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching notes for ${entityType} ${entityId}:`, error?.response || error);
+    throw error;
+  }
+};
+

@@ -10,6 +10,12 @@ async function getAllCountries() {
   return result.recordset;
 }
 
+async function getAllActiveCountries() {
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request().execute("GetActiveCountries");
+  return result.recordset;
+}
+
 // =======================
 // Get country by ID
 // =======================
@@ -92,4 +98,5 @@ module.exports = {
   deleteCountry,
   reactivateCountry,
   hardDeleteCountry,
+  getAllActiveCountries
 };

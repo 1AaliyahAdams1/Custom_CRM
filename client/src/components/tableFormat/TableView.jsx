@@ -38,9 +38,10 @@ const TableView = ({
   onAddAttachment,
   onClaimAccount,
   onAssignUser,
-  entityType,
+  entityType = "records",
   menuItems = [],
   formatters = {},
+  tooltips = {}, // Generic tooltips configuration
 }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuRow, setMenuRow] = useState(null);
@@ -74,6 +75,27 @@ const TableView = ({
   const handleApplyFilters = (newFilters) => setFilters(newFilters);
   const handleSelectAll = (event) => onSelectAllClick && onSelectAllClick(event);
   const handleSelectRow = (id) => onSelectClick && onSelectClick(id);
+
+  // --- Generic Tooltip Messages ---
+  const getSearchTooltip = () => {
+    return tooltips?.search || `Search ${entityType} by any visible field or keyword`;
+  };
+
+  const getFilterTooltip = () => {
+    const activeFiltersCount = Object.keys(filters).length;
+    const baseMessage = tooltips?.filter || `${filtersExpanded ? 'Hide' : 'Show'} advanced filtering options`;
+    return activeFiltersCount > 0 
+      ? `${baseMessage} (${activeFiltersCount} filter${activeFiltersCount === 1 ? '' : 's'} active)`
+      : baseMessage;
+  };
+
+  const getColumnsTooltip = () => {
+    return tooltips?.columns || 'Customize which columns are visible in the table';
+  };
+
+  const getActionsTooltip = () => {
+    return tooltips?.actions || `Available actions for this ${entityType || 'record'}`;
+  };
 
   const filteredData = data.filter((item) => {
     if (searchTerm) {
@@ -172,37 +194,87 @@ const TableView = ({
 
   return (
     <>
-      {/* Toolbar */}
+      {/* Toolbar with Tooltips */}
       <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
-        <Button
-          variant="outlined"
-          startIcon={<FilterIcon />}
-          onClick={() => setFiltersExpanded(!filtersExpanded)}
+        <Tooltip 
+          title={getFilterTooltip()} 
+          arrow
+          enterDelay={300}
         >
-          {filtersExpanded ? "Hide Filters" : "Show Filters"}
-          {Object.keys(filters).length > 0 && (
-            <Chip label={Object.keys(filters).length} size="small" sx={{ ml: 1 }} />
-          )}
-        </Button>
+          <Button
+            variant="outlined"
+            startIcon={<FilterIcon />}
+            onClick={() => setFiltersExpanded(!filtersExpanded)}
+            sx={{
+              backgroundColor: filtersExpanded ? 'primary.main' : 'transparent',
+              color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
+              '&:hover': {
+                backgroundColor: filtersExpanded ? 'primary.dark' : 'primary.light',
+                color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
+              }
+            }}
+          >
+            {filtersExpanded ? "Hide Filters" : "Show Filters"}
+            {Object.keys(filters).length > 0 && (
+              <Tooltip 
+                title={`${Object.keys(filters).length} active filter${Object.keys(filters).length === 1 ? '' : 's'}`} 
+                arrow
+              >
+                <Chip 
+                  label={Object.keys(filters).length} 
+                  size="small" 
+                  sx={{ ml: 1 }} 
+                />
+              </Tooltip>
+            )}
+          </Button>
+        </Tooltip>
 
-        <TextField
-          size="small"
-          variant="outlined"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1 }} /> }}
-          sx={{ minWidth: 250 }}
-        />
-
-        <Button
-          variant="outlined"
-          startIcon={<ColumnsIcon />}
-          onClick={() => setColumnsDialogOpen(true)}
+        <Tooltip 
+          title={getSearchTooltip()} 
+          arrow
+          enterDelay={300}
         >
-          Columns
-        </Button>
+          <TextField
+            size="small"
+            variant="outlined"
+            placeholder={`Search ${entityType}...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{ 
+              startAdornment: <SearchIcon sx={{ mr: 1, color: '#666' }} /> 
+            }}
+            sx={{ 
+              minWidth: 250,
+              '& .MuiOutlinedInput-root': {
+                '&:hover fieldset': {
+                  borderColor: 'primary.main',
+                },
+              }
+            }}
+          />
+        </Tooltip>
+
+        <Tooltip 
+          title={getColumnsTooltip()} 
+          arrow
+          enterDelay={300}
+        >
+          <Button
+            variant="outlined"
+            startIcon={<ColumnsIcon />}
+            onClick={() => setColumnsDialogOpen(true)}
+            sx={{
+              '&:hover': {
+                backgroundColor: 'primary.light',
+              }
+            }}
+          >
+            Columns
+          </Button>
+        </Tooltip>
       </Box>
+      
 
       {filtersExpanded && (
         <FiltersDialog
@@ -220,17 +292,19 @@ const TableView = ({
             <TableRow>
               {showSelection && (
                 <TableCell padding="checkbox">
-                  <Checkbox
-                    color="primary"
-                    indeterminate={
-                      selected.length > 0 && selected.length < filteredData.length
-                    }
-                    checked={
-                      filteredData.length > 0 &&
-                      selected.length === filteredData.length
-                    }
-                    onChange={handleSelectAll}
-                  />
+                  <Tooltip title="Select all visible records" arrow>
+                    <Checkbox
+                      color="primary"
+                      indeterminate={
+                        selected.length > 0 && selected.length < filteredData.length
+                      }
+                      checked={
+                        filteredData.length > 0 &&
+                        selected.length === filteredData.length
+                      }
+                      onChange={handleSelectAll}
+                    />
+                  </Tooltip>
                 </TableCell>
               )}
               {displayedColumns.map((column) => (
@@ -238,7 +312,11 @@ const TableView = ({
                   {column.headerName || column.field}
                 </TableCell>
               ))}
-              {showActions && <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>}
+              {showActions && (
+                <TableCell sx={{ fontWeight: 600 }}>
+                  Actions
+                </TableCell>
+              )}
             </TableRow>
           </TableHead>
 
@@ -257,7 +335,9 @@ const TableView = ({
                 >
                   {showSelection && (
                     <TableCell padding="checkbox">
-                      <Checkbox color="primary" checked={isItemSelected} />
+                      <Tooltip title={`${isItemSelected ? 'Deselect' : 'Select'} this record`} arrow>
+                        <Checkbox color="primary" checked={isItemSelected} />
+                      </Tooltip>
                     </TableCell>
                   )}
                   {displayedColumns.map((column) => (
@@ -267,9 +347,19 @@ const TableView = ({
                   ))}
                   {showActions && (
                     <TableCell>
-                      <IconButton size="small" onClick={(e) => handleMenuClick(e, row)}>
-                        <MoreVert />
-                      </IconButton>
+                      <Tooltip title={getActionsTooltip()} arrow>
+                        <IconButton 
+                          size="small" 
+                          onClick={(e) => handleMenuClick(e, row)}
+                          sx={{
+                            '&:hover': {
+                              backgroundColor: 'action.hover',
+                            }
+                          }}
+                        >
+                          <MoreVert />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   )}
                 </TableRow>
@@ -279,8 +369,8 @@ const TableView = ({
         </Table>
       </TableContainer>
 
-      {/* Action Menu */}
-      {menuRow && ( // Only render menu if there is a row
+      {/* Action Menu with Enhanced Tooltips */}
+      {menuRow && (
         <ActionMenu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
@@ -299,6 +389,7 @@ const TableView = ({
             setAssignDialogOpen(true);
           }}
           menuItems={menuItems}
+          tooltips={tooltips} // Pass tooltips to ActionMenu
         />
       )}
 
