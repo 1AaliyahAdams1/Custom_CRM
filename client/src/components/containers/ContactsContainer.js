@@ -8,6 +8,9 @@ import {
 } from "../../services/contactService";
 import { noteService } from "../../services/noteService";
 import { attachmentService } from "../../services/attachmentService";
+import ConfirmDialog from "../../components/ConfirmDialog";
+import { formatters } from '../../utils/formatters';
+
 
 const ContactsContainer = () => {
   const navigate = useNavigate();
@@ -26,10 +29,13 @@ const ContactsContainer = () => {
   const [selectedContact, setSelectedContact] = useState(null);
   const [popupLoading, setPopupLoading] = useState(false);
   const [popupError, setPopupError] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState(null);
+
 
   // Filters
-  const [searchTerm, setSearchTerm] = useState("");
-  const [employmentStatusFilter, setEmploymentStatusFilter] = useState("");
+  const [searchTerm] = useState("");
+  const [employmentStatusFilter] = useState("");
 
   // User roles
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -48,20 +54,15 @@ const ContactsContainer = () => {
 
       if (isCLevel) {
         const allContacts = await getAllContacts();
-        console.log("getAllContacts() returned:", allContacts);
         data = allContacts;
       } else if (isSalesRep && userId) {
         const userContacts = await fetchContactsByUser(userId);
-        console.log("fetchContactsByUser() returned:", userContacts);
         data = userContacts;
       }
 
       if (!Array.isArray(data)) {
         throw new Error("Invalid response format - expected array");
       }
-
-      console.log("Raw contacts data from API:", data);
-      console.log("Sample contact (first item):", data[0]);
 
       // Add PersonFullName for search
       const processedData = data.map((contact) => ({
@@ -74,12 +75,8 @@ const ContactsContainer = () => {
           .filter((part) => part.trim() !== "")
           .join(" "),
       }));
-
-      console.log("Processed contacts data:", processedData);
-      console.log("First processed contact ContactID:", processedData[0]?.ContactID);
       setContacts(processedData);
     } catch (err) {
-      console.error("Failed to load contacts:", err);
       setError("Failed to load contacts. Please try again.");
     } finally {
       setLoading(false);
@@ -92,23 +89,18 @@ const ContactsContainer = () => {
 
   // ---------------- FILTERED CONTACTS ----------------
   const filteredContacts = useMemo(() => {
-    console.log("Filtering contacts. Raw contacts:", contacts);
-    console.log("Search term:", `"${searchTerm}"`, "Employment filter:", `"${employmentStatusFilter}"`);
-    
+
     // If no search term and no filter, return all contacts
     if (!searchTerm.trim() && !employmentStatusFilter) {
-      console.log("No filters applied, returning all contacts:", contacts.length);
       return contacts;
     }
-    
+
     const filtered = contacts.filter((contact) => {
-      console.log("Filtering contact:", contact, "ContactID:", contact.ContactID);
-      
       // Search matching - only apply if searchTerm is not empty
       let matchesSearch = true;
       if (searchTerm.trim()) {
         const searchLower = searchTerm.toLowerCase();
-        matchesSearch = 
+        matchesSearch =
           (contact.ContactID && contact.ContactID.toString().includes(searchTerm)) ||
           (contact.AccountID && contact.AccountID.toString().includes(searchTerm)) ||
           (contact.PersonID && contact.PersonID.toString().includes(searchTerm)) ||
@@ -129,12 +121,9 @@ const ContactsContainer = () => {
       }
 
       const matches = matchesSearch && matchesEmploymentStatus;
-      console.log("Contact", contact.ContactID, "matches:", matches, "search:", matchesSearch, "employment:", matchesEmploymentStatus);
-      
       return matches;
     });
-    
-    console.log("Filtered contacts result:", filtered.length, "contacts");
+
     return filtered;
   }, [contacts, searchTerm, employmentStatusFilter]);
 
@@ -151,24 +140,38 @@ const ContactsContainer = () => {
     if (event.target.checked) setSelected(filteredContacts.map((c) => c.ContactID));
     else setSelected([]);
   };
+  //-----------------CONFIRM/CANCEL HANDLERS-----------
 
-  // ---------------- CONTACT HANDLERS ----------------
-  const handleDeactivate = async (id) => {
-    if (!id) {
-      setError("Cannot delete contact - missing ID");
-      return;
-    }
-    if (!window.confirm("Are you sure you want to delete this contact?")) return;
-
+  const confirmDelete = async () => {
     try {
-      await deactivateContact(id);
+      await deactivateContact(contactToDelete);
       setSuccessMessage("Contact deleted successfully.");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       console.error("Failed to delete contact:", err);
       setError("Failed to delete contact. Please try again.");
+    } finally {
+      setConfirmOpen(false);
+      setContactToDelete(null);
     }
   };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setContactToDelete(null);
+  };
+
+
+  // ---------------- CONTACT HANDLERS ----------------
+  const handleDeactivate = (id) => {
+    if (!id) {
+      setError("Cannot delete contact - missing ID");
+      return;
+    }
+    setContactToDelete(id);
+    setConfirmOpen(true);
+  };
+
 
   const handleEdit = (contact) => {
     if (!contact?.ContactID) {
@@ -282,50 +285,50 @@ const ContactsContainer = () => {
     }
   };
 
-  // ---------------- FORMATTERS ----------------
-  const formatters = {
-    CreatedAt: (value) => {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (isNaN(date)) return "-";
-      return date.toLocaleDateString();
-    },
-  };
 
-  console.log("About to render ContactsPage with filteredContacts:", filteredContacts.length);
 
   return (
-    <ContactsPage
-      contacts={filteredContacts}
-      loading={loading}
-      error={error}
-      successMessage={successMessage}
-      setSuccessMessage={setSuccessMessage}
-      selected={selected}
-      onSelectClick={handleSelectClick}
-      onSelectAllClick={handleSelectAllClick}
-      onDeactivate={handleDeactivate}
-      onEdit={handleEdit}
-      onView={handleView}
-      onCreate={handleCreate}
-      onAddNote={handleAddNote}
-      onAddAttachment={handleAddAttachment}
-      notesPopupOpen={notesPopupOpen}
-      setNotesPopupOpen={setNotesPopupOpen}
-      attachmentsPopupOpen={attachmentsPopupOpen}
-      setAttachmentsPopupOpen={setAttachmentsPopupOpen}
-      selectedContact={selectedContact}
-      popupLoading={popupLoading}
-      popupError={popupError}
-      handleSaveNote={handleSaveNote}
-      handleDeleteNote={handleDeleteNote}
-      handleEditNote={handleEditNote}
-      handleUploadAttachment={handleUploadAttachment}
-      handleDeleteAttachment={handleDeleteAttachment}
-      handleDownloadAttachment={handleDownloadAttachment}
-      formatters={formatters}
-      totalCount={contacts.length}
-    />
+    <>
+      <ContactsPage
+        contacts={filteredContacts}
+        loading={loading}
+        error={error}
+        successMessage={successMessage}
+        setSuccessMessage={setSuccessMessage}
+        selected={selected}
+        onSelectClick={handleSelectClick}
+        onSelectAllClick={handleSelectAllClick}
+        onDeactivate={handleDeactivate}
+        onEdit={handleEdit}
+        onView={handleView}
+        onCreate={handleCreate}
+        onAddNote={handleAddNote}
+        onAddAttachment={handleAddAttachment}
+        notesPopupOpen={notesPopupOpen}
+        setNotesPopupOpen={setNotesPopupOpen}
+        attachmentsPopupOpen={attachmentsPopupOpen}
+        setAttachmentsPopupOpen={setAttachmentsPopupOpen}
+        selectedContact={selectedContact}
+        popupLoading={popupLoading}
+        popupError={popupError}
+        handleSaveNote={handleSaveNote}
+        handleDeleteNote={handleDeleteNote}
+        handleEditNote={handleEditNote}
+        handleUploadAttachment={handleUploadAttachment}
+        handleDeleteAttachment={handleDeleteAttachment}
+        handleDownloadAttachment={handleDownloadAttachment}
+        formatters={formatters}
+        totalCount={contacts.length}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete Contact?"
+        description="Are you sure you want to delete this contact? This action cannot be undone."
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
+    </>
   );
 };
 

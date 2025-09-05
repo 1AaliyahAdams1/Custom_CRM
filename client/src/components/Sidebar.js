@@ -41,7 +41,7 @@ const navigation = [
   {
     name: "Dashboard",
     href: "/dashboard",
-    icon: BarChartIcon,
+    icon: DashboardIcon,
     accessKey: "dashboard",
   },
   {
@@ -88,7 +88,7 @@ const navigation = [
   },
   {
     name: "Geographic Data",
-    href: "/country",
+    href: "/countries",
     icon: FlagIcon,
     accessKey: 'country',
   },
@@ -104,9 +104,9 @@ const navigation = [
     icon: AdminPanelSettingsIcon,
     accessKey: 'roles',
   },
-  { 
+  {
     name: "Priority Levels",
-    href: "/priority-levels", 
+    href: "/priority-levels",
     icon: PriorityHighIcon,
     accessKey: 'priority',
   },
@@ -255,11 +255,13 @@ export function AppSidebar() {
           width: drawerWidth,
           boxSizing: "border-box",
           transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          backgroundColor: '#000000', // Black background
-          borderRight: `1px solid #333333`, // Darker border
-          top: 0, // Changed from "64px" to 0
-          height: "100vh", // Changed from "calc(100vh - 64px)" to "100vh"
+          backgroundColor: "#000000",
+          borderRight: `1px solid #333333`,
+          top: 0,
+          height: "100vh",
           overflowX: "hidden",
+          display: "flex",
+          flexDirection: "column",
         },
       }}
     >
@@ -276,7 +278,7 @@ export function AppSidebar() {
             variant="h6"
             sx={{
               fontWeight: 700,
-              color: '#ffffff',
+              color: "#ffffff",
               fontSize: "1.1rem",
               textAlign: "center",
               letterSpacing: "0.5px",
@@ -286,27 +288,20 @@ export function AppSidebar() {
           </Typography>
           <Typography
             variant="subtitle2"
-            // sx={{
-            //   color: '#2196F3',
-            //   fontSize: "0.75rem",
-            //   textAlign: "center",
-            //   fontWeight: 500,
-            //   mt: 0.5,
-            // }}sx={{
-            sx= {{fontWeight: 700,
-              color:'#2196F3',
+            sx={{
+              fontWeight: 700,
+              color: "#2196F3",
               fontSize: "1.1rem",
               textAlign: "center",
               letterSpacing: "0.5px",
             }}
-
           >
             CRM System
           </Typography>
         </Box>
       )}
 
-      {/* Sidebar Header with Toggle Button */}
+      {/* Sidebar Header with Toggle */}
       <Box
         sx={{
           display: "flex",
@@ -321,25 +316,22 @@ export function AppSidebar() {
             variant="subtitle1"
             sx={{
               fontWeight: 600,
-              color: '#ffffff',
+              color: "#ffffff",
               fontSize: "0.9rem",
-              opacity: isCollapsed ? 0 : 1,
-              transition: "opacity 0.3s ease",
               textAlign: "center",
             }}
           >
             Navigation Panel
           </Typography>
         )}
-
         <IconButton
           onClick={toggleSidebar}
           size="small"
           sx={{
-            backgroundColor: alpha('#2196F3', 0.15),
-            color: '#2196F3',
+            backgroundColor: alpha("#2196F3", 0.15),
+            color: "#2196F3",
             "&:hover": {
-              backgroundColor: alpha('#2196F3', 0.25),
+              backgroundColor: alpha("#2196F3", 0.25),
             },
           }}
         >
@@ -347,11 +339,29 @@ export function AppSidebar() {
         </IconButton>
       </Box>
 
-      <Divider sx={{ mx: 1, borderColor: '#333333', display: isCollapsed ? 'none' : 'block' }} />
+      <Divider sx={{ mx: 1, borderColor: "#333333", display: isCollapsed ? "none" : "block" }} />
 
-      {/* Navigation Items */}
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", pt: 1 }}>
-        <List sx={{ flex: 1, px: 0 }}>
+      {/* Navigation List - scrollable */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          px: 0,
+          "&::-webkit-scrollbar": {
+            width: "6px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "rgba(255, 255, 255, 0.2)",
+            borderRadius: "3px",
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "transparent",
+          },
+          scrollbarWidth: "thin", // Firefox
+          scrollbarColor: "rgba(255,255,255,0.2) transparent", // Firefox
+        }}
+      >
+        <List sx={{ px: 0 }}>
           {navigation.map((item) => renderNavigationItem(item))}
         </List>
       </Box>
@@ -361,8 +371,8 @@ export function AppSidebar() {
         <Box
           sx={{
             p: 2,
-            borderTop: `1px solid #333333`, // Darker border
-            backgroundColor: alpha('#000000', 0.8), // Slightly transparent black
+            borderTop: `1px solid #333333`,
+            backgroundColor: alpha("#000000", 0.8),
           }}
         >
           <Typography
@@ -370,10 +380,8 @@ export function AppSidebar() {
             sx={{
               display: "block",
               textAlign: "center",
-              color: '#cccccc', // Light gray for footer text
+              color: "#cccccc",
               fontWeight: 500,
-              opacity: isCollapsed ? 0 : 1,
-              transition: "opacity 0.3s ease",
             }}
           >
             2025 CRM Prototype v2
@@ -381,6 +389,7 @@ export function AppSidebar() {
         </Box>
       )}
     </Drawer>
+
   );
 }
 

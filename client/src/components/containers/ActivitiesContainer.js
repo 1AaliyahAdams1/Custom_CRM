@@ -10,6 +10,7 @@ import { noteService } from "../../services/noteService";
 import { attachmentService } from "../../services/attachmentService";
 import { getAllAccounts } from "../../services/accountService";
 import { activityTypeService, priorityLevelService } from "../../services/dropdownServices";
+import ConfirmDialog from "../../components/ConfirmDialog"; 
 
 const ActivitiesContainer = () => {
   const navigate = useNavigate();
@@ -37,6 +38,10 @@ const ActivitiesContainer = () => {
   const [activityTypes, setActivityTypes] = useState([]);
   const [priorityLevels, setPriorityLevels] = useState([]);
 
+  // Delete confirm dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState(null);
+
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
   const userId = storedUser.UserID || storedUser.id || null;
@@ -55,8 +60,7 @@ const ActivitiesContainer = () => {
       setAccounts(accountsData);
       setActivityTypes(activityTypesData);
       setPriorityLevels(priorityLevelsData);
-    } catch (err) {
-      console.error("Error fetching lookups:", err);
+    } catch {
       setError("Failed to load lookups.");
     }
   };
@@ -72,10 +76,8 @@ const ActivitiesContainer = () => {
       } else if (isSalesRep && userId) {
         activitiesData = await fetchActivitiesByUser(userId);
       }
-      console.log("Fetched activities:", activitiesData);
       setActivities(activitiesData || []);
-    } catch (err) {
-      console.error("Failed to load activities:", err);
+    } catch {
       setError("Failed to load activities. Please try again.");
     } finally {
       setLoading(false);
@@ -90,28 +92,43 @@ const ActivitiesContainer = () => {
   // ---------------- FILTERED ACTIVITIES ----------------
   const filteredActivities = useMemo(() => {
     return activities.filter((a) => {
-      const matchesSearch = !searchTerm || a.AccountName?.toLowerCase().includes(searchTerm.toLowerCase()) || a.ActivityType?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = !statusFilter || (statusFilter === "completed" ? a.Completed : !a.Completed);
-      const matchesPriority = !priorityFilter || a.PriorityLevelName === priorityFilter;
+      const matchesSearch =
+        !searchTerm ||
+        a.AccountName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.ActivityType?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        !statusFilter || (statusFilter === "completed" ? a.Completed : !a.Completed);
+      const matchesPriority =
+        !priorityFilter || a.PriorityLevelName === priorityFilter;
       return matchesSearch && matchesStatus && matchesPriority;
     });
   }, [activities, searchTerm, statusFilter, priorityFilter]);
 
   // ---------------- HANDLERS ----------------
-  const handleDeactivate = async (id) => {
-    if (!window.confirm("Are you sure you want to deactivate this activity?")) return;
+  const handleDeactivateClick = (activity) => {
+    setActivityToDelete(activity);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeactivate = async () => {
+    if (!activityToDelete) return;
     try {
-      await deactivateActivity(id);
+      await deactivateActivity(activityToDelete.ActivityID);
       setSuccessMessage("Activity deleted successfully.");
       setRefreshFlag((f) => !f);
-    } catch (err) {
-      console.error("Failed to delete activity:", err);
+    } catch {
       setError("Failed to delete activity. Please try again.");
+    } finally {
+      setDeleteDialogOpen(false);
+      setActivityToDelete(null);
     }
   };
 
-  const handleEdit = (activity) => navigate(`/activities/edit/${activity.ActivityID}`, { state: { activity } });
+  const handleEdit = (activity) =>
+    navigate(`/activities/edit/${activity.ActivityID}`, { state: { activity } });
+
   const handleView = (activity) => navigate(`/activities/${activity.ActivityID}`);
+
   const handleCreate = () => navigate("/activities/create");
 
   // ---------------- NOTES / ATTACHMENTS ----------------
@@ -120,6 +137,7 @@ const ActivitiesContainer = () => {
     setNotesPopupOpen(true);
     setPopupError(null);
   };
+
   const handleAddAttachment = (activity) => {
     setSelectedActivity(activity);
     setAttachmentsPopupOpen(true);
@@ -163,41 +181,60 @@ const ActivitiesContainer = () => {
   };
 
   return (
-    <ActivitiesPage
-      activities={filteredActivities}
-      loading={loading}
-      error={error}
-      successMessage={successMessage}
-      setSuccessMessage={setSuccessMessage}
-      selected={selected}
-      onSelectClick={(id) => {
-        setSelected((prev) => prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]);
-      }}
-      onSelectAllClick={(e) => setSelected(e.target.checked ? activities.map(a => a.ActivityID) : [])}
-      onDeactivate={handleDeactivate}
-      onEdit={handleEdit}
-      onView={handleView}
-      onCreate={handleCreate}
-      onAddNote={handleAddNote}
-      onAddAttachment={handleAddAttachment}
-      notesPopupOpen={notesPopupOpen}
-      setNotesPopupOpen={setNotesPopupOpen}
-      attachmentsPopupOpen={attachmentsPopupOpen}
-      setAttachmentsPopupOpen={setAttachmentsPopupOpen}
-      selectedActivity={selectedActivity}
-      popupLoading={popupLoading}
-      popupError={popupError}
-      handleSaveNote={handleSaveNote}
-      handleUploadAttachment={handleUploadAttachment}
-      searchTerm={searchTerm}
-      statusFilter={statusFilter}
-      priorityFilter={priorityFilter}
-      setSearchTerm={setSearchTerm}
-      setStatusFilter={setStatusFilter}
-      setPriorityFilter={setPriorityFilter}
-      clearFilters={clearFilters}
-      totalCount={activities.length}
-    />
+    <>
+      <ActivitiesPage
+        activities={filteredActivities}
+        loading={loading}
+        error={error}
+        successMessage={successMessage}
+        setSuccessMessage={setSuccessMessage}
+        selected={selected}
+        onSelectClick={(id) =>
+          setSelected((prev) =>
+            prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+          )
+        }
+        onSelectAllClick={(e) =>
+          setSelected(e.target.checked ? activities.map((a) => a.ActivityID) : [])
+        }
+        onDeactivate={handleDeactivateClick} // ✅ use dialog
+        onEdit={handleEdit}
+        onView={handleView}
+        onCreate={handleCreate}
+        onAddNote={handleAddNote}
+        onAddAttachment={handleAddAttachment}
+        notesPopupOpen={notesPopupOpen}
+        setNotesPopupOpen={setNotesPopupOpen}
+        attachmentsPopupOpen={attachmentsPopupOpen}
+        setAttachmentsPopupOpen={setAttachmentsPopupOpen}
+        selectedActivity={selectedActivity}
+        popupLoading={popupLoading}
+        popupError={popupError}
+        handleSaveNote={handleSaveNote}
+        handleUploadAttachment={handleUploadAttachment}
+        searchTerm={searchTerm}
+        statusFilter={statusFilter}
+        priorityFilter={priorityFilter}
+        setSearchTerm={setSearchTerm}
+        setStatusFilter={setStatusFilter}
+        setPriorityFilter={setPriorityFilter}
+        clearFilters={clearFilters}
+        totalCount={activities.length}
+      />
+
+      {/* Confirm delete dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Delete Activity"
+        description={`Are you sure you want to delete this activity${
+          activityToDelete?.ActivityType
+            ? ` (${activityToDelete.ActivityType})`
+            : ""
+        }?`}
+        onConfirm={confirmDeactivate}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
+    </>
   );
 };
 
