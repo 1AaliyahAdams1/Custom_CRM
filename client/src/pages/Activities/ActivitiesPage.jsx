@@ -80,11 +80,11 @@ const ActivitiesPage = ({
       label: 'Activities',
       component: 'activities'
     },
-    {
-      id: 'activity-types',
-      label: 'Activity Types', 
-      component: 'activityTypes'
-    },
+    // {
+    //   id: 'activity-types',
+    //   label: 'Activity Types', 
+    //   component: 'activityTypes'
+    // },
     // Add more tabs here as needed:
     // {
     //   id: 'reports',

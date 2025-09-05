@@ -94,11 +94,11 @@ const DealsPage = ({
       label: 'Deals',
       component: 'deals'
     },
-    {
-      id: 'deal-stages',
-      label: 'Deal Stages',
-      component: 'dealStages'
-    },
+    // {
+    //   id: 'deal-stages',
+    //   label: 'Deal Stages',
+    //   component: 'dealStages'
+    // },
     // Add more tabs here as needed:
     // {
     //   id: 'reports',

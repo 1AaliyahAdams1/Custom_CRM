@@ -98,14 +98,6 @@ const StateProvincePage = ({
   const columns = [
     { field: 'StateProvince_Name', headerName: 'State/Province Name', type: 'tooltip', defaultVisible: true },
     { field: 'Country_Name', headerName: 'Country', defaultVisible: true },
-    {
-      field: 'Active',
-      headerName: 'Status',
-      type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive', 1: 'Active', 0: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999', 1: '#079141ff', 0: '#999999' },
-      defaultVisible: true,
-    },
   ];
 
   // Enhanced menu items for states/provinces
