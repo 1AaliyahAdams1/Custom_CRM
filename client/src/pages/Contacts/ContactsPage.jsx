@@ -31,19 +31,6 @@ const ContactsPage = ({
   onCreate,
   onAddNote,
   onAddAttachment,
-  notesPopupOpen,
-  setNotesPopupOpen,
-  attachmentsPopupOpen,
-  setAttachmentsPopupOpen,
-  selectedContact,
-  popupLoading,
-  popupError,
-  handleSaveNote,
-  handleDeleteNote,
-  handleEditNote,
-  handleUploadAttachment,
-  handleDeleteAttachment,
-  handleDownloadAttachment,
 }) => {
   const columns = [
     { field: 'AccountName', headerName: 'Account', type: 'tooltip' },
@@ -54,6 +41,14 @@ const ContactsPage = ({
     { field: 'Still_employed', headerName: 'Still Employed', type: 'boolean' },
     { field: 'CreatedAt', headerName: 'Created', type: 'dateTime' },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime' },
+    {
+      field: 'Active',
+      headerName: 'Active',
+      type: 'chip',
+      chipLabels: { true: 'Active', false: 'Inactive' },
+      chipColors: { true: '#079141ff', false: '#999999' },
+      defaultVisible: true,
+    }
   ];
 
   return (

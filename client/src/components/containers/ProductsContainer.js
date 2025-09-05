@@ -2,8 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductPage from "../../pages/Products/ProductPage";
 import * as productService from "../../services/productService";
-import { noteService } from "../../services/noteService";
-import { attachmentService } from "../../services/attachmentService";
+import { 
+  createNote, 
+  updateNote, 
+  deleteNote 
+} from "../../services/noteService";
+import { 
+  uploadAttachment, 
+  deleteAttachment, 
+  downloadAttachment 
+} from "../../services/attachmentService";
+import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent";
+import ConfirmDialog from "../../components/ConfirmDialog"; 
 
 const ProductsContainer = () => {
   const navigate = useNavigate();
@@ -14,24 +25,20 @@ const ProductsContainer = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [refreshFlag, setRefreshFlag] = useState(false);
-
   const [selected, setSelected] = useState([]);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusSeverity, setStatusSeverity] = useState('success');
-  
+
   // Popups
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [popupLoading, setPopupLoading] = useState(false);
-  const [popupError, setPopupError] = useState(null);
 
-  // ---------------- USER ROLES ----------------
-  const storedUser = JSON.parse(localStorage.getItem("user")) || {};
-  const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
-  const userId = storedUser.UserID || storedUser.id || null;
-  const isCLevel = roles.includes("C-level");
-  const isSalesRep = roles.includes("Sales Representative");
+  // Confirm dialog state
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmDescription, setConfirmDescription] = useState("");
 
   // ---------------- FETCH PRODUCTS ----------------
   const fetchProducts = async () => {
@@ -52,65 +59,99 @@ const ProductsContainer = () => {
     fetchProducts();
   }, [refreshFlag]);
 
+  // ---------------- CONFIRM DIALOG HANDLERS ----------------
+  const openConfirmDialog = (title, description, action) => {
+    setConfirmTitle(title);
+    setConfirmDescription(description);
+    setConfirmAction(() => action); // save action to execute on confirm
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirm = async () => {
+    setConfirmDialogOpen(false);
+    if (confirmAction) await confirmAction();
+    setConfirmAction(null);
+  };
+
+  const handleCancel = () => {
+    setConfirmDialogOpen(false);
+    setConfirmAction(null);
+  };
+
   // ---------------- PRODUCT ACTIONS ----------------
-  const handleDeactivate = async (productId) => {
-    if (!window.confirm('Are you sure you want to deactivate this product?')) return;
-    setError(null);
-    try {
-      await productService.deactivateProduct(productId);
-      setSuccessMessage('Product deactivated successfully.');
-      setRefreshFlag(flag => !flag);
-    } catch (err) {
-      console.error('Error deactivating product:', err);
-      setError('Failed to deactivate product: ' + err.message);
-    }
-  };
-
-  const handleReactivate = async (productId) => {
-    if (!window.confirm('Are you sure you want to reactivate this product?')) return;
-    setError(null);
-    try {
-      await productService.reactivateProduct(productId);
-      setSuccessMessage('Product reactivated successfully.');
-      setRefreshFlag(flag => !flag);
-    } catch (err) {
-      console.error('Error reactivating product:', err);
-      setError('Failed to reactivate product: ' + err.message);
-    }
-  };
-
-  const handleDelete = async (productId) => {
-    if (!window.confirm('Are you sure you want to permanently delete this product? This action cannot be undone.')) return;
-    setError(null);
-    try {
-      await productService.deleteProduct(productId);
-      setSuccessMessage('Product deleted successfully.');
-      // Remove from selected if it was selected
-      setSelected(prev => prev.filter(id => id !== productId));
-      setRefreshFlag(flag => !flag);
-    } catch (err) {
-      console.error('Error deleting product:', err);
-      setError('Failed to delete product: ' + err.message);
-    }
-  };
-
-  const handleBulkDeactivate = async () => {
-    if (!window.confirm(`Are you sure you want to deactivate ${selected.length} selected products?`)) return;
-    setError(null);
-    try {
-      // Handle bulk deactivation
-      for (const productId of selected) {
-        await productService.deactivateProduct(productId);
+  const handleDeactivate = (productId) => {
+    openConfirmDialog(
+      "Deactivate Product",
+      "Are you sure you want to deactivate this product?",
+      async () => {
+        try {
+          await productService.deactivateProduct(productId);
+          setSuccessMessage('Product deactivated successfully.');
+          setRefreshFlag(flag => !flag);
+        } catch (err) {
+          console.error('Error deactivating product:', err);
+          setError('Failed to deactivate product: ' + err.message);
+        }
       }
-      setSelected([]);
-      setSuccessMessage(`${selected.length} products deactivated successfully.`);
-      setRefreshFlag(flag => !flag);
-    } catch (err) {
-      console.error('Error deactivating products:', err);
-      setError('Failed to deactivate products: ' + err.message);
-    }
+    );
   };
 
+  const handleReactivate = (productId) => {
+    openConfirmDialog(
+      "Reactivate Product",
+      "Are you sure you want to reactivate this product?",
+      async () => {
+        try {
+          await productService.reactivateProduct(productId);
+          setSuccessMessage('Product reactivated successfully.');
+          setRefreshFlag(flag => !flag);
+        } catch (err) {
+          console.error('Error reactivating product:', err);
+          setError('Failed to reactivate product: ' + err.message);
+        }
+      }
+    );
+  };
+
+  const handleDelete = (productId) => {
+    openConfirmDialog(
+      "Delete Product",
+      "Are you sure you want to permanently delete this product? This action cannot be undone.",
+      async () => {
+        try {
+          await productService.deleteProduct(productId);
+          setSuccessMessage('Product deleted successfully.');
+          setSelected(prev => prev.filter(id => id !== productId));
+          setRefreshFlag(flag => !flag);
+        } catch (err) {
+          console.error('Error deleting product:', err);
+          setError('Failed to delete product: ' + err.message);
+        }
+      }
+    );
+  };
+
+  const handleBulkDeactivate = () => {
+    openConfirmDialog(
+      `Deactivate ${selected.length} products`,
+      `Are you sure you want to deactivate ${selected.length} selected products?`,
+      async () => {
+        try {
+          for (const productId of selected) {
+            await productService.deactivateProduct(productId);
+          }
+          setSelected([]);
+          setSuccessMessage(`${selected.length} products deactivated successfully.`);
+          setRefreshFlag(flag => !flag);
+        } catch (err) {
+          console.error('Error deactivating products:', err);
+          setError('Failed to deactivate products: ' + err.message);
+        }
+      }
+    );
+  };
+
+  // ---------------- NAVIGATION ----------------
   const handleEdit = (product) => navigate(`/products/edit/${product.ProductID}`, { state: { product } });
   const handleView = (product) => product?.ProductID && navigate(`/products/${product.ProductID}`);
   const handleCreate = () => navigate("/products/create");
@@ -129,56 +170,45 @@ const ProductsContainer = () => {
     else setSelected([]);
   };
 
-  // ---------------- STATUS MESSAGES ----------------
-  const showStatus = (message, severity = 'success') => {
-    setStatusMessage(message);
-    setStatusSeverity(severity);
-  };
-
   // ---------------- NOTES ----------------
   const handleAddNote = (product) => { 
     setSelectedProduct(product); 
     setNotesPopupOpen(true); 
-    setPopupError(null); 
   };
 
   const handleSaveNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.createNote(noteData);
+      const notePayload = {
+        EntityID: selectedProduct.ProductID,
+        EntityType: "Product",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag(flag => !flag);
     } catch (err) { 
-      setPopupError(err.message || "Failed to save note"); 
-    } finally { 
-      setPopupLoading(false); 
+      setError(err.message || "Failed to save note"); 
     }
   };
 
   const handleDeleteNote = async (noteId) => {
     try {
-      setPopupLoading(true);
-      await noteService.deleteNote(noteId);
+      await deleteNote(noteId);
       setSuccessMessage("Note deleted successfully!");
       setRefreshFlag(flag => !flag);
     } catch (err) { 
-      setPopupError(err.message || "Failed to delete note"); 
-    } finally { 
-      setPopupLoading(false); 
+      setError(err.message || "Failed to delete note"); 
     }
   };
 
   const handleEditNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.updateNote(noteData.NoteID, noteData);
+      await updateNote(noteData.NoteID, noteData);
       setSuccessMessage("Note updated successfully!");
       setRefreshFlag(flag => !flag);
     } catch (err) { 
-      setPopupError(err.message || "Failed to update note"); 
-    } finally { 
-      setPopupLoading(false); 
+      setError(err.message || "Failed to update note"); 
     }
   };
 
@@ -186,97 +216,104 @@ const ProductsContainer = () => {
   const handleAddAttachment = (product) => { 
     setSelectedProduct(product); 
     setAttachmentsPopupOpen(true); 
-    setPopupError(null); 
   };
 
-  const handleUploadAttachment = async (attachments) => {
+  const handleUploadAttachment = async (files) => {
     try {
-      setPopupLoading(true);
-      for (const att of attachments) await attachmentService.uploadAttachment(att);
-      setSuccessMessage(`${attachments.length} attachment(s) uploaded successfully!`);
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedProduct.ProductID,
+          entityTypeName: "Product"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
       setAttachmentsPopupOpen(false);
       setRefreshFlag(flag => !flag);
     } catch (err) { 
-      setPopupError(err.message || "Failed to upload attachments"); 
-    } finally { 
-      setPopupLoading(false); 
+      setError(err.message || "Failed to upload attachments"); 
     }
   };
 
   const handleDeleteAttachment = async (attachmentId) => {
     try {
-      setPopupLoading(true);
-      await attachmentService.deleteAttachment(attachmentId);
+      await deleteAttachment(attachmentId);
       setSuccessMessage("Attachment deleted successfully!");
       setRefreshFlag(flag => !flag);
     } catch (err) { 
-      setPopupError(err.message || "Failed to delete attachment"); 
-    } finally { 
-      setPopupLoading(false); 
+      setError(err.message || "Failed to delete attachment"); 
     }
   };
 
   const handleDownloadAttachment = async (attachment) => {
     try { 
-      await attachmentService.downloadAttachment(attachment); 
+      await downloadAttachment(attachment); 
     } catch (err) { 
-      setPopupError(err.message || "Failed to download attachment"); 
-    }
-  };
-
-  // ---------------- USER ASSIGNMENT ----------------
-  const handleAssignUser = async (employeeId, product) => {
-    try {
-      // Implement user assignment logic if needed for products
-      // This might not be applicable to products, but keeping for consistency
-      setSuccessMessage(`User assigned to ${product.ProductName}`);
-      // Optionally update local state if needed
-    } catch (err) {
-      console.error("Failed to assign user:", err);
-      setError(err.message || "Failed to assign user");
-      throw err; // Re-throw so the dialog can show the error
+      setError(err.message || "Failed to download attachment"); 
     }
   };
 
   return (
-    <ProductPage
-      products={products}
-      loading={loading}
-      error={error}
-      setError={setError}
-      successMessage={successMessage}
-      setSuccessMessage={setSuccessMessage}
-      statusMessage={statusMessage}
-      statusSeverity={statusSeverity}
-      setStatusMessage={setStatusMessage}
-      selected={selected}
-      onSelectClick={handleSelectClick}
-      onSelectAllClick={handleSelectAllClick}
-      onDeactivate={handleDeactivate}
-      onReactivate={handleReactivate}
-      onDelete={handleDelete}
-      onBulkDeactivate={handleBulkDeactivate}
-      onEdit={handleEdit}
-      onView={handleView}
-      onCreate={handleCreate}
-      onAddNote={handleAddNote}
-      onAddAttachment={handleAddAttachment}
-      onAssignUser={handleAssignUser}
-      showStatus={showStatus}
-      notesPopupOpen={notesPopupOpen}
-      setNotesPopupOpen={setNotesPopupOpen}
-      attachmentsPopupOpen={attachmentsPopupOpen}
-      setAttachmentsPopupOpen={setAttachmentsPopupOpen}
-      selectedProduct={selectedProduct}
-      popupLoading={popupLoading}
-      popupError={popupError}
-      handleSaveNote={handleSaveNote}
-      handleDeleteNote={handleDeleteNote}
-      handleEditNote={handleEditNote}
-      handleUploadAttachment={handleUploadAttachment}
-      handleDeleteAttachment={handleDeleteAttachment}
-      handleDownloadAttachment={handleDownloadAttachment}
-    />
+    <>
+      <ProductPage
+        products={products}
+        loading={loading}
+        error={error}
+        setError={setError}
+        successMessage={successMessage}
+        setSuccessMessage={setSuccessMessage}
+        statusMessage={statusMessage}
+        statusSeverity={statusSeverity}
+        setStatusMessage={setStatusMessage}
+        selected={selected}
+        onSelectClick={handleSelectClick}
+        onSelectAllClick={handleSelectAllClick}
+        onDeactivate={handleDeactivate}
+        onReactivate={handleReactivate}
+        onDelete={handleDelete}
+        onBulkDeactivate={handleBulkDeactivate}
+        onEdit={handleEdit}
+        onView={handleView}
+        onCreate={handleCreate}
+        onAddNote={handleAddNote}
+        onAddAttachment={handleAddAttachment}
+      />
+
+      {/* Notes Popup */}
+      <NotesPopup
+        open={notesPopupOpen}
+        onClose={() => setNotesPopupOpen(false)}
+        onSave={handleSaveNote}
+        onEdit={handleEditNote}
+        onDelete={handleDeleteNote}
+        entityType="Product"
+        entityId={selectedProduct?.ProductID}
+        entityName={selectedProduct?.ProductName}
+        showExistingNotes={true}
+      />
+
+      {/* Attachments Popup */}
+      <AttachmentsPopup
+        open={attachmentsPopupOpen}
+        onClose={() => setAttachmentsPopupOpen(false)}
+        entityType="Product"
+        entityId={selectedProduct?.ProductID}
+        entityName={selectedProduct?.ProductName}
+        onUpload={handleUploadAttachment}
+        onDelete={handleDeleteAttachment}
+        onDownload={handleDownloadAttachment}
+      />
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title={confirmTitle}
+        description={confirmDescription}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+    </>
   );
 };
 

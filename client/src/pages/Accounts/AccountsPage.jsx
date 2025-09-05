@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Box,
@@ -10,8 +9,9 @@ import {
   Chip,
   Toolbar,
   Snackbar,
+  Tooltip,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
+import { Add, Info } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import TableView from '../../components/tableFormat/TableView';
 import theme from "../../components/Theme";
@@ -61,6 +61,15 @@ const AccountsPage = ({
       chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' },
       defaultVisible: true,
     },
+    {
+      field: 'Active',
+      headerName: 'Active',
+      type: 'chip',
+      chipLabels: { true: 'Active', false: 'Inactive' },
+      chipColors: { true: '#079141ff', false: '#999999' },
+      defaultVisible: true,
+    }
+
   ];
 
   // Local state for status messages
@@ -80,24 +89,46 @@ const AccountsPage = ({
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
           <Toolbar sx={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e5e5', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, py: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-              <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
-                Accounts
-              </Typography>
-              {selected.length > 0 && <Chip label={`${selected.length} selected`} size="small" sx={{ backgroundColor: '#e0e0e0', color: '#050505' }} />}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
+                  Accounts
+                </Typography>
+                <Tooltip title="Manage and view all customer accounts in your system" arrow>
+                  <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
+                </Tooltip>
+              </Box>
+              {selected.length > 0 && (
+                <Tooltip title={`${selected.length} account${selected.length === 1 ? '' : 's'} selected for bulk operations`} arrow>
+                  <Chip
+                    label={`${selected.length} selected`}
+                    size="small"
+                    sx={{ backgroundColor: '#e0e0e0', color: '#050505' }}
+                  />
+                </Tooltip>
+              )}
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={onCreate}
-              >
-                Add Account
-              </Button>
+              <Tooltip title="Create a new account in the system" arrow>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={onCreate}
+                >
+                  Add Account
+                </Button>
+              </Tooltip>
             </Box>
           </Toolbar>
 
           {loading ? (
-            <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+              <CircularProgress />
+              <Tooltip title="Loading account data from the database" arrow>
+                <Typography variant="body2" sx={{ mt: 2, color: '#666666' }}>
+                  Loading accounts...
+                </Typography>
+              </Tooltip>
+            </Box>
           ) : (
             <TableView
               data={accounts}
@@ -116,16 +147,40 @@ const AccountsPage = ({
               onAssignUser={onAssignUser}
               formatters={formatters}
               entityType="account"
+              tooltips={{
+                search: "Search records by any visible field or keyword",
+                filter: "Show/hide advanced filtering options",
+                columns: "Customize which columns are visible in the table",
+                actionMenu: {
+                  view: "View detailed information for this record",
+                  edit: "Edit this record's information",
+                  delete: "Delete or deactivate this record",
+                  addNote: "Add internal notes or comments",
+                  addAttachment: "Attach files or documents",
+                  claimAccount: "Claim ownership of this record",
+                  assignUser: "Assign a team member to this record"
+                }
+              }}
             />
           )}
 
           <Box sx={{ p: 2, borderTop: '1px solid #e5e5e5', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" sx={{ color: '#666666' }}>Showing {accounts.length} accounts</Typography>
-            {selected.length > 0 && <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>{selected.length} selected</Typography>}
+            <Tooltip title="Total number of accounts currently displayed in the table" arrow>
+              <Typography variant="body2" sx={{ color: '#666666', cursor: 'help' }}>
+                Showing {accounts.length} accounts
+              </Typography>
+            </Tooltip>
+            {selected.length > 0 && (
+              <Tooltip title="Number of accounts currently selected for bulk operations" arrow>
+                <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500, cursor: 'help' }}>
+                  {selected.length} selected
+                </Typography>
+              </Tooltip>
+            )}
           </Box>
         </Paper>
 
-        {/* Status Snackbar */}
+        {/* Status Snackbar with tooltip context */}
         <Snackbar
           open={!!statusMessage}
           autoHideDuration={4000}

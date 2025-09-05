@@ -4,11 +4,10 @@ const { dbConfig } = require("../dbConfig");
 // =======================
 // Get all deals
 // =======================
-async function getAllDeals(onlyActive = true) {
+async function getAllDeals() {
   try {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
-      .input("OnlyActive", sql.Bit, onlyActive ? 1 : 0)
       .execute("GetDeal");
     return result.recordset;
   } catch (error) {

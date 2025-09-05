@@ -29,7 +29,7 @@ const ReportsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
   const [exporting, setExporting] = useState(false);
-  
+
   // Refs to access report data from child components
   const reportRefs = useRef({});
 
@@ -94,37 +94,52 @@ const ReportsPage = () => {
   const exportToExcel = (sheets, filename) => {
     try {
       const wb = XLSX.utils.book_new();
-      
-      sheets.forEach(sheet => {
+      const usedNames = new Set(); // Track sheet names already used
+
+      sheets.forEach((sheet, index) => {
         if (sheet.data && sheet.data.length > 0) {
           const ws = XLSX.utils.json_to_sheet(sheet.data);
-          
+
           // Set column widths for better formatting
           const colWidths = Object.keys(sheet.data[0]).map(() => ({ wch: 20 }));
           ws['!cols'] = colWidths;
-          
-          XLSX.utils.book_append_sheet(wb, ws, sheet.sheetName);
+
+          // Sanitize sheet name
+          let safeName = sheet.sheetName
+            .replace(/[/\\?*[\]:]/g, "")     // remove invalid characters
+            .substring(0, 31);               // trim to 31 chars
+
+          // Ensure uniqueness
+          let uniqueName = safeName;
+          let counter = 1;
+          while (usedNames.has(uniqueName)) {
+            uniqueName = `${safeName.substring(0, 28)}_${counter++}`;
+          }
+          usedNames.add(uniqueName);
+
+          XLSX.utils.book_append_sheet(wb, ws, uniqueName);
         }
       });
-      
+
       if (wb.SheetNames.length === 0) {
-        throw new Error('No data to export');
+        throw new Error("No data to export");
       }
-      
+
       XLSX.writeFile(wb, `${filename}.xlsx`);
       return true;
     } catch (error) {
-      console.error('Error exporting to Excel:', error);
+      console.error("Error exporting to Excel:", error);
       return false;
     }
   };
 
+
   // Data transformation functions for each report type
   const transformActivitiesData = (reportData) => {
     if (!reportData) return [];
-    
+
     const sheets = [];
-    
+
     // Main activities data
     if (reportData.data && reportData.data.length > 0) {
       const mainData = reportData.data.map(item => ({
@@ -134,7 +149,7 @@ const ReportsPage = () => {
       }));
       sheets.push({ sheetName: 'Activities Breakdown', data: mainData });
     }
-    
+
     // Conversion metrics
     if (reportData.conversionMetrics && reportData.conversionMetrics.length > 0) {
       const conversionData = reportData.conversionMetrics.map(item => ({
@@ -145,7 +160,7 @@ const ReportsPage = () => {
       }));
       sheets.push({ sheetName: 'Conversion Rates', data: conversionData });
     }
-    
+
     // Summary
     if (reportData.summary) {
       const summaryData = [{
@@ -158,15 +173,15 @@ const ReportsPage = () => {
       }];
       sheets.push({ sheetName: 'Summary', data: summaryData });
     }
-    
+
     return sheets;
   };
 
   const transformClosedDealsData = (reportData) => {
     if (!reportData) return [];
-    
+
     const sheets = [];
-    
+
     // Main deals data
     if (reportData.data && reportData.data.length > 0) {
       const mainData = reportData.data.map(item => ({
@@ -176,7 +191,7 @@ const ReportsPage = () => {
       }));
       sheets.push({ sheetName: 'Closed Deals by Period', data: mainData });
     }
-    
+
     // Summary
     if (reportData.summary) {
       const summaryData = [{
@@ -188,15 +203,15 @@ const ReportsPage = () => {
       }];
       sheets.push({ sheetName: 'Summary', data: summaryData });
     }
-    
+
     return sheets;
   };
 
   const transformSegmentationData = (reportData) => {
     if (!reportData) return [];
-    
+
     const sheets = [];
-    
+
     // Main segmentation data
     if (reportData.data && reportData.data.length > 0) {
       const mainData = reportData.data.map(item => ({
@@ -206,7 +221,7 @@ const ReportsPage = () => {
       }));
       sheets.push({ sheetName: 'Customer Segments', data: mainData });
     }
-    
+
     // Summary
     if (reportData.summary) {
       const summaryData = [{
@@ -218,15 +233,15 @@ const ReportsPage = () => {
       }];
       sheets.push({ sheetName: 'Summary', data: summaryData });
     }
-    
+
     return sheets;
   };
 
   const transformForecastData = (reportData) => {
     if (!reportData) return [];
-    
+
     const sheets = [];
-    
+
     // Main forecast data
     if (reportData.data && reportData.data.length > 0) {
       const mainData = reportData.data.map(item => ({
@@ -234,12 +249,12 @@ const ReportsPage = () => {
         'Actual Revenue': item.formattedActualRevenue || (item.actualRevenue ? `R ${item.actualRevenue.toLocaleString()}` : 'N/A'),
         'Forecast Revenue': item.formattedForecastRevenue || (item.forecastRevenue ? `R ${item.forecastRevenue.toLocaleString()}` : 'N/A'),
         'Total Revenue': item.formattedTotalRevenue || (item.totalRevenue ? `R ${item.totalRevenue.toLocaleString()}` : 'N/A'),
-        'Variance %': item.actualRevenue && item.forecastRevenue ? 
+        'Variance %': item.actualRevenue && item.forecastRevenue ?
           `${(((item.actualRevenue - item.forecastRevenue) / item.forecastRevenue) * 100).toFixed(1)}%` : 'TBD'
       }));
       sheets.push({ sheetName: 'Revenue Forecast', data: mainData });
     }
-    
+
     // Summary
     if (reportData.summary) {
       const summaryData = [{
@@ -250,15 +265,15 @@ const ReportsPage = () => {
       }];
       sheets.push({ sheetName: 'Summary', data: summaryData });
     }
-    
+
     return sheets;
   };
 
   const transformPipelineData = (reportData) => {
     if (!reportData) return [];
-    
+
     const sheets = [];
-    
+
     // Main pipeline data
     if (reportData.data && reportData.data.length > 0) {
       const mainData = reportData.data.map(item => ({
@@ -269,7 +284,7 @@ const ReportsPage = () => {
       }));
       sheets.push({ sheetName: 'Sales Pipeline', data: mainData });
     }
-    
+
     // Summary
     if (reportData.summary) {
       const summaryData = [{
@@ -279,13 +294,13 @@ const ReportsPage = () => {
       }];
       sheets.push({ sheetName: 'Summary', data: summaryData });
     }
-    
+
     return sheets;
   };
 
   const handleExportCurrent = async () => {
     if (filteredReports.length === 0) return;
-    
+
     setExporting(true);
     const currentReport = filteredReports[activeTab];
     let sheets = [];
@@ -348,7 +363,7 @@ const ReportsPage = () => {
 
   const handleExportAll = async () => {
     setExporting(true);
-    
+
     try {
       let allSheets = [];
       let hasData = false;
@@ -360,7 +375,7 @@ const ReportsPage = () => {
           const reportData = reportRef.getReportData();
           if (reportData) {
             let sheets = [];
-            
+
             switch (report.id) {
               case "activities":
                 sheets = transformActivitiesData(reportData);
@@ -378,13 +393,13 @@ const ReportsPage = () => {
                 sheets = transformPipelineData(reportData);
                 break;
             }
-            
+
             // Add prefix to sheet names to avoid conflicts
             sheets.forEach(sheet => {
               sheet.sheetName = `${report.title} - ${sheet.sheetName}`;
               allSheets.push(sheet);
             });
-            
+
             if (sheets.length > 0) hasData = true;
           }
         }
@@ -437,14 +452,14 @@ const ReportsPage = () => {
     <Box sx={{ minHeight: '100vh', backgroundColor: '#fafafa', p: 3 }}>
       <Box sx={{ width: '100%' }}>
         {/* Header */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
+        <Box
+          sx={{
+            display: 'flex',
             flexDirection: { xs: 'column', sm: 'row' },
-            justifyContent: 'space-between', 
+            justifyContent: 'space-between',
             alignItems: { xs: 'start', sm: 'center' },
             gap: 2,
-            mb: 4 
+            mb: 4
           }}
         >
           <Box>
@@ -456,12 +471,12 @@ const ReportsPage = () => {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               startIcon={<Download />}
               onClick={handleExportCurrent}
               disabled={filteredReports.length === 0 || exporting}
-              sx={{ 
+              sx={{
                 color: '#000',
                 borderColor: '#000',
                 '&:hover': {
@@ -472,12 +487,12 @@ const ReportsPage = () => {
             >
               {exporting ? 'Exporting...' : 'Export Current'}
             </Button>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               startIcon={<Download />}
               onClick={handleExportAll}
               disabled={exporting}
-              sx={{ 
+              sx={{
                 backgroundColor: '#000',
                 '&:hover': {
                   backgroundColor: '#333'
@@ -515,11 +530,11 @@ const ReportsPage = () => {
                   </Typography>
                 )}
               </Box>
-              
+
               {/* Tabs */}
               {filteredReports.length > 0 ? (
-                <Tabs 
-                  value={activeTab} 
+                <Tabs
+                  value={activeTab}
                   onChange={handleTabChange}
                   sx={{
                     '& .MuiTabs-indicator': {
@@ -542,9 +557,9 @@ const ReportsPage = () => {
                   scrollButtons="auto"
                 >
                   {filteredReports.map((report, index) => (
-                    <Tab 
+                    <Tab
                       key={report.id}
-                      label={report.title} 
+                      label={report.title}
                     />
                   ))}
                 </Tabs>
@@ -572,10 +587,10 @@ const ReportsPage = () => {
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                     Try adjusting your search term or browse all available reports.
                   </Typography>
-                  <Button 
-                    variant="outlined" 
+                  <Button
+                    variant="outlined"
                     onClick={() => setSearchTerm("")}
-                    sx={{ 
+                    sx={{
                       color: '#000',
                       borderColor: '#000',
                       '&:hover': {
@@ -599,8 +614,8 @@ const ReportsPage = () => {
           onClose={handleCloseToast}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         >
-          <Alert 
-            onClose={handleCloseToast} 
+          <Alert
+            onClose={handleCloseToast}
             severity={toast.severity}
             sx={{ width: '100%' }}
           >
