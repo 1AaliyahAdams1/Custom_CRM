@@ -61,6 +61,15 @@ const AccountsPage = ({
       chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' },
       defaultVisible: true,
     },
+    {
+      field: 'Active',
+      headerName: 'Active',
+      type: 'chip',
+      chipLabels: { true: 'Active', false: 'Inactive' },
+      chipColors: { true: '#079141ff', false: '#999999' },
+      defaultVisible: true,
+    }
+
   ];
 
   // Local state for status messages
@@ -90,10 +99,10 @@ const AccountsPage = ({
               </Box>
               {selected.length > 0 && (
                 <Tooltip title={`${selected.length} account${selected.length === 1 ? '' : 's'} selected for bulk operations`} arrow>
-                  <Chip 
-                    label={`${selected.length} selected`} 
-                    size="small" 
-                    sx={{ backgroundColor: '#e0e0e0', color: '#050505' }} 
+                  <Chip
+                    label={`${selected.length} selected`}
+                    size="small"
+                    sx={{ backgroundColor: '#e0e0e0', color: '#050505' }}
                   />
                 </Tooltip>
               )}

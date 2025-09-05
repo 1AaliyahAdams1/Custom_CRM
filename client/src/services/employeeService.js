@@ -1,6 +1,6 @@
 import api from "../utils/api";
 
-const EMPLOYEE_API = "/employees"; // matches your backend route
+const EMPLOYEE_API = "/employees"; 
 
 export const getAllEmployees = async () => {
   try {

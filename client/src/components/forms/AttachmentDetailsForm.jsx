@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Box, Button, Typography, LinearProgress, IconButton, Paper } from "@mui/material";
 import { Delete, CloudDownload } from "@mui/icons-material";
-import { attachmentService } from "../../services/attachmentService";
+import {
+  getAttachmentsByEntity,
+  uploadAttachment,
+  deleteAttachment,
+  downloadAttachment,
+  getFileIcon,
+  uploadMultipleAttachments,
+} from "../../services/attachmentService";
 
 const AttachmentDetailsForm = ({ entityType, entityId, onUploaded }) => {
   const [attachments, setAttachments] = useState([]);
@@ -13,8 +20,8 @@ const AttachmentDetailsForm = ({ entityType, entityId, onUploaded }) => {
   const loadAttachments = async () => {
     try {
       setLoading(true);
-      const data = await attachmentService.getAttachmentsByEntity(entityId, entityType);
-      setAttachments(data);
+      const data = await getAttachmentsByEntity(entityId, entityType);
+      setAttachments(data || []);
     } catch (err) {
       setError(err.message || "Failed to load attachments");
     } finally {
@@ -23,7 +30,7 @@ const AttachmentDetailsForm = ({ entityType, entityId, onUploaded }) => {
   };
 
   useEffect(() => {
-    loadAttachments();
+    if (entityId && entityType) loadAttachments();
   }, [entityId, entityType]);
 
   const handleFileSelect = (e) => {
@@ -32,12 +39,12 @@ const AttachmentDetailsForm = ({ entityType, entityId, onUploaded }) => {
   };
 
   const handleUpload = async () => {
+    if (selectedFiles.length === 0) return;
+
     try {
       setLoading(true);
-      for (const file of selectedFiles) {
-        attachmentService.validateFile(file); // validate before upload
-        await attachmentService.uploadAttachment({ file, entityId, entityTypeName: entityType });
-      }
+      // Upload all selected files at once
+      await uploadMultipleAttachments({ files: selectedFiles, entityId, entityTypeName: entityType });
       setSelectedFiles([]);
       await loadAttachments();
       if (onUploaded) onUploaded();
@@ -52,7 +59,7 @@ const AttachmentDetailsForm = ({ entityType, entityId, onUploaded }) => {
     if (!window.confirm("Are you sure you want to delete this attachment?")) return;
     try {
       setLoading(true);
-      await attachmentService.deleteAttachment(attachmentId);
+      await deleteAttachment(attachmentId);
       await loadAttachments();
     } catch (err) {
       setError(err.message || "Failed to delete attachment");
@@ -63,7 +70,7 @@ const AttachmentDetailsForm = ({ entityType, entityId, onUploaded }) => {
 
   const handleDownload = async (attachment) => {
     try {
-      await attachmentService.downloadAttachment(attachment);
+      await downloadAttachment(attachment);
     } catch (err) {
       setError(err.message || "Failed to download attachment");
     }
@@ -72,18 +79,10 @@ const AttachmentDetailsForm = ({ entityType, entityId, onUploaded }) => {
   return (
     <Box>
       {error && <Typography color="error">{error}</Typography>}
+
       <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "center" }}>
-        <input
-          type="file"
-          multiple
-          onChange={handleFileSelect}
-          disabled={loading}
-        />
-        <Button
-          variant="contained"
-          onClick={handleUpload}
-          disabled={selectedFiles.length === 0 || loading}
-        >
+        <input type="file" multiple onChange={handleFileSelect} disabled={loading} />
+        <Button variant="contained" onClick={handleUpload} disabled={selectedFiles.length === 0 || loading}>
           Upload
         </Button>
       </Box>
@@ -94,18 +93,18 @@ const AttachmentDetailsForm = ({ entityType, entityId, onUploaded }) => {
         {attachments.length === 0 && <Typography>No attachments found</Typography>}
         {attachments.map((att) => (
           <Paper
-            key={att.AttachmentID}
+            key={att.AttachmentID || att.attachmentId}
             sx={{ p: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography>{attachmentService.getFileIcon(att.FileName)}</Typography>
-              <Typography>{att.FileName}</Typography>
+              <Typography>{getFileIcon(att.FileName || att.fileName)}</Typography>
+              <Typography>{att.FileName || att.fileName}</Typography>
             </Box>
             <Box>
               <IconButton onClick={() => handleDownload(att)} disabled={loading}>
                 <CloudDownload />
               </IconButton>
-              <IconButton onClick={() => handleDelete(att.AttachmentID)} disabled={loading}>
+              <IconButton onClick={() => handleDelete(att.AttachmentID || att.attachmentId)} disabled={loading}>
                 <Delete />
               </IconButton>
             </Box>

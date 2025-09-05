@@ -17,38 +17,27 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   Chip,
+  Snackbar,
 } from '@mui/material';
 import {
   Close,
   Save,
-  Add,
   Note,
   Delete,
   Edit,
   Refresh,
+  Add,
+  Cancel
 } from '@mui/icons-material';
-import { noteService } from '../services/noteService';
+import {
+  createNote,
+  updateNote,
+  deleteNote,
+  getNotesByEntity,
+  deactivateNote,
+  reactivateNote
+} from '../services/noteService';
 
-/**
- * Reusable Notes Popup Component
- * 
- * @param {Object} props
- * @param {boolean} props.open - Whether the dialog is open
- * @param {Function} props.onClose - Callback when dialog closes
- * @param {Function} props.onSave - Callback when note is saved (noteData) => void
- * @param {Function} props.onDelete - Optional callback when note is deleted (noteId) => void
- * @param {Function} props.onEdit - Optional callback when note is edited (noteData) => void
- * @param {string} props.entityType - Type of entity (e.g., 'account', 'contact', 'deal')
- * @param {string|number} props.entityId - ID of the entity
- * @param {string} props.entityName - Name of the entity for display
- * @param {boolean} props.loading - Loading state
- * @param {string} props.error - Error message
- * @param {string} props.mode - 'create' | 'view' | 'edit' (default: 'create')
- * @param {Object} props.initialNote - Initial note data for editing
- * @param {boolean} props.showExistingNotes - Whether to show list of existing notes (default: true)
- * @param {string} props.maxLength - Maximum length for note content (default: 1000)
- * @param {boolean} props.required - Whether note content is required (default: true)
- */
 const NotesPopup = ({
   open,
   onClose,
@@ -58,51 +47,69 @@ const NotesPopup = ({
   entityType = 'entity',
   entityId,
   entityName,
-  loading = false,
-  error = null,
   mode = 'create',
   initialNote = null,
   showExistingNotes = true,
   maxLength = 1000,
-  required = true,
+  required = false,
+  allowDeactivate = false,
+  onNotesChange,
 }) => {
   const [noteContent, setNoteContent] = useState('');
   const [editingNoteId, setEditingNoteId] = useState(null);
-  const [localLoading, setLocalLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [existingNotes, setExistingNotes] = useState([]);
   const [fetchingNotes, setFetchingNotes] = useState(false);
   const [notesError, setNotesError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   // Initialize form data when dialog opens or initialNote changes
   useEffect(() => {
-    if (open) {
-      if (mode === 'edit' && initialNote) {
-        setNoteContent(initialNote.Content || '');
-        setEditingNoteId(initialNote.NoteID || null);
-      } else {
-        setNoteContent('');
-        setEditingNoteId(null);
-      }
-      setValidationError('');
-      
-      // Fetch existing notes when dialog opens
-      if (entityId && entityType && showExistingNotes) {
-        fetchExistingNotes();
-      }
+    if (!open) return;
+
+    if (mode === 'edit' && initialNote) {
+      setNoteContent(initialNote.Content || '');
+      setEditingNoteId(initialNote.NoteID || null);
+      setIsEditing(true);
+    } else {
+      setNoteContent('');
+      setEditingNoteId(null);
+      setIsEditing(false);
+    }
+
+    resetErrors();
+
+    if (entityId && entityType && showExistingNotes) {
+      fetchExistingNotes();
     }
   }, [open, mode, initialNote, entityId, entityType, showExistingNotes]);
 
+  const resetErrors = () => {
+    setValidationError('');
+    setNotesError('');
+    setSuccessMessage('');
+  };
+
   // Fetch existing notes
   const fetchExistingNotes = async () => {
+    if (!entityId || !entityType) return;
+
     try {
       setFetchingNotes(true);
       setNotesError('');
-      const notes = await noteService.getNotesByEntity(entityType, entityId);
-      setExistingNotes(notes || []);
-    } catch (error) {
-      console.error('Error fetching notes:', error);
-      setNotesError('Failed to load existing notes');
+
+      const notes = await getNotesByEntity(entityType, entityId);
+      setExistingNotes(Array.isArray(notes) ? notes : []);
+
+      if (onNotesChange) {
+        onNotesChange(Array.isArray(notes) ? notes : []);
+      }
+
+    } catch (err) {
+      console.error('Failed to fetch notes:', err);
+      setNotesError(err.message || 'Failed to load existing notes');
       setExistingNotes([]);
     } finally {
       setFetchingNotes(false);
@@ -111,23 +118,34 @@ const NotesPopup = ({
 
   // Validation
   const validateNote = () => {
-    if (required && !noteContent.trim()) {
+    const trimmedContent = noteContent.trim();
+
+    if (required && !trimmedContent) {
       setValidationError('Note content is required');
       return false;
     }
-    if (noteContent.length > maxLength) {
+
+    if (trimmedContent.length > maxLength) {
       setValidationError(`Note content must be ${maxLength} characters or less`);
       return false;
     }
+
     setValidationError('');
     return true;
   };
 
-  // Handlers
+  // Save or update note
   const handleSave = async () => {
     if (!validateNote()) return;
 
-    setLocalLoading(true);
+    if (!entityId || !entityType) {
+      setValidationError('Entity information is required');
+      return;
+    }
+
+    setLoading(true);
+    resetErrors();
+
     try {
       const noteData = {
         Content: noteContent.trim(),
@@ -135,39 +153,57 @@ const NotesPopup = ({
         EntityID: entityId,
         EntityName: entityName,
         CreatedAt: new Date().toISOString(),
-        ...(editingNoteId && { NoteID: editingNoteId }),
       };
+
+      let result;
 
       if (editingNoteId) {
         // Update existing note
-        await noteService.updateNote(editingNoteId, noteData);
-        if (onEdit) await onEdit(noteData);
+        noteData.NoteID = editingNoteId;
+        result = await updateNote(editingNoteId, noteData);
+        setSuccessMessage('Note updated successfully');
+
+        if (onEdit) {
+          await onEdit(noteData);
+        }
       } else {
         // Create new note
-        await noteService.createNote(noteData);
-        if (onSave) await onSave(noteData);
+        result = await createNote(noteData);
+        setSuccessMessage('Note created successfully');
+
+        if (onSave) {
+          await onSave(noteData);
+        }
       }
 
-      // Refresh the notes list
-      await fetchExistingNotes();
-      
       // Reset form
       setNoteContent('');
       setEditingNoteId(null);
-      setValidationError('');
+      setIsEditing(false);
 
-    } catch (error) {
-      console.error('Failed to save note:', error);
-      setValidationError(error.message || 'Failed to save note');
+      // Refresh the notes list
+      await fetchExistingNotes();
+
+    } catch (err) {
+      console.error('Failed to save note:', err);
+      setValidationError(err.message || 'Failed to save note');
     } finally {
-      setLocalLoading(false);
+      setLoading(false);
     }
   };
 
   const handleEditNote = (note) => {
     setNoteContent(note.Content || '');
     setEditingNoteId(note.NoteID);
-    setValidationError('');
+    setIsEditing(true);
+    resetErrors();
+  };
+
+  const handleCancelEdit = () => {
+    setNoteContent('');
+    setEditingNoteId(null);
+    setIsEditing(false);
+    resetErrors();
   };
 
   const handleDeleteNote = async (noteId) => {
@@ -175,26 +211,74 @@ const NotesPopup = ({
       return;
     }
 
-    setLocalLoading(true);
+    setLoading(true);
+    resetErrors();
+
     try {
-      await noteService.deleteNote(noteId);
-      if (onDelete) await onDelete(noteId);
-      
-      // Refresh the notes list
+      await deleteNote(noteId);
+      setSuccessMessage('Note deleted successfully');
+
+      if (onDelete) {
+        await onDelete(noteId);
+      }
+
       await fetchExistingNotes();
-    } catch (error) {
-      console.error('Failed to delete note:', error);
-      setNotesError(error.message || 'Failed to delete note');
+
+    } catch (err) {
+      console.error('Failed to delete note:', err);
+      setNotesError(err.message || 'Failed to delete note');
     } finally {
-      setLocalLoading(false);
+      setLoading(false);
+    }
+  };
+
+  const handleDeactivateNote = async (noteId) => {
+    if (!allowDeactivate) return;
+
+    if (!window.confirm('Are you sure you want to deactivate this note?')) {
+      return;
+    }
+
+    setLoading(true);
+    resetErrors();
+
+    try {
+      await deactivateNote(noteId);
+      setSuccessMessage('Note deactivated successfully');
+      await fetchExistingNotes();
+
+    } catch (err) {
+      console.error('Failed to deactivate note:', err);
+      setNotesError(err.message || 'Failed to deactivate note');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReactivateNote = async (noteId) => {
+    if (!allowDeactivate) return;
+
+    setLoading(true);
+    resetErrors();
+
+    try {
+      await reactivateNote(noteId);
+      setSuccessMessage('Note reactivated successfully');
+      await fetchExistingNotes();
+
+    } catch (err) {
+      console.error('Failed to reactivate note:', err);
+      setNotesError(err.message || 'Failed to reactivate note');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleClose = () => {
     setNoteContent('');
     setEditingNoteId(null);
-    setValidationError('');
-    setNotesError('');
+    setIsEditing(false);
+    resetErrors();
     onClose();
   };
 
@@ -203,79 +287,60 @@ const NotesPopup = ({
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return '-';
+    if (!dateString) return 'Unknown';
+
     try {
-      return new Date(dateString).toLocaleDateString();
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
     } catch {
-      return '-';
+      return 'Unknown';
     }
   };
 
-  const isEditing = editingNoteId !== null;
-  const canSave = noteContent.trim() && !validationError;
+  const canSave = noteContent.trim().length > 0 && !validationError;
+  const characterCount = noteContent.length;
+  const isNearLimit = characterCount > maxLength * 0.8;
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 2,
-          minHeight: '500px',
-        }
-      }}
-    >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        pb: 1,
-      }}>
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      {/* Dialog Title */}
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Note sx={{ color: '#2563eb' }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             {isEditing ? 'Edit Note' : 'Add Note'}
           </Typography>
           {entityName && (
-            <Chip 
+            <Chip
               label={`${entityType}: ${entityName}`}
               size="small"
               sx={{ ml: 1, backgroundColor: '#f3f4f6' }}
             />
           )}
         </Box>
-        <IconButton onClick={handleClose} size="small">
+        <IconButton onClick={handleClose}>
           <Close />
         </IconButton>
       </DialogTitle>
 
       <Divider />
 
+      {/* Dialog Content */}
       <DialogContent sx={{ pt: 2 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {validationError && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            {validationError}
-          </Alert>
-        )}
-
-        {notesError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {notesError}
-          </Alert>
-        )}
+        {/* Alerts */}
+        {notesError && <Alert severity="error" sx={{ mb: 2 }}>{notesError}</Alert>}
+        {validationError && <Alert severity="warning" sx={{ mb: 2 }}>{validationError}</Alert>}
+        {successMessage && <Alert severity="success" sx={{ mb: 2 }}>{successMessage}</Alert>}
 
         {/* Note Input */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-            {isEditing ? 'Edit Note Content' : 'Note Content'} 
+            {isEditing ? 'Edit Note Content' : 'Note Content'}
             {required && <span style={{ color: '#d32f2f' }}>*</span>}
           </Typography>
           <TextField
@@ -287,8 +352,8 @@ const NotesPopup = ({
             fullWidth
             variant="outlined"
             error={!!validationError}
-            helpertext={`${noteContent.length}/${maxLength} characters`}
-            disabled={loading || localLoading}
+            helperText={`${noteContent.length}/${maxLength} characters`}
+            disabled={loading}
           />
         </Box>
 
@@ -299,11 +364,7 @@ const NotesPopup = ({
               <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
                 Existing Notes ({existingNotes.length})
               </Typography>
-              <IconButton 
-                size="small" 
-                onClick={handleRefreshNotes}
-                disabled={fetchingNotes || localLoading}
-              >
+              <IconButton size="small" onClick={handleRefreshNotes} disabled={fetchingNotes || loading}>
                 <Refresh />
               </IconButton>
             </Box>
@@ -314,51 +375,42 @@ const NotesPopup = ({
               </Box>
             ) : existingNotes.length > 0 ? (
               <List sx={{ maxHeight: 300, overflow: 'auto' }}>
-                {existingNotes.map((note, index) => (
-                  <React.Fragment key={note.NoteID || index}>
-                    <ListItem
-                      sx={{
-                        backgroundColor: '#f9fafb',
-                        borderRadius: 1,
-                        mb: 1,
-                        border: '1px solid #e5e7eb',
-                        alignItems: 'flex-start',
-                      }}
-                    >
-                      <ListItemText
-                        primary={
-                          <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
-                            {note.Content}
-                          </Typography>
-                        }
-                        secondary={
-                          <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                            Created: {formatDate(note.CreatedAt)}
-                            {note.CreatedBy && ` by ${note.CreatedBy}`}
-                          </Typography>
-                        }
-                      />
-                      <ListItemSecondaryAction>
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditNote(note)}
-                            disabled={loading || localLoading}
-                          >
-                            <Edit fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteNote(note.NoteID)}
-                            disabled={loading || localLoading}
-                            sx={{ color: '#dc2626' }}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  </React.Fragment>
+                {existingNotes.map((note, idx) => (
+                  <ListItem
+                    key={note.NoteID || idx}
+                    sx={{
+                      backgroundColor: '#f9fafb',
+                      borderRadius: 1,
+                      mb: 1,
+                      border: '1px solid #e5e7eb',
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <ListItemText
+                      primary={<Typography variant="body2" sx={{ lineHeight: 1.5 }}>{note.Content}</Typography>}
+                      secondary={
+                        <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                          Created: {formatDate(note.CreatedAt)}
+                          {note.CreatedBy && ` by ${note.CreatedBy}`}
+                        </Typography>
+                      }
+                    />
+                    <ListItemSecondaryAction>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton size="small" onClick={() => handleEditNote(note)} disabled={loading}>
+                          <Edit fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteNote(note.NoteID)}
+                          disabled={loading}
+                          sx={{ color: '#dc2626' }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </ListItemSecondaryAction>
+                  </ListItem>
                 ))}
               </List>
             ) : (
@@ -374,33 +426,24 @@ const NotesPopup = ({
 
       <Divider />
 
+      {/* Dialog Actions */}
       <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button
-          onClick={handleClose}
-          variant="outlined"
-          sx={{
-            borderColor: '#e5e5e5',
-            color: '#666666',
-          }}
-          disabled={loading || localLoading}
-        >
+        <Button onClick={handleClose} variant="outlined" disabled={loading}>
           Cancel
         </Button>
         <Button
           onClick={handleSave}
           variant="contained"
-          startIcon={loading || localLoading ? <CircularProgress size={16} /> : <Save />}
-          disabled={!canSave || loading || localLoading}
-          sx={{
-            backgroundColor: '#2563eb',
-            '&:hover': { backgroundColor: '#1d4ed8' },
-          }}
+          startIcon={loading ? <CircularProgress size={16} /> : <Save />}
+          disabled={!canSave || loading}
+          sx={{ backgroundColor: '#2563eb', '&:hover': { backgroundColor: '#1d4ed8' } }}
         >
           {isEditing ? 'Update Note' : 'Save Note'}
         </Button>
       </DialogActions>
     </Dialog>
   );
+
 };
 
 export default NotesPopup;

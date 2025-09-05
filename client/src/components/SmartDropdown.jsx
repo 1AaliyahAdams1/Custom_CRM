@@ -46,17 +46,21 @@ const SmartDropdown = ({
   }, []);
 
   useEffect(() => {
-    if (value) {
+    if (value && options.length > 0) {
       const selectedOption = options.find(opt =>
         (opt[valueField] || opt.id || opt.ID) === value
       );
       if (selectedOption) {
         setInputValue(formatDisplayText(selectedOption));
+      } else {
+        // If we have a value but can't find the option, keep the raw value as display
+        setInputValue(String(value));
       }
-    } else {
+    } else if (!value) {
       setInputValue('');
     }
-  }, [value, options]);
+    // If we have a value but no options yet, don't change inputValue
+  }, [value, options, valueField, displayField]);
 
   useEffect(() => {
     if (!inputValue.trim()) {
@@ -109,13 +113,29 @@ const SmartDropdown = ({
       return;
     }
 
+    // Get the raw value without forcing it to be a number
+    const rawValue = selectedOption
+      ? (selectedOption[valueField] || selectedOption.id || selectedOption.ID)
+      : null;
+
+    // Only convert to number if the value looks like a numeric string or is already a number
+    let finalValue = rawValue;
+    if (rawValue !== null && rawValue !== undefined) {
+      // Check if it's a string that represents a number
+      const numericValue = Number(rawValue);
+      if (!isNaN(numericValue) && isFinite(numericValue)) {
+        // Only use the numeric conversion if it's actually a valid number
+        // and the original wasn't a string that should stay a string
+        if (typeof rawValue === 'number' || /^\d+$/.test(String(rawValue))) {
+          finalValue = numericValue;
+        }
+      }
+    }
+
     const syntheticEvent = {
       target: {
         name,
-        value: selectedOption
-          ? Number(selectedOption[valueField] || selectedOption.id || selectedOption.ID)
-          : null
-
+        value: finalValue
       }
     };
     onChange(syntheticEvent);

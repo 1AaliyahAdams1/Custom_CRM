@@ -198,6 +198,7 @@ async function deactivateAccount(account, changedBy, actionTypeId) {
       .input("StateProvinceID", sql.Int, account.StateProvinceID)
       .input("CountryID", sql.Int, account.CountryID)
       .input('ActionTypeID', sql.Int, actionTypeId)
+      .input('sequenceID', sql.Int, account.sequenceID)
       .execute('DeactivateAccount');
 
     return { message: "Account deactivated", AccountID: account.AccountID };
@@ -442,8 +443,6 @@ async function getActiveUnassignedAccounts() {
 // =======================
 module.exports = {
   getAllAccounts,
-  getActiveAccounts,
-  getInactiveAccounts,
   createAccount,
   updateAccount,
   deactivateAccount,
