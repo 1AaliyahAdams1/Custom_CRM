@@ -6,11 +6,22 @@ import {
   fetchContactsByUser,
   deactivateContact,
 } from "../../services/contactService";
-import { noteService } from "../../services/noteService";
-import { attachmentService } from "../../services/attachmentService";
+import { 
+  createNote, 
+  updateNote, 
+  deleteNote, 
+  getNotesByEntity 
+} from "../../services/noteService";
+import { 
+  uploadAttachment, 
+  getAttachmentsByEntity, 
+  deleteAttachment, 
+  downloadAttachment 
+} from "../../services/attachmentService";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent";
 import { formatters } from '../../utils/formatters';
-
 
 const ContactsContainer = () => {
   const navigate = useNavigate();
@@ -27,11 +38,8 @@ const ContactsContainer = () => {
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
-  const [popupLoading, setPopupLoading] = useState(false);
-  const [popupError, setPopupError] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState(null);
-
 
   // Filters
   const [searchTerm] = useState("");
@@ -89,14 +97,11 @@ const ContactsContainer = () => {
 
   // ---------------- FILTERED CONTACTS ----------------
   const filteredContacts = useMemo(() => {
-
-    // If no search term and no filter, return all contacts
     if (!searchTerm.trim() && !employmentStatusFilter) {
       return contacts;
     }
 
     const filtered = contacts.filter((contact) => {
-      // Search matching - only apply if searchTerm is not empty
       let matchesSearch = true;
       if (searchTerm.trim()) {
         const searchLower = searchTerm.toLowerCase();
@@ -111,7 +116,6 @@ const ContactsContainer = () => {
           (contact.AccountName && contact.AccountName.toLowerCase().includes(searchLower));
       }
 
-      // Employment status matching - only apply if filter is selected
       let matchesEmploymentStatus = true;
       if (employmentStatusFilter) {
         matchesEmploymentStatus =
@@ -120,8 +124,7 @@ const ContactsContainer = () => {
           (employmentStatusFilter === "unknown" && contact.Still_employed == null);
       }
 
-      const matches = matchesSearch && matchesEmploymentStatus;
-      return matches;
+      return matchesSearch && matchesEmploymentStatus;
     });
 
     return filtered;
@@ -140,8 +143,8 @@ const ContactsContainer = () => {
     if (event.target.checked) setSelected(filteredContacts.map((c) => c.ContactID));
     else setSelected([]);
   };
-  //-----------------CONFIRM/CANCEL HANDLERS-----------
 
+  // ---------------- CONFIRM/CANCEL HANDLERS -----------
   const confirmDelete = async () => {
     try {
       await deactivateContact(contactToDelete);
@@ -161,7 +164,6 @@ const ContactsContainer = () => {
     setContactToDelete(null);
   };
 
-
   // ---------------- CONTACT HANDLERS ----------------
   const handleDeactivate = (id) => {
     if (!id) {
@@ -171,7 +173,6 @@ const ContactsContainer = () => {
     setContactToDelete(id);
     setConfirmOpen(true);
   };
-
 
   const handleEdit = (contact) => {
     if (!contact?.ContactID) {
@@ -196,47 +197,42 @@ const ContactsContainer = () => {
     if (!contact.ContactID) return;
     setSelectedContact(contact);
     setNotesPopupOpen(true);
-    setPopupError(null);
   };
 
   const handleSaveNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.createNote(noteData);
+      const notePayload = {
+        EntityID: selectedContact.ContactID,
+        EntityType: "Contact",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to save note");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to save note");
     }
   };
 
   const handleDeleteNote = async (noteId) => {
     try {
-      setPopupLoading(true);
-      await noteService.deleteNote(noteId);
+      await deleteNote(noteId);
       setSuccessMessage("Note deleted successfully!");
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to delete note");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to delete note");
     }
   };
 
   const handleEditNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.updateNote(noteData.NoteID, noteData);
+      await updateNote(noteData.NoteID, noteData);
       setSuccessMessage("Note updated successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to update note");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to update note");
     }
   };
 
@@ -245,47 +241,43 @@ const ContactsContainer = () => {
     if (!contact.ContactID) return;
     setSelectedContact(contact);
     setAttachmentsPopupOpen(true);
-    setPopupError(null);
   };
 
-  const handleUploadAttachment = async (attachments) => {
+  const handleUploadAttachment = async (files) => {
     try {
-      setPopupLoading(true);
-      for (const attachment of attachments) {
-        await attachmentService.uploadAttachment(attachment);
-      }
-      setSuccessMessage(`${attachments.length} attachment(s) uploaded successfully!`);
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedContact.ContactID,
+          entityTypeName: "Contact"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
       setAttachmentsPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to upload attachments");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to upload attachments");
     }
   };
 
   const handleDeleteAttachment = async (attachmentId) => {
     try {
-      setPopupLoading(true);
-      await attachmentService.deleteAttachment(attachmentId);
+      await deleteAttachment(attachmentId);
       setSuccessMessage("Attachment deleted successfully!");
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to delete attachment");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to delete attachment");
     }
   };
 
   const handleDownloadAttachment = async (attachment) => {
     try {
-      await attachmentService.downloadAttachment(attachment);
+      await downloadAttachment(attachment);
     } catch (err) {
-      setPopupError(err.message || "Failed to download attachment");
+      setError(err.message || "Failed to download attachment");
     }
   };
-
-
 
   return (
     <>
@@ -304,21 +296,33 @@ const ContactsContainer = () => {
         onCreate={handleCreate}
         onAddNote={handleAddNote}
         onAddAttachment={handleAddAttachment}
-        notesPopupOpen={notesPopupOpen}
-        setNotesPopupOpen={setNotesPopupOpen}
-        attachmentsPopupOpen={attachmentsPopupOpen}
-        setAttachmentsPopupOpen={setAttachmentsPopupOpen}
-        selectedContact={selectedContact}
-        popupLoading={popupLoading}
-        popupError={popupError}
-        handleSaveNote={handleSaveNote}
-        handleDeleteNote={handleDeleteNote}
-        handleEditNote={handleEditNote}
-        handleUploadAttachment={handleUploadAttachment}
-        handleDeleteAttachment={handleDeleteAttachment}
-        handleDownloadAttachment={handleDownloadAttachment}
         formatters={formatters}
         totalCount={contacts.length}
+      />
+
+      {/* Notes Popup */}
+      <NotesPopup
+        open={notesPopupOpen}
+        onClose={() => setNotesPopupOpen(false)}
+        onSave={handleSaveNote}
+        onEdit={handleEditNote}
+        onDelete={handleDeleteNote}
+        entityType="Contact"
+        entityId={selectedContact?.ContactID}
+        entityName={selectedContact?.PersonFullName}
+        showExistingNotes={true}
+      />
+
+      {/* Attachments Popup */}
+      <AttachmentsPopup
+        open={attachmentsPopupOpen}
+        onClose={() => setAttachmentsPopupOpen(false)}
+        entityType="Contact"
+        entityId={selectedContact?.ContactID}
+        entityName={selectedContact?.PersonFullName}
+        onUpload={handleUploadAttachment}
+        onDelete={handleDeleteAttachment}
+        onDownload={handleDownloadAttachment}
       />
 
       <ConfirmDialog

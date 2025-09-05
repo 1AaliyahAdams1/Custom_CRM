@@ -1,585 +1,185 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+import api from "../utils/api";
 
-class IndustryService {
-  constructor() {
-    this.baseURL = `${API_BASE_URL}/industries`;
+const RESOURCE = "/industries";
+
+// --- CRUD Operations ---
+export const getAllIndustries = async () => {
+  try {
+    const response = await api.get(RESOURCE);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching all industries:", error?.response || error);
+    throw error;
   }
+};
 
-  // Helper method for making API requests
-  async makeRequest(url, options = {}) {
-    try {
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      };
-
-      const response = await fetch(url, config);
-      
-      // Handle different response types
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(errorData.message || `HTTP Error: ${response.status}`);
-      }
-
-      // Check if response has content
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await response.json();
-      }
-      
-      return null; // For successful requests with no content (like deletes)
-    } catch (error) {
-      console.error('API Request failed:', error);
-      throw error;
-    }
+export const getIndustryById = async (id) => {
+  if (!id) throw new Error("Industry ID is required");
+  try {
+    const response = await api.get(`${RESOURCE}/${encodeURIComponent(id)}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching industry ${id}:`, error?.response || error);
+    throw error;
   }
+};
 
-  // Get all industries
-  async getAllIndustries() {
-    try {
-      const industries = await this.makeRequest(this.baseURL);
-      return {
-        success: true,
-        data: industries,
-        message: 'Industries retrieved successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to retrieve industries'
-      };
-    }
+export const createIndustry = async (data) => {
+  if (!data || !data.IndustryName) throw new Error("Industry name is required");
+  try {
+    const response = await api.post(RESOURCE, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating industry:", error?.response || error);
+    throw error;
   }
+};
 
-  // Get industry by ID
-  async getIndustryById(industryId) {
-    try {
-      if (!industryId) {
-        throw new Error('Industry ID is required');
-      }
-
-      const industry = await this.makeRequest(`${this.baseURL}/${industryId}`);
-      return {
-        success: true,
-        data: industry,
-        message: 'Industry retrieved successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to retrieve industry'
-      };
-    }
+export const updateIndustry = async (id, data) => {
+  if (!id) throw new Error("Industry ID is required");
+  if (!data || !data.IndustryName) throw new Error("Industry name is required");
+  try {
+    const response = await api.put(`${RESOURCE}/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating industry ${id}:`, error?.response || error);
+    throw error;
   }
+};
 
-  // Create new industry
-  async createIndustry(name) {
-    try {
-      if (!name || name.trim() === '') {
-        throw new Error('Industry name is required');
-      }
-
-      const validation = this.validateIndustryName(name);
-      if (!validation.isValid) {
-        throw new Error(validation.errors.join(', '));
-      }
-
-      const industry = await this.makeRequest(this.baseURL, {
-        method: 'POST',
-        body: JSON.stringify({ name: name.trim() })
-      });
-
-      return {
-        success: true,
-        data: industry,
-        message: 'Industry created successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to create industry'
-      };
-    }
+export const deactivateIndustry = async (id) => {
+  if (!id) throw new Error("Industry ID is required");
+  try {
+    const response = await api.patch(`${RESOURCE}/${id}/deactivate`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deactivating industry ${id}:`, error?.response || error);
+    throw error;
   }
+};
 
-  // Update industry
-  async updateIndustry(industryId, name) {
-    try {
-      if (!industryId) {
-        throw new Error('Industry ID is required');
-      }
-
-      if (!name || name.trim() === '') {
-        throw new Error('Industry name is required');
-      }
-
-      const validation = this.validateIndustryName(name);
-      if (!validation.isValid) {
-        throw new Error(validation.errors.join(', '));
-      }
-
-      const industry = await this.makeRequest(`${this.baseURL}/${industryId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ name: name.trim() })
-      });
-
-      return {
-        success: true,
-        data: industry,
-        message: 'Industry updated successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to update industry'
-      };
-    }
+export const reactivateIndustry = async (id) => {
+  if (!id) throw new Error("Industry ID is required");
+  try {
+    const response = await api.patch(`${RESOURCE}/${id}/reactivate`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error reactivating industry ${id}:`, error?.response || error);
+    throw error;
   }
+};
 
-  // Deactivate industry
-  async deactivateIndustry(industryId) {
-    try {
-      if (!industryId) {
-        throw new Error('Industry ID is required');
-      }
-
-      const result = await this.makeRequest(`${this.baseURL}/${industryId}/deactivate`, {
-        method: 'PATCH'
-      });
-
-      return {
-        success: true,
-        data: result,
-        message: 'Industry deactivated successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to deactivate industry'
-      };
-    }
+export const deleteIndustry = async (id) => {
+  if (!id) throw new Error("Industry ID is required");
+  try {
+    const response = await api.delete(`${RESOURCE}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting industry ${id}:`, error?.response || error);
+    throw error;
   }
+};
 
-  // Reactivate industry
-  async reactivateIndustry(industryId) {
-    try {
-      if (!industryId) {
-        throw new Error('Industry ID is required');
-      }
-
-      const result = await this.makeRequest(`${this.baseURL}/${industryId}/reactivate`, {
-        method: 'PATCH'
-      });
-
-      return {
-        success: true,
-        data: result,
-        message: 'Industry reactivated successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to reactivate industry'
-      };
-    }
+// --- Bulk operations ---
+export const bulkDeactivateIndustries = async (ids) => {
+  if (!Array.isArray(ids) || ids.length === 0) throw new Error("Array of industry IDs is required");
+  try {
+    const promises = ids.map(id => deactivateIndustry(id));
+    return await Promise.all(promises);
+  } catch (error) {
+    console.error("Error bulk deactivating industries:", error?.response || error);
+    throw error;
   }
+};
 
-  // Delete industry
-  async deleteIndustry(industryId) {
-    try {
-      if (!industryId) {
-        throw new Error('Industry ID is required');
-      }
-
-      await this.makeRequest(`${this.baseURL}/${industryId}`, {
-        method: 'DELETE'
-      });
-
-      return {
-        success: true,
-        data: null,
-        message: 'Industry deleted successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to delete industry'
-      };
-    }
+export const bulkReactivateIndustries = async (ids) => {
+  if (!Array.isArray(ids) || ids.length === 0) throw new Error("Array of industry IDs is required");
+  try {
+    const promises = ids.map(id => reactivateIndustry(id));
+    return await Promise.all(promises);
+  } catch (error) {
+    console.error("Error bulk reactivating industries:", error?.response || error);
+    throw error;
   }
+};
 
-  // Additional utility methods for frontend needs
-
-  // Search industries by name
-  async searchIndustries(searchTerm) {
-    try {
-      if (!searchTerm || searchTerm.trim() === '') {
-        return await this.getAllIndustries();
-      }
-
-      const response = await this.getAllIndustries();
-      
-      if (!response.success) {
-        return response;
-      }
-
-      const filteredIndustries = response.data.filter(industry =>
-        industry.IndustryName && 
-        industry.IndustryName.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-      return {
-        success: true,
-        data: filteredIndustries,
-        message: `Found ${filteredIndustries.length} industries matching "${searchTerm}"`
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to search industries'
-      };
-    }
+// --- Helper Functions ---
+// Get only active industries
+export const getActiveIndustries = async () => {
+  try {
+    const industries = await getAllIndustries();
+    return industries.filter(i => i.IsActive === true || i.IsActive === 1);
+  } catch (error) {
+    console.error("Error fetching active industries:", error?.response || error);
+    throw error;
   }
+};
 
-  // Get active industries only
-  async getActiveIndustries() {
-    try {
-      const response = await this.getAllIndustries();
-      
-      if (!response.success) {
-        return response;
-      }
-
-      const activeIndustries = response.data.filter(industry =>
-        industry.IsActive === true || industry.IsActive === 1
-      );
-
-      return {
-        success: true,
-        data: activeIndustries,
-        message: `Found ${activeIndustries.length} active industries`
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to retrieve active industries'
-      };
-    }
+// Search industries by name
+export const searchIndustries = async (searchTerm) => {
+  if (!searchTerm) return getAllIndustries();
+  try {
+    const industries = await getAllIndustries();
+    return industries.filter(i =>
+      i.IndustryName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  } catch (error) {
+    console.error("Error searching industries:", error?.response || error);
+    throw error;
   }
+};
 
-  // Get industries sorted by name
-  async getIndustriesSorted(ascending = true) {
-    try {
-      const response = await this.getAllIndustries();
-      
-      if (!response.success) {
-        return response;
-      }
-
-      const sortedIndustries = [...response.data].sort((a, b) => {
-        const nameA = (a.IndustryName || '').toLowerCase();
-        const nameB = (b.IndustryName || '').toLowerCase();
-        
-        if (ascending) {
-          return nameA.localeCompare(nameB);
-        } else {
-          return nameB.localeCompare(nameA);
-        }
-      });
-
-      return {
-        success: true,
-        data: sortedIndustries,
-        message: `Industries sorted ${ascending ? 'ascending' : 'descending'}`
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to sort industries'
-      };
-    }
+// Sort industries by name
+export const getIndustriesSorted = async (ascending = true) => {
+  try {
+    const industries = await getAllIndustries();
+    return [...industries].sort((a, b) => {
+      const nameA = (a.IndustryName || "").toLowerCase();
+      const nameB = (b.IndustryName || "").toLowerCase();
+      return ascending ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    });
+  } catch (error) {
+    console.error("Error sorting industries:", error?.response || error);
+    throw error;
   }
+};
 
-  // Check if industry name exists
-  async checkIndustryNameExists(name, excludeId = null) {
-    try {
-      if (!name || name.trim() === '') {
-        return {
-          success: true,
-          data: { exists: false },
-          message: 'No name provided'
-        };
-      }
-
-      const response = await this.getAllIndustries();
-      
-      if (!response.success) {
-        return response;
-      }
-
-      const normalizedName = name.trim().toLowerCase();
-      const exists = response.data.some(industry => 
-        industry.IndustryName &&
-        industry.IndustryName.toLowerCase() === normalizedName &&
-        (!excludeId || industry.IndustryID !== excludeId)
-      );
-
-      return {
-        success: true,
-        data: { 
-          exists,
-          name: name.trim()
-        },
-        message: exists ? 'Industry name already exists' : 'Industry name is available'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to check industry name'
-      };
-    }
+// Check if industry name exists (optionally excluding an ID)
+export const checkIndustryNameExists = async (name, excludeId = null) => {
+  if (!name) return false;
+  try {
+    const industries = await getAllIndustries();
+    const normalized = name.trim().toLowerCase();
+    return industries.some(i =>
+      i.IndustryName?.toLowerCase() === normalized &&
+      (!excludeId || i.IndustryID !== excludeId)
+    );
+  } catch (error) {
+    console.error("Error checking industry name:", error?.response || error);
+    throw error;
   }
+};
 
-  // Bulk operations
-  async bulkDeleteIndustries(industryIds) {
-    try {
-      if (!industryIds || !Array.isArray(industryIds) || industryIds.length === 0) {
-        throw new Error('Array of industry IDs is required');
-      }
-
-      const results = await Promise.allSettled(
-        industryIds.map(id => this.deleteIndustry(id))
-      );
-
-      const successful = results.filter(r => r.status === 'fulfilled' && r.value.success);
-      const failed = results.filter(r => r.status === 'rejected' || !r.value.success);
-
-      return {
-        success: failed.length === 0,
-        data: {
-          successful: successful.length,
-          failed: failed.length,
-          total: industryIds.length
-        },
-        message: `Deleted ${successful.length} out of ${industryIds.length} industries`
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to bulk delete industries'
-      };
-    }
+// Get industry stats
+export const getIndustryStats = async () => {
+  try {
+    const industries = await getAllIndustries();
+    const total = industries.length;
+    const active = industries.filter(i => i.IsActive === true || i.IsActive === 1).length;
+    const inactive = total - active;
+    return { total, active, inactive, activePercentage: total ? ((active/total)*100).toFixed(1) : "0.0" };
+  } catch (error) {
+    console.error("Error fetching industry stats:", error?.response || error);
+    throw error;
   }
+};
 
-  // Bulk activate/deactivate industries
-  async bulkActivateIndustries(industryIds, activate = true) {
-    try {
-      if (!industryIds || !Array.isArray(industryIds) || industryIds.length === 0) {
-        throw new Error('Array of industry IDs is required');
-      }
-
-      const action = activate ? 'reactivateIndustry' : 'deactivateIndustry';
-      const results = await Promise.allSettled(
-        industryIds.map(id => this[action](id))
-      );
-
-      const successful = results.filter(r => r.status === 'fulfilled' && r.value.success);
-      const failed = results.filter(r => r.status === 'rejected' || !r.value.success);
-
-      const actionText = activate ? 'activated' : 'deactivated';
-      
-      return {
-        success: failed.length === 0,
-        data: {
-          successful: successful.length,
-          failed: failed.length,
-          total: industryIds.length
-        },
-        message: `${actionText} ${successful.length} out of ${industryIds.length} industries`
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || `Failed to bulk ${activate ? 'activate' : 'deactivate'} industries`
-      };
-    }
-  }
-
-  // Create multiple industries
-  async bulkCreateIndustries(industryNames) {
-    try {
-      if (!industryNames || !Array.isArray(industryNames) || industryNames.length === 0) {
-        throw new Error('Array of industry names is required');
-      }
-
-      const validNames = industryNames
-        .map(name => name && name.trim())
-        .filter(name => name && name.length > 0);
-
-      if (validNames.length === 0) {
-        throw new Error('No valid industry names provided');
-      }
-
-      const results = await Promise.allSettled(
-        validNames.map(name => this.createIndustry(name))
-      );
-
-      const successful = results.filter(r => r.status === 'fulfilled' && r.value.success);
-      const failed = results.filter(r => r.status === 'rejected' || !r.value.success);
-
-      return {
-        success: failed.length === 0,
-        data: {
-          successful: successful.length,
-          failed: failed.length,
-          total: validNames.length,
-          createdIndustries: successful.map(r => r.value.data)
-        },
-        message: `Created ${successful.length} out of ${validNames.length} industries`
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to bulk create industries'
-      };
-    }
-  }
-
-  // Get industry statistics
-  async getIndustryStats() {
-    try {
-      const response = await this.getAllIndustries();
-      
-      if (!response.success) {
-        return response;
-      }
-
-      const industries = response.data;
-      const total = industries.length;
-      const active = industries.filter(i => i.IsActive === true || i.IsActive === 1).length;
-      const inactive = total - active;
-
-      return {
-        success: true,
-        data: {
-          total,
-          active,
-          inactive,
-          activePercentage: total > 0 ? ((active / total) * 100).toFixed(1) : '0.0'
-        },
-        message: 'Industry statistics retrieved successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to retrieve industry statistics'
-      };
-    }
-  }
-
-  // Validation helpers
-  validateIndustryName(name) {
-    const errors = [];
-
-    if (!name || name.trim() === '') {
-      errors.push('Industry name is required');
-    }
-
-    if (name && name.trim().length < 2) {
-      errors.push('Industry name must be at least 2 characters long');
-    }
-
-    if (name && name.trim().length > 100) {
-      errors.push('Industry name must be less than 100 characters');
-    }
-
-    // Check for valid characters (letters, numbers, spaces, basic punctuation)
-    if (name && !/^[a-zA-Z0-9\s\-&.,()]+$/.test(name.trim())) {
-      errors.push('Industry name contains invalid characters');
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  }
-
-  // Format industry name for display
-  formatIndustryName(name) {
-    if (!name) return '';
-    
-    return name.trim()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  }
-
-  // Create lookup map for quick access
-  createIndustryLookupMap(industries) {
-    if (!Array.isArray(industries)) return {};
-    
-    return industries.reduce((map, industry) => {
-      if (industry.IndustryID) {
-        map[industry.IndustryID] = industry;
-      }
-      return map;
-    }, {});
-  }
-
-  // Get industries for dropdown/select components
-  async getIndustriesForDropdown(includeInactive = false) {
-    try {
-      const response = includeInactive 
-        ? await this.getAllIndustries()
-        : await this.getActiveIndustries();
-      
-      if (!response.success) {
-        return response;
-      }
-
-      const options = response.data.map(industry => ({
-        value: industry.IndustryID,
-        label: this.formatIndustryName(industry.IndustryName),
-        isActive: industry.IsActive === true || industry.IsActive === 1,
-        raw: industry
-      }));
-
-      return {
-        success: true,
-        data: options,
-        message: 'Industry dropdown options retrieved successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Failed to retrieve industry dropdown options'
-      };
-    }
-  }
-}
-
-// Create and export a singleton instance
-const industryService = new IndustryService();
-export default industryService;
-
-// Also export the class for testing purposes
-export { IndustryService };
+// Format name for display
+export const formatIndustryName = (name) => {
+  if (!name) return "";
+  return name
+    .trim()
+    .split(" ")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};

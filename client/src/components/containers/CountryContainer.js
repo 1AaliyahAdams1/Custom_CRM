@@ -83,16 +83,16 @@ const GeographyContainer = () => {
     // Update URL based on tab
     switch (newTab) {
       case 0:
-        navigate('/country', { replace: true });
+        navigate('/countries', { replace: true });
         break;
       case 1:
-        navigate('/country/states', { replace: true });
+        navigate('/countries/states', { replace: true });
         break;
       case 2:
-        navigate('/country/city', { replace: true });
+        navigate('/countries/cities', { replace: true });
         break;
       default:
-        navigate('/country', { replace: true });
+        navigate('/countries', { replace: true });
     }
   }, [navigate]);
 

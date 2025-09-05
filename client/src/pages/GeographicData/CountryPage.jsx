@@ -150,7 +150,7 @@ const CountryPage = ({
   const columns = [
     { field: 'CountryName', headerName: 'Country Name', type: 'tooltip', defaultVisible: true },
     { field: 'CountryCode', headerName: 'Country Code', defaultVisible: true },
-    { field: 'CurrencyID', headerName: 'CurrencyID', defaultVisible: true },
+    //{ field: 'CurrencyID', headerName: 'CurrencyID', defaultVisible: true },
   ];
 
   // Enhanced menu items for countries

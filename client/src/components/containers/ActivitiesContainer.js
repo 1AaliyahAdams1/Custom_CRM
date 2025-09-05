@@ -6,11 +6,23 @@ import {
   fetchActivitiesByUser,
   deactivateActivity,
 } from "../../services/activityService";
-import { noteService } from "../../services/noteService";
-import { attachmentService } from "../../services/attachmentService";
+import { 
+  createNote, 
+  updateNote, 
+  deleteNote, 
+  getNotesByEntity 
+} from "../../services/noteService";
+import { 
+  uploadAttachment, 
+  getAttachmentsByEntity, 
+  deleteAttachment, 
+  downloadAttachment 
+} from "../../services/attachmentService";
 import { getAllAccounts } from "../../services/accountService";
 import { activityTypeService, priorityLevelService } from "../../services/dropdownServices";
-import ConfirmDialog from "../../components/ConfirmDialog"; 
+import ConfirmDialog from "../../components/ConfirmDialog";
+import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent";
 
 const ActivitiesContainer = () => {
   const navigate = useNavigate();
@@ -25,8 +37,6 @@ const ActivitiesContainer = () => {
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
-  const [popupLoading, setPopupLoading] = useState(false);
-  const [popupError, setPopupError] = useState(null);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -131,46 +141,96 @@ const ActivitiesContainer = () => {
 
   const handleCreate = () => navigate("/activities/create");
 
-  // ---------------- NOTES / ATTACHMENTS ----------------
+  // ---------------- SELECTION ----------------
+  const handleSelectClick = (id) =>
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+    );
+
+  const handleSelectAllClick = (e) =>
+    setSelected(e.target.checked ? activities.map((a) => a.ActivityID) : []);
+
+  // ---------------- NOTES ----------------
   const handleAddNote = (activity) => {
     setSelectedActivity(activity);
     setNotesPopupOpen(true);
-    setPopupError(null);
-  };
-
-  const handleAddAttachment = (activity) => {
-    setSelectedActivity(activity);
-    setAttachmentsPopupOpen(true);
-    setPopupError(null);
   };
 
   const handleSaveNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.createNote(noteData);
+      const notePayload = {
+        EntityID: selectedActivity.ActivityID,
+        EntityType: "Activity",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to save note");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to save note");
     }
   };
 
-  const handleUploadAttachment = async (attachments) => {
+  const handleEditNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      for (const attachment of attachments) {
-        await attachmentService.uploadAttachment(attachment);
-      }
-      setSuccessMessage(`${attachments.length} attachment(s) uploaded successfully!`);
+      await updateNote(noteData.NoteID, noteData);
+      setSuccessMessage("Note updated successfully!");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      setError(err.message || "Failed to update note");
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await deleteNote(noteId);
+      setSuccessMessage("Note deleted successfully!");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      setError(err.message || "Failed to delete note");
+    }
+  };
+
+  // ---------------- ATTACHMENTS ----------------
+  const handleAddAttachment = (activity) => {
+    setSelectedActivity(activity);
+    setAttachmentsPopupOpen(true);
+  };
+
+  const handleUploadAttachment = async (files) => {
+    try {
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedActivity.ActivityID,
+          entityTypeName: "Activity"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
       setAttachmentsPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to upload attachments");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to upload attachments");
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    try {
+      await deleteAttachment(attachmentId);
+      setSuccessMessage("Attachment deleted successfully!");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      setError(err.message || "Failed to delete attachment");
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      await downloadAttachment(attachment);
+    } catch (err) {
+      setError(err.message || "Failed to download attachment");
     }
   };
 
@@ -189,29 +249,14 @@ const ActivitiesContainer = () => {
         successMessage={successMessage}
         setSuccessMessage={setSuccessMessage}
         selected={selected}
-        onSelectClick={(id) =>
-          setSelected((prev) =>
-            prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
-          )
-        }
-        onSelectAllClick={(e) =>
-          setSelected(e.target.checked ? activities.map((a) => a.ActivityID) : [])
-        }
-        onDeactivate={handleDeactivateClick} // ✅ use dialog
+        onSelectClick={handleSelectClick}
+        onSelectAllClick={handleSelectAllClick}
+        onDeactivate={handleDeactivateClick}
         onEdit={handleEdit}
         onView={handleView}
         onCreate={handleCreate}
         onAddNote={handleAddNote}
         onAddAttachment={handleAddAttachment}
-        notesPopupOpen={notesPopupOpen}
-        setNotesPopupOpen={setNotesPopupOpen}
-        attachmentsPopupOpen={attachmentsPopupOpen}
-        setAttachmentsPopupOpen={setAttachmentsPopupOpen}
-        selectedActivity={selectedActivity}
-        popupLoading={popupLoading}
-        popupError={popupError}
-        handleSaveNote={handleSaveNote}
-        handleUploadAttachment={handleUploadAttachment}
         searchTerm={searchTerm}
         statusFilter={statusFilter}
         priorityFilter={priorityFilter}
@@ -220,6 +265,31 @@ const ActivitiesContainer = () => {
         setPriorityFilter={setPriorityFilter}
         clearFilters={clearFilters}
         totalCount={activities.length}
+      />
+
+      {/* Notes Popup */}
+      <NotesPopup
+        open={notesPopupOpen}
+        onClose={() => setNotesPopupOpen(false)}
+        onSave={handleSaveNote}
+        onEdit={handleEditNote}
+        onDelete={handleDeleteNote}
+        entityType="Activity"
+        entityId={selectedActivity?.ActivityID}
+        entityName={selectedActivity?.ActivityType}
+        showExistingNotes={true}
+      />
+
+      {/* Attachments Popup */}
+      <AttachmentsPopup
+        open={attachmentsPopupOpen}
+        onClose={() => setAttachmentsPopupOpen(false)}
+        entityType="Activity"
+        entityId={selectedActivity?.ActivityID}
+        entityName={selectedActivity?.ActivityType}
+        onUpload={handleUploadAttachment}
+        onDelete={handleDeleteAttachment}
+        onDownload={handleDownloadAttachment}
       />
 
       {/* Confirm delete dialog */}

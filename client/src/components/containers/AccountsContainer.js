@@ -8,9 +8,21 @@ import {
   deactivateAccount,
 } from "../../services/accountService";
 import { claimAccount, assignUser } from "../../services/assignService";
-import { noteService } from "../../services/noteService";
-import { attachmentService } from "../../services/attachmentService";
-import ConfirmDialog from "../../components/ConfirmDialog"; 
+import { 
+  createNote, 
+  updateNote, 
+  deleteNote, 
+  getNotesByEntity 
+} from "../../services/noteService";
+import { 
+  uploadAttachment, 
+  getAttachmentsByEntity, 
+  deleteAttachment, 
+  downloadAttachment 
+} from "../../services/attachmentService";
+import ConfirmDialog from "../../components/ConfirmDialog";
+import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent";
 
 const AccountsContainer = () => {
   const navigate = useNavigate();
@@ -30,8 +42,6 @@ const AccountsContainer = () => {
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
-  const [popupLoading, setPopupLoading] = useState(false);
-  const [popupError, setPopupError] = useState(null);
 
   // Delete confirm dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -158,46 +168,41 @@ const AccountsContainer = () => {
   const handleAddNote = (account) => {
     setSelectedAccount(account);
     setNotesPopupOpen(true);
-    setPopupError(null);
   };
 
   const handleSaveNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.createNote(noteData);
+      const notePayload = {
+        EntityID: selectedAccount.AccountID,
+        EntityType: "Account",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag((flag) => !flag);
     } catch (err) {
-      setPopupError(err.message || "Failed to save note");
-    } finally {
-      setPopupLoading(false);
-    }
-  };
-
-  const handleDeleteNote = async (noteId) => {
-    try {
-      setPopupLoading(true);
-      await noteService.deleteNote(noteId);
-      setSuccessMessage("Note deleted successfully!");
-      setRefreshFlag((flag) => !flag);
-    } catch (err) {
-      setPopupError(err.message || "Failed to delete note");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to save note");
     }
   };
 
   const handleEditNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.updateNote(noteData.NoteID, noteData);
+      await updateNote(noteData.NoteID, noteData);
       setSuccessMessage("Note updated successfully!");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
-      setPopupError(err.message || "Failed to update note");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to update note");
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await deleteNote(noteId);
+      setSuccessMessage("Note deleted successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to delete note");
     }
   };
 
@@ -205,41 +210,41 @@ const AccountsContainer = () => {
   const handleAddAttachment = (account) => {
     setSelectedAccount(account);
     setAttachmentsPopupOpen(true);
-    setPopupError(null);
   };
 
-  const handleUploadAttachment = async (attachments) => {
+  const handleUploadAttachment = async (files) => {
     try {
-      setPopupLoading(true);
-      for (const att of attachments) await attachmentService.uploadAttachment(att);
-      setSuccessMessage(`${attachments.length} attachment(s) uploaded successfully!`);
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedAccount.AccountID,
+          entityTypeName: "Account"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
       setAttachmentsPopupOpen(false);
       setRefreshFlag((flag) => !flag);
     } catch (err) {
-      setPopupError(err.message || "Failed to upload attachments");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to upload attachments");
     }
   };
 
   const handleDeleteAttachment = async (attachmentId) => {
     try {
-      setPopupLoading(true);
-      await attachmentService.deleteAttachment(attachmentId);
+      await deleteAttachment(attachmentId);
       setSuccessMessage("Attachment deleted successfully!");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
-      setPopupError(err.message || "Failed to delete attachment");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to delete attachment");
     }
   };
 
   const handleDownloadAttachment = async (attachment) => {
     try {
-      await attachmentService.downloadAttachment(attachment);
+      await downloadAttachment(attachment);
     } catch (err) {
-      setPopupError(err.message || "Failed to download attachment");
+      setError(err.message || "Failed to download attachment");
     }
   };
 
@@ -265,19 +270,31 @@ const AccountsContainer = () => {
         onAddAttachment={handleAddAttachment}
         onClaimAccount={handleClaimAccount}
         onAssignUser={handleAssignUser}
-        notesPopupOpen={notesPopupOpen}
-        setNotesPopupOpen={setNotesPopupOpen}
-        attachmentsPopupOpen={attachmentsPopupOpen}
-        setAttachmentsPopupOpen={setAttachmentsPopupOpen}
-        selectedAccount={selectedAccount}
-        popupLoading={popupLoading}
-        popupError={popupError}
-        handleSaveNote={handleSaveNote}
-        handleDeleteNote={handleDeleteNote}
-        handleEditNote={handleEditNote}
-        handleUploadAttachment={handleUploadAttachment}
-        handleDeleteAttachment={handleDeleteAttachment}
-        handleDownloadAttachment={handleDownloadAttachment}
+      />
+
+      {/* Notes Popup */}
+      <NotesPopup
+        open={notesPopupOpen}
+        onClose={() => setNotesPopupOpen(false)}
+        onSave={handleSaveNote}
+        onEdit={handleEditNote}
+        onDelete={handleDeleteNote}
+        entityType="Account"
+        entityId={selectedAccount?.AccountID}
+        entityName={selectedAccount?.AccountName}
+        showExistingNotes={true}
+      />
+
+      {/* Attachments Popup */}
+      <AttachmentsPopup
+        open={attachmentsPopupOpen}
+        onClose={() => setAttachmentsPopupOpen(false)}
+        entityType="Account"
+        entityId={selectedAccount?.AccountID}
+        entityName={selectedAccount?.AccountName}
+        onUpload={handleUploadAttachment}
+        onDelete={handleDeleteAttachment}
+        onDownload={handleDownloadAttachment}
       />
 
       {/* Confirm delete dialog */}

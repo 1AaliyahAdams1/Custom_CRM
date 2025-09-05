@@ -2,47 +2,34 @@ import api from '../utils/api';
 
 const RESOURCE = '/currencies';
 
-export async function getAllCurrencies(onlyActive = true) {
+// Get all currencies
+export async function getAllCurrencies() {
   try {
-    console.log('Calling getAllCurrencies with onlyActive:', onlyActive);
-    const response = await api.get(RESOURCE, { params: { onlyActive } });
-    console.log('getAllCurrencies response:', response);
+    const response = await api.get(RESOURCE);
     return response.data;
   } catch (error) {
-    console.error('Error fetching currencies:', error);
+    console.error('Error fetching all currencies:', error);
     throw error;
   }
 }
 
-export async function getCurrencyDetails(currencyId) {
+// Get currency by ID
+export async function getCurrencyById(id) {
+  if (!id) throw new Error('Currency ID is required');
   try {
-    console.log('Calling getCurrencyDetails with ID:', currencyId);
-    const response = await api.get(`${RESOURCE}/${currencyId}`);
-    console.log('getCurrencyDetails response:', response);
-    return response;
-  } catch (error) {
-    console.error(`Error fetching currency ${currencyId}:`, error);
-    throw error;
-  }
-}
-
-export async function searchCurrencies(searchTerm) {
-  try {
-    console.log('Calling searchCurrencies with searchTerm:', searchTerm);
-    const response = await api.get(`${RESOURCE}/search`, { params: { q: searchTerm } });
-    console.log('searchCurrencies response:', response);
+    const response = await api.get(`${RESOURCE}/${id}`);
     return response.data;
   } catch (error) {
-    console.error(`Error searching currencies with term ${searchTerm}:`, error);
+    console.error(`Error fetching currency ${id}:`, error);
     throw error;
   }
 }
 
-export async function createCurrency(currencyData) {
+// Create a new currency
+export async function createCurrency(data) {
+  if (!data.Symbol || !data.ISOcode) throw new Error('Symbol and ISOcode are required');
   try {
-    console.log('Calling createCurrency with data:', currencyData);
-    const response = await api.post(RESOURCE, currencyData);
-    console.log('createCurrency response:', response);
+    const response = await api.post(RESOURCE, data);
     return response.data;
   } catch (error) {
     console.error('Error creating currency:', error);
@@ -50,26 +37,50 @@ export async function createCurrency(currencyData) {
   }
 }
 
-export async function updateCurrency(currencyId, currencyData) {
+// Update currency
+export async function updateCurrency(id, data) {
+  if (!id) throw new Error('Currency ID is required');
   try {
-    console.log('Calling updateCurrency with ID:', currencyId, 'data:', currencyData);
-    const response = await api.put(`${RESOURCE}/${currencyId}`, currencyData);
-    console.log('updateCurrency response:', response);
+    const response = await api.put(`${RESOURCE}/${id}`, data);
     return response.data;
   } catch (error) {
-    console.error(`Error updating currency ${currencyId}:`, error);
+    console.error(`Error updating currency ${id}:`, error);
     throw error;
   }
 }
 
-export async function getActiveCurrencies() {
+// Deactivate currency
+export async function deactivateCurrency(id) {
+  if (!id) throw new Error('Currency ID is required');
   try {
-    console.log('Calling getActiveCurrencies');
-    const response = await api.get(`${RESOURCE}/active`);
-    console.log('getActiveCurrencies response:', response);
+    const response = await api.patch(`${RESOURCE}/${id}/deactivate`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching active currencies:', error);
+    console.error(`Error deactivating currency ${id}:`, error);
+    throw error;
+  }
+}
+
+// Reactivate currency
+export async function reactivateCurrency(id) {
+  if (!id) throw new Error('Currency ID is required');
+  try {
+    const response = await api.patch(`${RESOURCE}/${id}/reactivate`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error reactivating currency ${id}:`, error);
+    throw error;
+  }
+}
+
+// Hard delete currency
+export async function deleteCurrency(id) {
+  if (!id) throw new Error('Currency ID is required');
+  try {
+    const response = await api.delete(`${RESOURCE}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting currency ${id}:`, error);
     throw error;
   }
 }

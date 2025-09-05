@@ -6,7 +6,21 @@ import {
   fetchDealsByUser,
   deactivateDeal,
 } from "../../services/dealService";
+import { 
+  createNote, 
+  updateNote, 
+  deleteNote, 
+  getNotesByEntity 
+} from "../../services/noteService";
+import { 
+  uploadAttachment, 
+  getAttachmentsByEntity, 
+  deleteAttachment, 
+  downloadAttachment 
+} from "../../services/attachmentService";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent";
 
 const DealsContainer = () => {
   const navigate = useNavigate();
@@ -19,6 +33,11 @@ const DealsContainer = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [refreshFlag, setRefreshFlag] = useState(false);
+
+  // Popups
+  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
+  const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
+  const [selectedDeal, setSelectedDeal] = useState(null);
 
   // Delete confirm dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -125,10 +144,89 @@ const DealsContainer = () => {
 
   const handleOpenCreate = () => navigate("/deals/create");
 
-  const handleAddNote = (deal) => navigate(`/deals/${deal.DealID}/notes`);
+  // ---------------- NOTES ----------------
+  const handleAddNote = (deal) => {
+    setSelectedDeal(deal);
+    setNotesPopupOpen(true);
+  };
 
-  const handleAddAttachment = (deal) =>
-    navigate(`/deals/${deal.DealID}/attachments`);
+  const handleSaveNote = async (noteData) => {
+    try {
+      const notePayload = {
+        EntityID: selectedDeal.DealID,
+        EntityType: "Deal",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
+      setSuccessMessage("Note added successfully!");
+      setNotesPopupOpen(false);
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to save note");
+    }
+  };
+
+  const handleEditNote = async (noteData) => {
+    try {
+      await updateNote(noteData.NoteID, noteData);
+      setSuccessMessage("Note updated successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to update note");
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await deleteNote(noteId);
+      setSuccessMessage("Note deleted successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to delete note");
+    }
+  };
+
+  // ---------------- ATTACHMENTS ----------------
+  const handleAddAttachment = (deal) => {
+    setSelectedDeal(deal);
+    setAttachmentsPopupOpen(true);
+  };
+
+  const handleUploadAttachment = async (files) => {
+    try {
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedDeal.DealID,
+          entityTypeName: "Deal"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
+      setAttachmentsPopupOpen(false);
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to upload attachments");
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    try {
+      await deleteAttachment(attachmentId);
+      setSuccessMessage("Attachment deleted successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to delete attachment");
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      await downloadAttachment(attachment);
+    } catch (err) {
+      setError(err.message || "Failed to download attachment");
+    }
+  };
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -160,12 +258,37 @@ const DealsContainer = () => {
         totalCount={deals.length}
       />
 
-      {/*Confirm deactivate dialog */}
+      {/* Notes Popup */}
+      <NotesPopup
+        open={notesPopupOpen}
+        onClose={() => setNotesPopupOpen(false)}
+        onSave={handleSaveNote}
+        onEdit={handleEditNote}
+        onDelete={handleDeleteNote}
+        entityType="Deal"
+        entityId={selectedDeal?.DealID}
+        entityName={selectedDeal?.DealName}
+        showExistingNotes={true}
+      />
+
+      {/* Attachments Popup */}
+      <AttachmentsPopup
+        open={attachmentsPopupOpen}
+        onClose={() => setAttachmentsPopupOpen(false)}
+        entityType="Deal"
+        entityId={selectedDeal?.DealID}
+        entityName={selectedDeal?.DealName}
+        onUpload={handleUploadAttachment}
+        onDelete={handleDeleteAttachment}
+        onDownload={handleDownloadAttachment}
+      />
+
+      {/* Confirm deactivate dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Deactivate Deal"
         description={`Are you sure you want to deactivate this deal${
-          dealToDelete?.DealName ? ` (“${dealToDelete.DealName}”)` : ""
+          dealToDelete?.DealName ? ` ("${dealToDelete.DealName}")` : ""
         }?`}
         onConfirm={confirmDeactivate}
         onCancel={() => setDeleteDialogOpen(false)}

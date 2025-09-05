@@ -31,97 +31,117 @@ import {
   Flag as FlagIcon,
   Settings as SettingsApplicationsIcon,
 } from "@mui/icons-material";
-import LocationCityIcon from '@mui/icons-material/LocationCity';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { useAuth } from "../hooks/auth/useAuth";
 import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
 
+
 // Navigation items configuration using centralized route access
 const navigation = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: DashboardIcon,
-    accessKey: "dashboard",
-  },
+  // {
+  //   name: "Dashboard",
+  //   href: "/dashboard",
+  //   icon: DashboardIcon,
+  //   accessKey: "dashboard",
+  //   section: "Main",
+  // },
   {
     name: "Accounts",
     href: "/accounts",
     icon: BusinessIcon,
     accessKey: "accounts",
+    section: "CRM Management",
   },
   {
     name: "Contacts",
     href: "/contacts",
     icon: PeopleIcon,
     accessKey: "contacts",
+    section: "CRM Management",
   },
   {
     name: "Deals",
     href: "/deals",
     icon: HandshakeIcon,
     accessKey: "deals",
+    section: "CRM Management",
   },
   {
     name: "Activities",
     href: "/activities",
     icon: EventIcon,
     accessKey: "activities",
+    section: "CRM Management",
   },
   {
     name: "Products",
     href: "/products",
     icon: InventoryIcon,
     accessKey: "products",
+    section: "CRM Management",
   },
-  {
-    name: "Work Page",
-    href: "/smart-work",
-    icon: WorkspacesOutlineIcon,
-    accessKey: "smartWork",
-  },
+  // {
+  //   name: "Work Page",
+  //   href: "/smart-work",
+  //   icon: WorkspacesOutlineIcon,
+  //   accessKey: "smartWork",
+  //   section: "CRM Management",
+  // },
   {
     name: "Reports",
     href: "/reports",
     icon: BarChartIcon,
     accessKey: "reports",
+    section: "Analysis & Reports",
   },
   {
     name: "Geographic Data",
     href: "/countries",
     icon: FlagIcon,
-    accessKey: 'country',
+    accessKey: "country",
+    section: "Misc",
   },
   {
     name: "Industry",
-    href: "/industry",
+    href: "/industries",
     icon: BusinessIcon,
-    accessKey: 'industry',
+    accessKey: "industry",
+    section: "Misc",
   },
-  {
-    name: "Role Management",
-    href: "/rolemanagement",
-    icon: AdminPanelSettingsIcon,
-    accessKey: 'roles',
-  },
+  // {
+  //   name: "Role Management",
+  //   href: "/rolemanagement",
+  //   icon: AdminPanelSettingsIcon,
+  //   accessKey: "roles",
+  //   section: "Admin",
+  // },
   {
     name: "Priority Levels",
     href: "/priority-levels",
     icon: PriorityHighIcon,
-    accessKey: 'priority',
+    accessKey: "priority",
+    section: "Misc",
   },
-  // {
-  //   name: "Settings",
-  //   href: "/settings",
-  //   icon: SettingsApplicationsIcon,
-  //   accessKey: 'settings',
-  // },
 ];
+
 
 const DRAWER_WIDTH_EXPANDED = 200;
 const DRAWER_WIDTH_COLLAPSED = 64;
 
 export function AppSidebar() {
+  // Get unique sections from navigation
+  const sections = [...new Set(navigation.map(item => item.section))];
+
+  // Track collapsed state per section
+  const [collapsedSections, setCollapsedSections] = useState({});
+
+  // Toggle section collapse
+  const toggleSection = (section) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -357,13 +377,61 @@ export function AppSidebar() {
           "&::-webkit-scrollbar-track": {
             backgroundColor: "transparent",
           },
-          scrollbarWidth: "thin", // Firefox
-          scrollbarColor: "rgba(255,255,255,0.2) transparent", // Firefox
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(255,255,255,0.2) transparent",
         }}
       >
-        <List sx={{ px: 0 }}>
-          {navigation.map((item) => renderNavigationItem(item))}
-        </List>
+        {sections.map(section => {
+          const isSectionCollapsed = collapsedSections[section];
+
+          return (
+            <Box key={section} sx={{ mb: 2 }}>
+              {/* Section header */}
+              {!isCollapsed && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    px: 2,
+                    pt: 1,
+                    pb: 0.5,
+                    cursor: "pointer",
+                    userSelect: "none",
+                  }}
+                  onClick={() => toggleSection(section)}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      color: alpha("#ffffff", 0.6),
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    {section}
+                  </Typography>
+                  <IconButton size="small" sx={{ color: alpha("#ffffff", 0.6) }}>
+                    {isSectionCollapsed ? <ChevronRight /> : <ChevronLeft />}
+                  </IconButton>
+                </Box>
+              )}
+
+              {/* Section items */}
+              {!isSectionCollapsed && (
+                <List sx={{ px: 0 }}>
+                  {navigation
+                    .filter(item => item.section === section)
+                    .map(item => renderNavigationItem(item))}
+                </List>
+              )}
+
+              {/* Optional divider between sections */}
+              {!isCollapsed && <Divider sx={{ mx: 1, borderColor: "#333333" }} />}
+            </Box>
+          );
+        })}
       </Box>
 
       {/* Footer */}

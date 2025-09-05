@@ -1,6 +1,6 @@
 import api from '../utils/api';
 
-const RESOURCE = '/states';  // Updated to use the correct endpoint
+const RESOURCE = '/states'; 
 
 export async function getAllStatesProvinces(onlyActive = true) {
   try {

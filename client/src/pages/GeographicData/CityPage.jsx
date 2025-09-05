@@ -119,7 +119,7 @@ const CityPage = ({
   const columns = [
     { field: 'CityName', headerName: 'City Name', type: 'tooltip', defaultVisible: true },
     { field: 'StateProvince_Name', headerName: 'State/Province', defaultVisible: true },
-    { field: 'EntertainmentCity_Name', headerName: 'Entertainment City', defaultVisible: true },
+    //{ field: 'EntertainmentCity_Name', headerName: 'Entertainment City', defaultVisible: true },
     {
       field: 'Active',
       headerName: 'Status',
