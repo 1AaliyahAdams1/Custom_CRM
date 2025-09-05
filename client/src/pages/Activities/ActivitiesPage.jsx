@@ -72,46 +72,11 @@ const activitiesTableConfig = {
     { field: "DueToStart", headerName: "Due To Start", type: "date" },
     { field: "DueToEnd", headerName: "Due To End", type: "date" },
     {
-      field: "Status",
-      headerName: "Status",
-      type: "custom", // Custom type for our new status formatter
-    },
-    {
-      field: "CreatedAt",
-      headerName: "Created",
-      type: "dateTime",
-    },
-    {
-      field: "UpdatedAt",
-      headerName: "Updated",
-      type: "date",
+      field: "Completed",
+      headerName: "Completed",
+      type: "boolean",
     },
   ],
-};
-
-// Enhanced formatters object that includes the status formatter and data migration
-const enhancedFormatters = {
-  ...formatters,
-  Status: (value, row) => {
-    // Handle migration from old Completed boolean to new Status field
-    let statusValue = value;
-    if (!statusValue && typeof row.Completed === 'boolean') {
-      statusValue = row.Completed ? 'complete' : 'incomplete';
-    }
-    
-    const config = statusConfig[statusValue] || { label: statusValue || "Unknown", color: "#9e9e9e" };
-    return (
-      <Chip
-        label={config.label}
-        size="small"
-        sx={{
-          backgroundColor: config.color,
-          color: "#fff",
-          fontWeight: 500,
-        }}
-      />
-    );
-  },
 };
 
 const ActivitiesPage = ({
@@ -120,20 +85,13 @@ const ActivitiesPage = ({
   loading = false,
   error,
   successMessage,
-  searchTerm,
-  statusFilter,
-  priorityFilter,
   setSuccessMessage,
-  setSearchTerm,
-  setStatusFilter,
-  setPriorityFilter,
   onDeactivate,
   onEdit,
   onView,
   onCreate,
   onAddNote,
   onAddAttachment,
-  clearFilters,
   totalCount,
   
   // Activity Types props (pass through to ActivityTypePage)
@@ -149,11 +107,11 @@ const ActivitiesPage = ({
       label: 'Activities',
       component: 'activities'
     },
-    {
-      id: 'activity-types',
-      label: 'Activity Types', 
-      component: 'activityTypes'
-    },
+    // {
+    //   id: 'activity-types',
+    //   label: 'Activity Types', 
+    //   component: 'activityTypes'
+    // },
     // Add more tabs here as needed:
     // {
     //   id: 'reports',

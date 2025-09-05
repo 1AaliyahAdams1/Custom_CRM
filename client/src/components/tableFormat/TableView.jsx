@@ -102,20 +102,9 @@ const TableView = ({
     return tooltips?.actions || `Available actions for this ${entityType || 'record'}`;
   };
 
-  // Use custom filtered data if available, otherwise apply standard filtering
-  const getFilteredData = () => {
-    let baseData = data;
-    
-    // If we have custom filtered data from FiltersDialog, use it as the base
-    if (customFilteredData && Object.keys(filters).length > 0) {
-      baseData = customFilteredData;
-    }
-    
-    // Apply search term filtering on top of any existing filters
-    if (!searchTerm) return baseData;
-    
-    return baseData.filter((item) => {
-      return columns.some((c) => {
+  const filteredData = data.filter((item) => {
+    if (searchTerm) {
+      const found = columns.some((c) => {
         const val = item[c.field];
         return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
       });

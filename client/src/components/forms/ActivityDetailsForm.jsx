@@ -1,23 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { 
-  Box, 
-  Alert, 
-  Typography, 
-  Chip, 
-  Menu, 
-  MenuItem,
-  ListItemIcon,
-  ListItemText
-} from "@mui/material";
-import { 
-  CheckCircle, 
-  Cancel, 
-  HourglassEmpty, 
-  Schedule 
-} from "@mui/icons-material";
+import { Box, Alert, Typography } from "@mui/material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
-import { fetchActivityById, updateActivity } from "../../services/activityService";
+import { fetchActivityById, updateActivity, deactivateActivity } from "../../services/activityService";
 import { priorityLevelService, activityTypeService } from '../../services/dropdownServices';
 
 // Status options configuration with icons
@@ -49,74 +34,14 @@ const statusOptions = [
 ];
 
 const activityMainFields = [
-  { 
-    key: "TypeID", 
-    label: "Activity Type", 
-    required: true, 
-    type: "dropdown", 
-    service: activityTypeService, 
-    displayField: "TypeName", 
-    valueField: "TypeID", 
-    width: { xs: 12, md: 6 } 
-  },
-  { 
-    key: "AccountName", 
-    label: "Account", 
-    type: "text", 
-    disabled: true, 
-    width: { xs: 12, md: 6 } 
-  },
-  { 
-    key: "Description", 
-    label: "Description", 
-    type: "textarea", 
-    rows: 4,
-    placeholder: "Enter detailed description of the activity...",
-    width: { xs: 12 } 
-  },
-  { 
-    key: "PriorityLevelID", 
-    label: "Priority", 
-    type: "dropdown", 
-    service: priorityLevelService, 
-    displayField: "PriorityLevelName", 
-    valueField: "PriorityLevelID", 
-    width: { xs: 12, md: 6 } 
-  },
-  { 
-    key: "Status", 
-    label: "Status", 
-    type: "select", 
-    options: statusOptions,
-    required: true,
-    width: { xs: 12, md: 6 } 
-  },
-  { 
-    key: "DueToStart", 
-    label: "Due To Start", 
-    type: "date", 
-    width: { xs: 12, md: 6 } 
-  },
-  { 
-    key: "DueToEnd", 
-    label: "Due To End", 
-    type: "date", 
-    width: { xs: 12, md: 6 } 
-  },
-  { 
-    key: "CreatedAt", 
-    label: "Created", 
-    type: "datetime", 
-    disabled: true, 
-    width: { xs: 12, md: 6 } 
-  },
-  { 
-    key: "UpdatedAt", 
-    label: "Updated", 
-    type: "datetime", 
-    disabled: true, 
-    width: { xs: 12, md: 6 } 
-  },
+  { key: "TypeID", label: "Activity Type", required: true, type: "dropdown", service: activityTypeService, displayField: "TypeName", valueField: "TypeID", width: { xs: 12, md: 6 } },
+  { key: "AccountName", label: "Account", type: "text", disabled: true, width: { xs: 12, md: 6 } },
+  { key: "PriorityLevelID", label: "Priority", type: "dropdown", service: priorityLevelService, displayField: "PriorityLevelName", valueField: "PriorityLevelID", width: { xs: 12, md: 6 } },
+  { key: "DueToStart", label: "Due To Start", type: "date", width: { xs: 12, md: 6 } },
+  { key: "DueToEnd", label: "Due To End", type: "date", width: { xs: 12, md: 6 } },
+  { key: "Completed", label: "Completed", type: "boolean", width: { xs: 12, md: 6 } },
+  { key: "CreatedAt", label: "Created", type: "datetime", disabled: true, width: { xs: 12, md: 6 } },
+  { key: "UpdatedAt", label: "Updated", type: "datetime", disabled: true, width: { xs: 12, md: 6 } },
 ];
 
 export default function ActivityDetailsForm({ 
@@ -135,36 +60,34 @@ export default function ActivityDetailsForm({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
-  const [statusMenuAnchor, setStatusMenuAnchor] = useState(null);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const refreshActivity = useCallback(async () => {
-    if (!currentActivityId) {
-      setError("No activity ID provided in the route.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const data = await fetchActivityById(parseInt(currentActivityId, 10));
-      console.log("Debug: fetchActivityById response:", data);
-      
-      // Handle data migration from old boolean Completed to new Status field
-      let activityData = data?.data || data;
-      if (activityData && !activityData.Status && typeof activityData.Completed === 'boolean') {
-        // Migrate old boolean completed field to new status
-        activityData.Status = activityData.Completed ? 'complete' : 'incomplete';
+  useEffect(() => {
+    const loadActivity = async () => {
+      if (!id) {
+        setError("No activity ID provided in the route.");
+        setLoading(false);
+        return;
       }
-      
-      setActivity(activityData);
-    } catch (err) {
-      console.error("Error loading activity:", err);
-      setError("Failed to load activity details");
-    } finally {
-      setLoading(false);
-    }
-  }, [currentActivityId]);
+
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchActivityById(id);
+        console.log("Debug: fetchActivityById response:", data);
+        
+        const activityData = data?.data || data;
+        if (!activityData) {
+          throw new Error("Activity not found");
+        }
+        
+        setActivity(activityData);
+      } catch (err) {
+        console.error("Error loading activity:", err);
+        setError(err.message || "Failed to load activity details");
+      } finally {
+        setLoading(false);
+      }
+    };
 
   useEffect(() => {
     refreshActivity();
@@ -173,27 +96,34 @@ export default function ActivityDetailsForm({
   const handleSave = async (formData) => {
     try {
       console.log("Debug: Saving activity:", formData);
+      setError(null);
       
-      // Ensure we have required fields
-      if (!formData.Status) {
-        formData.Status = 'incomplete'; // Default status
-      }
+      // Optimistic UI update
+      setActivity(formData);
       
-      setActivity(formData); // optimistic UI update
-      await updateActivity(formData.ActivityID, formData);
+      const activityId = formData.ActivityID || id;
+      await updateActivity(activityId, formData);
+      setSuccessMessage("Activity updated successfully!");
       
-      const message = "Activity updated successfully!";
-      setSuccessMessage(message);
-      
-      // Call parent callback if provided
-      if (onSuccessMessage) onSuccessMessage(message);
-      if (onActivityUpdate) onActivityUpdate();
-      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
       console.error("Error saving activity:", err);
-      const errorMessage = "Failed to save activity.";
-      setError(errorMessage);
-      if (onError) onError(errorMessage);
+      setError(err.message || "Failed to save activity.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this activity?")) return;
+    
+    try {
+      setError(null);
+      await deactivateActivity(id);
+      setSuccessMessage("Activity deleted successfully!");
+      setTimeout(() => navigate("/activities"), 1500);
+    } catch (err) {
+      console.error("Error deleting activity:", err);
+      setError(err.message || "Failed to delete activity.");
     }
   };
 
@@ -247,44 +177,26 @@ export default function ActivityDetailsForm({
   const getActivityDisplayName = (a) =>
     a.TypeName ? `${a.TypeName} Activity` : `Activity #${a.ActivityID}`;
 
-  // Status configuration for display
-  const getStatusConfig = (status) => {
-    return statusOptions.find(option => option.value === status) || {
-      value: "incomplete",
-      label: "Incomplete", 
-      color: "#9e9e9e",
-      icon: Cancel
+  const headerChips = [
+    {
+      label: activity.Completed ? "Completed" : "Pending",
+      color: activity.Completed ? "#10b981" : "#f59e0b",
+      textColor: "#fff",
+    },
+  ];
+
+  if (activity.PriorityLevelName) {
+    const priorityColors = {
+      'High': '#ef4444',
+      'Medium': '#f59e0b', 
+      'Low': '#10b981'
     };
-  };
-
-  // Create clickable status chip
-  const createClickableStatusChip = (currentStatus) => {
-    const config = getStatusConfig(currentStatus);
-    const IconComponent = config.icon;
-    
-    return (
-      <Chip
-        icon={<IconComponent sx={{ fontSize: 16 }} />}
-        label={config.label}
-        onClick={handleStatusClick}
-        sx={{
-          backgroundColor: config.color,
-          color: "#fff",
-          fontWeight: 500,
-          cursor: "pointer",
-          "&:hover": {
-            backgroundColor: config.color,
-            opacity: 0.8,
-            transform: "scale(1.02)",
-          },
-          transition: "all 0.2s ease-in-out",
-        }}
-      />
-    );
-  };
-
-  // Create header chips with clickable status
-  const headerChips = [createClickableStatusChip(activity.Status)];
+    headerChips.push({
+      label: activity.PriorityLevelName,
+      color: priorityColors[activity.PriorityLevelName] || '#6b7280',
+      textColor: '#fff'
+    });
+  }
 
   return (
     <Box>
@@ -301,6 +213,7 @@ export default function ActivityDetailsForm({
         mainFields={activityMainFields}
         onBack={handleBack}
         onSave={handleSave}
+        onDelete={handleDelete}
         entityType="activity"
         headerChips={headerChips}
       />

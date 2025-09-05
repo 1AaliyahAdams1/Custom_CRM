@@ -1,7 +1,7 @@
 const dealRepo = require("../data/dealRepository");
 
-async function getAllDeals(onlyActive) {
-  return await dealRepo.getAllDeals(onlyActive = true);
+async function getAllDeals() {
+  return await dealRepo.getAllDeals();
 }
 
 async function getDealById(id) {

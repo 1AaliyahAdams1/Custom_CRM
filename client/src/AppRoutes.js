@@ -9,12 +9,11 @@ import { ROUTE_ACCESS } from "./utils/auth/routesAccess";
 import Unauthorized from "./pages/Unauthorized";
 
 // Lazy load pages
-// const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Accounts = lazy(() => import("./components/containers/AccountsContainer"));
 const Contacts = lazy(() => import("./components/containers/ContactsContainer"));
 const Deals = lazy(() => import("./components/containers/DealsContainer"));
 const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
-
 
 const ProductsContainer = lazy(() => import("./components/containers/ProductsContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
@@ -24,8 +23,8 @@ const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
 const CityPage = lazy(() => import("./pages/GeographicData/CityPage"));
 const StateProvincePage = lazy(() => import("./pages/GeographicData/StateProvincePage"));
-const IndustryPage = lazy(() => import("./pages/Industry/IndustryPage"));
-const PriorityLevelsPage = lazy(() => import("./pages/PriorityLevelsPage"));
+const IndustryContainer = lazy(() => import("./components/containers/IndustryContainer"));
+const PriorityLevelContainer = lazy(() => import("./components/containers/PriorityLevelContainer"));
 const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
 const DealStagePage = lazy(() => import("./pages/Deals/DealStagePage"));
 
@@ -39,8 +38,6 @@ const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPag
 const CreateDealPage = lazy(() => import("./pages/Deals/CreateDealPage"));
 const CreateActivitiesPage = lazy(() => import("./pages/Activities/CreateActivitiesPage"));
 const CreateProduct = lazy(() => import("./pages/Products/CreateProductPage"));
-
-
 
 const EditAccountPage = lazy(() => import("./pages/Accounts/EditAccountPage"));
 const EditContactPage = lazy(() => import("./pages/Contacts/EditContactPage"));
@@ -61,7 +58,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* Protected routes with dynamic allowedRoles from ROUTE_ACCESS
+      {/* Protected routes with dynamic allowedRoles from ROUTE_ACCESS */}
       <Route
         path="/dashboard"
         element={
@@ -69,7 +66,7 @@ const AppRoutes = () => {
             <Dashboard />
           </PrivateRoute>
         }
-      /> */}
+      />
 
       {/* --- Accounts Routes --- */}
       <Route
@@ -224,7 +221,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/activity-types"    
+        path="/activity-types"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.activityTypes}>
             <ActivityTypePage />
@@ -244,44 +241,58 @@ const AppRoutes = () => {
         path="/products/create"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.productsCreate}>
-              <CreateProduct />
+            <CreateProduct />
           </PrivateRoute>
         }
       />
-      {/* --- Country Routes --- */}
+
+      {/* --- Geography Routes (Updated) --- */}
+      {/* Main geography route - shows countries by default */}
       <Route
-        path="/country"
+        path="/countries"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.country}>
             <CountryContainer />
           </PrivateRoute>
         }
       />
-      
-      {/* --- City Routes --- */}
+
+      {/* Geography sub-routes - all use the same container but with different tabs */}
       <Route
-        path="/city"
+        path="/countries/states"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.states}>
+            <CountryContainer />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/countries/cities"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.city}>
-            <CityPage />
+            <CountryContainer />
           </PrivateRoute>
         }
       />
-      {/* --- State/Province Routes --- */}
+
+      {/* Legacy routes - redirect to new structure */}
       <Route
-        path="/state-province"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.stateProvince}>
-            <StateProvincePage />
-          </PrivateRoute>
-        }
+        path="/cities"
+        element={<Navigate to="/countries/cities" replace />}
       />
+
+      <Route
+        path="/states"
+        element={<Navigate to="/countries/states" replace />}
+      />
+
       {/* --- Industry Routes --- */}
       <Route
-        path="/industry"
+        path="/industries"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.industry}>
-            <IndustryPage />
+            <IndustryContainer />
           </PrivateRoute>
         }
       />
@@ -304,7 +315,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      
+
       {/* --- Role Management Route --- */}
 
       <Route
@@ -315,12 +326,11 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      {/* --- Priority Levels Route --- */}
       <Route
         path="/priority-levels"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.priority}>
-            <PriorityLevelsPage />
+            <PriorityLevelContainer />
           </PrivateRoute>
         }
       />

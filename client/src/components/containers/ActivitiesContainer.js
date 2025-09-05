@@ -6,10 +6,23 @@ import {
   fetchActivitiesByUser,
   deactivateActivity,
 } from "../../services/activityService";
-import { noteService } from "../../services/noteService";
-import { attachmentService } from "../../services/attachmentService";
+import { 
+  createNote, 
+  updateNote, 
+  deleteNote, 
+  getNotesByEntity 
+} from "../../services/noteService";
+import { 
+  uploadAttachment, 
+  getAttachmentsByEntity, 
+  deleteAttachment, 
+  downloadAttachment 
+} from "../../services/attachmentService";
 import { getAllAccounts } from "../../services/accountService";
 import { activityTypeService, priorityLevelService } from "../../services/dropdownServices";
+import ConfirmDialog from "../../components/ConfirmDialog";
+import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent";
 
 const ActivitiesContainer = () => {
   const navigate = useNavigate();
@@ -24,8 +37,6 @@ const ActivitiesContainer = () => {
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
-  const [popupLoading, setPopupLoading] = useState(false);
-  const [popupError, setPopupError] = useState(null);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,6 +47,10 @@ const ActivitiesContainer = () => {
   const [accounts, setAccounts] = useState([]);
   const [activityTypes, setActivityTypes] = useState([]);
   const [priorityLevels, setPriorityLevels] = useState([]);
+
+  // Delete confirm dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState(null);
 
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
@@ -55,8 +70,7 @@ const ActivitiesContainer = () => {
       setAccounts(accountsData);
       setActivityTypes(activityTypesData);
       setPriorityLevels(priorityLevelsData);
-    } catch (err) {
-      console.error("Error fetching lookups:", err);
+    } catch {
       setError("Failed to load lookups.");
     }
   };
@@ -72,10 +86,8 @@ const ActivitiesContainer = () => {
       } else if (isSalesRep && userId) {
         activitiesData = await fetchActivitiesByUser(userId);
       }
-      console.log("Fetched activities:", activitiesData);
       setActivities(activitiesData || []);
-    } catch (err) {
-      console.error("Failed to load activities:", err);
+    } catch {
       setError("Failed to load activities. Please try again.");
     } finally {
       setLoading(false);
@@ -90,77 +102,135 @@ const ActivitiesContainer = () => {
   // ---------------- FILTERED ACTIVITIES ----------------
   const filteredActivities = useMemo(() => {
     return activities.filter((a) => {
-      // Enhanced search to include description
-      const matchesSearch = !searchTerm || 
-        a.AccountName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        a.ActivityType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.Description?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // Updated status filtering for new status options
-      const matchesStatus = !statusFilter || a.Status === statusFilter;
-      
-      const matchesPriority = !priorityFilter || a.PriorityLevelName === priorityFilter;
-      
+      const matchesSearch =
+        !searchTerm ||
+        a.AccountName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.ActivityType?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        !statusFilter || (statusFilter === "completed" ? a.Completed : !a.Completed);
+      const matchesPriority =
+        !priorityFilter || a.PriorityLevelName === priorityFilter;
       return matchesSearch && matchesStatus && matchesPriority;
     });
   }, [activities, searchTerm, statusFilter, priorityFilter]);
 
   // ---------------- HANDLERS ----------------
-  const handleDeactivate = async (id) => {
-    if (!window.confirm("Are you sure you want to deactivate this activity?")) return;
+  const handleDeactivateClick = (activity) => {
+    setActivityToDelete(activity);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeactivate = async () => {
+    if (!activityToDelete) return;
     try {
-      await deactivateActivity(id);
+      await deactivateActivity(activityToDelete.ActivityID);
       setSuccessMessage("Activity deleted successfully.");
       setRefreshFlag((f) => !f);
-    } catch (err) {
-      console.error("Failed to delete activity:", err);
+    } catch {
       setError("Failed to delete activity. Please try again.");
+    } finally {
+      setDeleteDialogOpen(false);
+      setActivityToDelete(null);
     }
   };
 
-  const handleEdit = (activity) => navigate(`/activities/edit/${activity.ActivityID}`, { state: { activity } });
+  const handleEdit = (activity) =>
+    navigate(`/activities/edit/${activity.ActivityID}`, { state: { activity } });
+
   const handleView = (activity) => navigate(`/activities/${activity.ActivityID}`);
+
   const handleCreate = () => navigate("/activities/create");
 
-  // ---------------- NOTES / ATTACHMENTS ----------------
+  // ---------------- SELECTION ----------------
+  const handleSelectClick = (id) =>
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+    );
+
+  const handleSelectAllClick = (e) =>
+    setSelected(e.target.checked ? activities.map((a) => a.ActivityID) : []);
+
+  // ---------------- NOTES ----------------
   const handleAddNote = (activity) => {
     setSelectedActivity(activity);
     setNotesPopupOpen(true);
-    setPopupError(null);
-  };
-  const handleAddAttachment = (activity) => {
-    setSelectedActivity(activity);
-    setAttachmentsPopupOpen(true);
-    setPopupError(null);
   };
 
   const handleSaveNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      await noteService.createNote(noteData);
+      const notePayload = {
+        EntityID: selectedActivity.ActivityID,
+        EntityType: "Activity",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to save note");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to save note");
     }
   };
 
-  const handleUploadAttachment = async (attachments) => {
+  const handleEditNote = async (noteData) => {
     try {
-      setPopupLoading(true);
-      for (const attachment of attachments) {
-        await attachmentService.uploadAttachment(attachment);
-      }
-      setSuccessMessage(`${attachments.length} attachment(s) uploaded successfully!`);
+      await updateNote(noteData.NoteID, noteData);
+      setSuccessMessage("Note updated successfully!");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      setError(err.message || "Failed to update note");
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await deleteNote(noteId);
+      setSuccessMessage("Note deleted successfully!");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      setError(err.message || "Failed to delete note");
+    }
+  };
+
+  // ---------------- ATTACHMENTS ----------------
+  const handleAddAttachment = (activity) => {
+    setSelectedActivity(activity);
+    setAttachmentsPopupOpen(true);
+  };
+
+  const handleUploadAttachment = async (files) => {
+    try {
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedActivity.ActivityID,
+          entityTypeName: "Activity"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
       setAttachmentsPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setPopupError(err.message || "Failed to upload attachments");
-    } finally {
-      setPopupLoading(false);
+      setError(err.message || "Failed to upload attachments");
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    try {
+      await deleteAttachment(attachmentId);
+      setSuccessMessage("Attachment deleted successfully!");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      setError(err.message || "Failed to delete attachment");
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      await downloadAttachment(attachment);
+    } catch (err) {
+      setError(err.message || "Failed to download attachment");
     }
   };
 
@@ -171,41 +241,70 @@ const ActivitiesContainer = () => {
   };
 
   return (
-    <ActivitiesPage
-      activities={filteredActivities}
-      loading={loading}
-      error={error}
-      successMessage={successMessage}
-      setSuccessMessage={setSuccessMessage}
-      selected={selected}
-      onSelectClick={(id) => {
-        setSelected((prev) => prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]);
-      }}
-      onSelectAllClick={(e) => setSelected(e.target.checked ? activities.map(a => a.ActivityID) : [])}
-      onDeactivate={handleDeactivate}
-      onEdit={handleEdit}
-      onView={handleView}
-      onCreate={handleCreate}
-      onAddNote={handleAddNote}
-      onAddAttachment={handleAddAttachment}
-      notesPopupOpen={notesPopupOpen}
-      setNotesPopupOpen={setNotesPopupOpen}
-      attachmentsPopupOpen={attachmentsPopupOpen}
-      setAttachmentsPopupOpen={setAttachmentsPopupOpen}
-      selectedActivity={selectedActivity}
-      popupLoading={popupLoading}
-      popupError={popupError}
-      handleSaveNote={handleSaveNote}
-      handleUploadAttachment={handleUploadAttachment}
-      searchTerm={searchTerm}
-      statusFilter={statusFilter}
-      priorityFilter={priorityFilter}
-      setSearchTerm={setSearchTerm}
-      setStatusFilter={setStatusFilter}
-      setPriorityFilter={setPriorityFilter}
-      clearFilters={clearFilters}
-      totalCount={activities.length}
-    />
+    <>
+      <ActivitiesPage
+        activities={filteredActivities}
+        loading={loading}
+        error={error}
+        successMessage={successMessage}
+        setSuccessMessage={setSuccessMessage}
+        selected={selected}
+        onSelectClick={handleSelectClick}
+        onSelectAllClick={handleSelectAllClick}
+        onDeactivate={handleDeactivateClick}
+        onEdit={handleEdit}
+        onView={handleView}
+        onCreate={handleCreate}
+        onAddNote={handleAddNote}
+        onAddAttachment={handleAddAttachment}
+        searchTerm={searchTerm}
+        statusFilter={statusFilter}
+        priorityFilter={priorityFilter}
+        setSearchTerm={setSearchTerm}
+        setStatusFilter={setStatusFilter}
+        setPriorityFilter={setPriorityFilter}
+        clearFilters={clearFilters}
+        totalCount={activities.length}
+      />
+
+      {/* Notes Popup */}
+      <NotesPopup
+        open={notesPopupOpen}
+        onClose={() => setNotesPopupOpen(false)}
+        onSave={handleSaveNote}
+        onEdit={handleEditNote}
+        onDelete={handleDeleteNote}
+        entityType="Activity"
+        entityId={selectedActivity?.ActivityID}
+        entityName={selectedActivity?.ActivityType}
+        showExistingNotes={true}
+      />
+
+      {/* Attachments Popup */}
+      <AttachmentsPopup
+        open={attachmentsPopupOpen}
+        onClose={() => setAttachmentsPopupOpen(false)}
+        entityType="Activity"
+        entityId={selectedActivity?.ActivityID}
+        entityName={selectedActivity?.ActivityType}
+        onUpload={handleUploadAttachment}
+        onDelete={handleDeleteAttachment}
+        onDownload={handleDownloadAttachment}
+      />
+
+      {/* Confirm delete dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Delete Activity"
+        description={`Are you sure you want to delete this activity${
+          activityToDelete?.ActivityType
+            ? ` (${activityToDelete.ActivityType})`
+            : ""
+        }?`}
+        onConfirm={confirmDeactivate}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
+    </>
   );
 };
 

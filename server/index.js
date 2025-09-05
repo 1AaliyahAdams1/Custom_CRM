@@ -46,7 +46,7 @@ const workRoutes = require('./routes/workRoutes');
 const attachmentRoutes = require("./routes/attachmentRoutes");
 const assignUserRoutes = require("./routes/assignUserRoutes");  
 const employeeRoutes = require("./routes/employeeRoutes"); 
-
+const currencyRoutes = require("./routes/currencyRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 
 
@@ -80,6 +80,7 @@ app.use("/attachments", attachmentRoutes);
 app.use('/assign', assignUserRoutes);
 app.use("/employees", employeeRoutes);
 app.use("/notes", noteRoutes);
+app.use("/currencies", currencyRoutes);
 
 const PORT = process.env.PORT || 5000;
 const HOST = "0.0.0.0";
