@@ -2,15 +2,12 @@ import api from "../utils/api";
 
 const RESOURCE = "/attachments";
 
-// -------------------------
-// UPLOAD
-// -------------------------
 export const uploadAttachment = async ({ file, entityId, entityTypeName }) => {
   if (!file) throw new Error("File is required");
   if (!entityId) throw new Error("Entity ID is required");
   if (!entityTypeName) throw new Error("Entity type is required");
 
-  const maxSize = 10 * 1024 * 1024; // 10MB
+  const maxSize = 10 * 1024 * 1024;
   const allowedTypes = [
     "image/jpeg","image/jpg","image/png","image/gif",
     "application/pdf",
@@ -43,7 +40,6 @@ export const uploadAttachment = async ({ file, entityId, entityTypeName }) => {
   }
 };
 
-// Upload multiple attachments sequentially
 export const uploadMultipleAttachments = async (attachments) => {
   if (!attachments?.length) throw new Error("Attachments array is required");
   const results = [];
@@ -58,9 +54,6 @@ export const uploadMultipleAttachments = async (attachments) => {
   return results;
 };
 
-// -------------------------
-// GET
-// -------------------------
 export const getAttachmentsByEntity = async (entityId, entityTypeName) => {
   if (!entityId) throw new Error("Entity ID is required");
   if (!entityTypeName) throw new Error("Entity type is required");
@@ -86,12 +79,8 @@ export const getAttachmentById = async (attachmentId) => {
   }
 };
 
-// -------------------------
-// DELETE / DOWNLOAD
-// -------------------------
 export const deleteAttachment = async (attachmentId) => {
   if (!attachmentId) throw new Error("Attachment ID is required");
-
   try {
     return await api.delete(`${RESOURCE}/${attachmentId}`);
   } catch (error) {
@@ -105,9 +94,7 @@ export const downloadAttachment = async (attachment) => {
   const attachmentId = attachment.AttachmentID || attachment.attachmentId;
 
   try {
-    const response = await api.get(`${RESOURCE}/${attachmentId}/download`, {
-      responseType: "blob",
-    });
+    const response = await api.get(`${RESOURCE}/${attachmentId}/download`, { responseType: "blob" });
 
     const contentDisposition = response.headers["content-disposition"];
     let filename = attachment.FileName || attachment.fileName || "download";
@@ -133,9 +120,6 @@ export const downloadAttachment = async (attachment) => {
   }
 };
 
-// -------------------------
-// Optional helper
-// -------------------------
 export const getFileIcon = (fileName) => {
   const ext = fileName.split(".").pop().toLowerCase();
   const map = {
@@ -150,5 +134,3 @@ export const getFileIcon = (fileName) => {
   };
   return map[ext] || "📎";
 };
-
-

@@ -39,7 +39,6 @@ export const updateNote = async (noteId, noteData) => {
 
 export const deleteNote = async (noteId) => {
   if (!noteId) throw new Error("Note ID is required");
-
   try {
     return await api.delete(`${RESOURCE}/${noteId}`);
   } catch (error) {
@@ -50,7 +49,6 @@ export const deleteNote = async (noteId) => {
 
 export const deactivateNote = async (noteId) => {
   if (!noteId) throw new Error("Note ID is required");
-
   try {
     return await api.patch(`${RESOURCE}/${noteId}/deactivate`);
   } catch (error) {
@@ -61,7 +59,6 @@ export const deactivateNote = async (noteId) => {
 
 export const reactivateNote = async (noteId) => {
   if (!noteId) throw new Error("Note ID is required");
-
   try {
     return await api.patch(`${RESOURCE}/${noteId}/reactivate`);
   } catch (error) {
@@ -84,4 +81,3 @@ export const getNotesByEntity = async (entityType, entityId) => {
     throw error;
   }
 };
-
