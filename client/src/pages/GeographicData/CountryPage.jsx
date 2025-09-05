@@ -100,15 +100,17 @@ const CountryPage = ({
   handleUploadAttachment,
   handleDeleteAttachment,
   handleDownloadAttachment,
-  
+
   // City props (pass through to CityPage)
   cityProps = {},
-  
+
   // State/Province props (pass through to StateProvincePage)
   stateProvinceProps = {},
+
+  // Tab management
+  currentTab = 0,
+  onTabChange,
 }) => {
-  const [currentTab, setCurrentTab] = useState(0);
-  
   // Add Country Dialog State
   const [addCountryDialogOpen, setAddCountryDialogOpen] = useState(false);
   const [newCountry, setNewCountry] = useState({
@@ -138,28 +140,17 @@ const CountryPage = ({
     },
   ];
 
-  // Use all available tabs
-  const userTabs = availableTabs;
-
   // Handle tab change
   const handleTabChange = (event, newValue) => {
-    setCurrentTab(newValue);
+    if (onTabChange) {
+      onTabChange(newValue);
+    }
   };
 
   const columns = [
     { field: 'CountryName', headerName: 'Country Name', type: 'tooltip', defaultVisible: true },
     { field: 'CountryCode', headerName: 'Country Code', defaultVisible: true },
-    { field: 'CurrencyName', headerName: 'Currency', defaultVisible: true },
-    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
-    {
-      field: 'Active',
-      headerName: 'Status',
-      type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive', 1: 'Active', 0: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999', 1: '#079141ff', 0: '#999999' },
-      defaultVisible: true,
-    },
+    //{ field: 'CurrencyID', headerName: 'CurrencyID', defaultVisible: true },
   ];
 
   // Enhanced menu items for countries
@@ -335,13 +326,14 @@ const CountryPage = ({
           p: 3,
         }}
       >
+        {/* Main Paper Container */}
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
           {/* Tabs Header */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs 
-              value={currentTab} 
+            <Tabs
+              value={currentTab}
               onChange={handleTabChange}
-              sx={{ 
+              sx={{
                 backgroundColor: '#fff',
                 '& .MuiTab-root': {
                   textTransform: 'none',
@@ -354,9 +346,9 @@ const CountryPage = ({
                 }
               }}
             >
-              {userTabs.map((tab, index) => (
-                <Tab 
-                  key={tab.id} 
+              {availableTabs.map((tab, index) => (
+                <Tab
+                  key={tab.id}
                   label={tab.label}
                   sx={{
                     color: currentTab === index ? '#050505' : '#666666',
@@ -371,9 +363,9 @@ const CountryPage = ({
           </Box>
 
           {/* Tab Content */}
-          {userTabs.map((tab, index) => (
+          {availableTabs.map((tab, index) => (
             <TabPanel key={tab.id} value={currentTab} index={index}>
-              
+
               {/* Countries Tab Content */}
               {tab.component === 'countries' && (
                 <>
@@ -388,7 +380,7 @@ const CountryPage = ({
                     <Alert
                       severity="success"
                       sx={{ m: 2 }}
-                      onClose={() => setSuccessMessage("")}
+                      onClose={() => setSuccessMessage && setSuccessMessage("")}
                     >
                       {successMessage}
                     </Alert>
@@ -520,16 +512,12 @@ const CountryPage = ({
 
               {/* States/Provinces Tab Content */}
               {tab.component === 'statesProvinces' && (
-                <Box sx={{ p: 0 }}>
-                  <StateProvincePage {...stateProvinceProps} />
-                </Box>
+                <StateProvincePage {...stateProvinceProps} />
               )}
 
               {/* Cities Tab Content */}
               {tab.component === 'cities' && (
-                <Box sx={{ p: 0 }}>
-                  <CityPage {...cityProps} />
-                </Box>
+                <CityPage {...cityProps} />
               )}
 
             </TabPanel>
@@ -537,15 +525,15 @@ const CountryPage = ({
         </Paper>
 
         {/* Add Country Dialog */}
-        <Dialog 
-          open={addCountryDialogOpen} 
+        <Dialog
+          open={addCountryDialogOpen}
           onClose={handleCloseAddCountryDialog}
           maxWidth="sm"
           fullWidth
         >
-          <DialogTitle sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <DialogTitle sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             borderBottom: '1px solid #e5e5e5'
           }}>
@@ -622,8 +610,8 @@ const CountryPage = ({
               onClick={handleAddCountry}
               variant="contained"
               disabled={
-                addCountryLoading || 
-                !newCountry.CountryName.trim() || 
+                addCountryLoading ||
+                !newCountry.CountryName.trim() ||
                 !newCountry.CountryCode.trim() ||
                 newCountry.CountryCode.length > 5
               }
@@ -640,9 +628,9 @@ const CountryPage = ({
           onClose={() => setStatusMessage && setStatusMessage('')}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
-          <Alert 
-            onClose={() => setStatusMessage && setStatusMessage('')} 
-            severity={statusSeverity} 
+          <Alert
+            onClose={() => setStatusMessage && setStatusMessage('')}
+            severity={statusSeverity}
             sx={{ width: '100%' }}
           >
             {statusMessage}

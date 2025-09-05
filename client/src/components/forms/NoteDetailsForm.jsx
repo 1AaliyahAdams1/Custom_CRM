@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Box, Button, TextField, Typography, Paper, IconButton } from "@mui/material";
 import { Delete, Edit, Save, Cancel } from "@mui/icons-material";
-import { noteService } from "../../services/noteService";
+import { 
+  createNote, 
+  getNotesByEntity, 
+  updateNote, 
+  deleteNote 
+} from "../../services/noteService";
 
 const NoteDetailsForm = ({ entityType, entityId, onUpdated }) => {
   const [notes, setNotes] = useState([]);
@@ -15,8 +20,8 @@ const NoteDetailsForm = ({ entityType, entityId, onUpdated }) => {
   const loadNotes = async () => {
     try {
       setLoading(true);
-      const data = await noteService.getNotesByEntity(entityType, entityId);
-      setNotes(data);
+      const data = await getNotesByEntity(entityType, entityId);
+      setNotes(data || []);
     } catch (err) {
       setError(err.message || "Failed to load notes");
     } finally {
@@ -32,7 +37,7 @@ const NoteDetailsForm = ({ entityType, entityId, onUpdated }) => {
     if (!newNote.trim()) return;
     try {
       setLoading(true);
-      await noteService.createNote({ Content: newNote, EntityType: entityType, EntityID: entityId });
+      await createNote({ Content: newNote, EntityType: entityType, EntityID: entityId });
       setNewNote("");
       await loadNotes();
       if (onUpdated) onUpdated();
@@ -47,7 +52,7 @@ const NoteDetailsForm = ({ entityType, entityId, onUpdated }) => {
     if (!window.confirm("Are you sure you want to delete this note?")) return;
     try {
       setLoading(true);
-      await noteService.deleteNote(noteId);
+      await deleteNote(noteId);
       await loadNotes();
     } catch (err) {
       setError(err.message || "Failed to delete note");
@@ -65,7 +70,7 @@ const NoteDetailsForm = ({ entityType, entityId, onUpdated }) => {
     if (!editingContent.trim()) return;
     try {
       setLoading(true);
-      await noteService.updateNote(noteId, { Content: editingContent });
+      await updateNote(noteId, { Content: editingContent });
       setEditingNoteId(null);
       setEditingContent("");
       await loadNotes();
