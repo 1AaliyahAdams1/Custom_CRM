@@ -51,6 +51,7 @@ const TableView = ({
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [currentRow, setCurrentRow] = useState(null);
+  const [customFilteredData, setCustomFilteredData] = useState(null);
 
   const [visibleColumns, setVisibleColumns] = useState(
     columns.reduce((acc, col) => ({ ...acc, [col.field]: col.defaultVisible !== false }), {})
@@ -71,8 +72,12 @@ const TableView = ({
     setTimeout(() => setMenuRow(null), 200); // matches MUI transition
   };
 
-  // --- Filters & Selection ---
-  const handleApplyFilters = (newFilters) => setFilters(newFilters);
+  // --- Enhanced Filters Handling ---
+  const handleApplyFilters = (newFilters, preFilteredData = null) => {
+    setFilters(newFilters);
+    setCustomFilteredData(preFilteredData);
+  };
+
   const handleSelectAll = (event) => onSelectAllClick && onSelectAllClick(event);
   const handleSelectRow = (id) => onSelectClick && onSelectClick(id);
 
@@ -97,26 +102,27 @@ const TableView = ({
     return tooltips?.actions || `Available actions for this ${entityType || 'record'}`;
   };
 
-  const filteredData = data.filter((item) => {
-    if (searchTerm) {
-      const found = columns.some((c) => {
+  // Use custom filtered data if available, otherwise apply standard filtering
+  const getFilteredData = () => {
+    let baseData = data;
+    
+    // If we have custom filtered data from FiltersDialog, use it as the base
+    if (customFilteredData && Object.keys(filters).length > 0) {
+      baseData = customFilteredData;
+    }
+    
+    // Apply search term filtering on top of any existing filters
+    if (!searchTerm) return baseData;
+    
+    return baseData.filter((item) => {
+      return columns.some((c) => {
         const val = item[c.field];
         return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
       });
-      if (!found) return false;
-    }
-    for (const [field, value] of Object.entries(filters)) {
-      if (value !== undefined && value !== null && value !== "") {
-        const itemVal = item[field];
-        if (typeof value === "boolean") {
-          if (itemVal !== value) return false;
-        } else {
-          if (!itemVal?.toString().toLowerCase().includes(value.toString().toLowerCase())) return false;
-        }
-      }
-    }
-    return true;
-  });
+    });
+  };
+
+  const filteredData = getFilteredData();
 
   const displayedColumns = columns.filter((col) => visibleColumns[col.field]);
 

@@ -442,8 +442,8 @@ async function getActiveUnassignedAccounts() {
 // =======================
 module.exports = {
   getAllAccounts,
-  getActiveAccounts,
-  getInactiveAccounts,
+  // getActiveAccounts,
+  // getInactiveAccounts,
   createAccount,
   updateAccount,
   deactivateAccount,

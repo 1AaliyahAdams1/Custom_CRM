@@ -1,6 +1,3 @@
-// PAGE : Main Activities Page with Tabs (presentational only, no data fetching)
-
-// IMPORTS
 import React, { useState } from "react";
 import {
   Box,
@@ -36,14 +33,49 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
-// Table configuration for activities
+// Status configuration for the new status options
+const statusConfig = {
+  incomplete: { label: "Incomplete", color: "#f44336" },
+  complete: { label: "Complete", color: "#4caf50" },
+  "in-progress": { label: "In Progress", color: "#ff9800" },
+  pending: { label: "Pending", color: "#2196f3" }
+};
+
+// Custom formatter for the new status field
+const statusFormatter = (value) => {
+  const config = statusConfig[value] || { label: value || "Unknown", color: "#9e9e9e" };
+  return (
+    <Chip
+      label={config.label}
+      size="small"
+      sx={{
+        backgroundColor: config.color,
+        color: "#fff",
+        fontWeight: 500,
+      }}
+    />
+  );
+};
+
+// Table configuration for activities with description column and updated status
 const activitiesTableConfig = {
   idField: "ActivityID",
   columns: [
     { field: "ActivityType", headerName: "Activity Type", type: "tooltip" },
     { field: "AccountName", headerName: "Account Name", type: "tooltip" },
+    { 
+      field: "Description", 
+      headerName: "Description", 
+      type: "truncated",
+      maxWidth: 300 // Limit width for better table layout
+    },
     { field: "DueToStart", headerName: "Due To Start", type: "date" },
     { field: "DueToEnd", headerName: "Due To End", type: "date" },
+    {
+      field: "Status",
+      headerName: "Status",
+      type: "custom", // Custom type for our new status formatter
+    },
     {
       field: "CreatedAt",
       headerName: "Created",
@@ -54,12 +86,32 @@ const activitiesTableConfig = {
       headerName: "Updated",
       type: "date",
     },
-    {
-      field: "Completed",
-      headerName: "Status",
-      type: "boolean",
-    },
   ],
+};
+
+// Enhanced formatters object that includes the status formatter and data migration
+const enhancedFormatters = {
+  ...formatters,
+  Status: (value, row) => {
+    // Handle migration from old Completed boolean to new Status field
+    let statusValue = value;
+    if (!statusValue && typeof row.Completed === 'boolean') {
+      statusValue = row.Completed ? 'complete' : 'incomplete';
+    }
+    
+    const config = statusConfig[statusValue] || { label: statusValue || "Unknown", color: "#9e9e9e" };
+    return (
+      <Chip
+        label={config.label}
+        size="small"
+        sx={{
+          backgroundColor: config.color,
+          color: "#fff",
+          fontWeight: 500,
+        }}
+      />
+    );
+  },
 };
 
 const ActivitiesPage = ({
@@ -298,7 +350,7 @@ const ActivitiesPage = ({
                       onDelete={onDeactivate}
                       onAddNote={onAddNote}
                       onAddAttachment={onAddAttachment}
-                      formatters={formatters}
+                      formatters={enhancedFormatters}
                       entityType="activity"
                     />
                   )}

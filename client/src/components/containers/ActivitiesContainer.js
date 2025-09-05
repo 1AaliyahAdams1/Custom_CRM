@@ -90,9 +90,17 @@ const ActivitiesContainer = () => {
   // ---------------- FILTERED ACTIVITIES ----------------
   const filteredActivities = useMemo(() => {
     return activities.filter((a) => {
-      const matchesSearch = !searchTerm || a.AccountName?.toLowerCase().includes(searchTerm.toLowerCase()) || a.ActivityType?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = !statusFilter || (statusFilter === "completed" ? a.Completed : !a.Completed);
+      // Enhanced search to include description
+      const matchesSearch = !searchTerm || 
+        a.AccountName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        a.ActivityType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.Description?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Updated status filtering for new status options
+      const matchesStatus = !statusFilter || a.Status === statusFilter;
+      
       const matchesPriority = !priorityFilter || a.PriorityLevelName === priorityFilter;
+      
       return matchesSearch && matchesStatus && matchesPriority;
     });
   }, [activities, searchTerm, statusFilter, priorityFilter]);
