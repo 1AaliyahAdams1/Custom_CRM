@@ -72,7 +72,7 @@ const ProductPage = ({
     { field: 'Price', headerName: 'Price', type: 'currency', defaultVisible: true },
     { field: 'Cost', headerName: 'Cost', type: 'currency', defaultVisible: false },
     { field: 'SKU', headerName: 'SKU', defaultVisible: true },
-    { field: 'CategoryName', headerName: 'Category', defaultVisible: true },
+    //{ field: 'CategoryID', headerName: 'Category', defaultVisible: true },
     { field: 'AccountName', headerName: 'Account', defaultVisible: false },
     { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },

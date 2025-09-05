@@ -16,7 +16,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import theme from "../../components/Theme";
 import SmartDropdown from '../../components/SmartDropdown';
 import { fetchActivityById, updateActivity } from "../../services/activityService";
-import { fetchAccountById, getAllAccounts } from "../../services/accountService";
+import { getAllAccounts } from "../../services/accountService";
 import { priorityLevelService, activityTypeService } from '../../services/dropdownServices';
 
 const EditActivityPage = () => {
@@ -39,48 +39,79 @@ const EditActivityPage = () => {
 
   useEffect(() => {
     const loadActivity = async () => {
-      if (!id) return setError("No activity ID provided");
+      if (!id) {
+        setError("No activity ID provided");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await fetchActivityById(id);
-        const activityData = response.data;
-        const accountresponse = await fetchAccountById(id);
-        const accountData = accountresponse.data;
+
+        // Fetch the activity data first
+        const activityResponse = await fetchActivityById(id);
+        const activityData = activityResponse.data;
+
+        // Format dates for datetime-local inputs
+        const formatDateTimeLocal = (dateString) => {
+          if (!dateString) return "";
+          const date = new Date(dateString);
+          if (isNaN(date)) return "";
+
+          // Convert to local timezone and format for datetime-local input
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+
+          return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
+
         setFormData({
-          AccountID: accountData.AccountID || "",
-          TypeID: activityData.TypeID || "",
+          AccountName: activityData.AccountName,
+          ActivityType: activityData.ActivityType || "",
           PriorityLevelID: activityData.PriorityLevelID || "",
-          DueToStart: activityData.DueToStart || "",
-          DueToEnd: activityData.DueToEnd || "",
+          DueToStart: formatDateTimeLocal(activityData.DueToStart),
+          DueToEnd: formatDateTimeLocal(activityData.DueToEnd),
           Completed: !!activityData.Completed
         });
-      } catch {
+
+      } catch (err) {
+        console.error("Error loading activity:", err);
         setError("Failed to load activity data.");
       } finally {
         setLoading(false);
       }
     };
+
     loadActivity();
   }, [id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    console.log("Input changed:", name, "=", value);
     setFormData(prev => ({ ...prev, [name]: value }));
     if (error) setError(null);
   };
 
   const handleCheckboxChange = (e) => {
     const { name, checked } = e.target;
+    console.log("Checkbox changed:", name, "=", checked);
     setFormData(prev => ({ ...prev, [name]: checked }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       setSaving(true);
+      console.log("Submitting form data:", formData);
+
       await updateActivity(id, formData);
       setSuccessMessage("Activity updated successfully!");
       setTimeout(() => navigate("/activities"), 1500);
-    } catch {
+    } catch (err) {
+      console.error("Error updating activity:", err);
       setError("Failed to update activity");
     } finally {
       setSaving(false);
@@ -120,23 +151,23 @@ const EditActivityPage = () => {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <SmartDropdown
                   label="Account"
-                  name="AccountID"
-                  value={formData.AccountID}
+                  name="AccountName"
+                  value={formData.AccountName}
                   onChange={handleInputChange}
                   service={{ getAll: async () => (await getAllAccounts()).data }}
                   displayField="AccountName"
-                  valueField="AccountID"
+                  valueField="AccountName"
                   disabled={saving}
                 />
 
                 <SmartDropdown
                   label="Activity Type"
-                  name="TypeID"
-                  value={formData.TypeID}
+                  name="ActivityType"
+                  value={formData.ActivityType} // "Call"
                   onChange={handleInputChange}
                   service={activityTypeService}
-                  displayField="TypeName"
-                  valueField="TypeID"
+                  displayField="TypeName" // Shows "Call" in dropdown
+                  valueField="ActivityType" // Returns "Call" when selected
                   disabled={saving}
                 />
 

@@ -20,7 +20,6 @@ const Reports = lazy(() => import("./pages/ReportsPage"));
 const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
 const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 
-// Updated to use the new Geography Container
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
 const CityPage = lazy(() => import("./pages/GeographicData/CityPage"));
 const StateProvincePage = lazy(() => import("./pages/GeographicData/StateProvincePage"));
@@ -250,7 +249,7 @@ const AppRoutes = () => {
       {/* --- Geography Routes (Updated) --- */}
       {/* Main geography route - shows countries by default */}
       <Route
-        path="/country"
+        path="/countries"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.country}>
             <CountryContainer />
@@ -260,7 +259,7 @@ const AppRoutes = () => {
 
       {/* Geography sub-routes - all use the same container but with different tabs */}
       <Route
-        path="/country/states"
+        path="/countries/states"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.states}>
             <CountryContainer />
@@ -269,7 +268,7 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/country/city"
+        path="/countries/cities"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.city}>
             <CountryContainer />
@@ -279,18 +278,18 @@ const AppRoutes = () => {
 
       {/* Legacy routes - redirect to new structure */}
       <Route
-        path="/city"
-        element={<Navigate to="/country/city" replace />}
+        path="/cities"
+        element={<Navigate to="/countries/cities" replace />}
       />
 
       <Route
         path="/states"
-        element={<Navigate to="/country/states" replace />}
+        element={<Navigate to="/countries/states" replace />}
       />
 
       {/* --- Industry Routes --- */}
       <Route
-        path="/industry"
+        path="/industries"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.industry}>
             <IndustryContainer />

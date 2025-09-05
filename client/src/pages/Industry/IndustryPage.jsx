@@ -70,15 +70,7 @@ const IndustryPage = ({
   const [addIndustryLoading, setAddIndustryLoading] = useState(false);
 
   const columns = [
-    { field: 'IndustryName', headerName: 'Industry Name', type: 'tooltip', defaultVisible: true },
-    {
-      field: 'Active',
-      headerName: 'Status',
-      type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive', 1: 'Active', 0: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999', 1: '#079141ff', 0: '#999999' },
-      defaultVisible: true,
-    },
+    { field: 'IndustryName', headerName: 'Industry Name', type: 'tooltip', defaultVisible: true }
   ];
 
   // Enhanced menu items for industries

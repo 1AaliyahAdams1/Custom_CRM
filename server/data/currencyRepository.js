@@ -1,29 +1,24 @@
 const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
-// =======================
 // Get all currencies
-// =======================
 async function getAllCurrencies() {
   const pool = await sql.connect(dbConfig);
-  const result = await pool.request().execute("GetCurrency");
-  return result.recordset.filter(c => c.Active === 1);
+  const result = await pool.request()
+    .query("SELECT * FROM Currency");
+  return result.recordset;
 }
 
-// =======================
 // Get currency by ID
-// =======================
 async function getCurrencyById(id) {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
     .input("CurrencyID", sql.Int, id)
-    .execute("GetCurrencyByID");
+    .query("SELECT * FROM Currency WHERE CurrencyID = @CurrencyID");
   return result.recordset[0];
 }
 
-// =======================
 // Create new currency
-// =======================
 async function createCurrency(data) {
   const {
     Symbol, ISOcode, DecimalPlaces, EnglishName,
@@ -31,7 +26,7 @@ async function createCurrency(data) {
   } = data;
 
   const pool = await sql.connect(dbConfig);
-  await pool.request()
+  const result = await pool.request()
     .input("Symbol", sql.NVarChar(5), Symbol)
     .input("ISOcode", sql.NVarChar(3), ISOcode)
     .input("DecimalPlaces", sql.TinyInt, DecimalPlaces)
@@ -39,14 +34,17 @@ async function createCurrency(data) {
     .input("LocalName", sql.NVarChar(100), LocalName)
     .input("ExchangeRate", sql.Decimal(9, 4), ExchangeRate)
     .input("Prefix", sql.Bit, Prefix)
-    .execute("CreateCurrency");
+    .input("Active", sql.Bit, true)
+    .query(`
+      INSERT INTO Currency (Symbol, ISOcode, DecimalPlaces, EnglishName, LocalName, ExchangeRate, Prefix, Active, LastUpdated)
+      VALUES (@Symbol, @ISOcode, @DecimalPlaces, @EnglishName, @LocalName, @ExchangeRate, @Prefix, @Active, GETDATE());
+      SELECT SCOPE_IDENTITY() AS CurrencyID
+    `);
 
-  return { message: "Currency created" };
+  return { CurrencyID: result.recordset[0].CurrencyID };
 }
 
-// =======================
-// Update currency by ID
-// =======================
+// Update currency
 async function updateCurrency(id, data) {
   const {
     Symbol, ISOcode, DecimalPlaces, EnglishName,
@@ -63,42 +61,47 @@ async function updateCurrency(id, data) {
     .input("LocalName", sql.NVarChar(100), LocalName)
     .input("ExchangeRate", sql.Decimal(9, 4), ExchangeRate)
     .input("Prefix", sql.Bit, Prefix)
-    .execute("UpdateCurrency");
+    .query(`
+      UPDATE Currency
+      SET Symbol = @Symbol,
+          ISOcode = @ISOcode,
+          DecimalPlaces = @DecimalPlaces,
+          EnglishName = @EnglishName,
+          LocalName = @LocalName,
+          ExchangeRate = @ExchangeRate,
+          Prefix = @Prefix,
+          LastUpdated = GETDATE()
+      WHERE CurrencyID = @CurrencyID
+    `);
 
-  return { message: "Currency updated", CurrencyID: id };
+  return { CurrencyID: id };
 }
 
-// =======================
-// Deactivate currency by ID
-// =======================
-async function deleteCurrency(id) {
+// Deactivate currency
+async function deactivateCurrency(id) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CurrencyID", sql.Int, id)
-    .execute("DeactivateCurrency");
-  return { message: "Currency deactivated", CurrencyID: id };
+    .query("UPDATE Currency SET Active = 0, LastUpdated = GETDATE() WHERE CurrencyID = @CurrencyID");
+  return { CurrencyID: id };
 }
 
-// =======================
-// Reactivate currency by ID
-// =======================
+// Reactivate currency
 async function reactivateCurrency(id) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CurrencyID", sql.Int, id)
-    .execute("ReactivateCurrency");
-  return { message: "Currency reactivated", CurrencyID: id };
+    .query("UPDATE Currency SET Active = 1, LastUpdated = GETDATE() WHERE CurrencyID = @CurrencyID");
+  return { CurrencyID: id };
 }
 
-// =======================
-// Hard delete currency by ID
-// =======================
-async function hardDeleteCurrency(id) {
+// Hard delete currency
+async function deleteCurrency(id) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CurrencyID", sql.Int, id)
-    .execute("DeleteCurrency");
-  return { message: "Currency hard deleted", CurrencyID: id };
+    .query("DELETE FROM Currency WHERE CurrencyID = @CurrencyID");
+  return { CurrencyID: id };
 }
 
 module.exports = {
@@ -106,7 +109,7 @@ module.exports = {
   getCurrencyById,
   createCurrency,
   updateCurrency,
-  deleteCurrency,
+  deactivateCurrency,
   reactivateCurrency,
-  hardDeleteCurrency,
+  deleteCurrency
 };

@@ -150,17 +150,7 @@ const CountryPage = ({
   const columns = [
     { field: 'CountryName', headerName: 'Country Name', type: 'tooltip', defaultVisible: true },
     { field: 'CountryCode', headerName: 'Country Code', defaultVisible: true },
-    { field: 'CurrencyName', headerName: 'Currency', defaultVisible: true },
-    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
-    {
-      field: 'Active',
-      headerName: 'Status',
-      type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive', 1: 'Active', 0: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999', 1: '#079141ff', 0: '#999999' },
-      defaultVisible: true,
-    },
+    //{ field: 'CurrencyID', headerName: 'CurrencyID', defaultVisible: true },
   ];
 
   // Enhanced menu items for countries

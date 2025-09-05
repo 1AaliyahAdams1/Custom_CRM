@@ -1,19 +1,19 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box, Tabs, Tab, Alert, Typography } from "@mui/material";
+import { Box, Alert, Typography } from "@mui/material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
-import { fetchActivityById, updateActivity } from "../../services/activityService";
+import { fetchActivityById, updateActivity, deactivateActivity } from "../../services/activityService";
 import { priorityLevelService, activityTypeService } from '../../services/dropdownServices';
 
 const activityMainFields = [
   { key: "TypeID", label: "Activity Type", required: true, type: "dropdown", service: activityTypeService, displayField: "TypeName", valueField: "TypeID", width: { xs: 12, md: 6 } },
   { key: "AccountName", label: "Account", type: "text", disabled: true, width: { xs: 12, md: 6 } },
-  { key: "PriorityLevelID", label: "Priority", type: "dropdown", service: priorityLevelService, displayField: "PriorityLevelName", valueField: "PriorityLevelID",  width: { xs: 12, md: 6 } },
-  { key: "DueToStart", label: "Due To Start", type: "date", width: { xs: 12, md: 6 } }, // new
-  { key: "DueToEnd", label: "Due To End", type: "date", width: { xs: 12, md: 6 } }, // new
+  { key: "PriorityLevelID", label: "Priority", type: "dropdown", service: priorityLevelService, displayField: "PriorityLevelName", valueField: "PriorityLevelID", width: { xs: 12, md: 6 } },
+  { key: "DueToStart", label: "Due To Start", type: "date", width: { xs: 12, md: 6 } },
+  { key: "DueToEnd", label: "Due To End", type: "date", width: { xs: 12, md: 6 } },
   { key: "Completed", label: "Completed", type: "boolean", width: { xs: 12, md: 6 } },
-  { key: "CreatedAt", label: "Created", type: "datetime", disabled: true, width: { xs: 12, md: 6 } }, // new
-  { key: "UpdatedAt", label: "Updated", type: "datetime", disabled: true, width: { xs: 12, md: 6 } }, // new
+  { key: "CreatedAt", label: "Created", type: "datetime", disabled: true, width: { xs: 12, md: 6 } },
+  { key: "UpdatedAt", label: "Updated", type: "datetime", disabled: true, width: { xs: 12, md: 6 } },
 ];
 
 export default function ActivityDetailsForm() {
@@ -26,8 +26,6 @@ export default function ActivityDetailsForm() {
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-    console.log("Debug: useParams() =", { id });
-
     const loadActivity = async () => {
       if (!id) {
         setError("No activity ID provided in the route.");
@@ -37,12 +35,19 @@ export default function ActivityDetailsForm() {
 
       try {
         setLoading(true);
+        setError(null);
         const data = await fetchActivityById(id);
         console.log("Debug: fetchActivityById response:", data);
-        setActivity(data?.data || data || null);
+        
+        const activityData = data?.data || data;
+        if (!activityData) {
+          throw new Error("Activity not found");
+        }
+        
+        setActivity(activityData);
       } catch (err) {
         console.error("Error loading activity:", err);
-        setError("Failed to load activity details");
+        setError(err.message || "Failed to load activity details");
       } finally {
         setLoading(false);
       }
@@ -54,12 +59,34 @@ export default function ActivityDetailsForm() {
   const handleSave = async (formData) => {
     try {
       console.log("Debug: Saving activity:", formData);
-      setActivity(formData); // optimistic UI update
-      await updateActivity(formData.ActivityID, formData);
+      setError(null);
+      
+      // Optimistic UI update
+      setActivity(formData);
+      
+      const activityId = formData.ActivityID || id;
+      await updateActivity(activityId, formData);
       setSuccessMessage("Activity updated successfully!");
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
       console.error("Error saving activity:", err);
-      setError("Failed to save activity.");
+      setError(err.message || "Failed to save activity.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this activity?")) return;
+    
+    try {
+      setError(null);
+      await deactivateActivity(id);
+      setSuccessMessage("Activity deleted successfully!");
+      setTimeout(() => navigate("/activities"), 1500);
+    } catch (err) {
+      console.error("Error deleting activity:", err);
+      setError(err.message || "Failed to delete activity.");
     }
   };
 
@@ -80,6 +107,19 @@ export default function ActivityDetailsForm() {
     },
   ];
 
+  if (activity.PriorityLevelName) {
+    const priorityColors = {
+      'High': '#ef4444',
+      'Medium': '#f59e0b', 
+      'Low': '#10b981'
+    };
+    headerChips.push({
+      label: activity.PriorityLevelName,
+      color: priorityColors[activity.PriorityLevelName] || '#6b7280',
+      textColor: '#fff'
+    });
+  }
+
   return (
     <Box>
       {successMessage && (
@@ -95,6 +135,7 @@ export default function ActivityDetailsForm() {
         mainFields={activityMainFields}
         onBack={handleBack}
         onSave={handleSave}
+        onDelete={handleDelete}
         entityType="activity"
         headerChips={headerChips}
       />

@@ -56,34 +56,37 @@ const dealsTableConfig = {
       headerName: 'Updated',
       type: 'date',
     },
+    {
+      field: 'Active',
+      headerName: 'Active',
+      type: 'chip',
+      chipLabels: { true: 'Active', false: 'Inactive' },
+      chipColors: { true: '#079141ff', false: '#999999' },
+      defaultVisible: true,
+    }
   ]
 };
 
-const DealsPage = ({ 
+const DealsPage = ({
   deals = [],
   loading = false,
   error = null,
   successMessage = "",
-  searchTerm = "",
-  statusFilter = "",
   setSuccessMessage,
-  setSearchTerm,
-  setStatusFilter,
   onDeactivate,
   onEdit,
   onView,
   onCreate,
   onAddNote,
   onAddAttachment,
-  clearFilters,
   totalCount = 0,
-  
+
   // Deal Stage props (pass through to DealStagePage)
   dealStageProps = {},
 }) => {
   const [selected, setSelected] = useState([]);
   const [currentTab, setCurrentTab] = useState(0);
-  
+
   // Define available tabs
   const availableTabs = [
     {
@@ -93,7 +96,7 @@ const DealsPage = ({
     },
     {
       id: 'deal-stages',
-      label: 'Deal Stages', 
+      label: 'Deal Stages',
       component: 'dealStages'
     },
     // Add more tabs here as needed:
@@ -175,10 +178,10 @@ const DealsPage = ({
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
           {/* Tabs Header */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs 
-              value={currentTab} 
+            <Tabs
+              value={currentTab}
               onChange={handleTabChange}
-              sx={{ 
+              sx={{
                 backgroundColor: '#fff',
                 '& .MuiTab-root': {
                   textTransform: 'none',
@@ -192,8 +195,8 @@ const DealsPage = ({
               }}
             >
               {userTabs.map((tab, index) => (
-                <Tab 
-                  key={tab.id} 
+                <Tab
+                  key={tab.id}
                   label={tab.label}
                   sx={{
                     color: currentTab === index ? '#050505' : '#666666',
@@ -210,7 +213,7 @@ const DealsPage = ({
           {/* Tab Content */}
           {userTabs.map((tab, index) => (
             <TabPanel key={tab.id} value={currentTab} index={index}>
-              
+
               {/* Deals Tab Content */}
               {tab.component === 'deals' && (
                 <>
