@@ -27,6 +27,7 @@ import {
   Power as PowerIcon,
   Delete as DeleteIcon,
   Close as CloseIcon,
+  Business as BusinessIcon,
 } from "@mui/icons-material";
 
 import { Add } from "@mui/icons-material";
@@ -58,21 +59,7 @@ const IndustryPage = ({
   onAddNote,
   onAddAttachment,
   onAssignUser,
-  showStatus,
-  // Popup props
-  notesPopupOpen,
-  setNotesPopupOpen,
-  attachmentsPopupOpen,
-  setAttachmentsPopupOpen,
   selectedIndustry,
-  popupLoading,
-  popupError,
-  handleSaveNote,
-  handleDeleteNote,
-  handleEditNote,
-  handleUploadAttachment,
-  handleDeleteAttachment,
-  handleDownloadAttachment,
 }) => {
   // Add Industry Dialog State
   const [addIndustryDialogOpen, setAddIndustryDialogOpen] = useState(false);
@@ -84,20 +71,20 @@ const IndustryPage = ({
 
   const columns = [
     { field: 'IndustryName', headerName: 'Industry Name', type: 'tooltip', defaultVisible: true },
-    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
     {
       field: 'Active',
       headerName: 'Status',
       type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999' },
+      chipLabels: { true: 'Active', false: 'Inactive', 1: 'Active', 0: 'Inactive' },
+      chipColors: { true: '#079141ff', false: '#999999', 1: '#079141ff', 0: '#999999' },
       defaultVisible: true,
     },
   ];
 
   // Enhanced menu items for industries
   const getMenuItems = (industry) => {
+    const isActive = industry.Active === true || industry.Active === 1;
+    
     const baseItems = [
       {
         label: 'View Details',
@@ -126,7 +113,7 @@ const IndustryPage = ({
     ];
 
     // Add reactivate/deactivate based on current status
-    if (industry.Active) {
+    if (isActive) {
       baseItems.push({
         label: 'Deactivate',
         icon: <PowerOffIcon sx={{ mr: 1, color: '#ff9800' }} />,
@@ -157,12 +144,13 @@ const IndustryPage = ({
   const industryFormatters = {
     ...formatters,
     Active: (value) => {
+      const isActive = value === true || value === 1;
       return (
         <Chip
-          label={value ? 'Active' : 'Inactive'}
+          label={isActive ? 'Active' : 'Inactive'}
           size="small"
           sx={{
-            backgroundColor: value ? '#079141ff' : '#999999',
+            backgroundColor: isActive ? '#079141ff' : '#999999',
             color: '#fff',
             fontWeight: 500,
           }}
@@ -267,6 +255,16 @@ const IndustryPage = ({
                 variant="contained"
                 startIcon={<Add />}
                 onClick={handleOpenAddIndustryDialog}
+                disabled={loading}
+                sx={{
+                  backgroundColor: "#050505",
+                  color: "#ffffff",
+                  "&:hover": { backgroundColor: "#333333" },
+                  "&:disabled": {
+                    backgroundColor: "#cccccc",
+                    color: "#666666",
+                  },
+                }}
               >
                 Add Industry
               </Button>
@@ -285,6 +283,15 @@ const IndustryPage = ({
           {loading ? (
             <Box display="flex" justifyContent="center" p={8}>
               <CircularProgress />
+            </Box>
+          ) : industries.length === 0 ? (
+            <Box sx={{ p: 8, textAlign: 'center' }}>
+              <Typography variant="h6" color="textSecondary">
+                No industries found
+              </Typography>
+              <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                Click "Add Industry" to create your first industry
+              </Typography>
             </Box>
           ) : (
             <TableView
@@ -339,7 +346,10 @@ const IndustryPage = ({
             alignItems: 'center',
             borderBottom: '1px solid #e5e5e5'
           }}>
-            Add New Industry
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BusinessIcon sx={{ color: '#1976d2' }} />
+              Add New Industry
+            </Box>
             <IconButton onClick={handleCloseAddIndustryDialog} size="small">
               <CloseIcon />
             </IconButton>
