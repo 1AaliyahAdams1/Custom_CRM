@@ -18,10 +18,13 @@ import { Add, Clear, FilterList, TrendingUp } from '@mui/icons-material';
 const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {} }) => {
   const [filters, setFilters] = useState(currentFilters);
   const [selectedColumn, setSelectedColumn] = useState('');
-  const [filterType, setFilterType] = useState('contains'); // 'contains', 'min', 'max', 'equals', 'range'
+  const [filterType, setFilterType] = useState('contains'); // 'contains', 'min', 'max', 'equals', 'range', 'after', 'before', 'on', 'dateRange'
   const [filterValue, setFilterValue] = useState('');
   const [rangeMin, setRangeMin] = useState('');
   const [rangeMax, setRangeMax] = useState('');
+  const [dateValue, setDateValue] = useState('');
+  const [dateRangeStart, setDateRangeStart] = useState('');
+  const [dateRangeEnd, setDateRangeEnd] = useState('');
 
   // Sync local filters with parent's currentFilters
   useEffect(() => {
@@ -33,7 +36,9 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
     if (columns && columns.length > 0 && !selectedColumn) {
       setSelectedColumn(columns[0].field);
       // Set default filter type based on column type
-      if (isRangeField(columns[0].field)) {
+      if (isDateField(columns[0].field)) {
+        setFilterType('after');
+      } else if (isRangeField(columns[0].field)) {
         setFilterType('min');
       } else {
         setFilterType('contains');
@@ -44,7 +49,9 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
   // Update filter type when column changes
   useEffect(() => {
     if (selectedColumn) {
-      if (isRangeField(selectedColumn)) {
+      if (isDateField(selectedColumn)) {
+        setFilterType('after');
+      } else if (isRangeField(selectedColumn)) {
         setFilterType('min');
       } else {
         setFilterType('contains');
@@ -53,12 +60,23 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
       setFilterValue('');
       setRangeMin('');
       setRangeMax('');
+      setDateValue('');
+      setDateRangeStart('');
+      setDateRangeEnd('');
     }
   }, [selectedColumn]);
 
+  // Check if current column is a date field
+  const isDateField = (field) => {
+    const dateFields = ['Date', 'Created', 'Updated', 'Modified', 'Start', 'End', 'Deadline', 'Due', 'Scheduled', 'Time'];
+    return dateFields.some(dateField => 
+      field.toLowerCase().includes(dateField.toLowerCase())
+    );
+  };
+
   // Check if current column is an amount/currency field
   const isAmountField = (field) => {
-    const amountFields = ['SymbolValue', 'Amount', 'Value', 'Price', 'Cost', 'Revenue'];
+    const amountFields = ['SymbolValue', 'Amount', 'Value', 'Price', 'Cost', 'Revenue', 'Venues'];
     return amountFields.some(amountField => 
       field.toLowerCase().includes(amountField.toLowerCase())
     );
@@ -88,21 +106,84 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
     return isNaN(parsed) ? 0 : parsed;
   };
 
+  // Parse date value to Date object
+  const parseDate = (value) => {
+    if (!value) return null;
+    
+    // If it's already a Date object
+    if (value instanceof Date) return value;
+    
+    // If it's a string, try to parse it
+    if (typeof value === 'string') {
+      // Handle various date formats
+      const date = new Date(value);
+      return isNaN(date.getTime()) ? null : date;
+    }
+    
+    // If it's a timestamp
+    if (typeof value === 'number') {
+      return new Date(value);
+    }
+    
+    return null;
+  };
+
+  // Format date for display and comparison (YYYY-MM-DD)
+  const formatDateForInput = (date) => {
+    if (!date) return '';
+    const dateObj = parseDate(date);
+    if (!dateObj) return '';
+    
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Compare dates (returns -1, 0, or 1)
+  const compareDates = (date1, date2) => {
+    const d1 = parseDate(date1);
+    const d2 = parseDate(date2);
+    
+    if (!d1 || !d2) return 0;
+    
+    // Compare only the date part (ignore time)
+    const d1Date = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
+    const d2Date = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate());
+    
+    if (d1Date < d2Date) return -1;
+    if (d1Date > d2Date) return 1;
+    return 0;
+  };
+
   // Check if a value matches the filter
   const matchesFilter = (itemValue, filterConfig, field) => {
-    const { type, value, min, max } = filterConfig;
+    const { type, value, min, max, dateStart, dateEnd } = filterConfig;
     
-    if (isRangeField(field)) {
-      let numericValue = extractNumericValue(itemValue);
+    if (isDateField(field)) {
+      const itemDate = parseDate(itemValue);
+      if (!itemDate) return false;
       
-      // Debug logging to see what values we're working with
-      console.log(`Filtering ${field}:`, {
-        itemValue,
-        numericValue,
-        filterConfig,
-        type,
-        compareValue: parseFloat(value)
-      });
+      switch (type) {
+        case 'after':
+          const afterDate = parseDate(value);
+          return afterDate ? compareDates(itemValue, afterDate) >= 0 : true;
+        case 'before':
+          const beforeDate = parseDate(value);
+          return beforeDate ? compareDates(itemValue, beforeDate) <= 0 : true;
+        case 'on':
+          const onDate = parseDate(value);
+          return onDate ? compareDates(itemValue, onDate) === 0 : true;
+        case 'dateRange':
+          const startDate = parseDate(dateStart);
+          const endDate = parseDate(dateEnd);
+          if (!startDate || !endDate) return true;
+          return compareDates(itemValue, startDate) >= 0 && compareDates(itemValue, endDate) <= 0;
+        default:
+          return true;
+      }
+    } else if (isRangeField(field)) {
+      let numericValue = extractNumericValue(itemValue);
       
       const compareValue = parseFloat(value);
       const compareMin = parseFloat(min);
@@ -137,7 +218,24 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
     
     let filterConfig;
     
-    if (isRangeField(selectedColumn)) {
+    if (isDateField(selectedColumn)) {
+      if (filterType === 'dateRange') {
+        if (!dateRangeStart.trim() || !dateRangeEnd.trim()) return;
+        filterConfig = {
+          type: 'dateRange',
+          dateStart: dateRangeStart.trim(),
+          dateEnd: dateRangeEnd.trim(),
+          displayValue: `${dateRangeStart} to ${dateRangeEnd}`
+        };
+      } else {
+        if (!dateValue.trim()) return;
+        filterConfig = {
+          type: filterType,
+          value: dateValue.trim(),
+          displayValue: dateValue.trim()
+        };
+      }
+    } else if (isRangeField(selectedColumn)) {
       if (filterType === 'range') {
         if (!rangeMin.trim() || !rangeMax.trim()) return;
         filterConfig = {
@@ -168,6 +266,9 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
     setFilterValue('');
     setRangeMin('');
     setRangeMax('');
+    setDateValue('');
+    setDateRangeStart('');
+    setDateRangeEnd('');
     
     // Apply filters
     applyFilters(newFilters);
@@ -208,6 +309,9 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
     setFilterValue('');
     setRangeMin('');
     setRangeMax('');
+    setDateValue('');
+    setDateRangeStart('');
+    setDateRangeEnd('');
     if (onApplyFilters) {
       onApplyFilters(emptyFilters);
     }
@@ -225,7 +329,14 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
   };
 
   const getFilterTypeOptions = (field) => {
-    if (isRangeField(field)) {
+    if (isDateField(field)) {
+      return [
+        { value: 'after', label: 'After' },
+        { value: 'before', label: 'Before' },
+        { value: 'on', label: 'On' },
+        { value: 'dateRange', label: 'Date Range' }
+      ];
+    } else if (isRangeField(field)) {
       return [
         { value: 'min', label: 'Minimum' },
         { value: 'max', label: 'Maximum' },
@@ -245,7 +356,7 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
       return `${getColumnDisplayName(field)}: ${filterConfig}`;
     }
     
-    const { type, value, min, max } = filterConfig;
+    const { type, value, min, max, dateStart, dateEnd } = filterConfig;
     const columnName = getColumnDisplayName(field);
     
     switch (type) {
@@ -259,6 +370,14 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
         return `${columnName}: ${min} - ${max}`;
       case 'contains':
         return `${columnName}: contains "${value}"`;
+      case 'after':
+        return `${columnName}: after ${value}`;
+      case 'before':
+        return `${columnName}: before ${value}`;
+      case 'on':
+        return `${columnName}: on ${value}`;
+      case 'dateRange':
+        return `${columnName}: ${dateStart} to ${dateEnd}`;
       default:
         return `${columnName}: ${value}`;
     }
@@ -278,6 +397,157 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
   }
 
   const activeFiltersCount = Object.keys(filters).length;
+
+  // Render filter value inputs based on field type and filter type
+  const renderFilterInputs = () => {
+    if (isDateField(selectedColumn)) {
+      if (filterType === 'dateRange') {
+        return (
+          <>
+            <Grid item xs={12} sm={2}>
+              <TextField
+                fullWidth
+                label="Start Date"
+                type="date"
+                value={dateRangeStart}
+                onChange={(e) => setDateRangeStart(e.target.value)}
+                onKeyPress={handleKeyPress}
+                size="small"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <TextField
+                fullWidth
+                label="End Date"
+                type="date"
+                value={dateRangeEnd}
+                onChange={(e) => setDateRangeEnd(e.target.value)}
+                onKeyPress={handleKeyPress}
+                size="small"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+              />
+            </Grid>
+          </>
+        );
+      } else {
+        return (
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label={
+                filterType === 'after' ? 'After Date' :
+                filterType === 'before' ? 'Before Date' :
+                filterType === 'on' ? 'On Date' :
+                'Select Date'
+              }
+              type="date"
+              value={dateValue}
+              onChange={(e) => setDateValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              size="small"
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+          </Grid>
+        );
+      }
+    } else if (isRangeField(selectedColumn)) {
+      if (filterType === 'range') {
+        return (
+          <>
+            <Grid item xs={12} sm={2}>
+              <TextField
+                fullWidth
+                label="Minimum"
+                value={rangeMin}
+                onChange={(e) => setRangeMin(e.target.value)}
+                onKeyPress={handleKeyPress}
+                size="small"
+                type="number"
+              />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <TextField
+                fullWidth
+                label="Maximum"
+                value={rangeMax}
+                onChange={(e) => setRangeMax(e.target.value)}
+                onKeyPress={handleKeyPress}
+                size="small"
+                type="number"
+              />
+            </Grid>
+          </>
+        );
+      } else {
+        return (
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label={
+                filterType === 'min' ? 'Minimum Value' :
+                filterType === 'max' ? 'Maximum Value' :
+                filterType === 'equals' ? 'Equal to' :
+                'Filter Value'
+              }
+              value={filterValue}
+              onChange={(e) => setFilterValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              size="small"
+              type="number"
+              placeholder={
+                `Enter ${isPercentageField(selectedColumn) ? 'percentage' : 'amount'}`
+              }
+            />
+          </Grid>
+        );
+      }
+    } else {
+      return (
+        <Grid item xs={12} sm={4}>
+          <TextField
+            fullWidth
+            label={
+              filterType === 'equals' ? 'Equal to' : 'Filter Value'
+            }
+            value={filterValue}
+            onChange={(e) => setFilterValue(e.target.value)}
+            onKeyPress={handleKeyPress}
+            size="small"
+            type="text"
+            placeholder={`Enter ${getColumnDisplayName(selectedColumn).toLowerCase()}`}
+          />
+        </Grid>
+      );
+    }
+  };
+
+  // Check if add button should be disabled
+  const isAddButtonDisabled = () => {
+    if (!selectedColumn) return true;
+    
+    if (isDateField(selectedColumn)) {
+      if (filterType === 'dateRange') {
+        return !dateRangeStart.trim() || !dateRangeEnd.trim();
+      } else {
+        return !dateValue.trim();
+      }
+    } else if (isRangeField(selectedColumn)) {
+      if (filterType === 'range') {
+        return !rangeMin.trim() || !rangeMax.trim();
+      } else {
+        return !filterValue.trim();
+      }
+    } else {
+      return !filterValue.trim();
+    }
+  };
 
   return (
     <Paper sx={{ p: 3, mb: 3, boxShadow: 2 }}>
@@ -334,73 +604,14 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
         </Grid>
 
         {/* Filter Value Input(s) */}
-        {filterType === 'range' ? (
-          <>
-            <Grid item xs={12} sm={2}>
-              <TextField
-                fullWidth
-                label="Minimum"
-                value={rangeMin}
-                onChange={(e) => setRangeMin(e.target.value)}
-                onKeyPress={handleKeyPress}
-                size="small"
-                type="number"
-                InputProps={{
-                  // No adornments - removed symbols
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <TextField
-                fullWidth
-                label="Maximum"
-                value={rangeMax}
-                onChange={(e) => setRangeMax(e.target.value)}
-                onKeyPress={handleKeyPress}
-                size="small"
-                type="number"
-                InputProps={{
-                  // No adornments - removed symbols
-                }}
-              />
-            </Grid>
-          </>
-        ) : (
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label={
-                filterType === 'min' ? 'Minimum Value' :
-                filterType === 'max' ? 'Maximum Value' :
-                filterType === 'equals' ? 'Equal to' :
-                'Filter Value'
-              }
-              value={filterValue}
-              onChange={(e) => setFilterValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              size="small"
-              type={isRangeField(selectedColumn) ? 'number' : 'text'}
-              InputProps={{
-                // No adornments - removed symbols
-              }}
-              placeholder={
-                isRangeField(selectedColumn) 
-                  ? `Enter ${isPercentageField(selectedColumn) ? 'percentage' : 'amount'}`
-                  : `Enter ${getColumnDisplayName(selectedColumn).toLowerCase()}`
-              }
-            />
-          </Grid>
-        )}
+        {renderFilterInputs()}
 
         {/* Add Filter Button */}
         <Grid item xs={12} sm={1}>
           <Button
             variant="contained"
             onClick={handleAddFilter}
-            disabled={
-              !selectedColumn || 
-              (filterType === 'range' ? (!rangeMin.trim() || !rangeMax.trim()) : !filterValue.trim())
-            }
+            disabled={isAddButtonDisabled()}
             fullWidth
             startIcon={<Add />}
             size="small"
@@ -459,23 +670,6 @@ const FiltersDialog = ({ columns, onApplyFilters, deals = [], currentFilters = {
           </Typography>
         </Box>
       )}
-
-      {/* Help Text
-      {selectedColumn && isRangeField(selectedColumn) && (
-        <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1, border: '1px solid', borderColor: 'info.main' }}>
-          <Typography variant="body2" color="info.dark">
-            <strong>Range Filtering Tips:</strong>
-            <br />
-            • <strong>Minimum:</strong> Shows {isPercentageField(selectedColumn) ? 'probabilities' : 'amounts'} greater than or equal to your value
-            <br />
-            • <strong>Maximum:</strong> Shows {isPercentageField(selectedColumn) ? 'probabilities' : 'amounts'} less than or equal to your value
-            <br />
-            • <strong>Equal to:</strong> Shows exact matches
-            <br />
-            • <strong>Range:</strong> Shows {isPercentageField(selectedColumn) ? 'probabilities' : 'amounts'} between min and max (inclusive)
-          </Typography>
-        </Box>
-      )} */}
     </Paper>
   );
 };

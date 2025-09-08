@@ -23,12 +23,15 @@ import {
 import ConfirmDialog from "../../components/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
+import BulkAssignDialog from "../../components/BulkAssignDialog"; 
 
 const AccountsContainer = () => {
   const navigate = useNavigate();
 
   // ---------------- STATE ----------------
-  const [accounts, setAccounts] = useState([]);
+  const [allAccounts, setAllAccounts] = useState([]);
+  const [filteredAccounts, setFilteredAccounts] = useState([]);
+  const [currentFilter, setCurrentFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -38,6 +41,10 @@ const AccountsContainer = () => {
   const [statusMessage, setStatusMessage] = useState("");
   const [statusSeverity, setStatusSeverity] = useState("success");
 
+  // Bulk operations state
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
+
   // Popups
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
@@ -46,6 +53,7 @@ const AccountsContainer = () => {
   // Delete confirm dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState(null);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -53,6 +61,53 @@ const AccountsContainer = () => {
   const userId = storedUser.UserID || storedUser.id || null;
   const isCLevel = roles.includes("C-level");
   const isSalesRep = roles.includes("Sales Representative");
+
+  // ---------------- FILTER LOGIC ----------------
+  const applyFilter = (accounts, filterType) => {
+    console.log('=== FILTER DEBUG ===');
+    console.log('Applying filter:', filterType, 'to accounts:', accounts.length);
+    
+    const ownerStatusValues = [...new Set(accounts.map(acc => acc.ownerStatus))];
+    console.log('All ownerStatus values found:', ownerStatusValues);
+    
+    let filteredAccounts;
+    switch (filterType) {
+      case 'my':
+        filteredAccounts = accounts.filter(acc => acc.ownerStatus === 'owned');
+        break;
+        
+      case 'team':
+        if (isCLevel) {
+          filteredAccounts = accounts;
+        } else if (isSalesRep) {
+          filteredAccounts = accounts.filter(acc => 
+            acc.ownerStatus === 'owned' || acc.ownerStatus === 'unowned'
+          );
+        } else {
+          filteredAccounts = accounts;
+        }
+        break;
+        
+      case 'unassigned':
+        if (isCLevel) {
+          filteredAccounts = accounts.filter(acc => 
+            acc.ownerStatus === 'n/a' || acc.ownerStatus === 'unowned'
+          );
+        } else {
+          filteredAccounts = accounts.filter(acc => acc.ownerStatus === 'unowned');
+        }
+        break;
+        
+      case 'all':
+      default:
+        filteredAccounts = accounts;
+        break;
+    }
+    
+    console.log(`Filter "${filterType}" returned:`, filteredAccounts.length, 'accounts');
+    console.log('=== END FILTER DEBUG ===');
+    return filteredAccounts;
+  };
 
   // ---------------- FETCH ACCOUNTS ----------------
   const fetchAccounts = async () => {
@@ -66,23 +121,40 @@ const AccountsContainer = () => {
         accountsData = response.data || [];
         accountsData.forEach((acc) => (acc.ownerStatus = "n/a"));
       } else if (isSalesRep) {
+        console.log('=== FETCHING ACCOUNTS DATA ===');
+        console.log('User ID:', userId);
+        
         const assignedRes = await fetchActiveAccountsByUser(userId);
         const unassignedRes = await fetchActiveUnassignedAccounts();
+
+        console.log('Assigned API response:', assignedRes);
+        console.log('Unassigned API response:', unassignedRes);
 
         const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
         const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
 
+        console.log('Assigned accounts count:', assignedAccounts.length);
+        console.log('Unassigned accounts count:', unassignedAccounts.length);
+
         assignedAccounts.forEach((acc) => (acc.ownerStatus = "owned"));
         unassignedAccounts.forEach((acc) => (acc.ownerStatus = "unowned"));
+
+        console.log('Sample assigned account:', assignedAccounts[0]);
+        console.log('Sample unassigned account:', unassignedAccounts[0]);
 
         const map = new Map();
         [...assignedAccounts, ...unassignedAccounts].forEach((acc) => {
           if (acc.AccountID) map.set(acc.AccountID, acc);
         });
         accountsData = Array.from(map.values());
+        
+        console.log('Final merged accounts count:', accountsData.length);
+        console.log('=== END FETCHING ACCOUNTS DATA ===');
       }
 
-      setAccounts(accountsData);
+      setAllAccounts(accountsData);
+      const filtered = applyFilter(accountsData, currentFilter);
+      setFilteredAccounts(filtered);
     } catch {
       setError("Failed to load accounts. Please try again.");
     } finally {
@@ -90,9 +162,22 @@ const AccountsContainer = () => {
     }
   };
 
+  // ---------------- FILTER HANDLER ----------------
+  const handleFilterChange = (filterType) => {
+    setCurrentFilter(filterType);
+    const filtered = applyFilter(allAccounts, filterType);
+    setFilteredAccounts(filtered);
+    setSelected([]);
+  };
+
   useEffect(() => {
     fetchAccounts();
   }, [refreshFlag]);
+
+  useEffect(() => {
+    const filtered = applyFilter(allAccounts, currentFilter);
+    setFilteredAccounts(filtered);
+  }, [allAccounts, currentFilter]);
 
   // ---------------- ACCOUNT ACTIONS ----------------
   const handleDeactivateClick = (account) => {
@@ -123,17 +208,129 @@ const AccountsContainer = () => {
 
   const handleCreate = () => navigate("/accounts/create");
 
+  // ---------------- BULK ACTIONS ----------------
+  const handleBulkClaim = async (selectedItems) => {
+    setBulkLoading(true);
+    const claimableAccounts = selectedItems.filter(account => account.ownerStatus === 'unowned');
+    
+    if (claimableAccounts.length === 0) {
+      setStatusMessage("No unowned accounts selected for claiming");
+      setStatusSeverity("warning");
+      setBulkLoading(false);
+      return;
+    }
+
+    try {
+      const claimPromises = claimableAccounts.map(account => 
+        claimAccount(account.AccountID)
+      );
+      
+      await Promise.all(claimPromises);
+      
+      setStatusMessage(`Successfully claimed ${claimableAccounts.length} account${claimableAccounts.length !== 1 ? 's' : ''}`);
+      setStatusSeverity("success");
+      
+      // Update accounts status
+      const updateAccounts = (accounts) =>
+        accounts.map((account) =>
+          claimableAccounts.some(claimed => claimed.AccountID === account.AccountID)
+            ? { ...account, ownerStatus: "owned" }
+            : account
+        );
+      
+      setAllAccounts(updateAccounts);
+      setFilteredAccounts(prev => updateAccounts(prev));
+      setSelected([]);
+      
+    } catch (err) {
+      setStatusMessage(err.message || "Failed to claim selected accounts");
+      setStatusSeverity("error");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkAssign = async (selectedItems) => {
+    setBulkAssignDialogOpen(true);
+  };
+
+  const confirmBulkAssign = async (employeeId) => {
+    setBulkLoading(true);
+    const selectedItems = filteredAccounts.filter(account => 
+      selected.includes(account.AccountID)
+    );
+
+    try {
+      const assignPromises = selectedItems.map(account => 
+        assignUser(account.AccountID, employeeId)
+      );
+      
+      await Promise.all(assignPromises);
+      
+      setSuccessMessage(`Successfully assigned ${selectedItems.length} account${selectedItems.length !== 1 ? 's' : ''}`);
+      setSelected([]);
+      setBulkAssignDialogOpen(false);
+      setRefreshFlag(flag => !flag);
+      
+    } catch (err) {
+      setError(err.message || "Failed to assign selected accounts");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkDeactivate = async (selectedItems) => {
+    setBulkDeleteDialogOpen(true);
+  };
+
+  const confirmBulkDeactivate = async () => {
+    setBulkLoading(true);
+    const selectedItems = filteredAccounts.filter(account => 
+      selected.includes(account.AccountID)
+    );
+
+    try {
+      const deletePromises = selectedItems.map(account => 
+        deactivateAccount(account.AccountID)
+      );
+      
+      await Promise.all(deletePromises);
+      
+      setSuccessMessage(`Successfully deactivated ${selectedItems.length} account${selectedItems.length !== 1 ? 's' : ''}`);
+      setSelected([]);
+      setBulkDeleteDialogOpen(false);
+      setRefreshFlag(flag => !flag);
+      
+    } catch (err) {
+      setError(err.message || "Failed to deactivate selected accounts");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkExport = async (selectedItems) => {
+    // Implementation for exporting selected accounts
+    console.log("Exporting accounts:", selectedItems);
+  };
+
+  const handleClearSelection = () => {
+    setSelected([]);
+  };
+
   // ---------------- CLAIM / ASSIGN ----------------
   const handleClaimAccount = async (account) => {
     try {
       await claimAccount(account.AccountID);
       setStatusMessage(`Account claimed: ${account.AccountName}`);
       setStatusSeverity("success");
-      setAccounts((prev) =>
-        prev.map((a) =>
+      
+      const updateAccounts = (accounts) =>
+        accounts.map((a) =>
           a.AccountID === account.AccountID ? { ...a, ownerStatus: "owned" } : a
-        )
-      );
+        );
+      
+      setAllAccounts(updateAccounts);
+      setFilteredAccounts(prev => updateAccounts(prev));
     } catch (err) {
       setStatusMessage(err.message || "Failed to claim account");
       setStatusSeverity("error");
@@ -144,6 +341,7 @@ const AccountsContainer = () => {
     try {
       await assignUser(account.AccountID, employeeId);
       setSuccessMessage(`User assigned to ${account.AccountName}`);
+      setRefreshFlag((flag) => !flag);
     } catch (err) {
       setError(err.message || "Failed to assign user");
       throw err;
@@ -160,7 +358,7 @@ const AccountsContainer = () => {
   };
 
   const handleSelectAllClick = (event) => {
-    if (event.target.checked) setSelected(accounts.map((a) => a.AccountID));
+    if (event.target.checked) setSelected(filteredAccounts.map((a) => a.AccountID));
     else setSelected([]);
   };
 
@@ -248,10 +446,15 @@ const AccountsContainer = () => {
     }
   };
 
+  // Get selected account objects for bulk operations
+  const selectedAccountObjects = filteredAccounts.filter(account => 
+    selected.includes(account.AccountID)
+  );
+
   return (
     <>
       <AccountsPage
-        accounts={accounts}
+        accounts={filteredAccounts}
         loading={loading}
         error={error}
         successMessage={successMessage}
@@ -260,6 +463,7 @@ const AccountsContainer = () => {
         statusSeverity={statusSeverity}
         setStatusMessage={setStatusMessage}
         selected={selected}
+        selectedItems={selectedAccountObjects}
         onSelectClick={handleSelectClick}
         onSelectAllClick={handleSelectAllClick}
         onDeactivate={handleDeactivateClick} 
@@ -270,6 +474,16 @@ const AccountsContainer = () => {
         onAddAttachment={handleAddAttachment}
         onClaimAccount={handleClaimAccount}
         onAssignUser={handleAssignUser}
+        onFilterChange={handleFilterChange}
+        
+        // Bulk action handlers
+        onBulkClaim={handleBulkClaim}
+        onBulkAssign={handleBulkAssign}
+        onBulkDeactivate={handleBulkDeactivate}
+        onBulkExport={handleBulkExport}
+        onClearSelection={handleClearSelection}
+        bulkLoading={bulkLoading}
+        userRoles={roles}
       />
 
       {/* Notes Popup */}
@@ -297,13 +511,31 @@ const AccountsContainer = () => {
         onDownload={handleDownloadAttachment}
       />
 
-      {/* Confirm delete dialog */}
+      {/* Bulk Assign Dialog */}
+      <BulkAssignDialog
+        open={bulkAssignDialogOpen}
+        onClose={() => setBulkAssignDialogOpen(false)}
+        selectedItems={selectedAccountObjects}
+        onConfirm={confirmBulkAssign}
+        loading={bulkLoading}
+      />
+
+      {/* Single delete dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Delete Account"
         description={`Are you sure you want to delete "${accountToDelete?.AccountName}"?`}
         onConfirm={confirmDeactivate}
         onCancel={() => setDeleteDialogOpen(false)}
+      />
+
+      {/* Bulk delete dialog */}
+      <ConfirmDialog
+        open={bulkDeleteDialogOpen}
+        title="Bulk Delete Accounts"
+        description={`Are you sure you want to deactivate ${selected.length} selected account${selected.length !== 1 ? 's' : ''}? This action cannot be undone.`}
+        onConfirm={confirmBulkDeactivate}
+        onCancel={() => setBulkDeleteDialogOpen(false)}
       />
     </>
   );
