@@ -9,7 +9,8 @@ const workController = require("../controllers/workController");
 // Get work dashboard summary (overview stats and recent activity)
 router.get("/user/:userId/dashboard", workController.getWorkDashboard);
 
-// Get work page activities (with sorting and filtering options)
+// Get smart work page activities (with sorting and filtering)
+// Query params: ?sort=dueDate|priority|account|type|sequence|status&filter=all|overdue|urgent|high-priority|completed|pending|today
 router.get("/user/:userId/activities", workController.getActivities);
 
 // Get single activity for workspace tab with full context
@@ -25,30 +26,37 @@ router.get("/user/:userId/sequences", workController.getUserSequences);
 router.get("/metadata/activity", workController.getActivityMetadata);
 
 // =======================
-// WORKFLOW SUPPORT ROUTES
+// SMART WORKFLOW ROUTES
 // =======================
 
-// Get next activity in workflow (supports smart progression)
+// Get next activity in smart workflow (supports intelligent progression)
+// Query params: ?currentActivityId=123 (to exclude current activity)
 router.get("/user/:userId/next-activity", workController.getNextActivity);
 
 // =======================
 // CALENDAR/DAY VIEW ROUTES
 // =======================
 
-// Get day view activities (calendar style)
+// Get day view activities (calendar style grouping by hour)
+// Query params: ?date=2024-01-15 (defaults to today)
 router.get("/user/:userId/day-view", workController.getDayView);
 
 // =======================
-// ACTIVITY MANAGEMENT ROUTES
+// WORKSPACE ACTIVITY MANAGEMENT
 // =======================
 
-// Complete an activity (includes getting next activity for workflow)
+// Complete an activity (includes smart workflow: auto-get next activity)
+// Body: { userId: number, notes?: string }
 router.post("/activities/:id/complete", workController.completeActivity);
 
-// Update activity (for workspace editing) - RESTful approach
+// Mark activity as complete (simple completion without workflow)
+router.patch("/user/:userId/activity/:activityId/complete", workController.markComplete);
+
+// Update activity in workspace (for editing due dates, priority, etc.)
+// Body: { dueToStart?: Date, dueToEnd?: Date, priorityLevelId?: number }
 router.put("/user/:userId/activity/:activityId", workController.updateActivity);
 
-// Soft delete activity
+// Soft delete activity (sets Active = 0, suggests next activity)
 router.delete("/user/:userId/activity/:activityId", workController.deleteActivity);
 
 module.exports = router;
