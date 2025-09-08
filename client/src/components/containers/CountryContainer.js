@@ -13,7 +13,7 @@ import {
   getCountryByCode,
   getActiveCountries
 } from '../../services/countryService';
-import CountryPage from "../../pages/Country/CountryPage";
+import CountryPage from "../../pages/GeographicData/CountryPage";
 
 const CountryContainer = () => {
     const navigate = useNavigate();
