@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box, Alert, Typography } from "@mui/material";
+import { 
+  Box, 
+  Alert, 
+  Typography, 
+  Menu, 
+  MenuItem, 
+  ListItemIcon, 
+  ListItemText 
+} from "@mui/material";
+import { 
+  Cancel, 
+  CheckCircle, 
+  HourglassEmpty, 
+  Schedule 
+} from "@mui/icons-material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { fetchActivityById, updateActivity, deactivateActivity } from "../../services/activityService";
 import { priorityLevelService, activityTypeService } from '../../services/dropdownServices';
@@ -60,6 +74,8 @@ export default function ActivityDetailsForm({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [statusMenuAnchor, setStatusMenuAnchor] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     const loadActivity = async () => {
@@ -89,9 +105,35 @@ export default function ActivityDetailsForm({
       }
     };
 
-  useEffect(() => {
-    refreshActivity();
-  }, [refreshActivity]);
+    loadActivity();
+  }, [id]);
+
+  const refreshActivity = async () => {
+    if (!id) {
+      setError("No activity ID provided in the route.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchActivityById(id);
+      console.log("Debug: fetchActivityById response:", data);
+      
+      const activityData = data?.data || data;
+      if (!activityData) {
+        throw new Error("Activity not found");
+      }
+      
+      setActivity(activityData);
+    } catch (err) {
+      console.error("Error loading activity:", err);
+      setError(err.message || "Failed to load activity details");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async (formData) => {
     try {

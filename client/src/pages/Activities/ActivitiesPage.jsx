@@ -157,6 +157,12 @@ const ActivitiesPage = ({
     }
   };
 
+  // Combine imported formatters with custom formatters
+  const enhancedFormatters = {
+    ...formatters,
+    Status: statusFormatter,
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Box

@@ -102,17 +102,52 @@ const TableView = ({
     return tooltips?.actions || `Available actions for this ${entityType || 'record'}`;
   };
 
-  const filteredData = data.filter((item) => {
-    if (searchTerm) {
-      const found = columns.some((c) => {
-        const val = item[c.field];
-        return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
+  // Fixed: Proper filtering logic with complete function
+  const getFilteredData = () => {
+    // Use custom filtered data if available (from advanced filters)
+    if (customFilteredData) {
+      if (!searchTerm) return customFilteredData;
+      
+      return customFilteredData.filter((item) => {
+        return columns.some((col) => {
+          const val = item[col.field];
+          return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
+        });
+      });
+    }
+
+    // Standard filtering based on search term and basic filters
+    return data.filter((item) => {
+      // Apply search term filter
+      if (searchTerm) {
+        const matchesSearch = columns.some((col) => {
+          const val = item[col.field];
+          return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
+        });
+        if (!matchesSearch) return false;
+      }
+
+      // Apply other filters
+      return Object.entries(filters).every(([field, filterValue]) => {
+        if (!filterValue || filterValue === '') return true;
+        const itemValue = item[field];
+        
+        // Handle array filters (for multi-select)
+        if (Array.isArray(filterValue)) {
+          return filterValue.includes(itemValue);
+        }
+        
+        // Handle string filters
+        if (typeof filterValue === 'string') {
+          return itemValue && itemValue.toString().toLowerCase().includes(filterValue.toLowerCase());
+        }
+        
+        return itemValue === filterValue;
       });
     });
   };
 
   const filteredData = getFilteredData();
-
   const displayedColumns = columns.filter((col) => visibleColumns[col.field]);
 
   const renderCellContent = (row, column) => {
