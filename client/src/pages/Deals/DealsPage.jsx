@@ -71,18 +71,9 @@ const dealsTableConfig = {
       chipColors: { true: '#079141ff', false: '#999999' },
       defaultVisible: true,
     }
-    {
-      field: 'Active',
-      headerName: 'Active',
-      type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999' },
-      defaultVisible: true,
-    }
   ]
 };
 
-const DealsPage = ({
 const DealsPage = ({
   deals = [],
   loading = false,

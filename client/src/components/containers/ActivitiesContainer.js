@@ -27,9 +27,6 @@ import { activityTypeService, priorityLevelService } from "../../services/dropdo
 import ConfirmDialog from "../../components/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
-import ConfirmDialog from "../../components/ConfirmDialog";
-import NotesPopup from "../../components/NotesComponent";
-import AttachmentsPopup from "../../components/AttachmentsComponent";
 
 const ActivitiesContainer = () => {
   const navigate = useNavigate();
@@ -57,10 +54,6 @@ const ActivitiesContainer = () => {
   const [accounts, setAccounts] = useState([]);
   const [activityTypes, setActivityTypes] = useState([]);
   const [priorityLevels, setPriorityLevels] = useState([]);
-
-  // Delete confirm dialog
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [activityToDelete, setActivityToDelete] = useState(null);
 
   // Delete confirm dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -217,7 +210,6 @@ const ActivitiesContainer = () => {
       setActivityTypes(activityTypesData);
       setPriorityLevels(priorityLevelsData);
     } catch {
-    } catch {
       setError("Failed to load lookups.");
     }
   };
@@ -294,24 +286,12 @@ const ActivitiesContainer = () => {
 
   const confirmDeactivate = async () => {
     if (!activityToDelete) return;
-  const handleDeactivateClick = (activity) => {
-    setActivityToDelete(activity);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDeactivate = async () => {
-    if (!activityToDelete) return;
     try {
-      await deactivateActivity(activityToDelete.ActivityID);
       await deactivateActivity(activityToDelete.ActivityID);
       setSuccessMessage("Activity deleted successfully.");
       setRefreshFlag((f) => !f);
     } catch {
-    } catch {
       setError("Failed to delete activity. Please try again.");
-    } finally {
-      setDeleteDialogOpen(false);
-      setActivityToDelete(null);
     } finally {
       setDeleteDialogOpen(false);
       setActivityToDelete(null);
@@ -321,11 +301,7 @@ const ActivitiesContainer = () => {
   const handleEdit = (activity) =>
     navigate(`/activities/edit/${activity.ActivityID}`, { state: { activity } });
 
-  const handleEdit = (activity) =>
-    navigate(`/activities/edit/${activity.ActivityID}`, { state: { activity } });
-
   const handleView = (activity) => navigate(`/activities/${activity.ActivityID}`);
-
 
   const handleCreate = () => navigate("/activities/create");
 
@@ -352,12 +328,6 @@ const ActivitiesContainer = () => {
         Content: noteData.Content,
       };
       await createNote(notePayload);
-      const notePayload = {
-        EntityID: selectedActivity.ActivityID,
-        EntityType: "Activity",
-        Content: noteData.Content,
-      };
-      await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag((f) => !f);
@@ -373,48 +343,11 @@ const ActivitiesContainer = () => {
       setRefreshFlag((f) => !f);
     } catch (err) {
       setError(err.message || "Failed to update note");
-      setError(err.message || "Failed to save note");
-    }
-  };
-
-  const handleEditNote = async (noteData) => {
-    try {
-      await updateNote(noteData.NoteID, noteData);
-      setSuccessMessage("Note updated successfully!");
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to update note");
     }
   };
 
   const handleDeleteNote = async (noteId) => {
-  const handleDeleteNote = async (noteId) => {
     try {
-      await deleteNote(noteId);
-      setSuccessMessage("Note deleted successfully!");
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to delete note");
-    }
-  };
-
-  // ---------------- ATTACHMENTS ----------------
-  const handleAddAttachment = (activity) => {
-    setSelectedActivity(activity);
-    setAttachmentsPopupOpen(true);
-  };
-
-  const handleUploadAttachment = async (files) => {
-    try {
-      const uploadPromises = files.map(file => 
-        uploadAttachment({
-          file,
-          entityId: selectedActivity.ActivityID,
-          entityTypeName: "Activity"
-        })
-      );
-      await Promise.all(uploadPromises);
-      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
       await deleteNote(noteId);
       setSuccessMessage("Note deleted successfully!");
       setRefreshFlag((f) => !f);
@@ -443,25 +376,6 @@ const ActivitiesContainer = () => {
       setAttachmentsPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
-      setError(err.message || "Failed to upload attachments");
-    }
-  };
-
-  const handleDeleteAttachment = async (attachmentId) => {
-    try {
-      await deleteAttachment(attachmentId);
-      setSuccessMessage("Attachment deleted successfully!");
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to delete attachment");
-    }
-  };
-
-  const handleDownloadAttachment = async (attachment) => {
-    try {
-      await downloadAttachment(attachment);
-    } catch (err) {
-      setError(err.message || "Failed to download attachment");
       setError(err.message || "Failed to upload attachments");
     }
   };

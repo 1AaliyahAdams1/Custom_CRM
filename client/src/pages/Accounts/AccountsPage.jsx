@@ -186,10 +186,6 @@ const AccountsPage = ({
                     label={`${selected.length} selected`}
                     size="small"
                     sx={{ backgroundColor: '#e0e0e0', color: '#050505' }}
-                  <Chip
-                    label={`${selected.length} selected`}
-                    size="small"
-                    sx={{ backgroundColor: '#e0e0e0', color: '#050505' }}
                   />
                 </Tooltip>
               )}
