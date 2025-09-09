@@ -17,7 +17,6 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
-import { Assignment } from '@mui/icons-material';
 import { getAllEmployees } from '../services/employeeService';
 
 const BulkAssignDialog = ({
@@ -81,41 +80,56 @@ const BulkAssignDialog = ({
       maxWidth="md" 
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 2 }
+        sx: { 
+          borderRadius: 2,
+          backgroundColor: 'white',
+          color: 'black'
+        }
       }}
     >
       <DialogTitle sx={{ 
         display: 'flex', 
         alignItems: 'center', 
         gap: 1,
-        pb: 1 
+        pb: 1,
+        color: 'black'
       }}>
-        <Assignment color="primary" />
         Bulk Assign Accounts
       </DialogTitle>
 
       <DialogContent sx={{ pt: 2 }}>
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 2,
+              backgroundColor: 'white',
+              color: 'black',
+              border: '1px solid black',
+              '& .MuiAlert-icon': {
+                color: 'black'
+              }
+            }}
+          >
             {error}
           </Alert>
         )}
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Assign {selectedItems.length} selected account{selectedItems.length !== 1 ? 's' : ''} to a team member:
+        <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+          Assign {selectedItems.length} selected account{selectedItems.length !== 1 ? 's' : ''} to an employee:
         </Typography>
 
         {/* Selected accounts preview */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, color: 'black' }}>
             Selected Accounts:
           </Typography>
           <Box sx={{ 
             maxHeight: 150, 
             overflow: 'auto', 
-            border: '1px solid #e0e0e0', 
+            border: '1px solid black', 
             borderRadius: 1,
-            backgroundColor: '#fafafa'
+            backgroundColor: '#f9f9f9'
           }}>
             <List dense>
               {selectedItems.slice(0, 10).map((account, index) => (
@@ -123,6 +137,10 @@ const BulkAssignDialog = ({
                   <ListItemText 
                     primary={account.AccountName}
                     secondary={`${account.CityName || 'Unknown'}, ${account.CountryName || 'Unknown'}`}
+                    sx={{
+                      '& .MuiListItemText-primary': { color: 'black' },
+                      '& .MuiListItemText-secondary': { color: '#666' }
+                    }}
                   />
                 </ListItem>
               ))}
@@ -130,7 +148,10 @@ const BulkAssignDialog = ({
                 <ListItem>
                   <ListItemText 
                     primary={`... and ${selectedItems.length - 10} more accounts`}
-                    sx={{ fontStyle: 'italic', color: 'text.secondary' }}
+                    sx={{ 
+                      fontStyle: 'italic',
+                      '& .MuiListItemText-primary': { color: '#666' }
+                    }}
                   />
                 </ListItem>
               )}
@@ -140,23 +161,47 @@ const BulkAssignDialog = ({
 
         {/* Employee selection */}
         <FormControl fullWidth>
-          <InputLabel>Assign to Employee</InputLabel>
+          <InputLabel sx={{ 
+            color: 'black',
+            '&.Mui-focused': {
+              color: 'black'
+            }
+          }}>Assign to Employee</InputLabel>
           <Select
             value={selectedEmployee}
             label="Assign to Employee"
             onChange={(e) => setSelectedEmployee(e.target.value)}
             disabled={employeesLoading || loading}
+            sx={{
+              color: 'black',
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'black',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'black',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'black',
+              },
+              '& .MuiSelect-icon': {
+                color: 'black',
+              }
+            }}
           >
             {employeesLoading ? (
               <MenuItem disabled>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CircularProgress size={16} />
+                  <CircularProgress size={16} sx={{ color: 'black' }} />
                   Loading employees...
                 </Box>
               </MenuItem>
             ) : (
               employees.map((employee) => (
-                <MenuItem key={employee.id} value={employee.id}>
+                <MenuItem 
+                  key={employee.id} 
+                  value={employee.id}
+                  sx={{ color: 'black' }}
+                >
                   {employee.name} - {employee.role}
                 </MenuItem>
               ))
@@ -165,8 +210,14 @@ const BulkAssignDialog = ({
         </FormControl>
 
         {selectedEmployee && (
-          <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-            <Typography variant="body2">
+          <Box sx={{ 
+            mt: 2, 
+            p: 2, 
+            backgroundColor: '#f5f5f5', 
+            borderRadius: 1,
+            border: '1px solid #ddd'
+          }}>
+            <Typography variant="body2" sx={{ color: 'black' }}>
               <strong>Confirmation:</strong> You are about to assign {selectedItems.length} account
               {selectedItems.length !== 1 ? 's' : ''} to{' '}
               {(() => {
@@ -183,6 +234,14 @@ const BulkAssignDialog = ({
         <Button 
           onClick={handleClose}
           disabled={loading}
+          sx={{
+            color: 'black',
+            borderColor: 'black',
+            '&:hover': {
+              backgroundColor: '#f5f5f5',
+              borderColor: 'black'
+            }
+          }}
         >
           Cancel
         </Button>
@@ -190,7 +249,18 @@ const BulkAssignDialog = ({
           onClick={handleConfirm}
           variant="contained"
           disabled={!selectedEmployee || loading || employeesLoading}
-          startIcon={loading ? <CircularProgress size={16} /> : <Assignment />}
+          startIcon={loading ? <CircularProgress size={16} sx={{ color: 'white' }} /> : null}
+          sx={{
+            backgroundColor: 'black',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: '#333'
+            },
+            '&:disabled': {
+              backgroundColor: '#ccc',
+              color: '#666'
+            }
+          }}
         >
           {loading ? 'Assigning...' : `Assign ${selectedItems.length} Account${selectedItems.length !== 1 ? 's' : ''}`}
         </Button>

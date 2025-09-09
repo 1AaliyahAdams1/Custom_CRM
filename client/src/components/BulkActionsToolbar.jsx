@@ -3,9 +3,6 @@ import React, { useState } from 'react';
 import {
   Box,
   Button,
-  Menu,
-  MenuItem,
-  Divider,
   Typography,
   Chip,
   CircularProgress,
@@ -14,9 +11,6 @@ import {
 import {
   Assignment,
   PersonAdd,
-  Delete,
-  MoreHoriz,
-  Check,
   Cancel,
 } from '@mui/icons-material';
 
@@ -29,20 +23,11 @@ const BulkActionsToolbar = ({
   onBulkDeactivate,
   onBulkExport,
   onClearSelection,
-  userRole = '',
+  userRole = [],
   loading = false,
   disabled = false,
 }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
   const [bulkLoading, setBulkLoading] = useState('');
-
-  const handleMoreClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
 
   const handleBulkAction = async (action, handler) => {
     if (!handler || loading || disabled) return;
@@ -54,19 +39,54 @@ const BulkActionsToolbar = ({
       console.error(`Bulk ${action} failed:`, error);
     } finally {
       setBulkLoading('');
-      handleClose();
     }
   };
 
   // Don't render if no items selected
   if (selectedCount === 0) return null;
 
-  const isSalesRep = userRole.includes('Sales Representative');
-  const isCLevel = userRole.includes('C-level');
+  // Debug logging
+  console.log('=== BULK ACTIONS TOOLBAR DEBUG ===');
+  console.log('selectedCount:', selectedCount);
+  console.log('userRole:', userRole, 'type:', typeof userRole);
+  console.log('selectedItems:', selectedItems);
+  console.log('selectedItems ownerStatus details:', selectedItems.map(item => ({ 
+    name: item.AccountName, 
+    status: item.ownerStatus,
+    statusType: typeof item.ownerStatus 
+  })));
+
+  // Handle both array and string userRole
+  let roles = [];
+  if (Array.isArray(userRole)) {
+    roles = userRole;
+  } else if (typeof userRole === 'string') {
+    roles = [userRole];
+  }
   
-  // Determine which accounts can be claimed (only unowned ones)
-  const claimableCount = selectedItems.filter(item => item.ownerStatus === 'unowned').length;
-  const canClaim = isSalesRep && claimableCount > 0;
+  const isSalesRep = roles.includes('Sales Representative');
+  const isCLevel = roles.includes('C-level');
+  
+  console.log('roles array:', roles);
+  console.log('isSalesRep:', isSalesRep);
+  console.log('isCLevel:', isCLevel);
+  
+  // Determine which accounts can be claimed
+  // Sales Rep can claim 'unowned' accounts
+  // C-level can claim 'n/a' accounts (since they see all accounts as n/a)
+  let claimableCount = 0;
+  if (isSalesRep) {
+    claimableCount = selectedItems.filter(item => item.ownerStatus === 'unowned').length;
+  } else if (isCLevel) {
+    claimableCount = selectedItems.filter(item => item.ownerStatus === 'n/a').length;
+  }
+  
+  const canClaim = (isSalesRep || isCLevel) && claimableCount > 0;
+
+  console.log('claimableCount:', claimableCount);
+  console.log('canClaim:', canClaim);
+  console.log('All unique ownerStatus values:', [...new Set(selectedItems.map(item => item.ownerStatus))]);
+  console.log('=== END DEBUG ===');
 
   return (
     <Box
@@ -103,7 +123,7 @@ const BulkActionsToolbar = ({
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {/* Primary bulk actions */}
+        {/* Bulk Claim Button - Show when there are claimable accounts */}
         {canClaim && (
           <Tooltip title={`Claim ${claimableCount} unowned ${entityType}${claimableCount !== 1 ? 's' : ''}`}>
             <Button
@@ -117,7 +137,7 @@ const BulkActionsToolbar = ({
                 )
               }
               onClick={() => handleBulkAction('claim', onBulkClaim)}
-              disabled={loading || bulkLoading || disabled}
+              disabled={Boolean(loading || bulkLoading || disabled)} // Convert to boolean
               sx={{
                 backgroundColor: 'rgba(255,255,255,0.15)',
                 color: 'inherit',
@@ -135,6 +155,7 @@ const BulkActionsToolbar = ({
           </Tooltip>
         )}
 
+        {/* Bulk Assign Button */}
         <Tooltip title={`Assign team members to ${selectedCount} selected ${entityType}${selectedCount !== 1 ? 's' : ''}`}>
           <Button
             variant="contained"
@@ -147,7 +168,7 @@ const BulkActionsToolbar = ({
               )
             }
             onClick={() => handleBulkAction('assign', onBulkAssign)}
-            disabled={loading || bulkLoading || disabled}
+            disabled={Boolean(loading || bulkLoading || disabled)} // Convert to boolean
             sx={{
               backgroundColor: 'rgba(255,255,255,0.15)',
               color: 'inherit',
@@ -164,55 +185,6 @@ const BulkActionsToolbar = ({
           </Button>
         </Tooltip>
 
-        
-
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleClose}
-          PaperProps={{
-            sx: {
-              mt: 1,
-              minWidth: 180,
-            }
-          }}
-        >
-          {onBulkExport && (
-            <MenuItem
-              onClick={() => handleBulkAction('export', onBulkExport)}
-              disabled={bulkLoading}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {bulkLoading === 'export' ? (
-                  <CircularProgress size={16} />
-                ) : (
-                  <Check fontSize="small" />
-                )}
-                Export Selected
-              </Box>
-            </MenuItem>
-          )}
-          
-          <Divider />
-          
-          {(isCLevel || isSalesRep) && onBulkDeactivate && (
-            <MenuItem
-              onClick={() => handleBulkAction('deactivate', onBulkDeactivate)}
-              disabled={bulkLoading}
-              sx={{ color: 'error.main' }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {bulkLoading === 'deactivate' ? (
-                  <CircularProgress size={16} color="error" />
-                ) : (
-                  <Delete fontSize="small" />
-                )}
-                Deactivate Selected
-              </Box>
-            </MenuItem>
-          )}
-        </Menu>
-
         {/* Clear selection */}
         <Tooltip title="Clear selection">
           <Button
@@ -220,7 +192,7 @@ const BulkActionsToolbar = ({
             size="small"
             startIcon={<Cancel />}
             onClick={onClearSelection}
-            disabled={loading || bulkLoading}
+            disabled={Boolean(loading || bulkLoading)} // Convert to boolean
             sx={{
               color: 'inherit',
               '&:hover': {

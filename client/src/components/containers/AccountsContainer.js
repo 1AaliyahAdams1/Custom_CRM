@@ -24,6 +24,7 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import BulkAssignDialog from "../../components/BulkAssignDialog"; 
+import BulkClaimDialog from "../../components/BulkClaimDialog"; 
 
 const AccountsContainer = () => {
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ const AccountsContainer = () => {
   // Bulk operations state
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
+  const [bulkClaimDialogOpen, setBulkClaimDialogOpen] = useState(false);
 
   // Popups
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
@@ -210,22 +212,24 @@ const AccountsContainer = () => {
 
   // ---------------- BULK ACTIONS ----------------
   const handleBulkClaim = async (selectedItems) => {
-    setBulkLoading(true);
-    const claimableAccounts = selectedItems.filter(account => account.ownerStatus === 'unowned');
-    
-    if (claimableAccounts.length === 0) {
-      setStatusMessage("No unowned accounts selected for claiming");
-      setStatusSeverity("warning");
-      setBulkLoading(false);
-      return;
-    }
+    setBulkClaimDialogOpen(true);
+  };
 
+  const confirmBulkClaim = async (claimableAccounts) => {
+    console.log('=== BULK CLAIM DEBUG ===');
+    console.log('Starting bulk claim for accounts:', claimableAccounts);
+    setBulkLoading(true);
+    
     try {
-      const claimPromises = claimableAccounts.map(account => 
-        claimAccount(account.AccountID)
-      );
+      console.log('Creating claim promises...');
+      const claimPromises = claimableAccounts.map((account, index) => {
+        console.log(`Claiming account ${index + 1}:`, account.AccountID, account.AccountName);
+        return claimAccount(account.AccountID);
+      });
       
-      await Promise.all(claimPromises);
+      console.log('Executing all claim promises...');
+      const results = await Promise.all(claimPromises);
+      console.log('All claims completed successfully:', results);
       
       setStatusMessage(`Successfully claimed ${claimableAccounts.length} account${claimableAccounts.length !== 1 ? 's' : ''}`);
       setStatusSeverity("success");
@@ -242,11 +246,36 @@ const AccountsContainer = () => {
       setFilteredAccounts(prev => updateAccounts(prev));
       setSelected([]);
       
+      // Close the dialog
+      console.log('Closing bulk claim dialog...');
+      setBulkClaimDialogOpen(false);
+      
+      console.log('Bulk claim completed successfully');
+      
     } catch (err) {
-      setStatusMessage(err.message || "Failed to claim selected accounts");
+      console.error('=== BULK CLAIM ERROR ===');
+      console.error('Full error object:', err);
+      console.error('Error message:', err?.message);
+      console.error('Error response:', err?.response?.data);
+      
+      // Get the actual error message from the backend
+      let errorMessage = "Failed to claim selected accounts";
+      if (err?.message) {
+        errorMessage = err.message;
+      } else if (err?.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      
+      setStatusMessage(errorMessage);
       setStatusSeverity("error");
+      
+      // Don't close dialog on error so user can see what happened
     } finally {
+      console.log('Setting bulk loading to false...');
       setBulkLoading(false);
+      console.log('=== END BULK CLAIM DEBUG ===');
     }
   };
 
@@ -319,23 +348,35 @@ const AccountsContainer = () => {
 
   // ---------------- CLAIM / ASSIGN ----------------
   const handleClaimAccount = async (account) => {
-    try {
-      await claimAccount(account.AccountID);
-      setStatusMessage(`Account claimed: ${account.AccountName}`);
-      setStatusSeverity("success");
-      
-      const updateAccounts = (accounts) =>
-        accounts.map((a) =>
-          a.AccountID === account.AccountID ? { ...a, ownerStatus: "owned" } : a
-        );
-      
-      setAllAccounts(updateAccounts);
-      setFilteredAccounts(prev => updateAccounts(prev));
-    } catch (err) {
-      setStatusMessage(err.message || "Failed to claim account");
-      setStatusSeverity("error");
-    }
-  };
+  try {
+    console.log('=== SINGLE CLAIM DEBUG ===');
+    console.log('Claiming account:', account.AccountID, account.AccountName);
+    
+    await claimAccount(account.AccountID);
+    
+    setStatusMessage(`Account claimed: ${account.AccountName}`);
+    setStatusSeverity("success");
+    
+    const updateAccounts = (accounts) =>
+      accounts.map((a) =>
+        a.AccountID === account.AccountID ? { ...a, ownerStatus: "owned" } : a
+      );
+    
+    setAllAccounts(updateAccounts);
+    setFilteredAccounts(prev => updateAccounts(prev));
+    
+    console.log('Single claim completed successfully');
+    
+  } catch (err) {
+    console.error('=== SINGLE CLAIM ERROR ===');
+    console.error('Error claiming account:', err);
+    console.error('Error message:', err?.message);
+    
+    const errorMessage = err?.message || "Failed to claim account";
+    setStatusMessage(errorMessage);
+    setStatusSeverity("error");
+  }
+};
 
   const handleAssignUser = async (employeeId, account) => {
     try {
@@ -517,6 +558,15 @@ const AccountsContainer = () => {
         onClose={() => setBulkAssignDialogOpen(false)}
         selectedItems={selectedAccountObjects}
         onConfirm={confirmBulkAssign}
+        loading={bulkLoading}
+      />
+
+      {/* Bulk Claim Dialog */}
+      <BulkClaimDialog
+        open={bulkClaimDialogOpen}
+        onClose={() => setBulkClaimDialogOpen(false)}
+        selectedItems={selectedAccountObjects}
+        onConfirm={confirmBulkClaim}
         loading={bulkLoading}
       />
 
