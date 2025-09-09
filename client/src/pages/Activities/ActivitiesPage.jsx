@@ -78,6 +78,7 @@ const activitiesTableConfig = {
     {
       field: "Completed",
       headerName: "Completed",
+      headerName: "Completed",
       type: "boolean",
     },
   ],
@@ -116,6 +117,11 @@ const ActivitiesPage = ({
       label: 'Activities',
       component: 'activities'
     },
+    // {
+    //   id: 'activity-types',
+    //   label: 'Activity Types', 
+    //   component: 'activityTypes'
+    // },
     // {
     //   id: 'activity-types',
     //   label: 'Activity Types', 

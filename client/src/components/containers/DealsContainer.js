@@ -5,6 +5,9 @@ import {
   getAllDeals,
   fetchDealsByUser,
   deactivateDeal,
+  getAllDeals,
+  fetchDealsByUser,
+  deactivateDeal,
 } from "../../services/dealService";
 import {
   getAllAccounts,
@@ -28,6 +31,7 @@ import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 
 const DealsContainer = () => {
+  const navigate = useNavigate();
   const navigate = useNavigate();
 
   const [allDeals, setAllDeals] = useState([]);
@@ -54,7 +58,12 @@ const DealsContainer = () => {
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
   const userId = storedUser.UserID || storedUser.id || null;
+  const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+  const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
+  const userId = storedUser.UserID || storedUser.id || null;
 
+  const isCLevel = roles.includes("C-level");
+  const isSalesRep = roles.includes("Sales Representative");
   const isCLevel = roles.includes("C-level");
   const isSalesRep = roles.includes("Sales Representative");
 
@@ -222,7 +231,16 @@ const DealsContainer = () => {
   useEffect(() => {
     fetchDeals();
   }, [refreshFlag]);
+  useEffect(() => {
+    fetchDeals();
+  }, [refreshFlag]);
 
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => setSuccessMessage(""), 3000);
@@ -262,11 +280,21 @@ const DealsContainer = () => {
         !statusFilter ||
         (statusFilter === "Active" && deal.Status === "Active") ||
         (statusFilter === "Inactive" && deal.Status === "Inactive");
+      const matchesStatus =
+        !statusFilter ||
+        (statusFilter === "Active" && deal.Status === "Active") ||
+        (statusFilter === "Inactive" && deal.Status === "Inactive");
 
       return matchesSearch && matchesStatus;
     });
   }, [filteredDeals, searchTerm, statusFilter]);
 
+  // ---------------- HANDLERS ----------------
+  const handleSelectClick = (id) => {
+    setSelectedDeals((prev) =>
+      prev.includes(id) ? prev.filter((dealId) => dealId !== id) : [...prev, id]
+    );
+  };
   // ---------------- HANDLERS ----------------
   const handleSelectClick = (id) => {
     setSelectedDeals((prev) =>
@@ -297,9 +325,33 @@ const DealsContainer = () => {
       setDealToDelete(null);
     }
   };
+  const handleDeactivateClick = (deal) => {
+    setDealToDelete(deal);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeactivate = async () => {
+    if (!dealToDelete) return;
+
+    try {
+      await deactivateDeal(dealToDelete.DealID);
+      setSuccessMessage("Deal deactivated successfully.");
+      setRefreshFlag((flag) => !flag);
+    } catch {
+      setError("Failed to deactivate deal. Please try again.");
+    } finally {
+      setDeleteDialogOpen(false);
+      setDealToDelete(null);
+    }
+  };
 
   const handleEdit = (deal) => navigate(`/deals/edit/${deal.DealID}`);
+  const handleEdit = (deal) => navigate(`/deals/edit/${deal.DealID}`);
 
+  const handleView = (deal) => {
+    if (!deal?.DealID) return;
+    navigate(`/deals/${deal.DealID}`);
+  };
   const handleView = (deal) => {
     if (!deal?.DealID) return;
     navigate(`/deals/${deal.DealID}`);
@@ -390,7 +442,96 @@ const DealsContainer = () => {
       setError(err.message || "Failed to download attachment");
     }
   };
+  const handleOpenCreate = () => navigate("/deals/create");
 
+  // ---------------- NOTES ----------------
+  const handleAddNote = (deal) => {
+    setSelectedDeal(deal);
+    setNotesPopupOpen(true);
+  };
+
+  const handleSaveNote = async (noteData) => {
+    try {
+      const notePayload = {
+        EntityID: selectedDeal.DealID,
+        EntityType: "Deal",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
+      setSuccessMessage("Note added successfully!");
+      setNotesPopupOpen(false);
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to save note");
+    }
+  };
+
+  const handleEditNote = async (noteData) => {
+    try {
+      await updateNote(noteData.NoteID, noteData);
+      setSuccessMessage("Note updated successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to update note");
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await deleteNote(noteId);
+      setSuccessMessage("Note deleted successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to delete note");
+    }
+  };
+
+  // ---------------- ATTACHMENTS ----------------
+  const handleAddAttachment = (deal) => {
+    setSelectedDeal(deal);
+    setAttachmentsPopupOpen(true);
+  };
+
+  const handleUploadAttachment = async (files) => {
+    try {
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedDeal.DealID,
+          entityTypeName: "Deal"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
+      setAttachmentsPopupOpen(false);
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to upload attachments");
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    try {
+      await deleteAttachment(attachmentId);
+      setSuccessMessage("Attachment deleted successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to delete attachment");
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      await downloadAttachment(attachment);
+    } catch (err) {
+      setError(err.message || "Failed to download attachment");
+    }
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("");
+  };
   const clearFilters = () => {
     setSearchTerm("");
     setStatusFilter("");

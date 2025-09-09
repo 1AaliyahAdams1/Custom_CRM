@@ -327,18 +327,41 @@ const ContactsContainer = () => {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) setSelected(filteredContacts.map((c) => c.ContactID));
+    if (event.target.checked) setSelected(filteredContacts.map((c) => c.ContactID));
     else setSelected([]);
   };
 
   // ---------------- CONFIRM/CANCEL HANDLERS -----------
   const confirmDelete = async () => {
+  // ---------------- CONFIRM/CANCEL HANDLERS -----------
+  const confirmDelete = async () => {
     try {
+      await deactivateContact(contactToDelete);
       await deactivateContact(contactToDelete);
       setSuccessMessage("Contact deleted successfully.");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       console.error("Failed to delete contact:", err);
       setError("Failed to delete contact. Please try again.");
+    } finally {
+      setConfirmOpen(false);
+      setContactToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setContactToDelete(null);
+  };
+
+  // ---------------- CONTACT HANDLERS ----------------
+  const handleDeactivate = (id) => {
+    if (!id) {
+      setError("Cannot delete contact - missing ID");
+      return;
+    }
+    setContactToDelete(id);
+    setConfirmOpen(true);
     } finally {
       setConfirmOpen(false);
       setContactToDelete(null);
@@ -393,10 +416,17 @@ const ContactsContainer = () => {
         Content: noteData.Content,
       };
       await createNote(notePayload);
+      const notePayload = {
+        EntityID: selectedContact.ContactID,
+        EntityType: "Contact",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
+      setError(err.message || "Failed to save note");
       setError(err.message || "Failed to save note");
     }
   };
@@ -404,9 +434,11 @@ const ContactsContainer = () => {
   const handleDeleteNote = async (noteId) => {
     try {
       await deleteNote(noteId);
+      await deleteNote(noteId);
       setSuccessMessage("Note deleted successfully!");
       setRefreshFlag((f) => !f);
     } catch (err) {
+      setError(err.message || "Failed to delete note");
       setError(err.message || "Failed to delete note");
     }
   };
@@ -414,10 +446,12 @@ const ContactsContainer = () => {
   const handleEditNote = async (noteData) => {
     try {
       await updateNote(noteData.NoteID, noteData);
+      await updateNote(noteData.NoteID, noteData);
       setSuccessMessage("Note updated successfully!");
       setNotesPopupOpen(false);
       setRefreshFlag((f) => !f);
     } catch (err) {
+      setError(err.message || "Failed to update note");
       setError(err.message || "Failed to update note");
     }
   };
@@ -430,7 +464,17 @@ const ContactsContainer = () => {
   };
 
   const handleUploadAttachment = async (files) => {
+  const handleUploadAttachment = async (files) => {
     try {
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedContact.ContactID,
+          entityTypeName: "Contact"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
       const uploadPromises = files.map(file => 
         uploadAttachment({
           file,
@@ -444,15 +488,18 @@ const ContactsContainer = () => {
       setRefreshFlag((f) => !f);
     } catch (err) {
       setError(err.message || "Failed to upload attachments");
+      setError(err.message || "Failed to upload attachments");
     }
   };
 
   const handleDeleteAttachment = async (attachmentId) => {
     try {
       await deleteAttachment(attachmentId);
+      await deleteAttachment(attachmentId);
       setSuccessMessage("Attachment deleted successfully!");
       setRefreshFlag((f) => !f);
     } catch (err) {
+      setError(err.message || "Failed to delete attachment");
       setError(err.message || "Failed to delete attachment");
     }
   };
@@ -460,7 +507,9 @@ const ContactsContainer = () => {
   const handleDownloadAttachment = async (attachment) => {
     try {
       await downloadAttachment(attachment);
+      await downloadAttachment(attachment);
     } catch (err) {
+      setError(err.message || "Failed to download attachment");
       setError(err.message || "Failed to download attachment");
     }
   };

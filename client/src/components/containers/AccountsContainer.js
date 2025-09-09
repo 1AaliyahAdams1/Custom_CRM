@@ -122,6 +122,7 @@ const AccountsContainer = () => {
         const response = await getAllAccounts();
         accountsData = response.data || [];
         accountsData.forEach((acc) => (acc.ownerStatus = "n/a"));
+        accountsData.forEach((acc) => (acc.ownerStatus = "n/a"));
       } else if (isSalesRep) {
         console.log('=== FETCHING ACCOUNTS DATA ===');
         console.log('User ID:', userId);
@@ -145,6 +146,7 @@ const AccountsContainer = () => {
         console.log('Sample unassigned account:', unassignedAccounts[0]);
 
         const map = new Map();
+        [...assignedAccounts, ...unassignedAccounts].forEach((acc) => {
         [...assignedAccounts, ...unassignedAccounts].forEach((acc) => {
           if (acc.AccountID) map.set(acc.AccountID, acc);
         });
@@ -189,18 +191,37 @@ const AccountsContainer = () => {
 
   const confirmDeactivate = async () => {
     if (!accountToDelete) return;
+  const handleDeactivateClick = (account) => {
+    setAccountToDelete(account);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeactivate = async () => {
+    if (!accountToDelete) return;
     setError(null);
     try {
       await deactivateAccount(accountToDelete.AccountID);
+      await deactivateAccount(accountToDelete.AccountID);
       setSuccessMessage("Account deleted successfully.");
+      setRefreshFlag((flag) => !flag);
+    } catch {
       setRefreshFlag((flag) => !flag);
     } catch {
       setError("Failed to delete account. Please try again.");
     } finally {
       setDeleteDialogOpen(false);
       setAccountToDelete(null);
+    } finally {
+      setDeleteDialogOpen(false);
+      setAccountToDelete(null);
     }
   };
+
+  const handleEdit = (account) =>
+    navigate(`/accounts/edit/${account.AccountID}`, { state: { account } });
+
+  const handleView = (account) =>
+    account?.AccountID && navigate(`/accounts/${account.AccountID}`);
 
   const handleEdit = (account) =>
     navigate(`/accounts/edit/${account.AccountID}`, { state: { account } });
@@ -381,10 +402,12 @@ const AccountsContainer = () => {
   const handleAssignUser = async (employeeId, account) => {
     try {
       await assignUser(account.AccountID, employeeId);
+      await assignUser(account.AccountID, employeeId);
       setSuccessMessage(`User assigned to ${account.AccountName}`);
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       setError(err.message || "Failed to assign user");
+      throw err;
       throw err;
     }
   };
@@ -394,6 +417,7 @@ const AccountsContainer = () => {
     const selectedIndex = selected.indexOf(id);
     let newSelected = [];
     if (selectedIndex === -1) newSelected = [...selected, id];
+    else newSelected = selected.filter((sid) => sid !== id);
     else newSelected = selected.filter((sid) => sid !== id);
     setSelected(newSelected);
   };
@@ -409,8 +433,19 @@ const AccountsContainer = () => {
     setNotesPopupOpen(true);
   };
 
+  const handleAddNote = (account) => {
+    setSelectedAccount(account);
+    setNotesPopupOpen(true);
+  };
+
   const handleSaveNote = async (noteData) => {
     try {
+      const notePayload = {
+        EntityID: selectedAccount.AccountID,
+        EntityType: "Account",
+        Content: noteData.Content,
+      };
+      await createNote(notePayload);
       const notePayload = {
         EntityID: selectedAccount.AccountID,
         EntityType: "Account",
@@ -433,12 +468,32 @@ const AccountsContainer = () => {
     } catch (err) {
       setError(err.message || "Failed to update note");
     }
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to save note");
+    }
   };
+
+  const handleEditNote = async (noteData) => {
+    try {
+      await updateNote(noteData.NoteID, noteData);
+      setSuccessMessage("Note updated successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to update note");
+    }
+  };
+
 
   const handleDeleteNote = async (noteId) => {
     try {
       await deleteNote(noteId);
+      await deleteNote(noteId);
       setSuccessMessage("Note deleted successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to delete note");
+    }
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       setError(err.message || "Failed to delete note");
@@ -446,6 +501,12 @@ const AccountsContainer = () => {
   };
 
   // ---------------- ATTACHMENTS ----------------
+  const handleAddAttachment = (account) => {
+    setSelectedAccount(account);
+    setAttachmentsPopupOpen(true);
+  };
+
+  const handleUploadAttachment = async (files) => {
   const handleAddAttachment = (account) => {
     setSelectedAccount(account);
     setAttachmentsPopupOpen(true);
@@ -462,24 +523,49 @@ const AccountsContainer = () => {
       );
       await Promise.all(uploadPromises);
       setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
+      const uploadPromises = files.map(file => 
+        uploadAttachment({
+          file,
+          entityId: selectedAccount.AccountID,
+          entityTypeName: "Account"
+        })
+      );
+      await Promise.all(uploadPromises);
+      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
       setAttachmentsPopupOpen(false);
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to upload attachments");
+    }
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       setError(err.message || "Failed to upload attachments");
     }
   };
 
+
   const handleDeleteAttachment = async (attachmentId) => {
     try {
+      await deleteAttachment(attachmentId);
       await deleteAttachment(attachmentId);
       setSuccessMessage("Attachment deleted successfully!");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       setError(err.message || "Failed to delete attachment");
     }
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to delete attachment");
+    }
   };
 
+
   const handleDownloadAttachment = async (attachment) => {
+    try {
+      await downloadAttachment(attachment);
+    } catch (err) {
+      setError(err.message || "Failed to download attachment");
+    }
     try {
       await downloadAttachment(attachment);
     } catch (err) {
