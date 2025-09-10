@@ -5,6 +5,8 @@ import { AppBar, Toolbar, Typography, Button, Box, IconButton } from "@mui/mater
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
+import TriggerEFMSyncButton from './TriggerEFMSyncButton';
+
 
 const Header = () => {
   const navigate = useNavigate();
@@ -32,77 +34,79 @@ const Header = () => {
   return (
     <AppBar position="sticky" sx={{ backgroundColor: "#000", height: "82px" }}>
       <Toolbar sx={{ display: "flex", justifyContent: "flex-end", color: "#fff", height: "200px" }}>
-        
-<Box display="flex" alignItems="center" gap={1}>
-  {user ? (
-    <>
-      <AccountCircleIcon sx={{ color: "#fff" }} />
-      <Typography sx={{ color: "#fff" }}>
-        {user.Username}
-      </Typography>
-      
-      {/* Settings Section - clickable */}
-      <Box 
-        display="flex" 
-        alignItems="center" 
-        gap={0.5}
-        sx={{ 
-          cursor: 'pointer',
-          padding: '4px 8px',
-          borderRadius: 1,
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          "&:hover": {
-            backgroundColor: "rgba(33, 150, 243, 0.15)", // Blue hover like navbar
-            color: '#2196F3',
-          }
-        }}
-        onClick={() => navigate("/settings")}
-      >
-        <SettingsIcon sx={{ color: "inherit", fontSize: 20 }} />
-        <Typography 
-          sx={{ 
-            color: "inherit",
-            fontSize: "0.875rem",
-            fontWeight: 500,
-          }}
-        >
-          Settings
-        </Typography>
-      </Box>
 
-      {/* Logout Section - clickable */}
-      <Box 
-        display="flex" 
-        alignItems="center" 
-        gap={0.5}
-        sx={{ 
-          cursor: 'pointer',
-          padding: '4px 8px',
-          borderRadius: 1,
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          "&:hover": {
-            backgroundColor: "rgba(33, 150, 243, 0.15)", // Blue hover like navbar
-            color: '#2196F3',
-          }
-        }}
-        onClick={handleLogout}
-      >
-        <LogoutIcon sx={{ color: "inherit", fontSize: 20 }} />
-        <Typography 
-          sx={{ 
-            color: "inherit",
-            fontSize: "0.875rem",
-            fontWeight: 500,
-          }}
-        >
-          Logout
-        </Typography>
-      </Box>
-    </>
-  ) : (
-    <Typography sx={{ color: "#fff" }}>Not logged in</Typography>
-  )}
-</Box>
+        <Box display="flex" alignItems="center" gap={1}>
+          <TriggerEFMSyncButton />
+
+          {user ? (
+            <>
+              <AccountCircleIcon sx={{ color: "#fff" }} />
+              <Typography sx={{ color: "#fff" }}>
+                {user.Username}
+              </Typography>
+
+              {/* Settings Section - clickable */}
+              <Box
+                display="flex"
+                alignItems="center"
+                gap={0.5}
+                sx={{
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: 1,
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  "&:hover": {
+                    backgroundColor: "rgba(33, 150, 243, 0.15)", // Blue hover like navbar
+                    color: '#2196F3',
+                  }
+                }}
+                onClick={() => navigate("/settings")}
+              >
+                <SettingsIcon sx={{ color: "inherit", fontSize: 20 }} />
+                <Typography
+                  sx={{
+                    color: "inherit",
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  Settings
+                </Typography>
+              </Box>
+
+              {/* Logout Section - clickable */}
+              <Box
+                display="flex"
+                alignItems="center"
+                gap={0.5}
+                sx={{
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: 1,
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  "&:hover": {
+                    backgroundColor: "rgba(33, 150, 243, 0.15)", // Blue hover like navbar
+                    color: '#2196F3',
+                  }
+                }}
+                onClick={handleLogout}
+              >
+                <LogoutIcon sx={{ color: "inherit", fontSize: 20 }} />
+                <Typography
+                  sx={{
+                    color: "inherit",
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  Logout
+                </Typography>
+              </Box>
+            </>
+          ) : (
+            <Typography sx={{ color: "#fff" }}>Not logged in</Typography>
+          )}
+        </Box>
       </Toolbar>
     </AppBar>
   );
