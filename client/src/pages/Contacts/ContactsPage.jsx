@@ -1,5 +1,4 @@
-// ContactsPage.jsx
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -9,8 +8,12 @@ import {
   Paper,
   Chip,
   Toolbar,
+  FormControl,
+  Select,
+  MenuItem,
+  Tooltip,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
+import { Add, Info } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import TableView from '../../components/tableFormat/TableView';
 import theme from "../../components/Theme";
@@ -31,16 +34,18 @@ const ContactsPage = ({
   onCreate,
   onAddNote,
   onAddAttachment,
+  onFilterChange,
+  userRoles = [],
 }) => {
   const columns = [
-    { field: 'AccountName', headerName: 'Account', type: 'tooltip' },
-    { field: 'PersonFullName', headerName: 'Person', type: 'tooltip' },
-    { field: 'WorkEmail', headerName: 'Email' },
-    { field: 'WorkPhone', headerName: 'Phone' },
-    { field: 'JobTitleName', headerName: 'Job Title' },
-    { field: 'Still_employed', headerName: 'Still Employed', type: 'boolean' },
-    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime' },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime' },
+    { field: 'AccountName', headerName: 'Account', type: 'tooltip', defaultVisible: true },
+    { field: 'PersonFullName', headerName: 'Person', type: 'tooltip', defaultVisible: true },
+    { field: 'WorkEmail', headerName: 'Email', defaultVisible: true },
+    { field: 'WorkPhone', headerName: 'Phone', defaultVisible: true },
+    { field: 'JobTitleName', headerName: 'Job Title', defaultVisible: true },
+    { field: 'Still_employed', headerName: 'Still Employed', type: 'boolean', defaultVisible: false },
+    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
+    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
     {
       field: 'Active',
       headerName: 'Active',
@@ -49,6 +54,26 @@ const ContactsPage = ({
       chipColors: { true: '#079141ff', false: '#999999' },
       defaultVisible: true,
     }
+  ];
+
+  // Local state for filter
+  const [contactFilter, setContactFilter] = useState('all');
+
+  const handleFilterChange = (event) => {
+    const newFilter = event.target.value;
+    setContactFilter(newFilter);
+    
+    // Call the parent component's filter handler if provided
+    if (onFilterChange) {
+      onFilterChange(newFilter);
+    }
+  };
+
+  const filterOptions = [
+    { value: 'all', label: 'All Contacts' },
+    { value: 'my', label: 'My Account Contacts' },
+    { value: 'team', label: 'My Team\'s Account Contacts' },
+    { value: 'unassigned', label: 'Unassigned Account Contacts' },
   ];
 
   return (
@@ -66,28 +91,83 @@ const ContactsPage = ({
         )}
 
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-          <Toolbar sx={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e5e5', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, py: 2 }}>
+          <Toolbar sx={{ 
+            backgroundColor: '#fff', 
+            borderBottom: '1px solid #e5e5e5', 
+            justifyContent: 'space-between', 
+            flexWrap: 'wrap', 
+            gap: 2, 
+            py: 2 
+          }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-              <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
-                Contacts
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
+                  Contacts
+                </Typography>
+                <Tooltip title="Manage and view all contacts linked to customer accounts" arrow>
+                  <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
+                </Tooltip>
+              </Box>
+
+              {/* Contact Filter Dropdown */}
+              <FormControl size="small" sx={{ minWidth: 220 }}>
+                <Select
+                  value={contactFilter}
+                  onChange={handleFilterChange}
+                  displayEmpty
+                  sx={{ 
+                    backgroundColor: '#fff',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#e0e0e0',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#c0c0c0',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: theme.palette.primary.main,
+                    },
+                  }}
+                >
+                  {filterOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
               {selected.length > 0 && (
-                <Chip label={`${selected.length} selected`} size="small" sx={{ backgroundColor: '#e0e0e0', color: '#050505' }} />
+                <Tooltip title={`${selected.length} contact${selected.length === 1 ? '' : 's'} selected for operations`} arrow>
+                  <Chip
+                    label={`${selected.length} selected`}
+                    size="small"
+                    sx={{ backgroundColor: '#e0e0e0', color: '#050505' }}
+                  />
+                </Tooltip>
               )}
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={onCreate}
-              >
-                Add Contact
-              </Button>
+              <Tooltip title="Create a new contact in the system" arrow>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={onCreate}
+                >
+                  Add Contact
+                </Button>
+              </Tooltip>
             </Box>
           </Toolbar>
 
           {loading ? (
-            <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+              <CircularProgress />
+              <Tooltip title="Loading contact data from the database" arrow>
+                <Typography variant="body2" sx={{ mt: 2, color: '#666666' }}>
+                  Loading contacts...
+                </Typography>
+              </Tooltip>
+            </Box>
           ) : (
             <TableView
               data={contacts}
@@ -104,13 +184,33 @@ const ContactsPage = ({
               onAddAttachment={onAddAttachment}
               formatters={formatters}
               entityType="contact"
+              tooltips={{
+                search: "Search contacts by name, email, phone, or account",
+                filter: "Show/hide advanced filtering options",
+                columns: "Customize which columns are visible in the table",
+                actionMenu: {
+                  view: "View detailed information for this contact",
+                  edit: "Edit this contact's information",
+                  delete: "Delete or deactivate this contact",
+                  addNote: "Add internal notes or comments",
+                  addAttachment: "Attach files or documents"
+                }
+              }}
             />
           )}
 
           <Box sx={{ p: 2, borderTop: '1px solid #e5e5e5', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" sx={{ color: '#666666' }}>Showing {contacts.length} contacts</Typography>
+            <Tooltip title="Total number of contacts currently displayed in the table" arrow>
+              <Typography variant="body2" sx={{ color: '#666666', cursor: 'help' }}>
+                Showing {contacts.length} contacts
+              </Typography>
+            </Tooltip>
             {selected.length > 0 && (
-              <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>{selected.length} selected</Typography>
+              <Tooltip title="Number of contacts currently selected for operations" arrow>
+                <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500, cursor: 'help' }}>
+                  {selected.length} selected
+                </Typography>
+              </Tooltip>
             )}
           </Box>
         </Paper>

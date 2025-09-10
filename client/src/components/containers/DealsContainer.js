@@ -6,6 +6,11 @@ import {
   fetchDealsByUser,
   deactivateDeal,
 } from "../../services/dealService";
+import {
+  getAllAccounts,
+  fetchActiveAccountsByUser,
+  fetchActiveUnassignedAccounts,
+} from "../../services/accountService";
 import { 
   createNote, 
   updateNote, 
@@ -25,7 +30,10 @@ import AttachmentsPopup from "../../components/AttachmentsComponent";
 const DealsContainer = () => {
   const navigate = useNavigate();
 
-  const [deals, setDeals] = useState([]);
+  const [allDeals, setAllDeals] = useState([]);
+  const [filteredDeals, setFilteredDeals] = useState([]);
+  const [currentFilter, setCurrentFilter] = useState('all');
+  const [accountOwnership, setAccountOwnership] = useState(new Map()); // Map of AccountID -> ownerStatus
   const [selectedDeals, setSelectedDeals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -50,6 +58,138 @@ const DealsContainer = () => {
   const isCLevel = roles.includes("C-level");
   const isSalesRep = roles.includes("Sales Representative");
 
+  // ---------------- FILTER LOGIC ----------------
+  const applyFilter = (deals, filterType) => {
+    console.log('=== DEALS FILTER DEBUG ===');
+    console.log('Applying filter:', filterType, 'to deals:', deals.length);
+    console.log('Account ownership map size:', accountOwnership.size);
+    
+    let filteredDeals;
+    switch (filterType) {
+      case 'my':
+        // Deals from accounts I own
+        if (isSalesRep) {
+          filteredDeals = deals.filter(deal => {
+            const ownerStatus = accountOwnership.get(deal.AccountID);
+            console.log(`Deal ${deal.DealName} (Account: ${deal.AccountID}) - Owner Status: ${ownerStatus}`);
+            return ownerStatus === 'owned';
+          });
+        } else {
+          // Non-sales reps might not have "owned" accounts
+          filteredDeals = [];
+        }
+        break;
+        
+      case 'team':
+        if (isCLevel) {
+          // C-level sees all deals
+          filteredDeals = deals;
+        } else if (isSalesRep) {
+          // Sales rep sees deals from owned and unassigned accounts
+          filteredDeals = deals.filter(deal => {
+            const ownerStatus = accountOwnership.get(deal.AccountID);
+            return ownerStatus === 'owned' || ownerStatus === 'unowned';
+          });
+        } else {
+          // Other roles see all deals (adjust as needed)
+          filteredDeals = deals;
+        }
+        break;
+        
+      case 'unassigned':
+        if (isCLevel) {
+          // C-level sees deals from unassigned accounts only
+          filteredDeals = deals.filter(deal => {
+            const ownerStatus = accountOwnership.get(deal.AccountID);
+            console.log(`Unassigned filter - Deal ${deal.DealName}: ${ownerStatus}`);
+            return ownerStatus === 'unowned';
+          });
+        } else if (isSalesRep) {
+          // Sales rep sees deals from unassigned accounts
+          filteredDeals = deals.filter(deal => {
+            const ownerStatus = accountOwnership.get(deal.AccountID);
+            return ownerStatus === 'unowned';
+          });
+        } else {
+          filteredDeals = [];
+        }
+        break;
+        
+      case 'all':
+      default:
+        filteredDeals = deals;
+        break;
+    }
+    
+    console.log(`Filter "${filterType}" returned:`, filteredDeals.length, 'deals');
+    console.log('=== END DEALS FILTER DEBUG ===');
+    return filteredDeals;
+  };
+
+  // ---------------- FETCH ACCOUNT OWNERSHIP ----------------
+  const fetchAccountOwnership = async () => {
+    console.log('=== FETCHING ACCOUNT OWNERSHIP FOR DEALS ===');
+    try {
+      const ownershipMap = new Map();
+
+      if (isCLevel) {
+        console.log('Fetching all accounts for C-level user');
+        const response = await getAllAccounts();
+        const accountsData = response.data || response || [];
+        console.log('All accounts received:', accountsData.length);
+        
+        // For C-level, determine which accounts are assigned vs unassigned
+        const assignedRes = await fetchActiveAccountsByUser(userId);
+        const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
+        const assignedAccountIds = new Set(assignedAccounts.map(acc => acc.AccountID));
+        
+        const unassignedRes = await fetchActiveUnassignedAccounts();
+        const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
+        const unassignedAccountIds = new Set(unassignedAccounts.map(acc => acc.AccountID));
+        
+        // Mark each account appropriately
+        accountsData.forEach(acc => {
+          if (assignedAccountIds.has(acc.AccountID)) {
+            ownershipMap.set(acc.AccountID, 'owned');
+          } else if (unassignedAccountIds.has(acc.AccountID)) {
+            ownershipMap.set(acc.AccountID, 'unowned');
+          } else {
+            ownershipMap.set(acc.AccountID, 'unknown');
+          }
+        });
+        
+      } else if (isSalesRep) {
+        console.log('Fetching accounts for Sales Rep');
+        
+        const assignedRes = await fetchActiveAccountsByUser(userId);
+        const unassignedRes = await fetchActiveUnassignedAccounts();
+
+        const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
+        const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
+
+        console.log('Assigned accounts:', assignedAccounts.length);
+        console.log('Unassigned accounts:', unassignedAccounts.length);
+
+        assignedAccounts.forEach(acc => {
+          ownershipMap.set(acc.AccountID, 'owned');
+        });
+
+        unassignedAccounts.forEach(acc => {
+          ownershipMap.set(acc.AccountID, 'unowned');
+        });
+      }
+
+      console.log('Account ownership map created with', ownershipMap.size, 'entries');
+      
+      setAccountOwnership(ownershipMap);
+      return ownershipMap;
+    } catch (err) {
+      console.error('Failed to fetch account ownership:', err);
+      setError('Failed to load account information for filtering');
+      return new Map();
+    }
+  };
+
   // ---------------- FETCH DEALS ----------------
   const fetchDeals = async () => {
     setLoading(true);
@@ -58,13 +198,20 @@ const DealsContainer = () => {
     try {
       let dealsData = [];
 
+      // First fetch account ownership information
+      const ownershipMap = await fetchAccountOwnership();
+
       if (isCLevel) {
         dealsData = (await getAllDeals(true)) || [];
       } else if (isSalesRep && userId) {
         dealsData = (await fetchDealsByUser(userId)) || [];
       }
 
-      setDeals(dealsData);
+      console.log('Raw deals received:', dealsData.length);
+
+      setAllDeals(dealsData);
+      const filtered = applyFilter(dealsData, currentFilter);
+      setFilteredDeals(filtered);
     } catch {
       setError("Failed to load deals. Please try again.");
     } finally {
@@ -83,9 +230,25 @@ const DealsContainer = () => {
     }
   }, [successMessage]);
 
+  useEffect(() => {
+    if (allDeals.length > 0 && accountOwnership.size > 0) {
+      const filtered = applyFilter(allDeals, currentFilter);
+      setFilteredDeals(filtered);
+    }
+  }, [allDeals, currentFilter, accountOwnership]);
+
+  // ---------------- FILTER HANDLER ----------------
+  const handleFilterChange = (filterType) => {
+    console.log('Filter changed to:', filterType);
+    setCurrentFilter(filterType);
+    const filtered = applyFilter(allDeals, filterType);
+    setFilteredDeals(filtered);
+    setSelectedDeals([]);
+  };
+
   // ---------------- FILTERING + SEARCH ----------------
-  const filteredDeals = useMemo(() => {
-    return deals.filter((deal) => {
+  const finalFilteredDeals = useMemo(() => {
+    return filteredDeals.filter((deal) => {
       const matchesSearch =
         (deal.DealName &&
           deal.DealName.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -102,7 +265,7 @@ const DealsContainer = () => {
 
       return matchesSearch && matchesStatus;
     });
-  }, [deals, searchTerm, statusFilter]);
+  }, [filteredDeals, searchTerm, statusFilter]);
 
   // ---------------- HANDLERS ----------------
   const handleSelectClick = (id) => {
@@ -112,7 +275,7 @@ const DealsContainer = () => {
   };
 
   const handleSelectAllClick = (checked) => {
-    setSelectedDeals(checked ? filteredDeals.map((deal) => deal.DealID) : []);
+    setSelectedDeals(checked ? finalFilteredDeals.map((deal) => deal.DealID) : []);
   };
 
   const handleDeactivateClick = (deal) => {
@@ -236,7 +399,7 @@ const DealsContainer = () => {
   return (
     <>
       <DealsPage
-        deals={filteredDeals}
+        deals={finalFilteredDeals}
         loading={loading}
         error={error}
         successMessage={successMessage}
@@ -254,8 +417,10 @@ const DealsContainer = () => {
         onCreate={handleOpenCreate}
         onAddNote={handleAddNote}
         onAddAttachment={handleAddAttachment}
+        onFilterChange={handleFilterChange}
         clearFilters={clearFilters}
-        totalCount={deals.length}
+        totalCount={allDeals.length}
+        currentFilter={currentFilter}
       />
 
       {/* Notes Popup */}
