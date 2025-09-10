@@ -28,7 +28,15 @@ export default function ActivitiesDetailsPage() {
     try {
       setLoading(true);
       const data = await fetchActivityById(parseInt(id, 10));
-      setActivity(data?.data || data);
+      
+      // Handle data migration from old boolean Completed to new Status field
+      let activityData = data?.data || data;
+      if (activityData && !activityData.Status && typeof activityData.Completed === 'boolean') {
+        // Migrate old boolean completed field to new status
+        activityData.Status = activityData.Completed ? 'complete' : 'incomplete';
+      }
+      
+      setActivity(activityData);
     } catch (err) {
       console.error(err);
       setError("Failed to load activity details");
@@ -96,7 +104,12 @@ export default function ActivitiesDetailsPage() {
 
       <Card sx={{ borderRadius: 2, overflow: "hidden", mb: 2 }}>
         <CardContent sx={{ p: 3 }}>
-          <ActivityDetailsForm activityId={id} />
+          <ActivityDetailsForm 
+            activityId={id} 
+            onActivityUpdate={refreshActivity}
+            onSuccessMessage={setSuccessMessage}
+            onError={setError}
+          />
         </CardContent>
       </Card>
 
