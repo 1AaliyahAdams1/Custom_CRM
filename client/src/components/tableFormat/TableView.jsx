@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Box,
   Table,
@@ -14,8 +14,16 @@ import {
   Link,
   TextField,
   Button,
+  TableSortLabel,
 } from "@mui/material";
-import { MoreVert, Search as SearchIcon, FilterList as FilterIcon, ViewColumn as ColumnsIcon } from "@mui/icons-material";
+import { 
+  MoreVert, 
+  Search as SearchIcon, 
+  FilterList as FilterIcon, 
+  ViewColumn as ColumnsIcon,
+  ArrowUpward,
+  ArrowDownward,
+} from "@mui/icons-material";
 
 import ColumnsDialog from "./ColumnsDialog";
 import FiltersDialog from "./FiltersDialog";
@@ -41,7 +49,7 @@ const TableView = ({
   entityType = "records",
   menuItems = [],
   formatters = {},
-  tooltips = {}, // Generic tooltips configuration
+  tooltips = {},
 }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuRow, setMenuRow] = useState(null);
@@ -51,12 +59,86 @@ const TableView = ({
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [currentRow, setCurrentRow] = useState(null);
+  const [customFilteredData, setCustomFilteredData] = useState(null);
+
+  // Sorting state
+  const [orderBy, setOrderBy] = useState("");
+  const [order, setOrder] = useState("asc");
+
+  // Column widths state for resizable columns
+  const [columnWidths, setColumnWidths] = useState({});
 
   const [visibleColumns, setVisibleColumns] = useState(
     columns.reduce((acc, col) => ({ ...acc, [col.field]: col.defaultVisible !== false }), {})
   );
 
   const isSelected = (id) => selected.includes(id);
+
+  // --- Sorting Functions ---
+  const handleSort = (columnField) => {
+    const isAsc = orderBy === columnField && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(columnField);
+  };
+
+  const sortData = (data) => {
+    if (!orderBy) return data;
+    
+    return [...data].sort((a, b) => {
+      const aVal = a[orderBy];
+      const bVal = b[orderBy];
+      
+      // Handle null/undefined values
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return order === "asc" ? 1 : -1;
+      if (bVal == null) return order === "asc" ? -1 : 1;
+      
+      // Handle different data types
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        const result = aVal.toLowerCase().localeCompare(bVal.toLowerCase());
+        return order === "asc" ? result : -result;
+      }
+      
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return order === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      
+      // Handle dates
+      if (aVal instanceof Date && bVal instanceof Date) {
+        return order === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      
+      // Fallback to string comparison
+      const aStr = String(aVal).toLowerCase();
+      const bStr = String(bVal).toLowerCase();
+      const result = aStr.localeCompare(bStr);
+      return order === "asc" ? result : -result;
+    });
+  };
+
+  // --- Column Resizing Functions ---
+  const handleMouseDown = useCallback((e, columnField) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = columnWidths[columnField] || 150; // Default width
+    
+    const handleMouseMove = (moveEvent) => {
+      const diff = moveEvent.clientX - startX;
+      const newWidth = Math.max(80, startWidth + diff); // Minimum width of 80px
+      setColumnWidths(prev => ({
+        ...prev,
+        [columnField]: newWidth
+      }));
+    };
+    
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [columnWidths]);
 
   // --- Menu Handling ---
   const handleMenuClick = (event, row) => {
@@ -67,12 +149,15 @@ const TableView = ({
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    // Delay clearing menuRow to prevent flash of hidden buttons
-    setTimeout(() => setMenuRow(null), 200); // matches MUI transition
+    setTimeout(() => setMenuRow(null), 200);
   };
 
-  // --- Filters & Selection ---
-  const handleApplyFilters = (newFilters) => setFilters(newFilters);
+  // --- Enhanced Filters Handling ---
+  const handleApplyFilters = (newFilters, preFilteredData = null) => {
+    setFilters(newFilters);
+    setCustomFilteredData(preFilteredData);
+  };
+
   const handleSelectAll = (event) => onSelectAllClick && onSelectAllClick(event);
   const handleSelectRow = (id) => onSelectClick && onSelectClick(id);
 
@@ -97,27 +182,59 @@ const TableView = ({
     return tooltips?.actions || `Available actions for this ${entityType || 'record'}`;
   };
 
-  const filteredData = data.filter((item) => {
-    if (searchTerm) {
-      const found = columns.some((c) => {
-        const val = item[c.field];
-        return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
-      });
-      if (!found) return false;
-    }
-    for (const [field, value] of Object.entries(filters)) {
-      if (value !== undefined && value !== null && value !== "") {
-        const itemVal = item[field];
-        if (typeof value === "boolean") {
-          if (itemVal !== value) return false;
-        } else {
-          if (!itemVal?.toString().toLowerCase().includes(value.toString().toLowerCase())) return false;
-        }
+  // --- Data Filtering and Sorting ---
+  const getFilteredData = () => {
+    let filteredData;
+    
+    // Use custom filtered data if available (from advanced filters)
+    if (customFilteredData) {
+      if (!searchTerm) {
+        filteredData = customFilteredData;
+      } else {
+        filteredData = customFilteredData.filter((item) => {
+          return columns.some((col) => {
+            const val = item[col.field];
+            return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
+          });
+        });
       }
-    }
-    return true;
-  });
+    } else {
+      // Standard filtering based on search term and basic filters
+      filteredData = data.filter((item) => {
+        // Apply search term filter
+        if (searchTerm) {
+          const matchesSearch = columns.some((col) => {
+            const val = item[col.field];
+            return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
+          });
+          if (!matchesSearch) return false;
+        }
 
+        // Apply other filters
+        return Object.entries(filters).every(([field, filterValue]) => {
+          if (!filterValue || filterValue === '') return true;
+          const itemValue = item[field];
+          
+          // Handle array filters (for multi-select)
+          if (Array.isArray(filterValue)) {
+            return filterValue.includes(itemValue);
+          }
+          
+          // Handle string filters
+          if (typeof filterValue === 'string') {
+            return itemValue && itemValue.toString().toLowerCase().includes(filterValue.toLowerCase());
+          }
+          
+          return itemValue === filterValue;
+        });
+      });
+    }
+    
+    // Apply sorting
+    return sortData(filteredData);
+  };
+
+  const filteredData = getFilteredData();
   const displayedColumns = columns.filter((col) => visibleColumns[col.field]);
 
   const renderCellContent = (row, column) => {
@@ -274,7 +391,6 @@ const TableView = ({
           </Button>
         </Tooltip>
       </Box>
-      
 
       {filtersExpanded && (
         <FiltersDialog
@@ -285,13 +401,19 @@ const TableView = ({
         />
       )}
 
-      {/* Table */}
+      {/* Table with Sortable & Resizable Headers */}
       <TableContainer>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
               {showSelection && (
-                <TableCell padding="checkbox">
+                <TableCell 
+                  padding="checkbox"
+                  sx={{ 
+                    width: 50,
+                    position: 'relative'
+                  }}
+                >
                   <Tooltip title="Select all visible records" arrow>
                     <Checkbox
                       color="primary"
@@ -307,13 +429,101 @@ const TableView = ({
                   </Tooltip>
                 </TableCell>
               )}
-              {displayedColumns.map((column) => (
-                <TableCell key={column.field} sx={{ fontWeight: 600 }}>
-                  {column.headerName || column.field}
+              {displayedColumns.map((column, index) => (
+                <TableCell 
+                  key={column.field} 
+                  sx={{ 
+                    fontWeight: 600,
+                    width: columnWidths[column.field] || 'auto',
+                    minWidth: 80,
+                    position: 'relative',
+                    userSelect: 'none',
+                    '&:hover .resize-handle': {
+                      opacity: 1,
+                    }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    {column.sortable !== false ? (
+                      <Tooltip 
+                        title={
+                          orderBy === column.field 
+                            ? `Currently sorted ${order === 'asc' ? 'ascending' : 'descending'}. Click to sort ${order === 'asc' ? 'descending' : 'ascending'}.`
+                            : `Click to sort by ${column.headerName || column.field}`
+                        }
+                        arrow
+                        enterDelay={500}
+                      >
+                        <TableSortLabel
+                          active={orderBy === column.field}
+                          direction={orderBy === column.field ? order : 'asc'}
+                          onClick={() => handleSort(column.field)}
+                          sx={{ 
+                            flex: 1,
+                            '&:hover': {
+                              color: 'primary.main',
+                            },
+                            '&.Mui-active': {
+                              color: 'primary.main',
+                              '& .MuiTableSortLabel-icon': {
+                                color: 'primary.main !important',
+                              },
+                            },
+                          }}
+                        >
+                          {column.headerName || column.field}
+                        </TableSortLabel>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip 
+                        title="This column is not sortable"
+                        arrow
+                        enterDelay={700}
+                      >
+                        <Box sx={{ flex: 1 }}>
+                          {column.headerName || column.field}
+                        </Box>
+                      </Tooltip>
+                    )}
+                    
+                    {/* Resize Handle */}
+                    {index < displayedColumns.length - 1 && (
+                      <Tooltip 
+                        title="Drag to resize column width" 
+                        arrow 
+                        enterDelay={700}
+                        placement="top"
+                      >
+                        <Box
+                          className="resize-handle"
+                          onMouseDown={(e) => handleMouseDown(e, column.field)}
+                          sx={{
+                            width: 4,
+                            height: 30,
+                            cursor: 'col-resize',
+                            backgroundColor: 'divider',
+                            opacity: 0,
+                            transition: 'opacity 0.2s',
+                            borderRadius: 1,
+                            ml: 1,
+                            '&:hover': {
+                              backgroundColor: 'primary.main',
+                              opacity: '1 !important',
+                            }
+                          }}
+                        />
+                      </Tooltip>
+                    )}
+                  </Box>
                 </TableCell>
               ))}
               {showActions && (
-                <TableCell sx={{ fontWeight: 600 }}>
+                <TableCell 
+                  sx={{ 
+                    fontWeight: 600,
+                    width: 80,
+                  }}
+                >
                   Actions
                 </TableCell>
               )}
@@ -341,7 +551,14 @@ const TableView = ({
                     </TableCell>
                   )}
                   {displayedColumns.map((column) => (
-                    <TableCell key={column.field}>
+                    <TableCell 
+                      key={column.field}
+                      sx={{
+                        width: columnWidths[column.field] || 'auto',
+                        maxWidth: columnWidths[column.field] || 'none',
+                        overflow: 'hidden',
+                      }}
+                    >
                       {renderCellContent(row, column)}
                     </TableCell>
                   ))}
@@ -389,7 +606,7 @@ const TableView = ({
             setAssignDialogOpen(true);
           }}
           menuItems={menuItems}
-          tooltips={tooltips} // Pass tooltips to ActionMenu
+          tooltips={tooltips}
         />
       )}
 

@@ -142,7 +142,7 @@ export const bulkDeleteActivityTypes = async (ids = []) => {
     message: `Deleted ${successful.length} out of ${ids.length} activity types`,
   };
 };
-
+465
 // -----------------------
 // SEARCH & FILTER
 // -----------------------
