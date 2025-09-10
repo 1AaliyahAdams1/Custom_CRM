@@ -1,9 +1,10 @@
 ﻿# Custom_CRM
 To pull repo into visual Studio Code:
 
-click Code Button and copy repo "https://github.com/1AaliyahAdams1/Custom_CRM.git"
+> click Code Button and copy repo "https://github.com/1AaliyahAdams1/Custom_CRM.git"
 
 > Go to file in Visual Studio Code
+
 > Click on New Window , A welcome window should be visible
 
 > Click on clone git repository on this welcome window
@@ -16,9 +17,13 @@ click Code Button and copy repo "https://github.com/1AaliyahAdams1/Custom_CRM.gi
 
 > Then you should select Yes when the next pop up appears
 
+=====================================================================================================
+
 To make a new branch visual Studio Code:
 MAKE ONLY ONE BRANCH AND THAT WILL BE YOUR BRANCH. AVOID MAKING MULTIPLE BRANCHES
-  = Paste these commands in the terminal = 
+
+= Paste these commands in the terminal = 
+
 > git checkout -b "your-branch-name-here"
 
 [CREATES YOUR BRANCH LOCALLY ON YOUR COMPUTER]
@@ -28,7 +33,9 @@ MAKE ONLY ONE BRANCH AND THAT WILL BE YOUR BRANCH. AVOID MAKING MULTIPLE BRANCHE
 [PUSHES YOUR BRANCH ONLINE]
 
 To save changes in your branch and push it to GitHub:
-  = Paste these commands in the terminal =
+
+= Paste these commands in the terminal =
+
 > git add .
 
 [THIS STAGES ALL CHANGES MADE ON BRANCH]
@@ -42,7 +49,9 @@ To save changes in your branch and push it to GitHub:
 [THIS PUSHES ALL CHANGES TO GITHUB]
 
 To pull changes from GitHub into your branch:
- = Paste these commands in the terminal =
+
+=Paste these commands in the terminal =
+
 > git pull origin main
 
 [PULLS ALL CHANGES MADE TO MAIN BRANCH TO YOUR BRANCH ON YOUR COMPUTER]
@@ -64,6 +73,8 @@ COMMANDS for Root folder [Custom_CRM]
 > npm install express@4.18.2
 
 > npm install express-validator
+
+> npm install node-cron
 
 
 COMMANDS for Client folder [client]

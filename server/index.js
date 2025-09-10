@@ -1,6 +1,7 @@
 //NEEDED CONNECTIONS
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, ".env") });
+const { startEFMSyncScheduler } = require('./utils/scheduler');
 
 
 //NEEDED PACKAGES
@@ -49,7 +50,15 @@ const employeeRoutes = require("./routes/employeeRoutes");
 const currencyRoutes = require("./routes/currencyRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 
-
+//API ROUTES
+const efmvenuesRoute = require('./routes/efm/efmVenueRoute');
+const efmeventsRoute = require('./routes/efm/efmEventRoute');
+const efmcompaniesRoute = require('./routes/efm/efmCompanyRoute');
+const efmownersRoute = require('./routes/efm/efmOwnerRoute');
+const efmcountriesRoute = require('./routes/efm/efmCountryRoute');
+const efmcitiesRoute = require('./routes/efm/efmCityRoute');
+const efmdiscountsRoute = require('./routes/efm/efmDiscountRoute');
+const efmSyncRouter = require('./routes/efm/efmSync');
 
 // Test route
 app.get("/", (req, res) => {
@@ -81,6 +90,21 @@ app.use('/assign', assignUserRoutes);
 app.use("/employees", employeeRoutes);
 app.use("/notes", noteRoutes);
 app.use("/currencies", currencyRoutes);
+
+//API Mounting
+app.use('/api/cities', efmcitiesRoute);
+app.use('/api/countries', efmcountriesRoute);
+app.use('/api/events', efmeventsRoute);
+app.use('/api/venues', efmvenuesRoute);
+app.use('/api/companies', efmcompaniesRoute);
+app.use('/api/owners', efmownersRoute);
+app.use('/api/discounts', efmdiscountsRoute);
+app.use('/api/efm-sync', efmSyncRouter);
+
+
+// Start scheduler [every hour updates info from main site]
+startEFMSyncScheduler();
+
 
 const PORT = process.env.PORT || 5000;
 const HOST = "0.0.0.0";
