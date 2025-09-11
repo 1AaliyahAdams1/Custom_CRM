@@ -1,33 +1,51 @@
-const { checkOwnership } = require("../utils/auth/checkOwnership"); // import your util
+const { checkOwnership } = require("../utils/auth/checkOwnership");
+const dealRoomAccessRepository = require("../data/auth/dealRoomAccessRepository");
 
-function authorizeRoleDynamic(allowedRoles = [], entityType = null) {
+/**
+ * Role + ownership + deal room access middleware
+ * 
+ * @param {Array} allowedRoles - roles allowed to access the route
+ * @param {Object} options - optional extra checks
+ *        options.entityType = "account" | "deal" | "contact" | "activity"
+ *        options.requireDealAccess = boolean
+ *        options.countryRestricted = boolean
+ */
+function authorizeRole(allowedRoles = [], options = {}) {
   return async (req, res, next) => {
     try {
       const userRoles = req.user?.roles || [];
+      const userId = req.user?.userId;
 
-      // Role match check
-      console.log("User roles from token:", req.user.roles);
-console.log("Allowed roles for route:", allowedRoles);
-
+      // Role check
       const hasRole = allowedRoles.some(role => userRoles.includes(role));
       if (!hasRole) {
         return res.status(403).json({ message: "Forbidden: Insufficient role" });
       }
 
-      // Ownership check if role is Sales Representative
-      if (userRoles.includes("Sales Representative") && entityType) {
+      // Ownership check (if entityType provided)
+      if (options.entityType) {
         const resourceId = req.params.id;
-        if (!resourceId) {
-          return res.status(400).json({ message: "Missing resource ID" });
-        }
+        if (!resourceId) return res.status(400).json({ message: "Missing resource ID" });
 
-        const isOwner = await checkOwnership(entityType, resourceId, req.user.userId);
-        if (!isOwner) {
-          return res.status(403).json({ message: "Forbidden: Not owner of the resource" });
-        }
+        const isOwner = await checkOwnership(options.entityType, resourceId, req.user);
+        if (!isOwner) return res.status(403).json({ message: "Forbidden: Not owner of the resource" });
       }
 
-      // TODO: Add region/territory/account ownership checks here if needed
+      // Deal room access for Clients
+      if (userRoles.includes("Client") && options.requireDealAccess) {
+        const dealId = req.params.dealId;
+        if (!dealId) return res.status(400).json({ message: "Missing deal ID" });
+
+        const hasAccess = await dealRoomAccessRepository.hasAccess(userId, dealId);
+        if (!hasAccess) return res.status(403).json({ message: "Forbidden: No deal room access" });
+      }
+
+      // Country restriction for Reporter
+      if (userRoles.includes("Reporter") && options.countryRestricted) {
+        if (req.query.country && req.query.country !== req.user.country) {
+          return res.status(403).json({ message: "Forbidden: Country restricted" });
+        }
+      }
 
       next();
     } catch (err) {
@@ -37,4 +55,4 @@ console.log("Allowed roles for route:", allowedRoles);
   };
 }
 
-module.exports = { authorizeRoleDynamic };
+module.exports = { authorizeRole };

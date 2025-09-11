@@ -12,6 +12,8 @@ import {
   PersonAdd,
   Business,
 } from "@mui/icons-material";
+import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
+import { useAuth } from "../hooks/auth/useAuth";
 
 export default function DetailsActions({
   isEditing = false,
@@ -27,112 +29,91 @@ export default function DetailsActions({
   onAssignUser,
   onClaimAccount,
 }) {
-  // Get current user roles from localStorage
-  const getCurrentUserRoles = () => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      return Array.isArray(user.roles) ? user.roles : [];
-    } catch (error) {
-      console.error("Error getting user roles:", error);
-      return [];
-    }
-  };
+  const { roles = [] } = useAuth() || {};
 
-  const hasRole = (roleToCheck) => getCurrentUserRoles().includes(roleToCheck);
+  const hasAccess = (accessKey) => {
+    if (!accessKey || !ROUTE_ACCESS[accessKey]) return true;
+    return ROUTE_ACCESS[accessKey].some((role) => roles.includes(role));
+  };
 
   return (
     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
       {!isEditing ? (
         <>
+          {/* Back button */}
           {onBack && (
             <Button
               variant="outlined"
               onClick={onBack}
               startIcon={<ArrowBack />}
-              sx={{
-                borderColor: "#e5e5e5",
-                color: "#666666",
-                "&:hover": { borderColor: "#cccccc", backgroundColor: "#f5f5f5" },
-              }}
+              sx={{ borderColor: "#e5e5e5", color: "#666", "&:hover": { borderColor: "#ccc", backgroundColor: "#f5f5f5" } }}
             >
               Back
             </Button>
           )}
 
-          {onEdit && !readOnly && (
+          {/* Edit button */}
+          {onEdit && !readOnly && hasAccess(`${entityType}Edit`) && (
             <Button
               variant="contained"
               onClick={onEdit}
               startIcon={<Edit />}
-              sx={{ backgroundColor: "#050505", "&:hover": { backgroundColor: "#333333" } }}
+              sx={{ backgroundColor: "#050505", "&:hover": { backgroundColor: "#333" } }}
             >
               Edit
             </Button>
           )}
 
-          {/* Assign User only for C-Level */}
-          {onAssignUser && !readOnly && entityType === "account" && hasRole("C-level") && (
+          {/* Assign User (C-level only for accounts) */}
+          {onAssignUser && !readOnly && entityType === "account" && hasAccess("accounts") && (
             <Button
               variant="outlined"
               onClick={onAssignUser}
               startIcon={<PersonAdd />}
-              sx={{
-                borderColor: "#7c3aed",
-                color: "#7c3aed",
-                "&:hover": { borderColor: "#6d28d9", backgroundColor: "#f3e8ff" },
-              }}
+              sx={{ borderColor: "#7c3aed", color: "#7c3aed", "&:hover": { borderColor: "#6d28d9", backgroundColor: "#f3e8ff" } }}
             >
               Assign User
             </Button>
           )}
 
-          {/* Claim Account only for Sales Rep */}
-          {onClaimAccount && entityType === "account" && hasRole("Sales Representative") && (
+          {/* Claim Account (Sales Representative only for accounts) */}
+          {onClaimAccount && entityType === "account" && hasAccess("accounts") && roles.includes("Sales Representative") && (
             <Button
               variant="outlined"
               onClick={onClaimAccount}
               startIcon={<Business />}
-              sx={{
-                borderColor: "#f59e0b",
-                color: "#f59e0b",
-                "&:hover": { borderColor: "#d97706", backgroundColor: "#fef3c7" },
-              }}
+              sx={{ borderColor: "#f59e0b", color: "#f59e0b", "&:hover": { borderColor: "#d97706", backgroundColor: "#fef3c7" } }}
             >
               Claim Account
             </Button>
           )}
 
-          {onAddNote && !readOnly && (
+          {/* Add Note */}
+          {onAddNote && !readOnly && hasAccess("activitiesCreate") && (
             <Button
               variant="outlined"
               onClick={onAddNote}
               startIcon={<Note />}
-              sx={{
-                borderColor: "#2563eb",
-                color: "#2563eb",
-                "&:hover": { borderColor: "#1d4ed8", backgroundColor: "#dbeafe" },
-              }}
+              sx={{ borderColor: "#2563eb", color: "#2563eb", "&:hover": { borderColor: "#1d4ed8", backgroundColor: "#dbeafe" } }}
             >
               Add Note
             </Button>
           )}
 
-          {onAddAttachment && !readOnly && (
+          {/* Add Attachment */}
+          {onAddAttachment && !readOnly && hasAccess("activitiesCreate") && (
             <Button
               variant="outlined"
               onClick={onAddAttachment}
               startIcon={<AttachFile />}
-              sx={{
-                borderColor: "#059669",
-                color: "#059669",
-                "&:hover": { borderColor: "#047857", backgroundColor: "#d1fae5" },
-              }}
+              sx={{ borderColor: "#059669", color: "#059669", "&:hover": { borderColor: "#047857", backgroundColor: "#d1fae5" } }}
             >
               Add Attachment
             </Button>
           )}
 
-          {onDelete && !readOnly && (
+          {/* Delete */}
+          {onDelete && !readOnly && hasAccess(`${entityType}Edit`) && (
             <Button
               variant="outlined"
               onClick={onDelete}
@@ -145,50 +126,48 @@ export default function DetailsActions({
         </>
       ) : (
         <>
+          {/* Cancel */}
           {onCancel && (
             <Button
               variant="outlined"
               onClick={onCancel}
               startIcon={<Close />}
-              sx={{ borderColor: "#e5e5e5", color: "#666666" }}
+              sx={{ borderColor: "#e5e5e5", color: "#666" }}
             >
               Cancel
             </Button>
           )}
-          {onSave && (
+
+          {/* Save */}
+          {onSave && hasAccess(`${entityType}Edit`) && (
             <Button
               variant="contained"
               onClick={onSave}
               startIcon={<Save />}
-              sx={{ backgroundColor: "#050505", "&:hover": { backgroundColor: "#333333" } }}
+              sx={{ backgroundColor: "#050505", "&:hover": { backgroundColor: "#333" } }}
             >
               Save
             </Button>
           )}
-          {onAddNote && (
+
+          {/* Optional Note & Attachment during editing */}
+          {onAddNote && hasAccess("activitiesCreate") && (
             <Button
               variant="outlined"
               onClick={onAddNote}
               startIcon={<Note />}
-              sx={{
-                borderColor: "#2563eb",
-                color: "#2563eb",
-                "&:hover": { borderColor: "#1d4ed8", backgroundColor: "#dbeafe" },
-              }}
+              sx={{ borderColor: "#2563eb", color: "#2563eb", "&:hover": { borderColor: "#1d4ed8", backgroundColor: "#dbeafe" } }}
             >
               Add Note
             </Button>
           )}
-          {onAddAttachment && (
+
+          {onAddAttachment && hasAccess("activitiesCreate") && (
             <Button
               variant="outlined"
               onClick={onAddAttachment}
               startIcon={<AttachFile />}
-              sx={{
-                borderColor: "#059669",
-                color: "#059669",
-                "&:hover": { borderColor: "#047857", backgroundColor: "#d1fae5" },
-              }}
+              sx={{ borderColor: "#059669", color: "#059669", "&:hover": { borderColor: "#047857", backgroundColor: "#d1fae5" } }}
             >
               Add Attachment
             </Button>
