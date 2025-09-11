@@ -151,4 +151,3 @@ export const getFileIcon = (fileName) => {
   return map[ext] || "📎";
 };
 
-
