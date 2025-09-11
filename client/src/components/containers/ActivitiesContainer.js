@@ -5,6 +5,9 @@ import {
   getAllActivities,
   fetchActivitiesByUser,
   deactivateActivity,
+  bulkMarkActivitiesComplete,
+  bulkMarkActivitiesIncomplete,
+  bulkUpdateActivityDueDates
 } from "../../services/activityService";
 import {
   getAllAccounts,
@@ -27,6 +30,7 @@ import { activityTypeService, priorityLevelService } from "../../services/dropdo
 import ConfirmDialog from "../../components/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
+import BulkDueDatesDialog from "../../components/BulkDueDatesDialog";
 
 const ActivitiesContainer = () => {
   const navigate = useNavigate();
@@ -404,6 +408,106 @@ const ActivitiesContainer = () => {
     setPriorityFilter("");
   };
 
+  // ---------------- BULK ACTION HANDLERS ----------------
+  const handleBulkMarkComplete = async (selectedActivities) => {
+    try {
+      setLoading(true);
+      const incompleteActivities = selectedActivities.filter(activity => !activity.Completed);
+      
+      if (incompleteActivities.length === 0) {
+        setError('No incomplete activities selected');
+        return;
+      }
+
+      // Call bulk complete service
+      await bulkMarkActivitiesComplete(incompleteActivities.map(a => a.ActivityID));
+      
+      setSuccessMessage(`Successfully marked ${incompleteActivities.length} activit${incompleteActivities.length === 1 ? 'y' : 'ies'} as complete`);
+      setSelected([]);
+      setRefreshFlag(f => !f);
+    } catch (error) {
+      console.error('Bulk mark complete failed:', error);
+      setError(error.message || 'Failed to mark activities as complete');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkMarkIncomplete = async (selectedActivities) => {
+    try {
+      setLoading(true);
+      const completeActivities = selectedActivities.filter(activity => activity.Completed);
+      
+      if (completeActivities.length === 0) {
+        setError('No complete activities selected');
+        return;
+      }
+
+      // Call bulk incomplete service
+      await bulkMarkActivitiesIncomplete(completeActivities.map(a => a.ActivityID));
+      
+      setSuccessMessage(`Successfully marked ${completeActivities.length} activit${completeActivities.length === 1 ? 'y' : 'ies'} as incomplete`);
+      setSelected([]);
+      setRefreshFlag(f => !f);
+    } catch (error) {
+      console.error('Bulk mark incomplete failed:', error);
+      setError(error.message || 'Failed to mark activities as incomplete');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkUpdateDueDates = async (selectedActivities) => {
+    // This is called from the toolbar - we don't need to do anything here
+    // The actual dialog opening is handled in the ActivitiesPage component
+    console.log('Bulk update due dates initiated for', selectedActivities.length, 'activities');
+  };
+
+  // This is the handler that gets called when the dialog confirms the update
+  const handleConfirmDueDatesUpdate = async (dateData) => {
+    try {
+      setLoading(true);
+      
+      const selectedActivityIds = selected.map(id => id);
+      
+      if (selectedActivityIds.length === 0) {
+        setError('No activities selected');
+        return;
+      }
+
+      // Call the bulk update service
+      await bulkUpdateActivityDueDates(
+        selectedActivityIds,
+        dateData.dueToStart,
+        dateData.dueToEnd
+      );
+      
+      const updatedCount = selectedActivityIds.length;
+      let message = `Successfully updated due dates for ${updatedCount} activit${updatedCount === 1 ? 'y' : 'ies'}`;
+      
+      if (dateData.dueToStart && dateData.dueToEnd) {
+        message += ' (both start and end dates)';
+      } else if (dateData.dueToStart) {
+        message += ' (start date)';
+      } else if (dateData.dueToEnd) {
+        message += ' (end date)';
+      }
+      
+      setSuccessMessage(message);
+      setSelected([]);
+      setRefreshFlag(f => !f);
+    } catch (error) {
+      console.error('Bulk update due dates failed:', error);
+      setError(error.message || 'Failed to update activity due dates');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelected([]);
+  };
+
   return (
     <>
       <ActivitiesPage
@@ -413,6 +517,12 @@ const ActivitiesContainer = () => {
         successMessage={successMessage}
         setSuccessMessage={setSuccessMessage}
         selected={selected}
+        onClearSelection={handleClearSelection}
+        userRole={storedUser.roles || []}
+        onBulkMarkComplete={handleBulkMarkComplete}
+        onBulkMarkIncomplete={handleBulkMarkIncomplete}
+        onBulkUpdateDueDates={handleBulkUpdateDueDates}
+        onConfirmDueDatesUpdate={handleConfirmDueDatesUpdate}
         onSelectClick={handleSelectClick}
         onSelectAllClick={handleSelectAllClick}
         onDeactivate={handleDeactivateClick}

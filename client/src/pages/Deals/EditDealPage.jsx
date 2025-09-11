@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
@@ -31,18 +31,31 @@ const EditDealPage = () => {
     CloseDate: "",
     Probability: "",
   });
+  const [accounts, setAccounts] = useState([]); // Add accounts state
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Memoized function to get account name from AccountID
+  const accountName = useMemo(() => {
+    if (!accounts.length || !formData.AccountID) return 'No account selected';
+    const account = accounts.find(acc => acc.AccountID === formData.AccountID);
+    return account ? account.AccountName : 'Unknown Account';
+  }, [accounts, formData.AccountID]);
+
   useEffect(() => {
-    const loadDeal = async () => {
+    const loadDealAndAccounts = async () => {
       if (!id) return setError("No deal ID provided");
 
       try {
-        const response = await fetchDealById(id);
-        const dealData = response.data;
+        // Fetch both deal data and accounts data
+        const [dealResponse, accountsResponse] = await Promise.all([
+          fetchDealById(id),
+          getAllAccounts()
+        ]);
+
+        const dealData = dealResponse.data;
         setFormData({
           DealID: dealData.DealID || "",
           AccountID: dealData.AccountID || "",
@@ -52,13 +65,15 @@ const EditDealPage = () => {
           CloseDate: dealData.CloseDate || "",
           Probability: dealData.Probability || "",
         });
+        
+        setAccounts(accountsResponse.data);
       } catch {
         setError("Failed to load deal data");
       } finally {
         setLoading(false);
       }
     };
-    loadDeal();
+    loadDealAndAccounts();
   }, [id]);
 
   const handleInputChange = (e) => {
@@ -108,25 +123,25 @@ const EditDealPage = () => {
               <Paper elevation={0} sx={{ p: 3 }}>
                 <form onSubmit={handleSubmit}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <TextField
-                      fullWidth
-                      label="Deal ID"
-                      name="DealID"
-                      value={formData.DealID}
-                      onChange={handleInputChange}
-                      disabled={saving}
-                    />
-
-                    <SmartDropdown
-                      label="Account"
-                      name="AccountID"
-                      value={formData.AccountID}
-                      onChange={handleInputChange}
-                      service={{ getAll: async () => (await getAllAccounts()).data }}
-                      displayField="AccountName"
-                      valueField="AccountID"
-                      disabled={saving}
-                    />
+                    {/* Read-only fields  */}
+                    <Box sx={{ mb: 2, p: 2, backgroundColor: '#f8f9fa', borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                      {/* <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                          Deal ID 
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                          {formData.DealID}
+                        </Typography>
+                      </Box> */}
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                          Account
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                          {accountName}
+                        </Typography>
+                      </Box>
+                    </Box>
 
                     <SmartDropdown
                       label="Deal Stage"
