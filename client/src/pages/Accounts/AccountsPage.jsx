@@ -10,10 +10,14 @@ import {
   Toolbar,
   Snackbar,
   Tooltip,
+  FormControl,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { Add, Info } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import TableView from '../../components/tableFormat/TableView';
+import BulkActionsToolbar from '../../components/BulkActionsToolbar';
 import theme from "../../components/Theme";
 import { formatters } from '../../utils/formatters';
 
@@ -22,6 +26,7 @@ const AccountsPage = ({
   loading = false,
   error,
   selected = [],
+  selectedItems = [], 
   onSelectClick,
   onSelectAllClick,
   onDeactivate,
@@ -32,6 +37,16 @@ const AccountsPage = ({
   onAddAttachment,
   onClaimAccount,
   onAssignUser,
+  onFilterChange,
+  
+  // Bulk action props
+  onBulkClaim,
+  onBulkAssign,
+  onBulkDeactivate,
+  onBulkExport,
+  onClearSelection,
+  bulkLoading = false,
+  userRoles = [],
 }) => {
   const columns = [
     { field: 'AccountName', headerName: 'Name', type: 'tooltip', defaultVisible: true },
@@ -69,17 +84,34 @@ const AccountsPage = ({
       chipColors: { true: '#079141ff', false: '#999999' },
       defaultVisible: true,
     }
-
   ];
 
-  // Local state for status messages
+  // Local state for status messages and filter
   const [statusMessage, setStatusMessage] = useState('');
   const [statusSeverity, setStatusSeverity] = useState('success');
+  const [accountFilter, setAccountFilter] = useState('all');
 
   const showStatus = (message, severity = 'success') => {
     setStatusMessage(message);
     setStatusSeverity(severity);
   };
+
+  const handleFilterChange = (event) => {
+    const newFilter = event.target.value;
+    setAccountFilter(newFilter);
+    
+    // Call the parent component's filter handler if provided
+    if (onFilterChange) {
+      onFilterChange(newFilter);
+    }
+  };
+
+  const filterOptions = [
+    { value: 'all', label: 'All Accounts' },
+    { value: 'my', label: 'My Accounts' },
+    { value: 'team', label: 'My Team\'s Accounts' },
+    { value: 'unassigned', label: 'Unassigned Accounts' },
+  ];
 
   return (
     <ThemeProvider theme={theme}>
@@ -87,7 +119,30 @@ const AccountsPage = ({
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-          <Toolbar sx={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e5e5', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, py: 2 }}>
+          {/* Bulk Actions Toolbar - shows when items are selected */}
+          <BulkActionsToolbar
+            selectedCount={selected.length}
+            selectedItems={selectedItems}
+            entityType="account"
+            onBulkAssign={onBulkAssign}
+            onBulkClaim={onBulkClaim}
+            onBulkDeactivate={onBulkDeactivate}
+            onBulkExport={onBulkExport}
+            onClearSelection={onClearSelection}
+            userRole={userRoles}
+            loading={bulkLoading}
+            disabled={loading}
+          />
+          
+          {/* Main Toolbar */}
+          <Toolbar sx={{ 
+            backgroundColor: '#fff', 
+            borderBottom: selected.length > 0 ? 'none' : '1px solid #e5e5e5',
+            justifyContent: 'space-between', 
+            flexWrap: 'wrap', 
+            gap: 2, 
+            py: 2 
+          }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
@@ -97,6 +152,34 @@ const AccountsPage = ({
                   <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
                 </Tooltip>
               </Box>
+
+              {/* Account Filter Dropdown */}
+              <FormControl size="small" sx={{ minWidth: 180 }}>
+                <Select
+                  value={accountFilter}
+                  onChange={handleFilterChange}
+                  displayEmpty
+                  sx={{ 
+                    backgroundColor: '#fff',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#e0e0e0',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#c0c0c0',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: theme.palette.primary.main,
+                    },
+                  }}
+                >
+                  {filterOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
               {selected.length > 0 && (
                 <Tooltip title={`${selected.length} account${selected.length === 1 ? '' : 's'} selected for bulk operations`} arrow>
                   <Chip

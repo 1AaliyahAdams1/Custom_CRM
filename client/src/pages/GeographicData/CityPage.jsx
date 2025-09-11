@@ -120,14 +120,6 @@ const CityPage = ({
     { field: 'CityName', headerName: 'City Name', type: 'tooltip', defaultVisible: true },
     { field: 'StateProvince_Name', headerName: 'State/Province', defaultVisible: true },
     //{ field: 'EntertainmentCity_Name', headerName: 'Entertainment City', defaultVisible: true },
-    {
-      field: 'Active',
-      headerName: 'Status',
-      type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive', 1: 'Active', 0: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999', 1: '#079141ff', 0: '#999999' },
-      defaultVisible: true,
-    },
   ];
 
   // Enhanced menu items for cities

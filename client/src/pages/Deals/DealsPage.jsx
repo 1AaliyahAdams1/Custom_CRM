@@ -10,15 +10,22 @@ import {
   Toolbar,
   Tabs,
   Tab,
+  FormControl,
+  Select,
+  MenuItem,
+  Tooltip,
+  TextField,
+  IconButton,
 } from "@mui/material";
 import {
   Add,
+  Info,
+  Clear,
 } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import { formatters } from '../../utils/formatters';
 import TableView from '../../components/tableFormat/TableView';
 import theme from "../../components/Theme";
-import DealStagePage from './DealStagePage';
 
 // Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {
@@ -73,49 +80,50 @@ const DealsPage = ({
   error = null,
   successMessage = "",
   setSuccessMessage,
+  searchTerm,
+  setSearchTerm,
+  statusFilter,
+  setStatusFilter,
+  clearFilters,
   onDeactivate,
   onEdit,
   onView,
   onCreate,
   onAddNote,
   onAddAttachment,
+  onFilterChange,
   totalCount = 0,
-
-  // Deal Stage props (pass through to DealStagePage)
-  dealStageProps = {},
+  currentFilter = 'all',
 }) => {
   const [selected, setSelected] = useState([]);
   const [currentTab, setCurrentTab] = useState(0);
+  const [dealFilter, setDealFilter] = useState(currentFilter);
 
   // Define available tabs
-  const availableTabs = [
-    {
-      id: 'deals',
-      label: 'Deals',
-      component: 'deals'
-    },
-    {
-      id: 'deal-stages',
-      label: 'Deal Stages',
-      component: 'dealStages'
-    },
-    // Add more tabs here as needed:
-    // {
-    //   id: 'reports',
-    //   label: 'Reports',
-    //   component: 'reports'
-    // }
+  const userTabs = [
+    { id: 'deals', label: 'Deals', component: 'deals' },
   ];
 
-  // Use all available tabs
-  const userTabs = availableTabs;
+  // Sync filter state from parent
+  useEffect(() => {
+    setDealFilter(currentFilter);
+  }, [currentFilter]);
 
-  // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setCurrentTab(newValue);
+  // Update filter in container
+  const handleFilterChange = (event) => {
+    const newFilter = event.target.value;
+    setDealFilter(newFilter);
+    if (onFilterChange) onFilterChange(newFilter);
   };
 
-  // Process deals data to add SymbolValue field
+  const filterOptions = [
+    { value: 'all', label: 'All Deals' },
+    { value: 'my', label: 'My Account Deals' },
+    { value: 'team', label: 'My Team\'s Account Deals' },
+    { value: 'unassigned', label: 'Unassigned Account Deals' },
+  ];
+
+  // Add SymbolValue for display
   const processedDeals = deals.map(deal => ({
     ...deal,
     SymbolValue: deal.Prefix
@@ -123,38 +131,21 @@ const DealsPage = ({
       : `${deal.Value}${deal.Symbol}`
   }));
 
-  // Automatically clear success message after 3 seconds
+  // Auto-clear success message
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => {
-        if (setSuccessMessage) {
-          setSuccessMessage("");
-        }
+        if (setSuccessMessage) setSuccessMessage("");
       }, 3000);
-
       return () => clearTimeout(timer);
     }
   }, [successMessage, setSuccessMessage]);
 
   // Selection handlers
   const handleSelectClick = (id) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
-      );
-    }
-
-    setSelected(newSelected);
+    setSelected(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const handleSelectAllClick = (event) => {
@@ -167,204 +158,136 @@ const DealsPage = ({
 
   return (
     <ThemeProvider theme={theme}>
-      <Box
-        sx={{
-          width: "100%",
-          backgroundColor: "#fafafa",
-          minHeight: "100vh",
-          p: 3,
-        }}
-      >
+      <Box sx={{ width: "100%", backgroundColor: "#fafafa", minHeight: "100vh", p: 3 }}>
         <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-          {/* Tabs Header */}
+          {/* Tabs */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
               value={currentTab}
-              onChange={handleTabChange}
+              onChange={(e, v) => setCurrentTab(v)}
               sx={{
                 backgroundColor: '#fff',
-                '& .MuiTab-root': {
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  minHeight: 56,
-                },
-                '& .MuiTabs-indicator': {
-                  backgroundColor: '#050505',
-                }
+                '& .MuiTab-root': { textTransform: 'none', fontSize: '1rem', fontWeight: 500 },
+                '& .MuiTabs-indicator': { backgroundColor: '#050505' }
               }}
             >
-              {userTabs.map((tab, index) => (
+              {userTabs.map((tab, idx) => (
                 <Tab
                   key={tab.id}
                   label={tab.label}
                   sx={{
-                    color: currentTab === index ? '#050505' : '#666666',
-                    '&.Mui-selected': {
-                      color: '#050505',
-                      fontWeight: 600,
-                    }
+                    color: currentTab === idx ? '#050505' : '#666',
+                    '&.Mui-selected': { color: '#050505', fontWeight: 600 }
                   }}
                 />
               ))}
             </Tabs>
           </Box>
 
-          {/* Tab Content */}
-          {userTabs.map((tab, index) => (
-            <TabPanel key={tab.id} value={currentTab} index={index}>
+          {/* Deals Tab */}
+          <TabPanel value={currentTab} index={0}>
+            {error && <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>}
+            {successMessage && (
+              <Alert severity="success" sx={{ m: 2 }} onClose={() => setSuccessMessage("")}>
+                {successMessage}
+              </Alert>
+            )}
 
-              {/* Deals Tab Content */}
-              {tab.component === 'deals' && (
-                <>
-                  {/* Error and Success Messages */}
-                  {error && (
-                    <Alert severity="error" sx={{ m: 2 }}>
-                      {error}
-                    </Alert>
-                  )}
+            {/* Toolbar */}
+            <Toolbar
+              sx={{
+                backgroundColor: "#fff",
+                borderBottom: "1px solid #e5e5e5",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 2,
+                py: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1, flexWrap: "wrap" }}>
+                <Typography variant="h6" sx={{ color: "#050505", fontWeight: 600 }}>
+                  Deals 
+                </Typography>
+                <Tooltip title="Filter deals by ownership" arrow>
+                  <FormControl size="small" sx={{ minWidth: 220 }}>
+                    <Select value={dealFilter} onChange={handleFilterChange}>
+                      {filterOptions.map(opt => (
+                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Tooltip>
 
-                  {successMessage && (
-                    <Alert
-                      severity="success"
-                      sx={{ m: 2 }}
-                      onClose={() => setSuccessMessage("")}
-                    >
-                      {successMessage}
-                    </Alert>
-                  )}
-
-                  {/* Deals Toolbar */}
-                  <Toolbar
-                    sx={{
-                      backgroundColor: "#ffffff",
-                      borderBottom: "1px solid #e5e5e5",
-                      justifyContent: "space-between",
-                      flexWrap: "wrap",
-                      gap: 2,
-                      py: 2,
-                    }}
+                {/* <TextField
+                  size="small"
+                  placeholder="Search deals..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  sx={{ minWidth: 200 }}
+                />
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    displayEmpty
                   >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        flex: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="h6"
-                        component="div"
-                        sx={{ color: "#050505", fontWeight: 600 }}
-                      >
-                        Deals
-                      </Typography>
-                      {selected.length > 0 && (
-                        <Chip
-                          label={`${selected.length} selected`}
-                          size="small"
-                          sx={{ backgroundColor: "#e0e0e0", color: "#050505" }}
-                        />
-                      )}
-                    </Box>
+                    <MenuItem value="">All Statuses</MenuItem>
+                    <MenuItem value="Active">Active</MenuItem>
+                    <MenuItem value="Inactive">Inactive</MenuItem>
+                  </Select>
+                </FormControl>
 
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        onClick={onCreate}
-                        disabled={loading}
-                        sx={{
-                          backgroundColor: "#050505",
-                          color: "#ffffff",
-                          "&:hover": { backgroundColor: "#333333" },
-                          "&:disabled": {
-                            backgroundColor: "#cccccc",
-                            color: "#666666",
-                          },
-                        }}
-                      >
-                        Add Deal
-                      </Button>
-                    </Box>
-                  </Toolbar>
+                {(searchTerm || statusFilter) && (
+                  <IconButton onClick={clearFilters} size="small">
+                    <Clear />
+                  </IconButton>
+                )}
 
-                  {/* Deals Table */}
-                  {loading ? (
-                    <Box display="flex" justifyContent="center" p={8}>
-                      <CircularProgress />
-                    </Box>
-                  ) : (
-                    <TableView
-                      data={processedDeals}
-                      columns={dealsTableConfig.columns}
-                      idField={dealsTableConfig.idField}
-                      selected={selected}
-                      onSelectClick={handleSelectClick}
-                      onSelectAllClick={handleSelectAllClick}
-                      showSelection={true}
-                      onView={onView}
-                      onEdit={onEdit}
-                      onDelete={onDeactivate}
-                      onAddNote={onAddNote}
-                      onAddAttachment={onAddAttachment}
-                      formatters={formatters}
-                      entityType="deal"
-                    />
-                  )}
+                {selected.length > 0 && (
+                  <Chip label={`${selected.length} selected`} size="small" />
+                )} */}
+              </Box>
 
-                  {/* Deals Results Footer */}
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderTop: "1px solid #e5e5e5",
-                      backgroundColor: "#fafafa",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ color: "#666666" }}>
-                      Showing {processedDeals.length} of {totalCount} deals
-                    </Typography>
-                    {selected.length > 0 && (
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#050505", fontWeight: 500 }}
-                      >
-                        {selected.length} selected
-                      </Typography>
-                    )}
-                  </Box>
-                </>
-              )}
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={onCreate}
+                disabled={loading}
+                sx={{
+                  backgroundColor: "#050505",
+                  color: "#fff",
+                  "&:hover": { backgroundColor: "#333" },
+                  "&:disabled": { backgroundColor: "#ccc", color: "#666" },
+                }}
+              >
+                Add Deal
+              </Button>
+            </Toolbar>
 
-              {/* Deal Stages Tab Content */}
-              {tab.component === 'dealStages' && (
-                <Box sx={{ p: 0 }}>
-                  <DealStagePage {...dealStageProps} />
-                </Box>
-              )}
-
-              {/* Add more tab components here as needed */}
-              {/* 
-              {tab.component === 'reports' && (
-                <Box sx={{ p: 0 }}>
-                  <DealReportsPage {...dealReportsProps} />
-                </Box>
-              )}
-              */}
-
-            </TabPanel>
-          ))}
+            {/* Table */}
+            {loading ? (
+              <Box display="flex" alignItems="center" justifyContent="center" p={8}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <TableView
+                data={processedDeals}
+                columns={dealsTableConfig.columns}
+                idField={dealsTableConfig.idField}
+                selected={selected}
+                onSelectClick={handleSelectClick}
+                onSelectAllClick={handleSelectAllClick}
+                showSelection
+                onView={onView}
+                onEdit={onEdit}
+                onDelete={onDeactivate}
+                onAddNote={onAddNote}
+                onAddAttachment={onAddAttachment}
+                formatters={formatters}
+                entityType="deal"
+              />
+            )}
+          </TabPanel>
         </Paper>
       </Box>
     </ThemeProvider>

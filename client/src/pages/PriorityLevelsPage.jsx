@@ -91,14 +91,6 @@ const PriorityLevelPage = ({
 
   const columns = [
     { field: 'PriorityLevelName', headerName: 'Priority Name', type: 'tooltip', defaultVisible: true },
-    {
-      field: 'IsActive',
-      headerName: 'Status',
-      type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999' },
-      defaultVisible: true,
-    },
   ];
 
   // Enhanced menu items for priority levels

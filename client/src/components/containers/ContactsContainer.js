@@ -6,6 +6,11 @@ import {
   fetchContactsByUser,
   deactivateContact,
 } from "../../services/contactService";
+import {
+  getAllAccounts,
+  fetchActiveAccountsByUser,
+  fetchActiveUnassignedAccounts,
+} from "../../services/accountService";
 import { 
   createNote, 
   updateNote, 
@@ -26,7 +31,10 @@ import { formatters } from '../../utils/formatters';
 const ContactsContainer = () => {
   const navigate = useNavigate();
 
-  const [contacts, setContacts] = useState([]);
+  const [allContacts, setAllContacts] = useState([]);
+  const [filteredContacts, setFilteredContacts] = useState([]);
+  const [currentFilter, setCurrentFilter] = useState('all');
+  const [accountOwnership, setAccountOwnership] = useState(new Map()); // Map of AccountID -> ownerStatus
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -41,10 +49,6 @@ const ContactsContainer = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState(null);
 
-  // Filters
-  const [searchTerm] = useState("");
-  const [employmentStatusFilter] = useState("");
-
   // User roles
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
@@ -53,12 +57,207 @@ const ContactsContainer = () => {
   const isCLevel = roles.includes("C-level");
   const isSalesRep = roles.includes("Sales Representative");
 
+  // Helper function to normalize boolean values
+  const normalizeBoolean = (value) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') {
+      const lower = value.toLowerCase();
+      if (lower === 'true' || lower === '1' || lower === 'yes') return true;
+      if (lower === 'false' || lower === '0' || lower === 'no') return false;
+    }
+    if (typeof value === 'number') {
+      return value === 1;
+    }
+    return null;
+  };
+
+  // ---------------- IMPROVED FILTER LOGIC ----------------
+  const applyFilter = (contacts, filterType) => {
+    console.log('=== CONTACTS FILTER DEBUG ===');
+    console.log('Applying filter:', filterType, 'to contacts:', contacts.length);
+    console.log('Account ownership map size:', accountOwnership.size);
+    console.log('User roles:', roles);
+    console.log('User ID:', userId);
+    
+    let filteredContacts;
+    switch (filterType) {
+      case 'my':
+        // Contacts from accounts I own
+        if (isSalesRep) {
+          filteredContacts = contacts.filter(contact => {
+            const ownerStatus = accountOwnership.get(contact.AccountID);
+            console.log(`Contact ${contact.PersonFullName} (Account: ${contact.AccountID}) - Owner Status: ${ownerStatus}`);
+            return ownerStatus === 'owned';
+          });
+        } else {
+          // Non-sales reps might not have "owned" accounts
+          filteredContacts = [];
+        }
+        break;
+        
+      case 'team':
+        if (isCLevel) {
+          // C-level sees all contacts
+          filteredContacts = contacts;
+        } else if (isSalesRep) {
+          // Sales rep sees contacts from owned and unassigned accounts
+          filteredContacts = contacts.filter(contact => {
+            const ownerStatus = accountOwnership.get(contact.AccountID);
+            return ownerStatus === 'owned' || ownerStatus === 'unowned';
+          });
+        } else {
+          // Other roles see all contacts (adjust as needed)
+          filteredContacts = contacts;
+        }
+        break;
+        
+      case 'unassigned':
+        if (isCLevel) {
+          // C-level sees contacts from unassigned accounts only
+          filteredContacts = contacts.filter(contact => {
+            const ownerStatus = accountOwnership.get(contact.AccountID);
+            console.log(`Unassigned filter - Contact ${contact.PersonFullName}: ${ownerStatus}`);
+            return ownerStatus === 'unowned'; // Changed from 'n/a' || 'unowned' to just 'unowned'
+          });
+        } else if (isSalesRep) {
+          // Sales rep sees contacts from unassigned accounts
+          filteredContacts = contacts.filter(contact => {
+            const ownerStatus = accountOwnership.get(contact.AccountID);
+            return ownerStatus === 'unowned';
+          });
+        } else {
+          filteredContacts = [];
+        }
+        break;
+
+      case 'employed':
+        // Currently employed contacts
+        filteredContacts = contacts.filter(contact => {
+          const employed = normalizeBoolean(contact.Still_employed);
+          console.log(`Employment filter - Contact ${contact.PersonFullName}: Still_employed = ${contact.Still_employed} (normalized: ${employed})`);
+          return employed === true;
+        });
+        break;
+
+      case 'not_employed':
+        // Not currently employed contacts
+        filteredContacts = contacts.filter(contact => {
+          const employed = normalizeBoolean(contact.Still_employed);
+          console.log(`Not employed filter - Contact ${contact.PersonFullName}: Still_employed = ${contact.Still_employed} (normalized: ${employed})`);
+          return employed === false;
+        });
+        break;
+        
+      case 'all':
+      default:
+        filteredContacts = contacts;
+        break;
+    }
+    
+    console.log(`Filter "${filterType}" returned:`, filteredContacts.length, 'contacts');
+    
+    // Additional debugging for employment status
+    if (filterType === 'employed' || filterType === 'not_employed') {
+      console.log('Employment status breakdown:');
+      const employmentStats = contacts.reduce((stats, contact) => {
+        const employed = normalizeBoolean(contact.Still_employed);
+        if (employed === true) stats.employed++;
+        else if (employed === false) stats.notEmployed++;
+        else stats.unknown++;
+        return stats;
+      }, { employed: 0, notEmployed: 0, unknown: 0 });
+      console.log('Employment stats:', employmentStats);
+    }
+    
+    console.log('=== END CONTACTS FILTER DEBUG ===');
+    return filteredContacts;
+  };
+
+  // ---------------- IMPROVED ACCOUNT OWNERSHIP FETCH ----------------
+  const fetchAccountOwnership = async () => {
+    console.log('=== FETCHING ACCOUNT OWNERSHIP ===');
+    try {
+      const ownershipMap = new Map();
+
+      if (isCLevel) {
+        console.log('Fetching all accounts for C-level user');
+        const response = await getAllAccounts();
+        const accountsData = response.data || response || []; // Handle different response formats
+        console.log('All accounts received:', accountsData.length);
+        
+        // For C-level, we need to determine which accounts are assigned vs unassigned
+        // First, get all assigned accounts
+        const assignedRes = await fetchActiveAccountsByUser(userId);
+        const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
+        const assignedAccountIds = new Set(assignedAccounts.map(acc => acc.AccountID));
+        
+        // Then get unassigned accounts
+        const unassignedRes = await fetchActiveUnassignedAccounts();
+        const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
+        const unassignedAccountIds = new Set(unassignedAccounts.map(acc => acc.AccountID));
+        
+        // Mark each account appropriately
+        accountsData.forEach(acc => {
+          if (assignedAccountIds.has(acc.AccountID)) {
+            ownershipMap.set(acc.AccountID, 'owned');
+          } else if (unassignedAccountIds.has(acc.AccountID)) {
+            ownershipMap.set(acc.AccountID, 'unowned');
+          } else {
+            ownershipMap.set(acc.AccountID, 'unknown'); // Fallback
+          }
+        });
+        
+      } else if (isSalesRep) {
+        console.log('Fetching accounts for Sales Rep');
+        
+        const assignedRes = await fetchActiveAccountsByUser(userId);
+        const unassignedRes = await fetchActiveUnassignedAccounts();
+
+        const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
+        const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
+
+        console.log('Assigned accounts:', assignedAccounts.length);
+        console.log('Unassigned accounts:', unassignedAccounts.length);
+
+        assignedAccounts.forEach(acc => {
+          ownershipMap.set(acc.AccountID, 'owned');
+        });
+
+        unassignedAccounts.forEach(acc => {
+          ownershipMap.set(acc.AccountID, 'unowned');
+        });
+      }
+
+      console.log('Account ownership map created with', ownershipMap.size, 'entries');
+      
+      // Debug: Show some entries
+      let debugCount = 0;
+      for (let [accountId, status] of ownershipMap.entries()) {
+        if (debugCount < 5) {
+          console.log(`Account ${accountId}: ${status}`);
+          debugCount++;
+        }
+      }
+      
+      setAccountOwnership(ownershipMap);
+      return ownershipMap;
+    } catch (err) {
+      console.error('Failed to fetch account ownership:', err);
+      setError('Failed to load account information for filtering');
+      return new Map();
+    }
+  };
+
   // ---------------- FETCH CONTACTS ----------------
   const fetchContacts = async () => {
     setLoading(true);
     setError(null);
     try {
       let data = [];
+
+      // First fetch account ownership information
+      const ownershipMap = await fetchAccountOwnership();
 
       if (isCLevel) {
         const allContacts = await getAllContacts();
@@ -72,7 +271,9 @@ const ContactsContainer = () => {
         throw new Error("Invalid response format - expected array");
       }
 
-      // Add PersonFullName for search
+      console.log('Raw contacts received:', data.length);
+
+      // Process contacts with PersonFullName
       const processedData = data.map((contact) => ({
         ...contact,
         PersonFullName: [
@@ -83,52 +284,37 @@ const ContactsContainer = () => {
           .filter((part) => part.trim() !== "")
           .join(" "),
       }));
-      setContacts(processedData);
+
+      setAllContacts(processedData);
+      const filtered = applyFilter(processedData, currentFilter);
+      setFilteredContacts(filtered);
     } catch (err) {
+      console.error('Error fetching contacts:', err);
       setError("Failed to load contacts. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // ---------------- FILTER HANDLER ----------------
+  const handleFilterChange = (filterType) => {
+    console.log('Filter changed to:', filterType);
+    setCurrentFilter(filterType);
+    const filtered = applyFilter(allContacts, filterType);
+    setFilteredContacts(filtered);
+    setSelected([]);
+  };
+
   useEffect(() => {
     fetchContacts();
   }, [refreshFlag]);
 
-  // ---------------- FILTERED CONTACTS ----------------
-  const filteredContacts = useMemo(() => {
-    if (!searchTerm.trim() && !employmentStatusFilter) {
-      return contacts;
+  useEffect(() => {
+    if (allContacts.length > 0 && accountOwnership.size > 0) {
+      const filtered = applyFilter(allContacts, currentFilter);
+      setFilteredContacts(filtered);
     }
-
-    const filtered = contacts.filter((contact) => {
-      let matchesSearch = true;
-      if (searchTerm.trim()) {
-        const searchLower = searchTerm.toLowerCase();
-        matchesSearch =
-          (contact.ContactID && contact.ContactID.toString().includes(searchTerm)) ||
-          (contact.AccountID && contact.AccountID.toString().includes(searchTerm)) ||
-          (contact.PersonID && contact.PersonID.toString().includes(searchTerm)) ||
-          (contact.WorkEmail && contact.WorkEmail.toLowerCase().includes(searchLower)) ||
-          (contact.WorkPhone && contact.WorkPhone.includes(searchTerm)) ||
-          (contact.JobTitleID && contact.JobTitleID.toString().includes(searchTerm)) ||
-          (contact.PersonFullName && contact.PersonFullName.toLowerCase().includes(searchLower)) ||
-          (contact.AccountName && contact.AccountName.toLowerCase().includes(searchLower));
-      }
-
-      let matchesEmploymentStatus = true;
-      if (employmentStatusFilter) {
-        matchesEmploymentStatus =
-          (employmentStatusFilter === "employed" && contact.Still_employed === true) ||
-          (employmentStatusFilter === "not_employed" && contact.Still_employed === false) ||
-          (employmentStatusFilter === "unknown" && contact.Still_employed == null);
-      }
-
-      return matchesSearch && matchesEmploymentStatus;
-    });
-
-    return filtered;
-  }, [contacts, searchTerm, employmentStatusFilter]);
+  }, [allContacts, currentFilter, accountOwnership]);
 
   // ---------------- SELECTION HANDLERS ----------------
   const handleSelectClick = (id) => {
@@ -296,8 +482,11 @@ const ContactsContainer = () => {
         onCreate={handleCreate}
         onAddNote={handleAddNote}
         onAddAttachment={handleAddAttachment}
+        onFilterChange={handleFilterChange}
+        userRoles={roles}
         formatters={formatters}
-        totalCount={contacts.length}
+        totalCount={allContacts.length}
+        currentFilter={currentFilter}
       />
 
       {/* Notes Popup */}

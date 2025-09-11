@@ -6,6 +6,11 @@ import {
   fetchActivitiesByUser,
   deactivateActivity,
 } from "../../services/activityService";
+import {
+  getAllAccounts,
+  fetchActiveAccountsByUser,
+  fetchActiveUnassignedAccounts,
+} from "../../services/accountService";
 import { 
   createNote, 
   updateNote, 
@@ -18,7 +23,6 @@ import {
   deleteAttachment, 
   downloadAttachment 
 } from "../../services/attachmentService";
-import { getAllAccounts } from "../../services/accountService";
 import { activityTypeService, priorityLevelService } from "../../services/dropdownServices";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
@@ -27,7 +31,10 @@ import AttachmentsPopup from "../../components/AttachmentsComponent";
 const ActivitiesContainer = () => {
   const navigate = useNavigate();
 
-  const [activities, setActivities] = useState([]);
+  const [allActivities, setAllActivities] = useState([]);
+  const [filteredActivities, setFilteredActivities] = useState([]);
+  const [currentFilter, setCurrentFilter] = useState('all');
+  const [accountOwnership, setAccountOwnership] = useState(new Map()); // Map of AccountID -> ownerStatus
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -38,7 +45,7 @@ const ActivitiesContainer = () => {
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
 
-  // Filters
+  // Additional filters (search, status, priority)
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
@@ -58,6 +65,138 @@ const ActivitiesContainer = () => {
 
   const isCLevel = roles.includes("C-level");
   const isSalesRep = roles.includes("Sales Representative");
+
+  // ---------------- FILTER LOGIC ----------------
+  const applyFilter = (activities, filterType) => {
+    console.log('=== ACTIVITIES FILTER DEBUG ===');
+    console.log('Applying filter:', filterType, 'to activities:', activities.length);
+    console.log('Account ownership map size:', accountOwnership.size);
+    
+    let filteredActivities;
+    switch (filterType) {
+      case 'my':
+        // Activities from accounts I own
+        if (isSalesRep) {
+          filteredActivities = activities.filter(activity => {
+            const ownerStatus = accountOwnership.get(activity.AccountID);
+            console.log(`Activity ${activity.ActivityType} (Account: ${activity.AccountID}) - Owner Status: ${ownerStatus}`);
+            return ownerStatus === 'owned';
+          });
+        } else {
+          // Non-sales reps might not have "owned" accounts
+          filteredActivities = [];
+        }
+        break;
+        
+      case 'team':
+        if (isCLevel) {
+          // C-level sees all activities
+          filteredActivities = activities;
+        } else if (isSalesRep) {
+          // Sales rep sees activities from owned and unassigned accounts
+          filteredActivities = activities.filter(activity => {
+            const ownerStatus = accountOwnership.get(activity.AccountID);
+            return ownerStatus === 'owned' || ownerStatus === 'unowned';
+          });
+        } else {
+          // Other roles see all activities (adjust as needed)
+          filteredActivities = activities;
+        }
+        break;
+        
+      case 'unassigned':
+        if (isCLevel) {
+          // C-level sees activities from unassigned accounts only
+          filteredActivities = activities.filter(activity => {
+            const ownerStatus = accountOwnership.get(activity.AccountID);
+            console.log(`Unassigned filter - Activity ${activity.ActivityType}: ${ownerStatus}`);
+            return ownerStatus === 'unowned';
+          });
+        } else if (isSalesRep) {
+          // Sales rep sees activities from unassigned accounts
+          filteredActivities = activities.filter(activity => {
+            const ownerStatus = accountOwnership.get(activity.AccountID);
+            return ownerStatus === 'unowned';
+          });
+        } else {
+          filteredActivities = [];
+        }
+        break;
+        
+      case 'all':
+      default:
+        filteredActivities = activities;
+        break;
+    }
+    
+    console.log(`Filter "${filterType}" returned:`, filteredActivities.length, 'activities');
+    console.log('=== END ACTIVITIES FILTER DEBUG ===');
+    return filteredActivities;
+  };
+
+  // ---------------- FETCH ACCOUNT OWNERSHIP ----------------
+  const fetchAccountOwnership = async () => {
+    console.log('=== FETCHING ACCOUNT OWNERSHIP FOR ACTIVITIES ===');
+    try {
+      const ownershipMap = new Map();
+
+      if (isCLevel) {
+        console.log('Fetching all accounts for C-level user');
+        const response = await getAllAccounts();
+        const accountsData = response.data || response || [];
+        console.log('All accounts received:', accountsData.length);
+        
+        // For C-level, determine which accounts are assigned vs unassigned
+        const assignedRes = await fetchActiveAccountsByUser(userId);
+        const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
+        const assignedAccountIds = new Set(assignedAccounts.map(acc => acc.AccountID));
+        
+        const unassignedRes = await fetchActiveUnassignedAccounts();
+        const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
+        const unassignedAccountIds = new Set(unassignedAccounts.map(acc => acc.AccountID));
+        
+        // Mark each account appropriately
+        accountsData.forEach(acc => {
+          if (assignedAccountIds.has(acc.AccountID)) {
+            ownershipMap.set(acc.AccountID, 'owned');
+          } else if (unassignedAccountIds.has(acc.AccountID)) {
+            ownershipMap.set(acc.AccountID, 'unowned');
+          } else {
+            ownershipMap.set(acc.AccountID, 'unknown');
+          }
+        });
+        
+      } else if (isSalesRep) {
+        console.log('Fetching accounts for Sales Rep');
+        
+        const assignedRes = await fetchActiveAccountsByUser(userId);
+        const unassignedRes = await fetchActiveUnassignedAccounts();
+
+        const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
+        const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
+
+        console.log('Assigned accounts:', assignedAccounts.length);
+        console.log('Unassigned accounts:', unassignedAccounts.length);
+
+        assignedAccounts.forEach(acc => {
+          ownershipMap.set(acc.AccountID, 'owned');
+        });
+
+        unassignedAccounts.forEach(acc => {
+          ownershipMap.set(acc.AccountID, 'unowned');
+        });
+      }
+
+      console.log('Account ownership map created with', ownershipMap.size, 'entries');
+      
+      setAccountOwnership(ownershipMap);
+      return ownershipMap;
+    } catch (err) {
+      console.error('Failed to fetch account ownership:', err);
+      setError('Failed to load account information for filtering');
+      return new Map();
+    }
+  };
 
   // ---------------- FETCH LOOKUPS ----------------
   const fetchLookups = async () => {
@@ -81,12 +220,21 @@ const ActivitiesContainer = () => {
     setError(null);
     try {
       let activitiesData = [];
+
+      // First fetch account ownership information
+      const ownershipMap = await fetchAccountOwnership();
+
       if (isCLevel) {
         activitiesData = await getAllActivities(true);
       } else if (isSalesRep && userId) {
         activitiesData = await fetchActivitiesByUser(userId);
       }
-      setActivities(activitiesData || []);
+
+      console.log('Raw activities received:', activitiesData.length);
+
+      setAllActivities(activitiesData || []);
+      const filtered = applyFilter(activitiesData || [], currentFilter);
+      setFilteredActivities(filtered);
     } catch {
       setError("Failed to load activities. Please try again.");
     } finally {
@@ -99,9 +247,25 @@ const ActivitiesContainer = () => {
     fetchActivities();
   }, [refreshFlag]);
 
-  // ---------------- FILTERED ACTIVITIES ----------------
-  const filteredActivities = useMemo(() => {
-    return activities.filter((a) => {
+  useEffect(() => {
+    if (allActivities.length > 0 && accountOwnership.size > 0) {
+      const filtered = applyFilter(allActivities, currentFilter);
+      setFilteredActivities(filtered);
+    }
+  }, [allActivities, currentFilter, accountOwnership]);
+
+  // ---------------- FILTER HANDLER ----------------
+  const handleFilterChange = (filterType) => {
+    console.log('Filter changed to:', filterType);
+    setCurrentFilter(filterType);
+    const filtered = applyFilter(allActivities, filterType);
+    setFilteredActivities(filtered);
+    setSelected([]);
+  };
+
+  // ---------------- FINAL FILTERED ACTIVITIES (with search, status, priority) ----------------
+  const finalFilteredActivities = useMemo(() => {
+    return filteredActivities.filter((a) => {
       const matchesSearch =
         !searchTerm ||
         a.AccountName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -112,7 +276,7 @@ const ActivitiesContainer = () => {
         !priorityFilter || a.PriorityLevelName === priorityFilter;
       return matchesSearch && matchesStatus && matchesPriority;
     });
-  }, [activities, searchTerm, statusFilter, priorityFilter]);
+  }, [filteredActivities, searchTerm, statusFilter, priorityFilter]);
 
   // ---------------- HANDLERS ----------------
   const handleDeactivateClick = (activity) => {
@@ -148,7 +312,7 @@ const ActivitiesContainer = () => {
     );
 
   const handleSelectAllClick = (e) =>
-    setSelected(e.target.checked ? activities.map((a) => a.ActivityID) : []);
+    setSelected(e.target.checked ? finalFilteredActivities.map((a) => a.ActivityID) : []);
 
   // ---------------- NOTES ----------------
   const handleAddNote = (activity) => {
@@ -243,7 +407,7 @@ const ActivitiesContainer = () => {
   return (
     <>
       <ActivitiesPage
-        activities={filteredActivities}
+        activities={finalFilteredActivities}
         loading={loading}
         error={error}
         successMessage={successMessage}
@@ -257,6 +421,7 @@ const ActivitiesContainer = () => {
         onCreate={handleCreate}
         onAddNote={handleAddNote}
         onAddAttachment={handleAddAttachment}
+        onFilterChange={handleFilterChange}
         searchTerm={searchTerm}
         statusFilter={statusFilter}
         priorityFilter={priorityFilter}
@@ -264,7 +429,8 @@ const ActivitiesContainer = () => {
         setStatusFilter={setStatusFilter}
         setPriorityFilter={setPriorityFilter}
         clearFilters={clearFilters}
-        totalCount={activities.length}
+        totalCount={allActivities.length}
+        currentFilter={currentFilter}
       />
 
       {/* Notes Popup */}
