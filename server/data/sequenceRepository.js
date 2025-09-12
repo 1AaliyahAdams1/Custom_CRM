@@ -567,7 +567,6 @@ async function getActivityMetadata() {
     throw err;
   }
 }
-}
 
 // ========
 // ========
