@@ -41,6 +41,7 @@ const CityPage = ({
   cities = [],
   statesProvinces = [], // For dropdown in add city popup
   entertainmentCities = [], // For dropdown in add city popup
+  countries = [], //  For country dropdown
   loading = false,
   error,
   setError,
@@ -67,20 +68,26 @@ const CityPage = ({
   // Add City Dialog State
   const [addCityDialogOpen, setAddCityDialogOpen] = useState(false);
   const [newCity, setNewCity] = useState({
-    City_Name: '',
-    StateProvince_ID: '',
-    EntertainmentCity_ID: '',
+    CityName: '',
+    StateProvinceID: '',
+    EntertainmentCityID: '',
+    CountryID: '', // Country field
     Active: true
   });
   const [addCityLoading, setAddCityLoading] = useState(false);
+
+  // Utility function to get consistent City ID (handling both CityID and EFMCityID)
+  const getCityId = (city) => {
+    return city.CityID || city.EFMCityID || city.City_ID;
+  };
 
   // Create maps for quick lookup - handling both naming conventions
   const stateProvinceMap = React.useMemo(() => {
     const map = {};
     statesProvinces.forEach(state => {
-      // Handle both underscore and camelCase field names
-      const stateId = state.StateProvince_ID || state.StateProvinceID;
-      const stateName = state.StateProvince_Name || state.StateProvinceName;
+      // Handle multiple naming conventions
+      const stateId = state.StateProvinceID || state.StateProvince_ID;
+      const stateName = state.StateProvinceName || state.StateProvince_Name;
       if (stateId) {
         map[stateId] = stateName;
       }
@@ -91,9 +98,9 @@ const CityPage = ({
   const entertainmentCityMap = React.useMemo(() => {
     const map = {};
     entertainmentCities.forEach(entertainment => {
-      // Handle both underscore and camelCase field names
-      const entertainmentId = entertainment.EntertainmentCity_ID || entertainment.EntertainmentCityID;
-      const entertainmentName = entertainment.EntertainmentCity_Name || entertainment.EntertainmentCityName;
+      // Handle multiple naming conventions
+      const entertainmentId = entertainment.EntertainmentCityID || entertainment.EntertainmentCity_ID;
+      const entertainmentName = entertainment.EntertainmentCityName || entertainment.EntertainmentCity_Name;
       if (entertainmentId) {
         map[entertainmentId] = entertainmentName;
       }
@@ -101,30 +108,55 @@ const CityPage = ({
     return map;
   }, [entertainmentCities]);
 
-  // Enhanced cities data with state/province and entertainment city names
+  // Country mapping
+  const countryMap = React.useMemo(() => {
+    const map = {};
+    countries.forEach(country => {
+      // Handle multiple naming conventions
+      const countryId = country.CountryID || country.Country_ID;
+      const countryName = country.CountryName || country.Country_Name;
+      if (countryId) {
+        map[countryId] = countryName;
+      }
+    });
+    return map;
+  }, [countries]);
+
+  // Enhanced cities data with state/province, entertainment city, and country names
   const enhancedCities = React.useMemo(() => {
     return cities.map(city => {
-      // Handle both underscore and camelCase field names for IDs
-      const stateProvinceId = city.StateProvince_ID || city.StateProvinceID;
-      const entertainmentCityId = city.EntertainmentCity_ID || city.EntertainmentCityID;
+      // Handle multiple naming conventions for IDs
+      const stateProvinceId = city.StateProvinceID || city.StateProvince_ID;
+      const entertainmentCityId = city.EntertainmentCityID || city.EntertainmentCity_ID;
+      const countryId = city.CountryID || city.Country_ID; // Country ID handling
       
       return {
         ...city,
+        // Ensure consistent field names for display
+        CityID: getCityId(city),
+        CityName: city.CityName || city.City_Name,
+        StateProvinceID: stateProvinceId,
+        EntertainmentCityID: entertainmentCityId,
+        CountryID: countryId, //  Consistent country ID
+        // Enhanced display names
         StateProvince_Name: stateProvinceMap[stateProvinceId] || 'N/A',
-        EntertainmentCity_Name: entertainmentCityMap[entertainmentCityId] || 'N/A'
+        EntertainmentCity_Name: entertainmentCityMap[entertainmentCityId] || 'N/A',
+        Country_Name: countryMap[countryId] || 'N/A' //  Country name
       };
     });
-  }, [cities, stateProvinceMap, entertainmentCityMap]);
+  }, [cities, stateProvinceMap, entertainmentCityMap, countryMap]);
 
   const columns = [
     { field: 'CityName', headerName: 'City Name', type: 'tooltip', defaultVisible: true },
     { field: 'StateProvince_Name', headerName: 'State/Province', defaultVisible: true },
-    //{ field: 'EntertainmentCity_Name', headerName: 'Entertainment City', defaultVisible: true },
+    { field: 'Country_Name', headerName: 'Country', defaultVisible: true }, //  Country column
+    { field: 'EntertainmentCity_Name', headerName: 'Entertainment City', defaultVisible: false },
+    { field: 'Active', headerName: 'Status', defaultVisible: true },
   ];
 
   // Enhanced menu items for cities
   const getMenuItems = (city) => {
-    const cityId = city.City_ID || city.CityID;
+    const cityId = getCityId(city); // Use utility function for consistent ID handling
     const baseItems = [
       {
         label: 'View Details',
@@ -207,6 +239,14 @@ const CityPage = ({
           N/A
         </Typography>
       ) : value;
+    },
+    // Country formatter
+    Country_Name: (value) => {
+      return value === 'N/A' ? (
+        <Typography variant="body2" sx={{ color: '#999' }}>
+          N/A
+        </Typography>
+      ) : value;
     }
   };
 
@@ -214,9 +254,10 @@ const CityPage = ({
   const handleOpenAddCityDialog = () => {
     setAddCityDialogOpen(true);
     setNewCity({
-      City_Name: '',
-      StateProvince_ID: '',
-      EntertainmentCity_ID: '',
+      CityName: '',
+      StateProvinceID: '',
+      EntertainmentCityID: '',
+      CountryID: '', // Reset country field
       Active: true
     });
   };
@@ -224,31 +265,39 @@ const CityPage = ({
   const handleCloseAddCityDialog = () => {
     setAddCityDialogOpen(false);
     setNewCity({
-      City_Name: '',
-      StateProvince_ID: '',
-      EntertainmentCity_ID: '',
+      CityName: '',
+      StateProvinceID: '',
+      EntertainmentCityID: '',
+      CountryID: '', //Reset country field
       Active: true
     });
   };
 
   const handleAddCity = async () => {
-    if (!newCity.City_Name.trim()) {
+    if (!newCity.CityName.trim()) {
       setError && setError('City name is required');
       return;
     }
 
-    if (!newCity.StateProvince_ID) {
+    if (!newCity.StateProvinceID) {
       setError && setError('State/Province is required');
       return;
     }
+
+    //  Country validation 
+    // if (!newCity.CountryID) {
+    //   setError && setError('Country is required');
+    //   return;
+    // }
 
     setAddCityLoading(true);
     try {
       if (onCreate) {
         const cityData = {
           ...newCity,
-          StateProvince_ID: parseInt(newCity.StateProvince_ID),
-          EntertainmentCity_ID: newCity.EntertainmentCity_ID ? parseInt(newCity.EntertainmentCity_ID) : null
+          StateProvinceID: parseInt(newCity.StateProvinceID),
+          EntertainmentCityID: newCity.EntertainmentCityID ? parseInt(newCity.EntertainmentCityID) : null,
+          CountryID: newCity.CountryID ? parseInt(newCity.CountryID) : null //  Country handling
         };
         await onCreate(cityData);
         handleCloseAddCityDialog();
@@ -368,7 +417,7 @@ const CityPage = ({
         <TableView
           data={enhancedCities}
           columns={columns}
-          idField="City_ID"
+          idField="CityID" // Updated to use consistent CityID
           selected={selected}
           onSelectClick={onSelectClick}
           onSelectAllClick={onSelectAllClick}
@@ -434,8 +483,8 @@ const CityPage = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <TextField
               label="City Name"
-              value={newCity.City_Name}
-              onChange={(e) => handleInputChange('City_Name', e.target.value)}
+              value={newCity.CityName}
+              onChange={(e) => handleInputChange('CityName', e.target.value)}
               fullWidth
               required
               variant="outlined"
@@ -446,16 +495,16 @@ const CityPage = ({
             <FormControl fullWidth required>
               <InputLabel>State/Province</InputLabel>
               <Select
-                value={newCity.StateProvince_ID}
-                onChange={(e) => handleInputChange('StateProvince_ID', e.target.value)}
+                value={newCity.StateProvinceID}
+                onChange={(e) => handleInputChange('StateProvinceID', e.target.value)}
                 label="State/Province"
               >
                 <MenuItem value="">
                   <em>Select a state/province</em>
                 </MenuItem>
                 {statesProvinces.map((state) => {
-                  const stateId = state.StateProvince_ID || state.StateProvinceID;
-                  const stateName = state.StateProvince_Name || state.StateProvinceName;
+                  const stateId = state.StateProvinceID || state.StateProvince_ID;
+                  const stateName = state.StateProvinceName || state.StateProvince_Name;
                   return (
                     <MenuItem key={stateId} value={stateId}>
                       {stateName}
@@ -465,19 +514,42 @@ const CityPage = ({
               </Select>
             </FormControl>
 
+            {/* Country Selection */}
+            <FormControl fullWidth>
+              <InputLabel>Country (Optional)</InputLabel>
+              <Select
+                value={newCity.CountryID}
+                onChange={(e) => handleInputChange('CountryID', e.target.value)}
+                label="Country (Optional)"
+              >
+                <MenuItem value="">
+                  <em>Select a country</em>
+                </MenuItem>
+                {countries.map((country) => {
+                  const countryId = country.CountryID || country.Country_ID;
+                  const countryName = country.CountryName || country.Country_Name;
+                  return (
+                    <MenuItem key={countryId} value={countryId}>
+                      {countryName}
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+
             <FormControl fullWidth>
               <InputLabel>Entertainment City (Optional)</InputLabel>
               <Select
-                value={newCity.EntertainmentCity_ID}
-                onChange={(e) => handleInputChange('EntertainmentCity_ID', e.target.value)}
+                value={newCity.EntertainmentCityID}
+                onChange={(e) => handleInputChange('EntertainmentCityID', e.target.value)}
                 label="Entertainment City (Optional)"
               >
                 <MenuItem value="">
                   <em>None</em>
                 </MenuItem>
                 {entertainmentCities.map((entertainment) => {
-                  const entertainmentId = entertainment.EntertainmentCity_ID || entertainment.EntertainmentCityID;
-                  const entertainmentName = entertainment.EntertainmentCity_Name || entertainment.EntertainmentCityName;
+                  const entertainmentId = entertainment.EntertainmentCityID || entertainment.EntertainmentCity_ID;
+                  const entertainmentName = entertainment.EntertainmentCityName || entertainment.EntertainmentCity_Name;
                   return (
                     <MenuItem key={entertainmentId} value={entertainmentId}>
                       {entertainmentName}
@@ -508,8 +580,8 @@ const CityPage = ({
             variant="contained"
             disabled={
               addCityLoading ||
-              !newCity.City_Name.trim() ||
-              !newCity.StateProvince_ID
+              !newCity.CityName.trim() ||
+              !newCity.StateProvinceID
             }
           >
             {addCityLoading ? <CircularProgress size={20} /> : 'Add City'}

@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -13,7 +15,7 @@ import {
   getCountryByCode,
   getActiveCountries
 } from '../../services/countryService';
-// Import state/province and city services (you'll need to create these)
+// Import state/province and city services
 import {
   getAllStatesProvinces,
   createStateProvince,
@@ -30,13 +32,21 @@ import {
   reactivateCity,
   deleteCity
 } from '../../services/cityService';
-// Import currency and entertainment city services
-import { getAllCurrencies } from '../../services/currencyService';
+// Import currency services
+import {
+  getAllCurrencies,
+  getCurrencyById,
+  createCurrency,
+  updateCurrency,
+  deactivateCurrency,
+  reactivateCurrency,
+  deleteCurrency
+} from '../../services/currencyService';
 import { getAllEntertainmentCities } from '../../services/entertainmentCityService';
 
 import CountryPage from "../../pages/GeographicData/CountryPage";
 
-const GeographyContainer = () => {
+const CountryContainer = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,7 +54,8 @@ const GeographyContainer = () => {
   const getInitialTab = () => {
     const path = location.pathname;
     if (path.includes('states')) return 1;
-    if (path.includes('city')) return 2;
+    if (path.includes('cities')) return 2;
+    if (path.includes('currencies')) return 3;
     return 0; // default to countries
   };
 
@@ -63,6 +74,11 @@ const GeographyContainer = () => {
   const [selectedCity, setSelectedCity] = useState(null);
   const [cityLoading, setCityLoading] = useState(false);
   
+  // State management for currencies
+  const [currencies, setCurrencies] = useState([]);
+  const [selectedCurrency, setSelectedCurrency] = useState(null);
+  const [currencyLoading, setCurrencyLoading] = useState(false);
+  
   // Shared state
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -72,7 +88,6 @@ const GeographyContainer = () => {
   const [currentTab, setCurrentTab] = useState(getInitialTab());
   
   // Dropdown data
-  const [currencies, setCurrencies] = useState([]);
   const [entertainmentCities, setEntertainmentCities] = useState([]);
   
   // Handle tab changes with URL updates
@@ -90,6 +105,9 @@ const GeographyContainer = () => {
         break;
       case 2:
         navigate('/countries/cities', { replace: true });
+        break;
+      case 3:
+        navigate('/countries/currencies', { replace: true });
         break;
       default:
         navigate('/countries', { replace: true });
@@ -169,6 +187,22 @@ const GeographyContainer = () => {
     }
   }, [clearError, showStatusMessage]);
 
+  // Load currencies
+  const loadCurrencies = useCallback(async () => {
+    try {
+      setCurrencyLoading(true);
+      clearError();
+      const data = await getAllCurrencies();
+      setCurrencies(data || []);
+    } catch (err) {
+      console.error('Error loading currencies:', err);
+      setError(err.message || 'Failed to load currencies');
+      showStatusMessage('Failed to load currencies', 'error');
+    } finally {
+      setCurrencyLoading(false);
+    }
+  }, [clearError, showStatusMessage]);
+
   // Initial load based on current tab
   useEffect(() => {
     loadDropdownData();
@@ -176,6 +210,7 @@ const GeographyContainer = () => {
     switch (currentTab) {
       case 0:
         loadCountries();
+        if (currencies.length === 0) loadCurrencies(); // Load currencies for dropdown
         break;
       case 1:
         loadStatesProvinces();
@@ -186,10 +221,13 @@ const GeographyContainer = () => {
         if (countries.length === 0) loadCountries(); // Load countries for dropdown
         if (statesProvinces.length === 0) loadStatesProvinces(); // Load states for dropdown
         break;
+      case 3:
+        loadCurrencies();
+        break;
       default:
         loadCountries();
     }
-  }, [currentTab, loadDropdownData, loadCountries, loadStatesProvinces, loadCities, countries.length, statesProvinces.length]);
+  }, [currentTab, loadDropdownData, loadCountries, loadStatesProvinces, loadCities, loadCurrencies, countries.length, statesProvinces.length, currencies.length]);
 
   // Selection handlers
   const handleSelectClick = useCallback((id) => {
@@ -215,12 +253,15 @@ const GeographyContainer = () => {
         case 2:
           allIds = cities.map(city => city.CityID);
           break;
+        case 3:
+          allIds = currencies.map(currency => currency.CurrencyID);
+          break;
       }
       setSelected(allIds);
     } else {
       setSelected([]);
     }
-  }, [currentTab, countries, statesProvinces, cities]);
+  }, [currentTab, countries, statesProvinces, cities, currencies]);
 
   // Country handlers
   const handleCountryView = useCallback(async (country) => {
@@ -383,6 +424,72 @@ const GeographyContainer = () => {
     }
   }, [loadCities, showStatusMessage]);
 
+  // Currency handlers
+  const handleCurrencyView = useCallback(async (currency) => {
+    try {
+      const response = await getCurrencyById(currency.CurrencyID);
+      setSelectedCurrency(response);
+      showStatusMessage('Currency details loaded');
+    } catch (err) {
+      setError(err.message || 'Failed to fetch currency details');
+    }
+  }, [showStatusMessage]);
+
+  const handleCurrencyCreate = useCallback(async (currencyData) => {
+    try {
+      setCurrencyLoading(true);
+      await createCurrency(currencyData);
+      await loadCurrencies();
+      setSuccessMessage('Currency created successfully');
+      showStatusMessage('Currency created successfully');
+      // Also reload currencies for dropdown in other tabs
+      loadDropdownData();
+    } catch (err) {
+      setError(err.message || 'Failed to create currency');
+      throw err;
+    } finally {
+      setCurrencyLoading(false);
+    }
+  }, [loadCurrencies, showStatusMessage, loadDropdownData]);
+
+  const handleCurrencyEdit = useCallback((currency) => {
+    console.log('Edit currency:', currency);
+    showStatusMessage('Edit currency functionality to be implemented', 'info');
+  }, [showStatusMessage]);
+
+  const handleCurrencyDeactivate = useCallback(async (currencyId) => {
+    try {
+      await deactivateCurrency(currencyId);
+      await loadCurrencies();
+      showStatusMessage('Currency deactivated successfully');
+    } catch (err) {
+      setError(err.message || 'Failed to deactivate currency');
+    }
+  }, [loadCurrencies, showStatusMessage]);
+
+  const handleCurrencyReactivate = useCallback(async (currencyId) => {
+    try {
+      await reactivateCurrency(currencyId);
+      await loadCurrencies();
+      showStatusMessage('Currency reactivated successfully');
+    } catch (err) {
+      setError(err.message || 'Failed to reactivate currency');
+    }
+  }, [loadCurrencies, showStatusMessage]);
+
+  const handleCurrencyDelete = useCallback(async (currencyId) => {
+    try {
+      await deleteCurrency(currencyId);
+      await loadCurrencies();
+      setSelected(prev => prev.filter(id => id !== currencyId));
+      showStatusMessage('Currency deleted successfully');
+      // Also reload currencies for dropdown in other tabs
+      loadDropdownData();
+    } catch (err) {
+      setError(err.message || 'Failed to delete currency');
+    }
+  }, [loadCurrencies, showStatusMessage, loadDropdownData]);
+
   // Bulk operations
   const handleBulkDeactivate = useCallback(async () => {
     try {
@@ -394,6 +501,8 @@ const GeographyContainer = () => {
             return deactivateStateProvince(id);
           case 2:
             return deactivateCity(id);
+          case 3:
+            return deactivateCurrency(id);
           default:
             return Promise.resolve();
         }
@@ -412,6 +521,9 @@ const GeographyContainer = () => {
         case 2:
           await loadCities();
           break;
+        case 3:
+          await loadCurrencies();
+          break;
       }
       
       setSelected([]);
@@ -419,7 +531,7 @@ const GeographyContainer = () => {
     } catch (err) {
       setError(err.message || 'Failed to deactivate items');
     }
-  }, [selected, currentTab, loadCountries, loadStatesProvinces, loadCities, showStatusMessage]);
+  }, [selected, currentTab, loadCountries, loadStatesProvinces, loadCities, loadCurrencies, showStatusMessage]);
 
   // Placeholder handlers for notes, attachments, etc.
   const handleAddNote = useCallback((item) => {
@@ -520,14 +632,41 @@ const GeographyContainer = () => {
     selectedCity,
   };
 
+  const currencyProps = {
+    currencies,
+    loading: currencyLoading,
+    error,
+    setError,
+    successMessage,
+    setSuccessMessage,
+    statusMessage,
+    statusSeverity,
+    setStatusMessage,
+    selected: currentTab === 3 ? selected : [],
+    onSelectClick: handleSelectClick,
+    onSelectAllClick: handleSelectAllClick,
+    onDeactivate: handleCurrencyDeactivate,
+    onReactivate: handleCurrencyReactivate,
+    onDelete: handleCurrencyDelete,
+    onBulkDeactivate: handleBulkDeactivate,
+    onEdit: handleCurrencyEdit,
+    onView: handleCurrencyView,
+    onCreate: handleCurrencyCreate,
+    onAddNote: handleAddNote,
+    onAddAttachment: handleAddAttachment,
+    onAssignUser: handleAssignUser,
+    selectedCurrency,
+  };
+
   return (
     <CountryPage
       // Pass all country props
       {...countryProps}
       
-      // Pass state/province and city props
+      // Pass state/province, city, and currency props
       stateProvinceProps={stateProvinceProps}
       cityProps={cityProps}
+      currencyProps={currencyProps}
       
       // Pass tab management
       currentTab={currentTab}
@@ -536,4 +675,4 @@ const GeographyContainer = () => {
   );
 };
 
-export default GeographyContainer;
+export default CountryContainer;
