@@ -5,7 +5,6 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    // Initialize from localStorage if available
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
@@ -21,7 +20,11 @@ export const AuthProvider = ({ children }) => {
           const roles = await authService.fetchUserRoles();
           const storedUser = localStorage.getItem("user");
           const userData = storedUser ? JSON.parse(storedUser) : {};
-          setUser({ ...userData, token, roles });
+          setUser({
+            ...userData,
+            token,
+            roles: Array.isArray(roles) ? roles : [], 
+          });
         } catch (error) {
           console.error("Failed to fetch user roles:", error);
           setUser(null);
@@ -39,18 +42,55 @@ export const AuthProvider = ({ children }) => {
   const login = async (identifier, password) => {
     const response = await authService.login(identifier, password);
     const { token, user: userData, roles } = response;
-    setUser({ ...userData, token, roles });
+
+    const userToStore = {
+      ...userData,
+      token,
+      roles: Array.isArray(roles) ? roles : [],
+      RoleNames: Array.isArray(roles) ? roles.join(", ") : "",
+    };
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(userToStore));
+
+    setUser(userToStore);
     return response;
   };
 
   // Logout
   const logout = () => {
     authService.logout();
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 
+  // Refresh roles
+  const refreshRoles = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setUser(prev => ({ ...prev, roles: [] }));
+        return;
+      }
+      const fetchedRoles = await authService.fetchUserRoles();
+      setUser(prev => ({
+        ...prev,
+        roles: Array.isArray(fetchedRoles) ? fetchedRoles : [],
+      }));
+    } catch (err) {
+      console.error("Error refreshing roles:", err);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setUser(prev => ({ ...prev, roles: [] }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, refreshRoles, setUser }}>
       {children}
     </AuthContext.Provider>
   );

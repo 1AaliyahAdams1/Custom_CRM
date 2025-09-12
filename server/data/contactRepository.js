@@ -43,7 +43,6 @@ async function createContact(data, changedBy = 1, actionTypeId = 1) {
     const {
       AccountID,
       PersonID = null,
-      Still_employed = 1,
       JobTitleID = null,
       WorkEmail = null,
       WorkPhone = null,
@@ -54,7 +53,6 @@ async function createContact(data, changedBy = 1, actionTypeId = 1) {
     const result = await pool.request()
       .input("AccountID", sql.Int, AccountID)
       .input("PersonID", sql.Int, PersonID)
-      .input("Still_employed", sql.Bit, Still_employed)
       .input("JobTitleID", sql.Int, JobTitleID)
       .input("WorkEmail", sql.VarChar(255), WorkEmail)
       .input("WorkPhone", sql.VarChar(255), WorkPhone)
@@ -85,7 +83,6 @@ async function updateContact(contactId, contactData, changedBy = 1) {
   const {
     AccountID = existing.AccountID,
     PersonID = existing.PersonID,
-    Still_employed = existing.Still_employed,
     JobTitleID = existing.JobTitleID,
     WorkEmail = existing.WorkEmail,
     WorkPhone = existing.WorkPhone,
@@ -96,7 +93,6 @@ async function updateContact(contactId, contactData, changedBy = 1) {
     .input("ContactID", sql.Int, contactId)
     .input("AccountID", sql.Int, AccountID)
     .input("PersonID", sql.Int, PersonID)
-    .input("Still_employed", sql.Bit, Still_employed)
     .input("JobTitleID", sql.Int, JobTitleID)
     .input("WorkEmail", sql.VarChar(255), WorkEmail)
     .input("WorkPhone", sql.VarChar(255), WorkPhone)
@@ -124,7 +120,6 @@ async function deactivateContact(contactId, changedBy = 1) {
     .input("ContactID", sql.Int, contactId)
     .input("AccountID", sql.Int, deleted.AccountID)
     .input("PersonID", sql.Int, deleted.PersonID)
-    .input("Still_employed", sql.Bit, deleted.Still_employed)
     .input("JobTitleID", sql.Int, deleted.JobTitleID)
     .input("WorkEmail", sql.VarChar(255), deleted.WorkEmail)
     .input("WorkPhone", sql.VarChar(255), deleted.WorkPhone)
@@ -152,7 +147,6 @@ async function reactivateContact(contactId, changedBy = 0) {
     .input("ContactID", sql.Int, contactId)
     .input("AccountID", sql.Int, contact.AccountID)
     .input("PersonID", sql.Int, contact.PersonID)
-    .input("Still_employed", sql.Bit, contact.Still_employed)
     .input("JobTitleID", sql.Int, contact.JobTitleID)
     .input("WorkEmail", sql.VarChar(255), contact.WorkEmail)
     .input("WorkPhone", sql.VarChar(255), contact.WorkPhone)
@@ -181,7 +175,6 @@ async function deleteContact(contactId, changedBy = 0) {
     .input("ContactID", sql.Int, contactId)
     .input("AccountID", sql.Int, contact.AccountID)
     .input("PersonID", sql.Int, contact.PersonID)
-    .input("Still_employed", sql.Bit, contact.Still_employed)
     .input("JobTitleID", sql.Int, contact.JobTitleID)
     .input("WorkEmail", sql.VarChar(255), contact.WorkEmail)
     .input("WorkPhone", sql.VarChar(255), contact.WorkPhone)
@@ -214,7 +207,7 @@ async function getContactsByUser(userId) {
         SELECT 
         c.[ContactID], c.[AccountID], a.[AccountName], 
         c.[PersonID], p.[first_name], p.[middle_name], 
-        p.[surname], c.[Still_employed], c.[JobTitleID], 
+        p.[surname], c.[JobTitleID], 
         jt.[JobTitleName], c.[WorkEmail], c.[WorkPhone], 
         p.[CityID], ci.[CityName], ci.[StateProvinceID],
         sp.[StateProvince_Name], sp.[CountryID], co.[CountryName], 

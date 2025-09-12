@@ -1,5 +1,4 @@
-import { createTheme} from "@mui/material/styles";
-
+import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
   palette: {
@@ -85,6 +84,17 @@ const theme = createTheme({
             backgroundColor: '#f5f5f5',
           },
         },
+        contained: {               
+          backgroundColor: '#050505',
+          color: '#fafafa',
+          '&:hover': {
+            backgroundColor: '#333333',
+          },
+          '&:disabled': {
+            backgroundColor: '#cccccc',
+            color: '#666666',
+          },
+        },
       },
     },
     MuiFormhelpertext: {
@@ -96,4 +106,5 @@ const theme = createTheme({
     },
   },
 });
+
 export default theme;

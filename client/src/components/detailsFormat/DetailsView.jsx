@@ -22,7 +22,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import theme from "../Theme";
 import DetailsActions from "./DetailsActions";
 import SmartDropdown from "../../components/SmartDropdown";
-import AssignUserDialog from "../AssignUserDialog";
+import AssignUserDialog from "../../components/dialogs/AssignUserDialog";
 import { claimAccount, assignUser } from "../../services/assignService";
 
 export function UniversalDetailView({

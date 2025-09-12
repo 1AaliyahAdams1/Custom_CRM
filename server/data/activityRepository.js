@@ -151,8 +151,6 @@ async function getActivitiesByUser(userId) {
             act.[DueToStart],
             act.[DueToEnd],
             act.[Completed],
-            act.[CreatedAt],
-            act.[UpdatedAt],
             act.[Active],
             act.[SequenceItemID]
         FROM [CRM].[dbo].[Activity] act

@@ -43,7 +43,6 @@ const EditContactPage = () => {
     first_name: "",
     middle_name: "",
     surname: "",
-    Still_employed: "",
     JobTitleID: "",
     JobTitleName: "",
     WorkEmail: "",
@@ -108,7 +107,6 @@ const EditContactPage = () => {
           first_name: contactData.first_name || "",
           middle_name: contactData.middle_name || "",
           surname: contactData.surname || "",
-          Still_employed: contactData.Still_employed || false,
           JobTitleID: contactData.JobTitleID || "",
           JobTitleName: contactData.JobTitleName || "",
           WorkEmail: contactData.WorkEmail || "",
@@ -394,27 +392,6 @@ const EditContactPage = () => {
                     type="tel"
                     disabled={saving}
                   />
-                </Box>
-
-                {/* Still Employed Checkbox - Full Width */}
-                <Box sx={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <input
-                    type="checkbox"
-                    id="Still_employed"
-                    name="Still_employed"
-                    checked={formData.Still_employed}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                    style={{
-                      marginRight: '12px',
-                      width: '18px',
-                      height: '18px',
-                      accentColor: '#050505'
-                    }}
-                  />
-                  <Typography variant="body1" sx={{ color: '#050505', fontWeight: 500 }}>
-                    Still Employed
-                  </Typography>
                 </Box>
               </Box>
             </form>
