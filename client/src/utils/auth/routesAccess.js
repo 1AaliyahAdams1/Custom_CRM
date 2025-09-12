@@ -3,22 +3,25 @@ const MANAGEMENT = ["C-level", "Sales Manager"];
 const CLEVEL = ["C-level"];
 
 export const ROUTE_ACCESS = {
+  // Core
   dashboard: ALL,
   roles: CLEVEL,
 
+  // Accounts
   accounts: ALL,
   accountsDetails: ALL,
   accountsCreate: ALL,
   accountsEdit: ALL,
-
   accountAssign: CLEVEL, 
   accountClaim: ALL, 
 
+  // Contacts
   contacts: ALL,
   contactsDetails: ALL,
   contactsCreate: ALL,
   contactsEdit: ALL,
 
+  // Deals
   deals: ALL,
   dealsDetails: ALL,
   dealsCreate: ALL,
@@ -26,34 +29,58 @@ export const ROUTE_ACCESS = {
   dealStage: ALL,
   dealStageCreate: MANAGEMENT,
 
+  // Activities
   activities: ALL,
   activitiesDetails: ALL,
   activitiesCreate: ALL,
   activitiesEdit: ALL,
-
   activityTypes: ALL,
   activityTypesCreate: MANAGEMENT,
 
+  // Reports & Smart Work
   reports: MANAGEMENT,
   smartWork: ALL,
 
+  // Products
   products: ALL,
-  productsCreate: MANAGEMENT,
+  productsCreate: ALL,
 
+  // Geography
   country: ALL,
-  countryCreate: MANAGEMENT,
-
+  countryCreate: ALL,
   city: ALL,
-  cityCreate: MANAGEMENT,
-
+  cityCreate: ALL,
   stateProvince: ALL,
-  stateProvinceCreate: MANAGEMENT,
+  stateProvinceCreate: ALL,
+  currency: ALL,
+  currencyCreate: ALL,
 
+  // Industry & Priority
   industry: ALL,
-  industryCreate: MANAGEMENT,
-
+  industryCreate: ALL,
   priority: ALL,
-  priorityCreate: MANAGEMENT,
+  priorityCreate: ALL,
 
+  // Companies
+  companies: MANAGEMENT,
+  companiesDetails: MANAGEMENT,
+  companiesCreate: MANAGEMENT,
+  companiesEdit: MANAGEMENT,
+
+  // Events
+  events: ALL,
+  eventsDetails: ALL,
+  eventsCreate: ALL,
+  eventsEdit: ALL,
+
+  // Owners
+  owners: MANAGEMENT,
+  ownersCreate: MANAGEMENT,
+
+  // Discount Codes
+  discountcodes: MANAGEMENT,
+  discountcodesCreate: MANAGEMENT,
+
+  // Settings
   settings: ALL,
 };

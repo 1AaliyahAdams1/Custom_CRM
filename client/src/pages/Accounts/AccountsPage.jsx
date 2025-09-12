@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -47,62 +47,10 @@ const AccountsPage = ({
   userRoles = [],
   statusMessage,
   setStatusMessage,
-  statusSeverity,
+  statusSeverity = "success",
 }) => {
+  // Local filter state
   const [accountFilter, setAccountFilter] = useState("all");
-  const columns = [
-    { 
-      field: 'AccountName', 
-      headerName: 'Name', 
-      type: 'clickable', 
-      defaultVisible: true,
-      onClick: onView, // This will call the same function as "View Details"
-    },
-    { field: 'CityName', headerName: 'City', defaultVisible: true },
-    { field: 'StateProvince_Name', headerName: 'State Province', defaultVisible: false },
-    { field: 'CountryName', headerName: 'Country', defaultVisible: true },
-    { field: 'street_address', headerName: 'Street', type: 'truncated', maxWidth: 200, defaultVisible: false },
-    { field: 'postal_code', headerName: 'Postal Code', defaultVisible: false },
-    { field: 'PrimaryPhone', headerName: 'Phone', defaultVisible: true },
-    { field: 'IndustryName', headerName: 'Industry', defaultVisible: false },
-    { field: 'fax', headerName: 'Fax', defaultVisible: false },
-    { field: 'email', headerName: 'Email', defaultVisible: false },
-    { field: 'Website', headerName: 'Website', type: 'link', defaultVisible: false },
-    { field: 'number_of_employees', headerName: '# Employees', defaultVisible: false },
-    { field: 'number_of_venues', headerName: '# Venues', defaultVisible: false },
-    { field: 'number_of_releases', headerName: '# Releases', defaultVisible: false },
-    { field: 'number_of_events_anually', headerName: '# Events Annually', defaultVisible: false },
-    { field: 'annual_revenue', headerName: 'Annual Revenue', defaultVisible: false },
-    { field: 'ParentAccountName', headerName: 'Parent Account', defaultVisible: false },
-    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
-    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
-    {
-      field: 'ownerStatus',
-      headerName: 'Ownership',
-      type: 'chip',
-      chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
-      chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' },
-      defaultVisible: true,
-    },
-    {
-      field: 'Active',
-      headerName: 'Active',
-      type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999' },
-      defaultVisible: true,
-    }
-  ];
-
-  // Local state for status messages and filter
-  const [statusMessage, setStatusMessage] = useState('');
-  const [statusSeverity, setStatusSeverity] = useState('success');
-  const [accountFilter, setAccountFilter] = useState('all');
-
-  const showStatus = (message, severity = 'success') => {
-    setStatusMessage(message);
-    setStatusSeverity(severity);
-  };
 
   const handleFilterChange = (event) => {
     const newFilter = event.target.value;
@@ -118,7 +66,7 @@ const AccountsPage = ({
   ];
 
   const columns = [
-    { field: "AccountName", headerName: "Name", type: "tooltip", defaultVisible: true },
+    { field: "AccountName", headerName: "Name", type: "clickable", defaultVisible: true, onClick: onView },
     { field: "CityName", headerName: "City", defaultVisible: true },
     { field: "StateProvince_Name", headerName: "State Province", defaultVisible: false },
     { field: "CountryName", headerName: "Country", defaultVisible: true },
@@ -159,7 +107,7 @@ const AccountsPage = ({
     <ThemeProvider theme={theme}>
       <Box sx={{ width: "100%", backgroundColor: "#fafafa", minHeight: "100vh", p: 3 }}>
         
-        {/* Integrated Status Message at the top of the page */}
+        {/* Status Message */}
         {statusMessage && (
           <Box sx={{ mb: 2 }}>
             <StatusMessage
@@ -214,9 +162,9 @@ const AccountsPage = ({
                 <Select value={accountFilter} onChange={handleFilterChange} displayEmpty
                   sx={{
                     backgroundColor: "#fff",
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: "#e0e0e0" },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: "#c0c0c0" },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.primary.main },
+                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e0e0" },
+                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#c0c0c0" },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.primary.main },
                   }}
                 >
                   {filterOptions.map(option => (
@@ -226,7 +174,7 @@ const AccountsPage = ({
               </FormControl>
 
               {selected.length > 0 && (
-                <Tooltip title={`${selected.length} account${selected.length === 1 ? '' : 's'} selected`} arrow>
+                <Tooltip title={`${selected.length} account${selected.length === 1 ? "" : "s"} selected`} arrow>
                   <Chip label={`${selected.length} selected`} size="small" sx={{ backgroundColor: "#e0e0e0", color: "#050505" }} />
                 </Tooltip>
               )}

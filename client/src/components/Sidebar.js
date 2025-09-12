@@ -164,18 +164,31 @@ const DRAWER_WIDTH_COLLAPSED = 64;
 // Navigation configuration
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: DashboardIcon, accessKey: "dashboard", section: "Main" },
+
+  // CRM
   { name: "Accounts", href: "/accounts", icon: BusinessIcon, accessKey: "accounts", section: "CRM Management" },
   { name: "Contacts", href: "/contacts", icon: PeopleIcon, accessKey: "contacts", section: "CRM Management" },
   { name: "Deals", href: "/deals", icon: HandshakeIcon, accessKey: "deals", section: "CRM Management" },
   { name: "Activities", href: "/activities", icon: EventIcon, accessKey: "activities", section: "CRM Management" },
   { name: "Products", href: "/products", icon: InventoryIcon, accessKey: "products", section: "CRM Management" },
+  { name: "Companies", href: "/companies", icon: CorporateFareIcon, accessKey: "companies", section: "CRM Management" },
+  { name: "Events", href: "/events", icon: EventIcon, accessKey: "events", section: "CRM Management" },
+  { name: "Owners", href: "/owners", icon: WorkIcon, accessKey: "owners", section: "CRM Management" },
+  { name: "Discount Codes", href: "/discount-codes", icon: DiscountIcon, accessKey: "discountcodes", section: "CRM Management" },
   { name: "Smart Work", href: "/smart-work", icon: WorkspacesOutlineIcon, accessKey: "smartWork", section: "CRM Management" },
+
+  // Reports
   { name: "Reports", href: "/reports", icon: BarChartIcon, accessKey: "reports", section: "Analysis & Reports" },
+
+  // Misc
   { name: "Geographic Data", href: "/countries", icon: FlagIcon, accessKey: "country", section: "Misc" },
   { name: "Industry", href: "/industries", icon: BusinessIcon, accessKey: "industry", section: "Misc" },
-  { name: "Role Management", href: "/rolemanagement", icon: AdminPanelSettingsIcon, accessKey: "roles", section: "Admin" },
   { name: "Priority Levels", href: "/priority-levels", icon: PriorityHighIcon, accessKey: "priority", section: "Misc" },
+
+  // Admin
+  { name: "Role Management", href: "/rolemanagement", icon: AdminPanelSettingsIcon, accessKey: "roles", section: "Admin" },
 ];
+
 
 export function AppSidebar() {
   const theme = useTheme();
