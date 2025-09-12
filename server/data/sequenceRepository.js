@@ -567,9 +567,12 @@ async function getActivityMetadata() {
     throw err;
   }
 }
+}
 
 // ========
+// ========
 // Exports
+// ========
 // ========
 module.exports = {
   getActivities,

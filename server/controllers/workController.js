@@ -1,4 +1,5 @@
 const workService = require("../services/workService");
+const sequenceRepo = require("../data/sequenceRepository");
 
 //======================================
 // Get Smart Work Page Activities
@@ -475,6 +476,7 @@ async function getUserSequences(req, res) {
 
 module.exports = {
   getActivities,
+  getActivityForWorkspace,
   getActivityForWorkspace,
   completeActivity,
   markComplete,

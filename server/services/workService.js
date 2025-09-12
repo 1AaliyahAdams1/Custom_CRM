@@ -541,6 +541,46 @@ function calculateTimeUntilDue(dueDate, completed) {
   return `${minutes}m`;
 }
 
+function getTimeSince(date) {
+  const now = new Date();
+  const past = new Date(date);
+  const diffMs = now - past;
+  
+  if (diffMs < 60 * 60 * 1000) return `${Math.floor(diffMs / (60 * 1000))}m ago`;
+  if (diffMs < 24 * 60 * 60 * 1000) return `${Math.floor(diffMs / (60 * 60 * 1000))}h ago`;
+  return `${Math.floor(diffMs / (24 * 60 * 60 * 1000))}d ago`;
+}
+
+function isUrgent(dueDate, completed) {
+  if (completed) return false;
+  const now = new Date();
+  const due = new Date(dueDate);
+  return due <= new Date(now.getTime() + 2 * 60 * 60 * 1000) && due >= now; // 2 hours
+}
+
+function filterActivities(activities, filterCriteria) {
+  switch(filterCriteria) {
+    case 'overdue':
+      return activities.filter(a => new Date(a.DueToStart) < new Date() && !a.Completed);
+    case 'urgent':
+      return activities.filter(a => isUrgent(a.DueToStart, a.Completed));
+    case 'high-priority':
+      return activities.filter(a => a.PriorityLevelValue >= 8 && !a.Completed);
+    case 'completed':
+      return activities.filter(a => a.Completed);
+    case 'today':
+      const today = new Date();
+      return activities.filter(a => {
+        const activityDate = new Date(a.DueToStart);
+        return activityDate.toDateString() === today.toDateString();
+      });
+    case 'pending':
+      return activities.filter(a => !a.Completed);
+    default:
+      return activities;
+  }
+}
+
 function calculateTimeSince(date) {
   const now = new Date();
   const past = new Date(date);

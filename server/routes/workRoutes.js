@@ -17,6 +17,10 @@ router.get("/user/:userId/activities", workController.getActivities);
 router.get("/user/:userId/activity/:activityId/workspace", workController.getActivityForWorkspace);
 
 // Get activities by status filter (overdue, urgent, normal, completed, etc.)
+// Get single activity for workspace tab with full context
+router.get("/user/:userId/activity/:activityId/workspace", workController.getActivityForWorkspace);
+
+// Get activities by status filter (overdue, urgent, normal, completed, etc.)
 router.get("/user/:userId/activities/:status", workController.getActivitiesByStatus);
 
 // Get user sequences for workspace context
