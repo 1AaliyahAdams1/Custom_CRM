@@ -237,11 +237,42 @@ const TableView = ({
   const filteredData = getFilteredData();
   const displayedColumns = columns.filter((col) => visibleColumns[col.field]);
 
+  // --- Handle clickable cell content ---
+  const handleCellClick = (event, row, column) => {
+    if (column.type === 'clickable' && column.onClick) {
+      event.stopPropagation();
+      column.onClick(row);
+    }
+  };
+
   const renderCellContent = (row, column) => {
     const value = row[column.field];
     if (formatters[column.field]) return formatters[column.field](value, row);
 
     switch (column.type) {
+      case "clickable":
+        return (
+          <Box
+            component="span"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (column.onClick) {
+                column.onClick(row);
+              }
+            }}
+            sx={{
+              color: 'primary.main',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              '&:hover': {
+                textDecoration: 'underline',
+              },
+              ...column.clickableStyle,
+            }}
+          >
+            {value || "-"}
+          </Box>
+        );
       case "chip":
         return (
           <Chip
@@ -629,5 +660,6 @@ const TableView = ({
     </>
   );
 };
+
 
 export default TableView;

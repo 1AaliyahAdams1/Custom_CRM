@@ -32,8 +32,130 @@ import {
 import PriorityHighIcon from "@mui/icons-material/PriorityHigh";
 import WorkspacesOutlineIcon from "@mui/icons-material/WorkspacesOutline";
 
+import CorporateFareIcon from '@mui/icons-material/CorporateFare';
+import WorkIcon from '@mui/icons-material/Work';
+import DiscountIcon from '@mui/icons-material/Discount';
+
 import { useAuth } from "../hooks/auth/useAuth";
 import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
+
+
+// Navigation items configuration using centralized route access
+const navigation = [
+  // {
+  //   name: "Dashboard",
+  //   href: "/dashboard",
+  //   icon: DashboardIcon,
+  //   accessKey: "dashboard",
+  //   section: "Main",
+  // },
+  {
+    name: "Accounts",
+    href: "/accounts",
+    icon: BusinessIcon,
+    accessKey: "accounts",
+    section: "CRM Management",
+  },
+  {
+    name: "Contacts",
+    href: "/contacts",
+    icon: PeopleIcon,
+    accessKey: "contacts",
+    section: "CRM Management",
+  },
+  {
+    name: "Deals",
+    href: "/deals",
+    icon: HandshakeIcon,
+    accessKey: "deals",
+    section: "CRM Management",
+  },
+  {
+    name: "Activities",
+    href: "/activities",
+    icon: EventIcon,
+    accessKey: "activities",
+    section: "CRM Management",
+  },
+  {
+    name: "Products",
+    href: "/products",
+    icon: InventoryIcon,
+    accessKey: "products",
+    section: "CRM Management",
+  },
+  {
+    name: "Companies",
+    href: "/companies",
+    icon: CorporateFareIcon,
+    accessKey: "companies",
+    section: "CRM Management",
+  },
+  {
+    name: "Events",
+    href: "/events",
+    icon: EventIcon,
+    accessKey: "events",
+    section: "CRM Management",
+  },
+  {
+    name: "Owners",
+    href: "/owners",
+    icon: WorkIcon,
+    accessKey: "owners",
+    section: "CRM Management",
+  },
+  {
+    name: "Discount Codes",
+    href: "/discount-codes",
+    icon: DiscountIcon,
+    accessKey: "discountcodes",
+    section: "CRM Management",
+  },
+  // {
+  //   name: "Work Page",
+  //   href: "/smart-work",
+  //   icon: WorkspacesOutlineIcon,
+  //   accessKey: "smartWork",
+  //   section: "CRM Management",
+  // },
+  {
+    name: "Reports",
+    href: "/reports",
+    icon: BarChartIcon,
+    accessKey: "reports",
+    section: "Analysis & Reports",
+  },
+  {
+    name: "Geographic Data",
+    href: "/countries",
+    icon: FlagIcon,
+    accessKey: "country",
+    section: "Misc",
+  },
+  {
+    name: "Industry",
+    href: "/industries",
+    icon: BusinessIcon,
+    accessKey: "industry",
+    section: "Misc",
+  },
+  // {
+  //   name: "Role Management",
+  //   href: "/rolemanagement",
+  //   icon: AdminPanelSettingsIcon,
+  //   accessKey: "roles",
+  //   section: "Admin",
+  // },
+  {
+    name: "Priority Levels",
+    href: "/priority-levels",
+    icon: PriorityHighIcon,
+    accessKey: "priority",
+    section: "Misc",
+  },
+];
+
 
 // Sidebar width
 const DRAWER_WIDTH_EXPANDED = 200;
