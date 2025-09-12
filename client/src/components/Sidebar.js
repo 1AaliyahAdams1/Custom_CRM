@@ -32,6 +32,10 @@ import {
   Settings as SettingsApplicationsIcon,
 } from "@mui/icons-material";
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
+import CorporateFareIcon from '@mui/icons-material/CorporateFare';
+import WorkIcon from '@mui/icons-material/Work';
+import DiscountIcon from '@mui/icons-material/Discount';
+
 import { useAuth } from "../hooks/auth/useAuth";
 import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
 
@@ -78,6 +82,34 @@ const navigation = [
     href: "/products",
     icon: InventoryIcon,
     accessKey: "products",
+    section: "CRM Management",
+  },
+  {
+    name: "Companies",
+    href: "/companies",
+    icon: CorporateFareIcon,
+    accessKey: "companies",
+    section: "CRM Management",
+  },
+  {
+    name: "Events",
+    href: "/events",
+    icon: EventIcon,
+    accessKey: "events",
+    section: "CRM Management",
+  },
+  {
+    name: "Owners",
+    href: "/owners",
+    icon: WorkIcon,
+    accessKey: "owners",
+    section: "CRM Management",
+  },
+  {
+    name: "Discount Codes",
+    href: "/discount-codes",
+    icon: DiscountIcon,
+    accessKey: "discountcodes",
     section: "CRM Management",
   },
   // {

@@ -15,6 +15,8 @@ const Contacts = lazy(() => import("./components/containers/ContactsContainer"))
 const Deals = lazy(() => import("./components/containers/DealsContainer"));
 const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
 
+
+
 const ProductsContainer = lazy(() => import("./components/containers/ProductsContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
 const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
@@ -22,11 +24,18 @@ const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
 const CityPage = lazy(() => import("./pages/GeographicData/CityPage"));
+const CurrencyPage = lazy(() => import("./pages/GeographicData/CurrencyPage"));
 const StateProvincePage = lazy(() => import("./pages/GeographicData/StateProvincePage"));
 const IndustryContainer = lazy(() => import("./components/containers/IndustryContainer"));
 const PriorityLevelContainer = lazy(() => import("./components/containers/PriorityLevelContainer"));
 const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
 const DealStagePage = lazy(() => import("./pages/Deals/DealStagePage"));
+
+const CompaniesPage = lazy(() => import("./pages/Companies/CompaniesPage"));
+const EventsPage = lazy(() => import("./pages/Events/EventsPage"));
+const OwnersPage = lazy(() => import("./pages/Owners/OwnersPage"));
+const DiscountCodesPage = lazy(() => import("./pages/DiscountCodes/DiscountCodePage"));
+
 
 const AccountsDetailsPage = lazy(() => import("./pages/Accounts/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsPage"));
@@ -245,16 +254,53 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      {/* --- Companies Routes --- */}
+      <Route
+        path="/companies"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.companies}>
+            <CompaniesPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Events Routes --- */}
+      <Route
+        path="/events"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.events}>
+            <EventsPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Owners Routes --- */}
+      <Route
+        path="/owners"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.owners}>
+            <OwnersPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Discount Codes Routes --- */}
+      <Route
+        path="/discount-codes"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodes}>
+            <DiscountCodesPage />
+          </PrivateRoute>
+        }
+      />
+      
 
-      {/* --- Geography Routes (Updated) --- */}
+      {/* --- Geography Routes (Updated) --- */} 
       {/* Main geography route - shows countries by default */}
       <Route
         path="/countries"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.country}>
-            <CountryContainer />
-          </PrivateRoute>
-        }
+        <PrivateRoute allowedRoles={ROUTE_ACCESS.country}>
+          <CountryContainer />
+       </PrivateRoute>
+       }
       />
 
       {/* Geography sub-routes - all use the same container but with different tabs */}
@@ -275,6 +321,14 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/countries/currencies"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.currency}>
+            <CountryContainer />
+          </PrivateRoute>
+        }
+      />
 
       {/* Legacy routes - redirect to new structure */}
       <Route
@@ -285,6 +339,10 @@ const AppRoutes = () => {
       <Route
         path="/states"
         element={<Navigate to="/countries/states" replace />}
+      />
+      <Route
+        path="/currencies"
+        element={<Navigate to="/countries/currencies" replace />}
       />
 
       {/* --- Industry Routes --- */}
