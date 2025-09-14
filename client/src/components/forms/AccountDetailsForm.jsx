@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Alert } from "@mui/material";
+import { Visibility, Edit, Delete, Download, Phone, Email } from "@mui/icons-material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import { fetchAccountById, updateAccount, deactivateAccount, getAllAccounts } from "../../services/accountService";
-import { noteService } from "../../services/noteService";
-import { attachmentService } from "../../services/attachmentService";
+import {  getNotesByEntity } from "../../services/noteService";
+import { getAttachmentsByEntity } from "../../services/attachmentService";
 import {
   cityService,
   industryService,
   countryService,
   stateProvinceService
 } from '../../services/dropdownServices';
+
+// imports for the related data services
+import { getContactsByAccountId } from "../../services/contactService";
+import { fetchDealById } from "../../services/dealService";
+import { fetchActivityById} from "../../services/activityService";
 
 const accountService = { getAll: async () => (await getAllAccounts()).data }
 
@@ -95,6 +101,128 @@ export default function AccountDetailsForm({ accountId }) {
   const handleAddNote = () => setNotesPopupOpen(true);
   const handleAddAttachment = () => setAttachmentsPopupOpen(true);
 
+  // Action handlers for table rows
+  const handleViewContact = (contact) => {
+    navigate(`/contacts/${contact.ContactID}`);
+  };
+
+  const handleEditContact = (contact) => {
+    navigate(`/contacts/${contact.ContactID}/edit`);
+  };
+
+  const handleViewDeal = (deal) => {
+    navigate(`/deals/${deal.DealID}`);
+  };
+
+  const handleViewActivity = (activity) => {
+    navigate(`/activities/${activity.ActivityID}`);
+  };
+
+  const handleDownloadAttachment = (attachment) => {
+    if (attachment.FilePath) {
+      window.open(attachment.FilePath, '_blank');
+    }
+  };
+
+  // Define the related tabs with table configurations
+  const relatedTabs = [
+    {
+      label: "Contacts",
+      dataService: (accountData) => getContactsByAccountId(accountData.AccountID),
+      columns: [
+        { key: "FirstName", label: "First Name" },
+        { key: "LastName", label: "Last Name" },
+        { key: "Title", label: "Title" },
+        { key: "email", label: "Email", type: "email" },
+        { key: "phone", label: "Phone", type: "phone" },
+        { key: "Active", label: "Status", type: "status" },
+      ],
+      actions: [
+        { 
+          label: "View", 
+          icon: <Visibility />, 
+          onClick: handleViewContact,
+          color: "primary"
+        },
+        { 
+          label: "Edit", 
+          icon: <Edit />, 
+          onClick: handleEditContact,
+          color: "secondary"
+        },
+      ]
+    },
+    {
+      label: "Deals",
+      dataService: (accountData) => fetchDealById (accountData.AccountID),
+      columns: [
+        { key: "DealName", label: "Deal Name" },
+        { key: "Stage", label: "Stage", type: "status" },
+        { key: "Amount", label: "Amount", type: "currency" },
+        { key: "Probability", label: "Probability (%)", type: "number" },
+        { key: "CloseDate", label: "Close Date", type: "date" },
+        { key: "OwnerName", label: "Owner" },
+      ],
+      actions: [
+        { 
+          label: "View", 
+          icon: <Visibility />, 
+          onClick: handleViewDeal,
+          color: "primary"
+        },
+      ]
+    },
+    {
+      label: "Activities",
+      dataService: (accountData) => fetchActivityById(accountData.AccountID),
+      columns: [
+        { key: "Subject", label: "Subject" },
+        { key: "ActivityType", label: "Type" },
+        { key: "Status", label: "Status", type: "status" },
+        { key: "DueDate", label: "Due Date", type: "datetime" },
+        { key: "AssignedToName", label: "Assigned To" },
+        { key: "Priority", label: "Priority", type: "status" },
+      ],
+      actions: [
+        { 
+          label: "View", 
+          icon: <Visibility />, 
+          onClick: handleViewActivity,
+          color: "primary"
+        },
+      ]
+    },
+    {
+      label: "Notes",
+      dataService: (accountData) =>getNotesByEntity.fetchByEntity("account", accountData.AccountID),
+      columns: [
+        { key: "Subject", label: "Subject" },
+        { key: "NoteText", label: "Note" },
+        { key: "CreatedByName", label: "Created By" },
+        { key: "CreatedDate", label: "Created Date", type: "datetime" },
+      ],
+    },
+    {
+      label: "Attachments",
+      dataService: (accountData) =>getAttachmentsByEntity                         .fetchByEntity("account", accountData.AccountID),
+      columns: [
+        { key: "FileName", label: "File Name" },
+        { key: "FileSize", label: "Size" },
+        { key: "FileType", label: "Type" },
+        { key: "UploadedByName", label: "Uploaded By" },
+        { key: "UploadedDate", label: "Uploaded Date", type: "datetime" },
+      ],
+      actions: [
+        { 
+          label: "Download", 
+          icon: <Download />, 
+          onClick: handleDownloadAttachment,
+          color: "primary"
+        },
+      ]
+    },
+  ];
+
   // Header chips
   const headerChips = [];
   if (account) {
@@ -116,7 +244,6 @@ export default function AccountDetailsForm({ accountId }) {
         subtitle={account.AccountID ? `Account ID: ${account.AccountID}` : undefined}
         item={account}
         mainFields={accountMainFields}
-        // onBack={handleBack}
         onSave={handleSave}
         onDelete={handleDelete}
         onAddNote={handleAddNote}
@@ -125,7 +252,7 @@ export default function AccountDetailsForm({ accountId }) {
         error={error}
         entityType="account"
         headerChips={headerChips}
-        relatedTabs={[]} // Add related tabs like contacts, deals, activities if needed
+        relatedTabs={relatedTabs} // table configurations
       />
 
       <NotesPopup open={notesPopupOpen} onClose={() => setNotesPopupOpen(false)} entityType="account" entityId={account?.AccountID} />

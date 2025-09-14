@@ -16,8 +16,25 @@ import {
   Paper,
   Chip,
   Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
+import { 
+  ArrowBack, 
+  Visibility, 
+  Edit, 
+  Delete, 
+  Download,
+  Phone,
+  Email,
+  Launch
+} from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "../Theme";
 import DetailsActions from "./DetailsActions";
@@ -49,10 +66,19 @@ export function UniversalDetailView({
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [statusSeverity, setStatusSeverity] = useState("success");
+  const [tabData, setTabData] = useState({});
+  const [tabLoading, setTabLoading] = useState({});
 
   useEffect(() => {
     if (item) setFormData(item);
   }, [item]);
+
+  useEffect(() => {
+    // Load data for the active tab if it has a dataService
+    if (relatedTabs[tab] && relatedTabs[tab].dataService && !tabData[tab]) {
+      loadTabData(tab);
+    }
+  }, [tab, relatedTabs, tabData]);
 
   const activeTheme = customTheme || theme;
 
@@ -97,6 +123,161 @@ export function UniversalDetailView({
       setStatusSeverity("error");
       throw err;
     }
+  };
+
+  const loadTabData = async (tabIndex) => {
+    const tabConfig = relatedTabs[tabIndex];
+    if (!tabConfig?.dataService) return;
+
+    setTabLoading(prev => ({ ...prev, [tabIndex]: true }));
+    try {
+      let data;
+      if (typeof tabConfig.dataService === 'function') {
+        data = await tabConfig.dataService(formData);
+      } else {
+        // Assume it's a service object with a method
+        data = await tabConfig.dataService.fetchData(formData);
+      }
+      setTabData(prev => ({ ...prev, [tabIndex]: data?.data || data || [] }));
+    } catch (err) {
+      console.error(`Failed to load ${tabConfig.label} data:`, err);
+      setTabData(prev => ({ ...prev, [tabIndex]: [] }));
+    } finally {
+      setTabLoading(prev => ({ ...prev, [tabIndex]: false }));
+    }
+  };
+
+  const formatCellValue = (value, column) => {
+    if (value === null || value === undefined || value === '') return '-';
+
+    switch (column.type) {
+      case 'date':
+        return new Date(value).toLocaleDateString();
+      case 'datetime':
+        return new Date(value).toLocaleString();
+      case 'currency':
+        return `$${parseFloat(value).toLocaleString()}`;
+      case 'email':
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <span>{value}</span>
+            <IconButton size="small" href={`mailto:${value}`}>
+              <Email fontSize="small" />
+            </IconButton>
+          </Box>
+        );
+      case 'phone':
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <span>{value}</span>
+            <IconButton size="small" href={`tel:${value}`}>
+              <Phone fontSize="small" />
+            </IconButton>
+          </Box>
+        );
+      case 'link':
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <span>{value}</span>
+            <IconButton size="small" href={value} target="_blank" rel="noopener noreferrer">
+              <Launch fontSize="small" />
+            </IconButton>
+          </Box>
+        );
+      case 'status':
+        const statusColors = {
+          active: 'success',
+          inactive: 'error',
+          pending: 'warning',
+          completed: 'success',
+          open: 'info',
+          closed: 'success',
+          won: 'success',
+          lost: 'error'
+        };
+        return (
+          <Chip 
+            label={value} 
+            color={statusColors[value?.toLowerCase()] || 'default'} 
+            size="small" 
+            variant="outlined"
+          />
+        );
+      case 'boolean':
+        return <Checkbox checked={Boolean(value)} disabled size="small" />;
+      default:
+        return value;
+    }
+  };
+
+  const renderTableTab = (tabConfig, tabIndex) => {
+    const data = tabData[tabIndex] || [];
+    const isLoading = tabLoading[tabIndex];
+
+    if (isLoading) {
+      return (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    if (!data.length) {
+      return (
+        <Box textAlign="center" py={4}>
+          <Typography variant="body1" color="textSecondary">
+            No {tabConfig.label.toLowerCase()} found
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <TableContainer component={Paper} elevation={0}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              {tabConfig.columns.map((column, idx) => (
+                <TableCell key={idx} sx={{ fontWeight: 600 }}>
+                  {column.label}
+                </TableCell>
+              ))}
+              {tabConfig.actions && (
+                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+              )}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data.map((row, rowIdx) => (
+              <TableRow key={row.id || rowIdx} hover>
+                {tabConfig.columns.map((column, colIdx) => (
+                  <TableCell key={colIdx}>
+                    {formatCellValue(row[column.key], column)}
+                  </TableCell>
+                ))}
+                {tabConfig.actions && (
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      {tabConfig.actions.map((action, actionIdx) => (
+                        <Tooltip key={actionIdx} title={action.label}>
+                          <IconButton 
+                            size="small" 
+                            onClick={() => action.onClick(row)}
+                            color={action.color || 'default'}
+                          >
+                            {action.icon}
+                          </IconButton>
+                        </Tooltip>
+                      ))}
+                    </Box>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
   };
 
   const visibleFields = mainFields.filter(
@@ -348,7 +529,12 @@ export function UniversalDetailView({
               <Box sx={{ p: 3 }}>
                 {relatedTabs.map((t, i) => (
                   <Box key={i} sx={{ display: tab === i ? "block" : "none" }}>
-                    {t.content}
+                    {/* Check if it's a table configuration or regular content */}
+                    {t.columns && t.dataService ? (
+                      renderTableTab(t, i)
+                    ) : (
+                      t.content
+                    )}
                   </Box>
                 ))}
               </Box>
