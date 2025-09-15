@@ -8,8 +8,7 @@ async function getActivities(userId, options = {}) {
   try {
     const pool = await sql.connect(dbConfig);
     const request = pool.request().input("UserID", sql.Int, userId);
-    
-    // Build WHERE clause based on filters
+   
     let whereConditions = [
       "au.UserID = @UserID",
       "a.Active = 1",
@@ -51,7 +50,6 @@ async function getActivities(userId, options = {}) {
       whereConditions.push("a.AccountID = @AccountId");
     }
     
-    // Build ORDER BY clause
     let orderBy = "a.DueToStart ASC, pl.PriorityLevelValue DESC";
     
     if (options.sortBy) {
@@ -71,7 +69,7 @@ async function getActivities(userId, options = {}) {
         case 'status':
           orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) AND a.Completed = 0 THEN 1 ELSE 2 END, a.DueToStart ASC";
           break;
-        default: // 'dueDate'
+        default: 
           orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END, a.DueToStart ASC, pl.PriorityLevelValue DESC";
       }
     }
@@ -568,11 +566,11 @@ async function getActivityMetadata() {
   }
 }
 
-// ========
-// ========
+// =============
+// =============
 // Exports
-// ========
-// ========
+// =============
+// =============
 module.exports = {
   getActivities,
   getActivityContext,

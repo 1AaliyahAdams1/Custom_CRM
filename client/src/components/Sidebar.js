@@ -80,13 +80,13 @@ const navigation = [
     accessKey: "products",
     section: "CRM Management",
   },
-  // {
-  //   name: "Work Page",
-  //   href: "/smart-work",
-  //   icon: WorkspacesOutlineIcon,
-  //   accessKey: "smartWork",
-  //   section: "CRM Management",
-  // },
+  {
+    name: "Work Page",
+    href: "/smart-work",
+    icon: WorkspacesOutlineIcon,
+    accessKey: "smartWork",
+    section: "CRM Management",
+  },
   {
     name: "Reports",
     href: "/reports",

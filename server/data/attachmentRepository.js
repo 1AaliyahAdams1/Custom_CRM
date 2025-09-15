@@ -1,7 +1,7 @@
 const { sql, poolPromise } = require("../dbConfig");
 
 // =======================
-// Helper: Get EntityTypeID by TypeName
+// Get EntityTypeID by TypeName
 // =======================
 async function getEntityTypeId(typeName) {
   try {
@@ -24,7 +24,7 @@ async function getEntityTypeId(typeName) {
 // =======================
 // Create Attachment
 // =======================
-async function addAttachment(entityId, entityTypeName, fileName, fileUrl) {
+async function addAttachment(entityId, entityTypeName, fileUrl, createdBy) {
   try {
     const pool = await poolPromise;
     const entityTypeId = await getEntityTypeId(entityTypeName);
@@ -32,8 +32,8 @@ async function addAttachment(entityId, entityTypeName, fileName, fileUrl) {
     await pool.request()
       .input("EntityID", sql.Int, entityId)
       .input("EntityTypeID", sql.Int, entityTypeId)
-      .input("FileName", sql.VarChar, fileName)
       .input("FileUrl", sql.VarChar, fileUrl)
+      .input("CreatedBy", sql.VarChar, createdBy) 
       .execute("CreateAttachment");
 
     return { message: `Attachment added to ${entityTypeName} successfully` };
@@ -53,9 +53,12 @@ async function getAttachments(entityId, entityTypeName) {
 
     const result = await pool.request().execute("GetAttachment");
 
-    // Filter and sort in memory
     return result.recordset
-      .filter(att => att.EntityID === entityId && att.EntityTypeID === entityTypeId)
+      .filter(att => 
+        att.EntityID === entityId && 
+        att.EntityTypeID === entityTypeId &&
+        (att.Active === 1 || att.Active === null) 
+      )
       .sort((a, b) => new Date(b.UploadedAt) - new Date(a.UploadedAt));
   } catch (error) {
     console.error("Database error in getAttachments:", error);
@@ -81,9 +84,9 @@ async function getAttachmentById(attachmentId) {
 }
 
 // =======================
-// Update Attachment by ID
+// Update Attachment by ID 
 // =======================
-async function updateAttachment(attachmentId, entityId, entityTypeName, fileName, fileUrl) {
+async function updateAttachment(attachmentId, entityId, entityTypeName, fileUrl) {
   try {
     const pool = await poolPromise;
     const entityTypeId = await getEntityTypeId(entityTypeName);
@@ -92,8 +95,7 @@ async function updateAttachment(attachmentId, entityId, entityTypeName, fileName
       .input("AttachmentID", sql.Int, attachmentId)
       .input("EntityID", sql.Int, entityId)
       .input("EntityTypeID", sql.Int, entityTypeId)
-      .input("FileName", sql.VarChar, fileName)
-      .input("FileUrl", sql.VarChar, fileUrl)
+      .input("FileUrl", sql.VarChar, fileUrl) 
       .execute("UpdateAttachment");
 
     return { message: "Attachment updated successfully" };
@@ -112,6 +114,8 @@ async function deactivateAttachment(attachmentId) {
     await pool.request()
       .input("AttachmentID", sql.Int, attachmentId)
       .execute("DeactivateAttachment");
+      
+    return { message: "Attachment deactivated successfully" };
   } catch (error) {
     console.error("Database error in deactivateAttachment:", error);
     throw error;
@@ -127,6 +131,8 @@ async function reactivateAttachment(attachmentId) {
     await pool.request()
       .input("AttachmentID", sql.Int, attachmentId)
       .execute("ReactivateAttachment");
+      
+    return { message: "Attachment reactivated successfully" };
   } catch (error) {
     console.error("Database error in reactivateAttachment:", error);
     throw error;
@@ -142,6 +148,8 @@ async function deleteAttachment(attachmentId) {
     await pool.request()
       .input("AttachmentID", sql.Int, attachmentId)
       .execute("DeleteAttachment");
+      
+    return { message: "Attachment deleted successfully" };
   } catch (error) {
     console.error("Database error in deleteAttachment:", error);
     throw error;

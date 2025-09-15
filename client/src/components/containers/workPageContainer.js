@@ -21,8 +21,15 @@ const WorkPageContainer = () => {
   const [refreshFlag, setRefreshFlag] = useState(false);
 
   // Filter and sort state
-  const [currentSort, setCurrentSort] = useState('priority');
+  const [currentSort, setCurrentSort] = useState('overdue');
   const [currentFilter, setCurrentFilter] = useState('all');
+
+    // Debug logging for state changes
+  useEffect(() => {
+    console.log('=== FILTER DEBUG ===');
+    console.log('Current filter changed to:', currentFilter);
+    console.log('Current sort:', currentSort);
+  }, [currentFilter, currentSort]);
 
   // Tab management state
   const [openTabs, setOpenTabs] = useState([]);
@@ -44,76 +51,58 @@ const WorkPageContainer = () => {
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const userId = storedUser.UserID || storedUser.id || null;
 
-  // Debug user ID
-  useEffect(() => {
-    console.log('Stored user from localStorage:', storedUser);
-    console.log('Extracted userId:', userId);
-    
-    if (!userId) {
-      console.error('No user ID found in localStorage. User object:', storedUser);
-      setError("User ID not found. Please log in again.");
-    }
-  }, [userId, storedUser]);
-
   // ---------------- FETCH ACTIVITIES ----------------
   const fetchActivities = useCallback(async () => {
     if (!userId) {
-      console.error("Cannot fetch activities: userId is null or undefined");
       setError("User ID not found. Please log in again.");
       return;
     }
+
+    console.log('=== FETCH ACTIVITIES DEBUG ===');
+    console.log('UserId:', userId);
+    console.log('CurrentSort:', currentSort);
+    console.log('CurrentFilter:', currentFilter);
+    console.log('About to call getWorkPageData...');
+
 
     setLoading(true);
     setError(null);
     
     try {
-      console.log(`Fetching activities for user ${userId} with sort: ${currentSort}, filter: ${currentFilter}`);
-      
       const response = await getWorkPageData(userId, currentSort, currentFilter);
+      console.log('=== RESPONSE DEBUG ===');
+      console.log('Full response:', response);
+      console.log('Response.success:', response.success);
+      console.log('Response.data:', response.data);
       
-      // Enhanced debugging
-      console.log('=== API RESPONSE DEBUG ===');
-      console.log('Full response object:', response);
-      console.log('Response type:', typeof response);
-      console.log('Response success:', response?.success);
-      console.log('Response data:', response?.data);
-      console.log('Response data type:', typeof response?.data);
-      
-      if (response?.success && response?.data) {
-        const activitiesData = response.data.activities || [];
-        console.log('Activities extracted:', activitiesData);
-        console.log('Activities count:', activitiesData.length);
-        console.log('First activity (if any):', activitiesData[0]);
-        
+      if (response.success && response.data) {
+        const activitiesData = response.data.activities || [];  // ✅ FIXED
+        console.log('=== ACTIVITIES DEBUG ===');
+        console.log('Activities array length:', activitiesData.length);
+        console.log('Activities data:', activitiesData);
+        console.log('Applied filters from backend:', response.data.appliedFilters);
+        console.log('Counts from backend:', response.data.counts);
+        console.log('Buckets from backend:', response.data.buckets);
+  
         setActivities(activitiesData);
-        console.log(`Successfully set ${activitiesData.length} activities in state`);
-        
-        // Clear any previous errors
-        setError(null);
-      } else if (Array.isArray(response)) {
-        // Handle direct array response
-        console.log('Response is direct array:', response);
-        setActivities(response);
-        setError(null);
-      } else if (response?.data && Array.isArray(response.data)) {
-        // Handle response.data as array
-        console.log('Response.data is array:', response.data);
-        setActivities(response.data);
-        setError(null);
-      } else {
-        console.error('Unexpected response format:', response);
-        throw new Error("Invalid response format from server");
+  
+        // Additional check
+        if (activitiesData.length === 0) {
+          console.warn('=== NO ACTIVITIES WARNING ===');
+          console.warn('Backend returned 0 activities');
+          console.warn('This might be due to the filter:', currentFilter);
+          console.warn('Total activities available:', response.data.totalActivities);
+          console.warn('Consider changing filter to "all" or "overdue"');
+        } 
+      } 
+      else {
+        console.error('=== INVALID RESPONSE ===');
+        console.error('Response structure is invalid:', response);
+        throw new Error("Invalid response format");
       }
     } catch (err) {
-      console.error("=== FETCH ACTIVITIES ERROR ===");
-      console.error("Error object:", err);
-      console.error("Error message:", err.message);
-      console.error("Error response:", err.response?.data);
-      console.error("Error status:", err.response?.status);
-      
-      const errorMessage = err.response?.data?.message || err.message || "Failed to load activities. Please try again.";
-      setError(errorMessage);
-      setActivities([]); // Clear activities on error
+      console.error('=== FETCH ERROR ===', err);
+      setError(err.message || "Failed to load activities. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -122,74 +111,47 @@ const WorkPageContainer = () => {
   // ---------------- FETCH METADATA ----------------
   const fetchMetadata = useCallback(async () => {
     try {
-      console.log('Fetching activity metadata...');
       const response = await getActivityMetadata();
-      console.log('Metadata response:', response);
-      
       if (response.success && response.data) {
         setActivityMetadata(response.data);
-      } else if (response.priorityLevels || response.activityTypes) {
-        // Handle direct response format
-        setActivityMetadata(response);
       }
     } catch (err) {
       console.error("Error fetching activity metadata:", err);
-      // Don't set error for metadata failure, just log it
     }
   }, []);
 
   // ---------------- EFFECTS ----------------
   useEffect(() => {
-    console.log('=== EFFECT TRIGGERED ===');
-    console.log('userId:', userId);
-    console.log('currentSort:', currentSort);
-    console.log('currentFilter:', currentFilter);
-    console.log('refreshFlag:', refreshFlag);
-    
-    if (userId) {
-      fetchActivities();
-    }
+    fetchActivities();
   }, [fetchActivities, refreshFlag]);
 
   useEffect(() => {
     fetchMetadata();
   }, [fetchMetadata]);
 
-  // Debug activities state changes
-  useEffect(() => {
-    console.log('=== ACTIVITIES STATE CHANGED ===');
-    console.log('New activities count:', activities.length);
-    console.log('Activities:', activities);
-  }, [activities]);
-
   // ---------------- FILTER & SORT HANDLERS ----------------
   const handleSortChange = (sortBy) => {
-    console.log('=== SORT CHANGE ===');
-    console.log('Previous sort:', currentSort);
-    console.log('New sort:', sortBy);
+    console.log('=== SORT CHANGE DEBUG ===');
+    console.log('Changing sort from:', currentSort, 'to:', sortBy);
     setCurrentSort(sortBy);
   };
 
   const handleFilterChange = (filterType) => {
-    console.log('=== FILTER CHANGE ===');
-    console.log('Previous filter:', currentFilter);
-    console.log('New filter:', filterType);
+    console.log('=== FILTER CHANGE DEBUG ===');
+    console.log('Changing filter from:', currentFilter, 'to:', filterType);
     setCurrentFilter(filterType);
   };
 
   // ---------------- TAB MANAGEMENT ----------------
   const handleActivityClick = async (activity) => {
     try {
-      console.log('=== ACTIVITY CLICK ===');
-      console.log('Activity clicked:', activity);
-      console.log('Activity ID:', activity.ActivityID);
+      console.log('Opening activity in tab:', activity.ActivityID);
       
       // Check if tab is already open
       const existingTabIndex = openTabs.findIndex(tab => tab.activityId === activity.ActivityID);
       
       if (existingTabIndex !== -1) {
         // Tab already exists, just activate it
-        console.log('Tab already open, activating existing tab at index:', existingTabIndex);
         setActiveTab(existingTabIndex);
         return;
       }
@@ -205,10 +167,6 @@ const WorkPageContainer = () => {
       const newTabs = [...openTabs, newTab];
       const newTabIndex = newTabs.length - 1;
       
-      console.log('Creating new tab:', newTab);
-      console.log('New tabs array:', newTabs);
-      console.log('New tab index:', newTabIndex);
-      
       setOpenTabs(newTabs);
       setActiveTab(newTabIndex);
       
@@ -216,21 +174,17 @@ const WorkPageContainer = () => {
       setTabLoading(prev => ({ ...prev, [activity.ActivityID]: true }));
 
       // Fetch detailed activity data for workspace
-      console.log('Fetching detailed activity data...');
       const response = await getActivityForWorkspace(activity.ActivityID, userId);
-      console.log('Activity detail response:', response);
       
       if (response.success && response.data) {
         setTabActivities(prev => ({
           ...prev,
           [activity.ActivityID]: response.data
         }));
-        console.log('Activity details loaded successfully');
       } else {
         throw new Error("Failed to load activity details");
       }
     } catch (err) {
-      console.error("=== ACTIVITY CLICK ERROR ===");
       console.error("Error opening activity tab:", err);
       setError(err.message || "Failed to open activity");
       
@@ -245,14 +199,8 @@ const WorkPageContainer = () => {
   };
 
   const handleTabClose = (tabIndex) => {
-    console.log('=== TAB CLOSE ===');
-    console.log('Closing tab at index:', tabIndex);
-    
     const tabToClose = openTabs[tabIndex];
     const newTabs = openTabs.filter((_, index) => index !== tabIndex);
-    
-    console.log('Tab to close:', tabToClose);
-    console.log('Remaining tabs:', newTabs);
     
     // Remove activity data from cache
     if (tabToClose) {
@@ -277,30 +225,23 @@ const WorkPageContainer = () => {
       if (newTabs.length > 0) {
         const newActiveIndex = tabIndex > 0 ? tabIndex - 1 : 0;
         setActiveTab(newActiveIndex);
-        console.log('New active tab index:', newActiveIndex);
       } else {
         setActiveTab(null);
-        console.log('No tabs remaining, active tab set to null');
       }
     } else if (activeTab > tabIndex) {
       // If closing a tab before active tab, decrease active tab index
       setActiveTab(activeTab - 1);
-      console.log('Adjusted active tab index to:', activeTab - 1);
     }
   };
 
   const handleTabChange = (tabIndex) => {
-    console.log('=== TAB CHANGE ===');
-    console.log('Changing active tab to index:', tabIndex);
     setActiveTab(tabIndex);
   };
 
   // ---------------- ACTIVITY ACTIONS ----------------
   const handleCompleteActivity = async (activityId, notes = '') => {
     try {
-      console.log('=== COMPLETE ACTIVITY ===');
-      console.log('Activity ID:', activityId);
-      console.log('Notes:', notes);
+      console.log('Completing activity:', activityId);
       
       const response = await completeActivity(activityId, userId, notes);
       
@@ -330,7 +271,6 @@ const WorkPageContainer = () => {
         throw new Error(response.message || "Failed to complete activity");
       }
     } catch (err) {
-      console.error("=== COMPLETE ACTIVITY ERROR ===");
       console.error("Error completing activity:", err);
       const errorMessage = err.message || "Failed to complete activity";
       setError(errorMessage);
@@ -341,9 +281,7 @@ const WorkPageContainer = () => {
 
   const handleUpdateActivity = async (activityId, updateData) => {
     try {
-      console.log('=== UPDATE ACTIVITY ===');
-      console.log('Activity ID:', activityId);
-      console.log('Update data:', updateData);
+      console.log('Updating activity:', activityId, updateData);
       
       const response = await updateActivity(activityId, userId, updateData);
       
@@ -364,7 +302,6 @@ const WorkPageContainer = () => {
         throw new Error(response.message || "Failed to update activity");
       }
     } catch (err) {
-      console.error("=== UPDATE ACTIVITY ERROR ===");
       console.error("Error updating activity:", err);
       const errorMessage = err.message || "Failed to update activity";
       setError(errorMessage);
@@ -375,8 +312,7 @@ const WorkPageContainer = () => {
 
   const handleDeleteActivity = async (activityId) => {
     try {
-      console.log('=== DELETE ACTIVITY ===');
-      console.log('Activity ID:', activityId);
+      console.log('Deleting activity:', activityId);
       
       const response = await deleteActivity(activityId, userId);
       
@@ -404,7 +340,6 @@ const WorkPageContainer = () => {
         throw new Error(response.message || "Failed to delete activity");
       }
     } catch (err) {
-      console.error("=== DELETE ACTIVITY ERROR ===");
       console.error("Error deleting activity:", err);
       const errorMessage = err.message || "Failed to delete activity";
       setError(errorMessage);
@@ -458,13 +393,6 @@ const WorkPageContainer = () => {
     const currentTab = openTabs[activeTab];
     return tabLoading[currentTab.activityId] || false;
   };
-
-  // Debug render
-  console.log('=== RENDER DEBUG ===');
-  console.log('Current activities count:', activities.length);
-  console.log('Loading state:', loading);
-  console.log('Error state:', error);
-  console.log('User ID:', userId);
 
   return (
     <WorkPage

@@ -45,7 +45,7 @@ const upload = multer({
 });
 
 // =======================
-// Upload Attachment - FIXED
+// Upload Attachment 
 // =======================
 async function uploadAttachment(req, res) {
   try {
@@ -53,18 +53,20 @@ async function uploadAttachment(req, res) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const { entityId, entityTypeName } = req.body;
+    const { entityId, entityTypeName, createdBy } = req.body;
     if (!entityId || !entityTypeName) {
       return res
         .status(400)
         .json({ error: "EntityID and EntityTypeName are required" });
     }
 
+    const createdByName = createdBy || req.user?.name || req.session?.userName || "system";
+
     const fileData = {
-      entityId,
+      entityId: parseInt(entityId),
       entityTypeName,
-      fileName: req.file.originalname,
       fileUrl: `/uploads/${req.file.filename}`,
+      createdBy: createdByName,
     };
 
     const result = await attachmentService.uploadAttachment(fileData);
@@ -75,10 +77,10 @@ async function uploadAttachment(req, res) {
       message: result.message,
       data: {
         ...result.data,
-        attachmentId: result.data.attachmentId, // Ensure ID is returned
         filePath: req.file.path,
         originalName: req.file.originalname,
-        size: req.file.size
+        size: req.file.size,
+        uploadedBy: createdByName,
       }
     });
   } catch (error) {
@@ -101,7 +103,7 @@ async function uploadAttachment(req, res) {
 }
 
 // =======================
-// Get Attachments for Entity - FIXED
+// Get Attachments for Entity 
 // =======================
 async function getAttachments(req, res) {
   try {
@@ -114,7 +116,7 @@ async function getAttachments(req, res) {
     }
     
     const result = await attachmentService.getAttachmentsForEntity(
-      entityId,
+      parseInt(entityId),
       entityTypeName
     );
     
@@ -140,7 +142,7 @@ async function getAttachmentById(req, res) {
       return res.status(400).json({ error: "AttachmentID is required" });
     }
     
-    const result = await attachmentService.getAttachmentById(attachmentId);
+    const result = await attachmentService.getAttachmentById(parseInt(attachmentId));
     
     if (!result) {
       return res.status(404).json({ error: "Attachment not found" });
@@ -157,7 +159,7 @@ async function getAttachmentById(req, res) {
 }
 
 // =======================
-// Download Attachment - FIXED
+// Download Attachment 
 // =======================
 async function downloadAttachment(req, res) {
   try {
@@ -167,21 +169,20 @@ async function downloadAttachment(req, res) {
       return res.status(400).json({ error: "AttachmentID is required" });
     }
     
-    const attachment = await attachmentService.getAttachmentById(attachmentId);
+    const attachment = await attachmentService.getAttachmentById(parseInt(attachmentId));
     
     if (!attachment) {
       return res.status(404).json({ error: "Attachment not found" });
     }
 
-    // Use the correct field names
     const filePath = path.join(__dirname, "../../", attachment.FileUrl || attachment.fileUrl);
     
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "File not found on server" });
     }
 
-    // Set proper headers
-    const fileName = attachment.FileName || attachment.fileName;
+    // Extract original filename from file URL and use it for download
+    const fileName = path.basename(attachment.FileUrl || attachment.fileUrl);
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${fileName}"`
@@ -200,7 +201,37 @@ async function downloadAttachment(req, res) {
 }
 
 // =======================
-// Delete Attachment - FIXED
+// Update Attachment 
+// =======================
+async function updateAttachment(req, res) {
+  try {
+    const { attachmentId } = req.params;
+    const { entityId, entityTypeName, fileUrl } = req.body;
+    
+    if (!attachmentId) {
+      return res.status(400).json({ error: "AttachmentID is required" });
+    }
+    
+    const updateData = {
+      entityId: parseInt(entityId),
+      entityTypeName,
+      fileUrl
+    };
+    
+    const result = await attachmentService.updateAttachment(parseInt(attachmentId), updateData);
+    
+    res.json(result);
+  } catch (error) {
+    console.error("Error in updateAttachment controller:", error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message || "Failed to update attachment" 
+    });
+  }
+}
+
+// =======================
+// Delete Attachment 
 // =======================
 async function deleteAttachment(req, res) {
   try {
@@ -210,7 +241,7 @@ async function deleteAttachment(req, res) {
       return res.status(400).json({ error: "AttachmentID is required" });
     }
     
-    const result = await attachmentService.deleteAttachment(attachmentId);
+    const result = await attachmentService.deleteAttachment(parseInt(attachmentId));
 
     // Remove physical file (service handles DB delete)
     const fileUrl = result.fileUrl;
@@ -241,11 +272,60 @@ async function deleteAttachment(req, res) {
   }
 }
 
+// =======================
+// Deactivate Attachment 
+// =======================
+async function deactivateAttachment(req, res) {
+  try {
+    const { attachmentId } = req.params;
+    
+    if (!attachmentId) {
+      return res.status(400).json({ error: "AttachmentID is required" });
+    }
+    
+    const result = await attachmentService.deactivateAttachment(parseInt(attachmentId));
+    
+    res.json(result);
+  } catch (error) {
+    console.error("Error in deactivateAttachment controller:", error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message || "Failed to deactivate attachment" 
+    });
+  }
+}
+
+// =======================
+// Reactivate Attachment 
+// =======================
+async function reactivateAttachment(req, res) {
+  try {
+    const { attachmentId } = req.params;
+    
+    if (!attachmentId) {
+      return res.status(400).json({ error: "AttachmentID is required" });
+    }
+    
+    const result = await attachmentService.reactivateAttachment(parseInt(attachmentId));
+    
+    res.json(result);
+  } catch (error) {
+    console.error("Error in reactivateAttachment controller:", error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message || "Failed to reactivate attachment" 
+    });
+  }
+}
+
 module.exports = {
   upload,
   uploadAttachment,
   getAttachments,
   getAttachmentById,
   downloadAttachment,
+  updateAttachment,
   deleteAttachment,
+  deactivateAttachment,
+  reactivateAttachment,
 };
