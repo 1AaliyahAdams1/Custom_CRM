@@ -49,7 +49,13 @@ const AccountsPage = ({
   userRoles = [],
 }) => {
   const columns = [
-    { field: 'AccountName', headerName: 'Name', type: 'tooltip', defaultVisible: true },
+    { 
+      field: 'AccountName', 
+      headerName: 'Name', 
+      type: 'clickable', 
+      defaultVisible: true,
+      onClick: onView, // This will call the same function as "View Details"
+    },
     { field: 'CityName', headerName: 'City', defaultVisible: true },
     { field: 'StateProvince_Name', headerName: 'State Province', defaultVisible: false },
     { field: 'CountryName', headerName: 'Country', defaultVisible: true },
