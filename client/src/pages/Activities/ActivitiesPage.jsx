@@ -80,7 +80,6 @@ const activitiesTableConfig = {
     {
       field: "Completed",
       headerName: "Completed",
-      headerName: "Completed",
       type: "boolean",
     },
   ],
@@ -107,10 +106,16 @@ const ActivitiesPage = ({
   totalCount,
   currentFilter = 'all',
   
+  // Additional props that were missing
+  onBulkMarkComplete,
+  onBulkMarkIncomplete,
+  userRole,
+  
   // Activity Types props (pass through to ActivityTypePage)
   activityTypesProps = {},
 }) => {
   const [currentTab, setCurrentTab] = useState(0);
+  const [dueDatesDialogOpen, setDueDatesDialogOpen] = useState(false);
 
   // Local state for filter
   const [activityFilter, setActivityFilter] = useState(currentFilter);
@@ -122,16 +127,11 @@ const ActivitiesPage = ({
       label: 'Activities',
       component: 'activities'
     },
-    // {
-    //   id: 'activity-types',
-    //   label: 'Activity Types', 
-    //   component: 'activityTypes'
-    // },
-    // {
-    //   id: 'activity-types',
-    //   label: 'Activity Types', 
-    //   component: 'activityTypes'
-    // },
+    {
+      id: 'activity-types',
+      label: 'Activity Types', 
+      component: 'activityTypes'
+    },
     // Add more tabs here as needed:
     // {
     //   id: 'reports',
@@ -173,31 +173,45 @@ const ActivitiesPage = ({
 
   // Selection handlers for activities
   const handleSelectClick = (id) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected = [];
+    if (onSelectClick) {
+      onSelectClick(id);
+    } else {
+      // Fallback logic if onSelectClick is not provided
+      const selectedIndex = selected.indexOf(id);
+      let newSelected = [];
 
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
-      );
+      if (selectedIndex === -1) {
+        newSelected = newSelected.concat(selected, id);
+      } else if (selectedIndex === 0) {
+        newSelected = newSelected.concat(selected.slice(1));
+      } else if (selectedIndex === selected.length - 1) {
+        newSelected = newSelected.concat(selected.slice(0, -1));
+      } else if (selectedIndex > 0) {
+        newSelected = newSelected.concat(
+          selected.slice(0, selectedIndex),
+          selected.slice(selectedIndex + 1)
+        );
+      }
+      // Note: You'd need setSelected from props or state to make this work
     }
-
-    setSelected(newSelected);
   };
 
   const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      setSelected(activities.map((activity) => activity.ActivityID));
-    } else {
-      setSelected([]);
+    if (onSelectAllClick) {
+      onSelectAllClick(event);
     }
+  };
+
+  // Get selected activities for bulk operations
+  const selectedActivities = activities.filter(activity => 
+    selected.includes(activity.ActivityID)
+  );
+
+  // Handle bulk due dates update
+  const handleConfirmDueDatesUpdate = (dueDateData) => {
+    // Handle the due dates update logic here
+    console.log('Updating due dates:', dueDateData);
+    setDueDatesDialogOpen(false);
   };
 
   // Combine imported formatters with custom formatters
@@ -234,17 +248,51 @@ const ActivitiesPage = ({
             </Alert>
           )}
 
-          {/* Bulk Actions Toolbar - Shows when items are selected */}
-          <ActivitiesBulkActionsToolbar
-            selectedCount={selected.length}
-            selectedItems={selectedActivities}
-            onBulkMarkComplete={onBulkMarkComplete}
-            onBulkMarkIncomplete={onBulkMarkIncomplete}
-            onBulkUpdateDueDates={() => setDueDatesDialogOpen(true)}
-            onClearSelection={onClearSelection}
-            userRole={userRole}
-            loading={loading}
-          />
+          {/* Tabs */}
+          <Tabs
+            value={currentTab}
+            onChange={handleTabChange}
+            sx={{
+              borderBottom: "1px solid #e5e5e5",
+              backgroundColor: "#ffffff",
+            }}
+          >
+            {userTabs.map((tab, index) => (
+              <Tab
+                key={tab.id}
+                label={tab.label}
+                id={`activities-tab-${index}`}
+                aria-controls={`activities-tabpanel-${index}`}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 500,
+                  "&.Mui-selected": {
+                    color: "#050505",
+                  },
+                }}
+              />
+            ))}
+          </Tabs>
+
+          {/* Tab Panels */}
+          {userTabs.map((tab, index) => (
+            <TabPanel key={tab.id} value={currentTab} index={index}>
+              {/* Activities Tab Content */}
+              {tab.component === 'activities' && (
+                <>
+                  {/* Bulk Actions Toolbar - Shows when items are selected */}
+                  {selected.length > 0 && (
+                    <ActivitiesBulkActionsToolbar
+                      selectedCount={selected.length}
+                      selectedItems={selectedActivities}
+                      onBulkMarkComplete={onBulkMarkComplete}
+                      onBulkMarkIncomplete={onBulkMarkIncomplete}
+                      onBulkUpdateDueDates={() => setDueDatesDialogOpen(true)}
+                      onClearSelection={onClearSelection}
+                      userRole={userRole}
+                      loading={loading}
+                    />
+                  )}
 
                   {/* Activities Toolbar */}
                   <Toolbar
@@ -416,7 +464,7 @@ const ActivitiesPage = ({
                   </Box>
                 </>
               )}
-
+              
               {/* Activity Types Tab Content */}
               {tab.component === 'activityTypes' && (
                 <Box sx={{ p: 0 }}>
@@ -432,7 +480,6 @@ const ActivitiesPage = ({
                 </Box>
               )}
               */}
-
             </TabPanel>
           ))}
         </Paper>

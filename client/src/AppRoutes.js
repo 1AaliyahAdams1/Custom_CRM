@@ -41,17 +41,25 @@ const AccountsDetailsPage = lazy(() => import("./pages/Accounts/AccountsDetailsP
 const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsPage"));
 const DealsDetailsPage = lazy(() => import("./pages/Deals/DealsDetailsPage"));
 const ActivitiesDetailsPage = lazy(() => import("./pages/Activities/ActivitiesDetailsPage"));
+const ProductDetailsPage = lazy(() => import("./pages/Products/ProductDetailsPage"));
 
 const CreateAccountPage = lazy(() => import("./pages/Accounts/CreateAccountPage"));
 const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPage"));
 const CreateDealPage = lazy(() => import("./pages/Deals/CreateDealPage"));
 const CreateActivitiesPage = lazy(() => import("./pages/Activities/CreateActivitiesPage"));
 const CreateProduct = lazy(() => import("./pages/Products/CreateProductPage"));
+const CreateCompanyPage = lazy(() => import("./pages/Companies/AddCompanyPage"));
+const CreateDiscountCodePage = lazy(() => import("./pages/DiscountCodes/CreateDiscountCodePage"));
+const CreateEventPage = lazy(() => import("./pages/Events/CreateEventPage"));
 
 const EditAccountPage = lazy(() => import("./pages/Accounts/EditAccountPage"));
 const EditContactPage = lazy(() => import("./pages/Contacts/EditContactPage"));
 const EditDealPage = lazy(() => import("./pages/Deals/EditDealPage"));
 const EditActivityPage = lazy(() => import("./pages/Activities/EditActivityPage"));
+const EditProductPage = lazy(() => import("./pages/Products/EditProductPage"));
+const EditCompanyPage = lazy(() => import("./pages/Companies/EditCompanyPage"));
+const EditDiscountCodePage = lazy(() => import("./pages/DiscountCodes/EditDiscountCodePage"));
+const EditEventPage = lazy(() => import("./pages/Events/EditEventsPage"));
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
@@ -254,6 +262,22 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/products/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.productsEdit}>
+            <EditProductPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/products/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.productsDetails}>  
+            <ProductDetailsPage />
+          </PrivateRoute>
+        }
+      />
       {/* --- Companies Routes --- */}
       <Route
         path="/companies"
@@ -263,6 +287,23 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/companies/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.companiesCreate}>
+            <CreateCompanyPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/companies/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.companiesEdit}>
+            <EditCompanyPage />
+          </PrivateRoute>
+        }
+      />
+
       {/* --- Events Routes --- */}
       <Route
         path="/events"
@@ -272,6 +313,24 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/events/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsCreate}>
+            <CreateEventPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/events/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsEdit}>
+            <EditEventPage />
+          </PrivateRoute>
+        }
+      />
+
+    
       {/* --- Owners Routes --- */}
       <Route
         path="/owners"
@@ -287,6 +346,22 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodes}>
             <DiscountCodesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/discount-codes/create"
+        element={   
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesCreate}>
+            <CreateDiscountCodePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/discount-codes/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesEdit}>
+            <EditDiscountCodePage />
           </PrivateRoute>
         }
       />
