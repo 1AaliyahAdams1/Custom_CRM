@@ -1,7 +1,7 @@
 const { sql, poolPromise } = require("../dbConfig");
 
 // =======================
-// Helper: get EntityTypeID by TypeName
+// get EntityTypeID by TypeName
 // =======================
 async function getEntityTypeId(typeName) {
   try {
