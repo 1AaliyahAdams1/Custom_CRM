@@ -48,7 +48,6 @@ const CreateContactsPage = () => {
     AccountID: '',
     PersonID: '',
     JobTitleID: '',
-    Still_employed: true,
     WorkEmail: '',
     WorkPhone: '',
   });
@@ -174,7 +173,6 @@ const CreateContactsPage = () => {
         AccountID: contactData.AccountID === "" ? null : Number(contactData.AccountID),
         PersonID: Number(personIdToUse),
         JobTitleID: contactData.JobTitleID === "" ? null : Number(contactData.JobTitleID),
-        Still_employed: contactData.Still_employed ?? true,
         WorkEmail: contactData.WorkEmail === "" ? null : contactData.WorkEmail,
         WorkPhone: contactData.WorkPhone === "" ? null : contactData.WorkPhone,
       };

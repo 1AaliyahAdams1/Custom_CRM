@@ -28,7 +28,7 @@ import {
 import ColumnsDialog from "./ColumnsDialog";
 import FiltersDialog from "./FiltersDialog";
 import ActionMenu from "./ActionMenu";
-import AssignUserDialog from "../AssignUserDialog"; 
+import AssignUserDialog from "../../components/dialogs/AssignUserDialog"; 
 
 const TableView = ({
   data = [],

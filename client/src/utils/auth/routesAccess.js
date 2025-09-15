@@ -1,78 +1,86 @@
-import { act } from "react";
-
+const ALL = ["C-level", "Sales Manager", "Sales Representative"];
+const MANAGEMENT = ["C-level", "Sales Manager"]; 
+const CLEVEL = ["C-level"];
 
 export const ROUTE_ACCESS = {
-  dashboard: ["C-level", "Sales Manager", "Sales Representative"],
-  
-  roles: ["C-level"],
+  // Core
+  dashboard: ALL,
+  roles: CLEVEL,
 
-  accounts: ["C-level", "Sales Manager", "Sales Representative"], 
-  accountsDetails: ["C-level", "Sales Manager", "Sales Representative"],
-  accountsCreate: ["C-level", "Sales Manager", "Sales Representative"], 
-  accountsEdit: ["C-level", "Sales Manager", "Sales Representative"],
+  // Accounts
+  accounts: ALL,
+  accountsDetails: ALL,
+  accountsCreate: ALL,
+  accountsEdit: ALL,
+  accountAssign: CLEVEL, 
+  accountClaim: ALL, 
 
-  contacts: ["C-level", "Sales Manager", "Sales Representative"], 
-  contactsDetails: ["C-level", "Sales Manager", "Sales Representative"],
-  contactsCreate: ["C-level", "Sales Manager", "Sales Representative"],
-  contactsEdit: ["C-level", "Sales Manager", "Sales Representative"],
+  // Contacts
+  contacts: ALL,
+  contactsDetails: ALL,
+  contactsCreate: ALL,
+  contactsEdit: ALL,
 
-  deals: ["C-level", "Sales Manager", "Sales Representative"], 
-  dealsDetails: ["C-level", "Sales Manager", "Sales Representative"],
-  dealsCreate: ["C-level", "Sales Manager", "Sales Representative"],
-  dealsEdit: ["C-level", "Sales Manager", "Sales Representative"],
-  dealStage: ["C-level", "Sales Manager", "Sales Representative"],
-  dealStageCreate: ["C-level", "Sales Manager"],
+  // Deals
+  deals: ALL,
+  dealsDetails: ALL,
+  dealsCreate: ALL,
+  dealsEdit: ALL,
+  dealStage: ALL,
+  dealStageCreate: MANAGEMENT,
 
+  // Activities
+  activities: ALL,
+  activitiesDetails: ALL,
+  activitiesCreate: ALL,
+  activitiesEdit: ALL,
+  activityTypes: ALL,
+  activityTypesCreate: MANAGEMENT,
 
-  activities: ["C-level", "Sales Manager", "Sales Representative"], 
-  activitiesDetails: ["C-level", "Sales Manager", "Sales Representative"],
-  activitiesCreate: ["C-level", "Sales Manager", "Sales Representative"],
-  activitiesEdit: ["C-level", "Sales Manager", "Sales Representative"],
-  activityTypes: ["C-level", "Sales Manager", "Sales Representative"],
-  activityTypesCreate: ["C-level", "Sales Manager"],
+  // Reports & Smart Work
+  reports: MANAGEMENT,
+  smartWork: ALL,
 
-  reports: ["C-level", "Sales Manager"],
+  // Products
+  products: ALL,
+  productsCreate: ALL,
 
-  smartWork: ["C-level", "Sales Manager", "Sales Representative"],
+  // Geography
+  country: ALL,
+  countryCreate: ALL,
+  city: ALL,
+  cityCreate: ALL,
+  stateProvince: ALL,
+  stateProvinceCreate: ALL,
+  currency: ALL,
+  currencyCreate: ALL,
 
-  products: ["C-level", "Sales Manager", "Sales Representative"],
-  productsCreate: ["C-level", "Sales Manager"],
+  // Industry & Priority
+  industry: ALL,
+  industryCreate: ALL,
+  priority: ALL,
+  priorityCreate: ALL,
 
-  country : ["C-level", "Sales Manager", "Sales Representative"],
-  countryCreate : ["C-level", "Sales Manager"],
+  // Companies
+  companies: MANAGEMENT,
+  companiesDetails: MANAGEMENT,
+  companiesCreate: MANAGEMENT,
+  companiesEdit: MANAGEMENT,
 
-  city: ["C-level", "Sales Manager", "Sales Representative"],
-  cityCreate: ["C-level", "Sales Manager"],
+  // Events
+  events: ALL,
+  eventsDetails: ALL,
+  eventsCreate: ALL,
+  eventsEdit: ALL,
 
-  stateProvince: ["C-level", "Sales Manager", "Sales Representative"],
-  stateProvinceCreate: ["C-level", "Sales Manager"],
+  // Owners
+  owners: MANAGEMENT,
+  ownersCreate: MANAGEMENT,
 
-  industry: ["C-level", "Sales Manager", "Sales Representative"],
-  industryCreate: ["C-level", "Sales Manager"],
+  // Discount Codes
+  discountcodes: MANAGEMENT,
+  discountcodesCreate: MANAGEMENT,
 
-  priority: ["C-level", "Sales Manager", "Sales Representative"],
-  priorityCreate: ["C-level", "Sales Manager"],
-
-  settings: ["C-level", "Sales Manager", "Sales Representative"],
-
-  currency: ["C-level", "Sales Manager", "Sales Representative"],
-  currencyCreate: ["C-level", "Sales Manager"],
-
-  companies: ["C-level", "Sales Manager", "Sales Representative"],
-  companiesDetails: ["C-level", "Sales Manager", "Sales Representative"],
-  companiesCreate: ["C-level", "Sales Manager", "Sales Representative"],
-  companiesEdit: ["C-level", "Sales Manager", "Sales Representative"],
-
-  events: ["C-level", "Sales Manager", "Sales Representative"],
-  eventsCreate: ["C-level", "Sales Manager", "Sales Representative"],
-  eventsEdit: ["C-level", "Sales Manager", "Sales Representative"],
-  eventsDetails: ["C-level", "Sales Manager", "Sales Representative"],
-
-  owners: ["C-level", "Sales Manager", "Sales Representative"],
-  ownersCreate: ["C-level", "Sales Manager"],
-
-  discountcodes: ["C-level", "Sales Manager", "Sales Representative"],
-  discountcodesCreate: ["C-level", "Sales Manager"],
-
-  
+  // Settings
+  settings: ALL,
 };

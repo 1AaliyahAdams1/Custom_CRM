@@ -27,7 +27,7 @@ import {
   downloadAttachment 
 } from "../../services/attachmentService";
 import { activityTypeService, priorityLevelService } from "../../services/dropdownServices";
-import ConfirmDialog from "../../components/ConfirmDialog";
+import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import BulkDueDatesDialog from "../../components/BulkDueDatesDialog";
