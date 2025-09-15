@@ -120,7 +120,8 @@ async function updateAccount(id, accountData, changedBy = 1) {
       number_of_events_anually = existing.number_of_events_anually,
       ParentAccount = existing.ParentAccount,
       StateProvinceID = existing.StateProvinceID,
-      CountryID = existing.CountryID
+      CountryID = existing.CountryID,
+      SequenceID = existing.SequenceID
     } = accountData;
 
     // Use the UpdateAccount stored procedure
@@ -150,6 +151,7 @@ async function updateAccount(id, accountData, changedBy = 1) {
       .input('UpdatedAt', sql.SmallDateTime, new Date())
       .input('ChangedBy', sql.Int, changedBy)
       .input('ActionTypeID', sql.Int, 1)
+      .input("SequenceID", sql.Int, SequenceID)
       .execute('UpdateAccount');
 
     return { message: "Account updated", AccountID: id };
