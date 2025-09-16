@@ -41,6 +41,16 @@ export async function updateProduct(productId, productData) {
   }
 }
 
+export async function deleteProduct(productId) {
+  try {
+    const response = await api.delete(`${RESOURCE}/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting product ${productId}:`, error);
+    throw error;
+  }
+}
+
 export async function deactivateProduct(productId) {
   try {
     const response = await api.patch(`${RESOURCE}/${productId}/deactivate`);
@@ -57,16 +67,6 @@ export async function reactivateProduct(productId) {
     return response.data;
   } catch (error) {
     console.error(`Error reactivating product ${productId}:`, error);
-    throw error;
-  }
-}
-
-export async function deleteProduct(productId) {
-  try {
-    const response = await api.delete(`${RESOURCE}/${productId}/delete`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error deleting product ${productId}:`, error);
     throw error;
   }
 }

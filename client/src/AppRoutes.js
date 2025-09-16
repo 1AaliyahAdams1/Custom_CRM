@@ -42,6 +42,9 @@ const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsP
 const DealsDetailsPage = lazy(() => import("./pages/Deals/DealsDetailsPage"));
 const ActivitiesDetailsPage = lazy(() => import("./pages/Activities/ActivitiesDetailsPage"));
 const ProductDetailsPage = lazy(() => import("./pages/Products/ProductDetailsPage"));
+const CompaniesDetailsPage = lazy(() => import("./pages/Companies/CompanyDetailsPage"));
+const EventsDetailsPage = lazy(() => import("./pages/Events/EventDetailsPage"));
+const DiscountCodesDetailsPage = lazy(() => import("./pages/DiscountCodes/DiscountCodeDetailsPage"));
 
 const CreateAccountPage = lazy(() => import("./pages/Accounts/CreateAccountPage"));
 const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPage"));
@@ -303,6 +306,15 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/companies/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.companiesDetails}> 
+            <CompaniesDetailsPage />
+          </PrivateRoute>
+        }
+      />
+
 
       {/* --- Events Routes --- */}
       <Route
@@ -326,6 +338,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsEdit}>
             <EditEventPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/events/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsDetails}>
+            <EventsDetailsPage />
           </PrivateRoute>
         }
       />
@@ -362,6 +382,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesEdit}>
             <EditDiscountCodePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/discount-codes/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesDetails}>
+            <DiscountCodesDetailsPage />
           </PrivateRoute>
         }
       />
