@@ -21,10 +21,10 @@ const WorkPageContainer = () => {
   const [refreshFlag, setRefreshFlag] = useState(false);
 
   // Filter and sort state
-  const [currentSort, setCurrentSort] = useState('overdue');
+  const [currentSort, setCurrentSort] = useState('dueDate');  // Changed from 'overdue' to 'dueDate'
   const [currentFilter, setCurrentFilter] = useState('all');
 
-    // Debug logging for state changes
+  // Debug logging for state changes
   useEffect(() => {
     console.log('=== FILTER DEBUG ===');
     console.log('Current filter changed to:', currentFilter);
@@ -52,61 +52,67 @@ const WorkPageContainer = () => {
   const userId = storedUser.UserID || storedUser.id || null;
 
   // ---------------- FETCH ACTIVITIES ----------------
-  const fetchActivities = useCallback(async () => {
-    if (!userId) {
-      setError("User ID not found. Please log in again.");
-      return;
-    }
+// Replace your fetchActivities function in WorkPageContainer.js with this:
 
-    console.log('=== FETCH ACTIVITIES DEBUG ===');
-    console.log('UserId:', userId);
-    console.log('CurrentSort:', currentSort);
-    console.log('CurrentFilter:', currentFilter);
-    console.log('About to call getWorkPageData...');
+const fetchActivities = useCallback(async () => {
+  if (!userId) {
+    setError("User ID not found. Please log in again.");
+    return;
+  }
 
+  console.log('=== FETCH ACTIVITIES DEBUG ===');
+  console.log('UserId:', userId);
+  console.log('CurrentSort:', currentSort);
+  console.log('CurrentFilter:', currentFilter);
+  console.log('About to call getWorkPageData...');
 
-    setLoading(true);
-    setError(null);
+  setLoading(true);
+  setError(null);
+  
+  try {
+    const response = await getWorkPageData(userId, currentSort, currentFilter);
+    console.log('=== RESPONSE DEBUG ===');
+    console.log('Full response:', response);
     
-    try {
-      const response = await getWorkPageData(userId, currentSort, currentFilter);
-      console.log('=== RESPONSE DEBUG ===');
-      console.log('Full response:', response);
-      console.log('Response.success:', response.success);
-      console.log('Response.data:', response.data);
-      
-      if (response.success && response.data) {
-        const activitiesData = response.data.activities || [];  // ✅ FIXED
-        console.log('=== ACTIVITIES DEBUG ===');
-        console.log('Activities array length:', activitiesData.length);
-        console.log('Activities data:', activitiesData);
-        console.log('Applied filters from backend:', response.data.appliedFilters);
-        console.log('Counts from backend:', response.data.counts);
-        console.log('Buckets from backend:', response.data.buckets);
-  
-        setActivities(activitiesData);
-  
-        // Additional check
-        if (activitiesData.length === 0) {
-          console.warn('=== NO ACTIVITIES WARNING ===');
-          console.warn('Backend returned 0 activities');
-          console.warn('This might be due to the filter:', currentFilter);
-          console.warn('Total activities available:', response.data.totalActivities);
-          console.warn('Consider changing filter to "all" or "overdue"');
-        } 
-      } 
-      else {
-        console.error('=== INVALID RESPONSE ===');
-        console.error('Response structure is invalid:', response);
-        throw new Error("Invalid response format");
-      }
-    } catch (err) {
-      console.error('=== FETCH ERROR ===', err);
-      setError(err.message || "Failed to load activities. Please try again.");
-    } finally {
-      setLoading(false);
+    // The service should return { activities: [...], buckets: {...}, counts: {...} }
+    let activitiesData = [];
+    
+    if (response && Array.isArray(response.activities)) {
+      // Expected structure from fixed service
+      activitiesData = response.activities;
+      console.log('Found activities in response.activities:', activitiesData.length);
+    } else if (Array.isArray(response)) {
+      // Fallback: direct array
+      activitiesData = response;
+      console.log('Response is direct array:', activitiesData.length);
+    } else {
+      console.warn('=== UNEXPECTED RESPONSE STRUCTURE ===');
+      console.warn('Response:', response);
+      console.warn('Could not find activities array in response');
+      activitiesData = [];
     }
-  }, [userId, currentSort, currentFilter]);
+    
+    console.log('=== FINAL ACTIVITIES DEBUG ===');
+    console.log('Setting activities array with length:', activitiesData.length);
+    console.log('Sample activity:', activitiesData[0]);
+    
+    setActivities(activitiesData);
+    
+    if (activitiesData.length === 0) {
+      console.warn('=== NO ACTIVITIES WARNING ===');
+      console.warn('Backend returned 0 activities');
+      console.warn('Current filter:', currentFilter);
+      console.warn('Current sort:', currentSort);
+      console.warn('Try changing filter to "pending" or "all"');
+    }
+  } catch (err) {
+    console.error('=== FETCH ERROR ===', err);
+    console.error('Error details:', err.response?.data || err.message);
+    setError(err.message || "Failed to load activities. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+}, [userId, currentSort, currentFilter]);
 
   // ---------------- FETCH METADATA ----------------
   const fetchMetadata = useCallback(async () => {

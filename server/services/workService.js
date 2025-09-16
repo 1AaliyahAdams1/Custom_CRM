@@ -1,4 +1,4 @@
-const sequenceRepo = require("../data/sequenceRepository");
+const workRepo = require("../data/sequenceRepository"); // Using the combined repository
 
 //======================================
 // Get Smart Work Page Data
@@ -14,7 +14,7 @@ async function getSmartWorkPageData(userId, options = {}) {
     const sortBy = options.sort || 'dueDate';
     
     // Get activities with database-level filtering
-    const activities = await sequenceRepo.getActivities(userId, {
+    const activities = await workRepo.getActivities(userId, {
       ...filterOptions,
       sortBy: sortBy
     });
@@ -53,6 +53,92 @@ async function getSmartWorkPageData(userId, options = {}) {
 }
 
 //======================================
+// Get Activities by User (for sequences)
+//======================================
+async function getActivitiesByUser(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const activities = await workRepo.getActivitiesByUser(userId);
+    
+    // Enhance activities with client-side calculations
+    const enhancedActivities = activities.map(activity => ({
+      ...activity,
+      TimeUntilDue: calculateTimeUntilDue(activity.DueToStart, activity.Completed),
+      HasSequence: !!activity.SequenceID,
+      SequenceProgress: activity.DaysFromStart ? {
+        current: activity.DaysFromStart,
+        sequenceName: activity.SequenceName
+      } : null
+    }));
+
+    return enhancedActivities;
+  } catch (error) {
+    console.error('Error in getActivitiesByUser:', error);
+    throw new Error(`Failed to fetch activities by user: ${error.message}`);
+  }
+}
+
+//======================================
+// Get Sequences and Items by User
+//======================================
+async function getSequencesandItemsByUser(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const sequences = await workRepo.getSequencesandItemsByUser(userId);
+    
+    // Enhance sequences with additional context
+    const enhancedSequences = sequences.map(sequence => ({
+      ...sequence,
+      ItemCount: sequence.Items ? sequence.Items.length : 0,
+      AccountCount: sequence.Accounts ? sequence.Accounts.length : 0,
+      IsActive: sequence.SequenceActive === 1,
+      Items: sequence.Items.map(item => ({
+        ...item,
+        IsHighPriority: item.PriorityLevel.PriorityLevelValue >= 8,
+        IsMedium: item.PriorityLevel.PriorityLevelValue >= 5 && item.PriorityLevel.PriorityLevelValue < 8,
+        IsLow: item.PriorityLevel.PriorityLevelValue < 5
+      }))
+    }));
+
+    return enhancedSequences;
+  } catch (error) {
+    console.error('Error in getSequencesandItemsByUser:', error);
+    throw new Error(`Failed to fetch sequences and items: ${error.message}`);
+  }
+}
+
+//======================================
+// Get User Sequences (simple)
+//======================================
+async function getUserSequences(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const sequences = await workRepo.getUserSequences(userId);
+    
+    return sequences.map(seq => ({
+      ...seq,
+      IsActive: seq.SequenceActive === 1,
+      AccountContext: {
+        id: seq.AccountID,
+        name: seq.AccountName
+      }
+    }));
+  } catch (error) {
+    console.error('Error in getUserSequences:', error);
+    throw new Error(`Failed to fetch user sequences: ${error.message}`);
+  }
+}
+
+//======================================
 // Get Activity for Workspace Tab
 //======================================
 async function getActivityForWorkspace(activityId, userId) {
@@ -61,7 +147,7 @@ async function getActivityForWorkspace(activityId, userId) {
       throw new Error('Activity ID and User ID are required');
     }
 
-    const activity = await sequenceRepo.getActivityContext(activityId, userId);
+    const activity = await workRepo.getActivityContext(activityId, userId);
     
     if (!activity) {
       throw new Error('Activity not found or access denied');
@@ -109,7 +195,7 @@ async function completeActivityWorkflow(activityId, userId, notes = '') {
       throw new Error('Activity ID and User ID are required');
     }
 
-    const result = await sequenceRepo.completeActivityAndGetNext(activityId, userId, notes);
+    const result = await workRepo.completeActivityAndGetNext(activityId, userId, notes);
     
     if (!result.success) {
       throw new Error(result.error || 'Failed to complete activity');
@@ -154,14 +240,14 @@ async function updateActivityWorkspace(activityId, userId, updateData) {
     // Validate update data
     const validatedData = validateUpdateData(updateData);
     
-    const updateResult = await sequenceRepo.updateActivity(activityId, userId, validatedData);
+    const updateResult = await workRepo.updateActivity(activityId, userId, validatedData);
     
     if (!updateResult.success) {
       throw new Error('Activity not found or update failed');
     }
 
     // Return updated activity with context
-    const updatedActivity = await sequenceRepo.getActivityContext(activityId, userId);
+    const updatedActivity = await workRepo.getActivityContext(activityId, userId);
     
     return {
       success: true,
@@ -190,14 +276,14 @@ async function deleteActivityWorkspace(activityId, userId) {
       throw new Error('Activity ID and User ID are required');
     }
 
-    const deleteResult = await sequenceRepo.softDeleteActivity(activityId, userId);
+    const deleteResult = await workRepo.softDeleteActivity(activityId, userId);
     
     if (!deleteResult.success) {
       throw new Error('Activity not found or delete failed');
     }
 
     // Get next activity to suggest
-    const nextActivity = await sequenceRepo.getNextActivity(userId, activityId);
+    const nextActivity = await workRepo.getNextActivity(userId, activityId);
     
     let enhancedNextActivity = null;
     if (nextActivity) {
@@ -229,9 +315,9 @@ async function getWorkDashboard(userId) {
     }
 
     const [summary, sequences, recentActivities] = await Promise.all([
-      sequenceRepo.getWorkDashboardSummary(userId),
-      sequenceRepo.getUserSequences(userId),
-      sequenceRepo.getActivities(userId, { completed: true, sortBy: 'dueDate' })
+      workRepo.getWorkDashboardSummary(userId),
+      workRepo.getUserSequences(userId),
+      workRepo.getActivities(userId, { completed: true, sortBy: 'dueDate' })
     ]);
 
     // Get recent completed activities (last 5)
@@ -278,7 +364,7 @@ async function getNextActivityForWorkflow(userId, currentActivityId = null) {
       throw new Error('User ID is required');
     }
 
-    const nextActivity = await sequenceRepo.getNextActivity(userId, currentActivityId);
+    const nextActivity = await workRepo.getNextActivity(userId, currentActivityId);
     
     if (!nextActivity) {
       return null;
@@ -305,7 +391,7 @@ async function getNextActivityForWorkflow(userId, currentActivityId = null) {
 //======================================
 async function getActivityMetadata() {
   try {
-    const metadata = await sequenceRepo.getActivityMetadata();
+    const metadata = await workRepo.getActivityMetadata();
     
     return {
       priorityLevels: metadata.priorityLevels.map(pl => ({
@@ -331,7 +417,7 @@ async function getUserSequencesForContext(userId) {
       throw new Error('User ID is required');
     }
 
-    const sequences = await sequenceRepo.getUserSequences(userId);
+    const sequences = await workRepo.getUserSequences(userId);
     
     return sequences.map(seq => ({
       ...seq,
@@ -357,7 +443,7 @@ async function getActivitiesByStatusFilter(userId, statusFilter) {
     }
 
     const filterOptions = parseFilterOptions(statusFilter);
-    const activities = await sequenceRepo.getActivities(userId, filterOptions);
+    const activities = await workRepo.getActivities(userId, filterOptions);
     
     const enhancedActivities = activities.map(activity => ({
       ...activity,
@@ -393,7 +479,7 @@ async function getDayViewActivities(userId, date = new Date()) {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const activities = await sequenceRepo.getActivities(userId, {
+    const activities = await workRepo.getActivities(userId, {
       dateFrom: startOfDay,
       dateTo: endOfDay,
       sortBy: 'dueDate'
@@ -438,7 +524,7 @@ async function markActivityComplete(activityId, userId) {
       throw new Error('Activity ID and User ID are required');
     }
 
-    const updateResult = await sequenceRepo.updateActivity(activityId, userId, { completed: 1 });
+    const updateResult = await workRepo.updateActivity(activityId, userId, { completed: 1 });
     
     if (!updateResult.success) {
       throw new Error('Activity not found or completion failed');
@@ -541,46 +627,6 @@ function calculateTimeUntilDue(dueDate, completed) {
   return `${minutes}m`;
 }
 
-function getTimeSince(date) {
-  const now = new Date();
-  const past = new Date(date);
-  const diffMs = now - past;
-  
-  if (diffMs < 60 * 60 * 1000) return `${Math.floor(diffMs / (60 * 1000))}m ago`;
-  if (diffMs < 24 * 60 * 60 * 1000) return `${Math.floor(diffMs / (60 * 60 * 1000))}h ago`;
-  return `${Math.floor(diffMs / (24 * 60 * 60 * 1000))}d ago`;
-}
-
-function isUrgent(dueDate, completed) {
-  if (completed) return false;
-  const now = new Date();
-  const due = new Date(dueDate);
-  return due <= new Date(now.getTime() + 2 * 60 * 60 * 1000) && due >= now; // 2 hours
-}
-
-function filterActivities(activities, filterCriteria) {
-  switch(filterCriteria) {
-    case 'overdue':
-      return activities.filter(a => new Date(a.DueToStart) < new Date() && !a.Completed);
-    case 'urgent':
-      return activities.filter(a => isUrgent(a.DueToStart, a.Completed));
-    case 'high-priority':
-      return activities.filter(a => a.PriorityLevelValue >= 8 && !a.Completed);
-    case 'completed':
-      return activities.filter(a => a.Completed);
-    case 'today':
-      const today = new Date();
-      return activities.filter(a => {
-        const activityDate = new Date(a.DueToStart);
-        return activityDate.toDateString() === today.toDateString();
-      });
-    case 'pending':
-      return activities.filter(a => !a.Completed);
-    default:
-      return activities;
-  }
-}
-
 function calculateTimeSince(date) {
   const now = new Date();
   const past = new Date(date);
@@ -636,6 +682,9 @@ function validateUpdateData(updateData) {
 
 module.exports = {
   getSmartWorkPageData,
+  getActivitiesByUser,
+  getSequencesandItemsByUser,
+  getUserSequences,
   getActivityForWorkspace,
   completeActivityWorkflow,
   updateActivityWorkspace,

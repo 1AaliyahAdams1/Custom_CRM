@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -78,6 +78,18 @@ const WorkPage = ({
   onClearMessages = () => {},
   showStatus = () => {},
 }) => {
+  // Debug: Log all props on each render
+  useEffect(() => {
+    console.log('=== WORKPAGE DEBUG ===');
+    console.log('activities prop:', activities);
+    console.log('activities.length:', activities?.length);
+    console.log('loading prop:', loading);
+    console.log('error prop:', error);
+    console.log('currentSort:', currentSort);
+    console.log('currentFilter:', currentFilter);
+    console.log('=== END DEBUG ===');
+  }, [activities, loading, error, currentSort, currentFilter]);
+
   // Local state for dialogs and forms
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -298,18 +310,69 @@ const WorkPage = ({
               </FormControl>
             </Box>
             
+            {/* DEBUG INFO - Remove this in production */}
+            <Box sx={{ p: 2, backgroundColor: '#f5f5f5', borderRadius: 1, mb: 2 }}>
+              <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold' }}>
+                DEBUG INFO:
+              </Typography>
+              <Typography variant="caption" sx={{ display: 'block' }}>
+                Activities Count: {Array.isArray(activities) ? activities.length : 'Not Array'}
+              </Typography>
+              <Typography variant="caption" sx={{ display: 'block' }}>
+                Loading: {loading.toString()}
+              </Typography>
+              <Typography variant="caption" sx={{ display: 'block' }}>
+                Error: {error || 'None'}
+              </Typography>
+              <Typography variant="caption" sx={{ display: 'block' }}>
+                Current Filter: {currentFilter}
+              </Typography>
+              <Typography variant="caption" sx={{ display: 'block' }}>
+                Current Sort: {currentSort}
+              </Typography>
+            </Box>
+            
             <Typography variant="body2" color="text.secondary">
-              {activities.length} activities
+              {Array.isArray(activities) ? activities.length : 0} activities
             </Typography>
           </Toolbar>
 
           {/* Activities List */}
           <Box sx={{ flex: 1, overflow: 'auto' }}>
             {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4, flexDirection: 'column', alignItems: 'center' }}>
                 <CircularProgress />
-                <Typography variant="body2" sx={{ ml: 2, color: '#666666' }}>
+                <Typography variant="body2" sx={{ mt: 2, color: '#666666' }}>
                   Loading activities...
+                </Typography>
+              </Box>
+            ) : error ? (
+              <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" color="error" sx={{ mb: 1 }}>
+                  Error Loading Activities
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {error}
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  sx={{ mt: 2 }}
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </Button>
+              </Box>
+            ) : !Array.isArray(activities) ? (
+              <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Assignment sx={{ fontSize: 48, color: '#f44336', mb: 2 }} />
+                <Typography variant="h6" color="error" sx={{ mb: 1 }}>
+                  Invalid Data Format
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Activities data is not in the expected format.
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  Expected: Array, Got: {typeof activities}
                 </Typography>
               </Box>
             ) : activities.length === 0 ? (
@@ -318,14 +381,27 @@ const WorkPage = ({
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                   No activities found
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Try adjusting your filter or sort options
                 </Typography>
+                <Button 
+                  variant="outlined" 
+                  onClick={() => onFilterChange('all')}
+                  sx={{ mr: 1 }}
+                >
+                  Show All
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  onClick={() => onFilterChange('pending')}
+                >
+                  Show Pending
+                </Button>
               </Box>
             ) : (
               <List sx={{ p: 0 }}>
                 {activities.map((activity, index) => (
-                  <React.Fragment key={activity.ActivityID}>
+                  <React.Fragment key={activity.ActivityID || index}>
                     <ListItem
                       draggable
                       onDragStart={(e) => onDragStart(e, activity)}
@@ -343,11 +419,11 @@ const WorkPage = ({
                         primary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                             <Typography variant="subtitle2" noWrap sx={{ flex: 1, fontWeight: 500 }}>
-                              {activity.AccountName}
+                              {activity.AccountName || 'Unknown Account'}
                             </Typography>
                             <Chip
                               size="small"
-                              label={activity.Status}
+                              label={activity.Status || 'unknown'}
                               sx={{
                                 backgroundColor: getStatusColor(activity.Status),
                                 color: 'white',
@@ -360,7 +436,7 @@ const WorkPage = ({
                         secondary={
                           <Box>
                             <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0.5 }}>
-                              {activity.ActivityTypeName}
+                              {activity.ActivityTypeName || 'Unknown Type'}
                             </Typography>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <Typography variant="caption" color="text.secondary">
@@ -368,9 +444,9 @@ const WorkPage = ({
                               </Typography>
                               <Chip
                                 size="small"
-                                label={`P${activity.PriorityLevelValue}`}
+                                label={`P${activity.PriorityLevelValue || '?'}`}
                                 sx={{
-                                  backgroundColor: getPriorityColor(activity.PriorityLevelValue),
+                                  backgroundColor: getPriorityColor(activity.PriorityLevelValue || 0),
                                   color: 'white',
                                   fontSize: '0.6rem',
                                   height: 16
@@ -658,92 +734,6 @@ const WorkPage = ({
             )}
           </Box>
         </Box>
-
-        {/* Edit Activity Dialog */}
-        <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Edit Activity</DialogTitle>
-          <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-              <TextField
-                label="Due Start Date & Time"
-                type="datetime-local"
-                value={editFormData.dueToStart}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, dueToStart: e.target.value }))}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-              
-              <TextField
-                label="Due End Date & Time"
-                type="datetime-local"
-                value={editFormData.dueToEnd}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, dueToEnd: e.target.value }))}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-              
-              <FormControl fullWidth>
-                <InputLabel>Priority Level</InputLabel>
-                <Select
-                  value={editFormData.priorityLevelId}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, priorityLevelId: e.target.value }))}
-                  label="Priority Level"
-                >
-                  {activityMetadata.priorityLevels.map((priority) => (
-                    <MenuItem key={priority.PriorityLevelID} value={priority.PriorityLevelID}>
-                      {priority.PriorityLevelName} ({priority.PriorityLevelValue})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleEditSubmit} variant="contained">Save Changes</Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Complete Activity Dialog */}
-        <Dialog open={completeDialogOpen} onClose={() => setCompleteDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Complete Activity</DialogTitle>
-          <DialogContent>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Mark this activity as complete. You can optionally add notes about the completion.
-            </Typography>
-            <TextField
-              label="Completion Notes (Optional)"
-              multiline
-              rows={4}
-              value={completeNotes}
-              onChange={(e) => setCompleteNotes(e.target.value)}
-              fullWidth
-              placeholder="Add any notes about this activity completion..."
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCompleteDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCompleteSubmit} variant="contained" startIcon={<CheckCircle />}>
-              Complete Activity
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-          <DialogTitle>Delete Activity</DialogTitle>
-          <DialogContent>
-            <Typography>
-              Are you sure you want to delete this activity? This action cannot be undone.
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
 
         {/* Status Snackbar */}
         <Snackbar

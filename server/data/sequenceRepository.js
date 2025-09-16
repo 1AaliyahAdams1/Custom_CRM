@@ -133,6 +133,65 @@ async function getActivities(userId, options = {}) {
 }
 
 //============================================
+// Get Activities by User (Simple version for sequences)
+//============================================
+async function getActivitiesByUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT  
+            a.ActivityID, 
+            a.AccountID, 
+            acc.AccountName, 
+            a.TypeID, 
+            at.TypeName AS ActivityTypeName, 
+            at.Description AS ActivityTypeDescription, 
+            a.PriorityLevelID, 
+            pl.PriorityLevelName, 
+            pl.PriorityLevelValue, 
+            a.DueToStart, 
+            a.DueToEnd, 
+            a.Completed, 
+            a.SequenceItemID, 
+            seq.SequenceID, 
+            seq.SequenceName, 
+            seq.SequenceDescription,
+            si.SequenceItemDescription, 
+            si.DaysFromStart,
+            a.Active AS ActivityActive,
+            -- Status calculations
+            CASE 
+              WHEN a.Completed = 1 THEN 'completed'
+              WHEN a.DueToStart < GETDATE() THEN 'overdue'
+              WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) THEN 'urgent'
+              ELSE 'normal'
+            END AS Status
+        FROM Activity a 
+        INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
+        INNER JOIN Account acc ON a.AccountID = acc.AccountID 
+        INNER JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
+        INNER JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
+        LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
+        LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
+        WHERE au.UserID = @UserID 
+          AND a.Active = 1 
+          AND au.Active = 1
+        ORDER BY 
+          CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END,
+          a.DueToStart ASC, 
+          pl.PriorityLevelValue DESC
+      `);
+
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getActivitiesByUser:", err);
+    throw err;
+  }
+}
+
+//============================================
 // Get Single Activity with Full Context
 //============================================
 async function getActivityContext(activityId, userId) {
@@ -211,6 +270,96 @@ async function getActivityContext(activityId, userId) {
     return result.recordset[0] || null;
   } catch (err) {
     console.error("Database error in getActivityContext:", err);
+    throw err;
+  }
+}
+
+//============================================
+// Get Sequences and Items by User
+//============================================
+async function getSequencesandItemsByUser(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT DISTINCT
+            seq.SequenceID,
+            seq.SequenceName,
+            seq.SequenceDescription,
+            seq.Active AS SequenceActive,
+            si.SequenceItemID,
+            si.SequenceItemDescription,
+            si.DaysFromStart,
+            si.Active AS SequenceItemActive,
+            at.TypeID,
+            at.TypeName AS ActivityTypeName,
+            at.Description AS ActivityTypeDescription,
+            pl.PriorityLevelID,
+            pl.PriorityLevelName,
+            pl.PriorityLevelValue,
+            acc.AccountID,
+            acc.AccountName
+        FROM Sequence seq
+        INNER JOIN SequenceItem si ON seq.SequenceID = si.SequenceID AND si.Active = 1
+        INNER JOIN ActivityType at ON si.TypeID = at.TypeID AND at.Active = 1
+        INNER JOIN PriorityLevel pl ON si.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
+        INNER JOIN Account acc ON seq.SequenceID = acc.SequenceID AND acc.Active = 1
+        INNER JOIN AssignedUser au ON acc.AccountID = au.AccountID AND au.Active = 1
+        WHERE au.UserID = @UserID
+          AND seq.Active = 1
+        ORDER BY seq.SequenceName, si.DaysFromStart
+      `);
+
+    // Group by sequence
+    const sequencesMap = new Map();
+    
+    result.recordset.forEach(row => {
+      if (!sequencesMap.has(row.SequenceID)) {
+        sequencesMap.set(row.SequenceID, {
+          SequenceID: row.SequenceID,
+          SequenceName: row.SequenceName,
+          SequenceDescription: row.SequenceDescription,
+          SequenceActive: row.SequenceActive,
+          Accounts: [],
+          Items: []
+        });
+      }
+      
+      const sequence = sequencesMap.get(row.SequenceID);
+      
+      // Add unique accounts
+      if (!sequence.Accounts.find(acc => acc.AccountID === row.AccountID)) {
+        sequence.Accounts.push({
+          AccountID: row.AccountID,
+          AccountName: row.AccountName
+        });
+      }
+      
+      // Add unique items
+      if (!sequence.Items.find(item => item.SequenceItemID === row.SequenceItemID)) {
+        sequence.Items.push({
+          SequenceItemID: row.SequenceItemID,
+          SequenceItemDescription: row.SequenceItemDescription,
+          DaysFromStart: row.DaysFromStart,
+          SequenceItemActive: row.SequenceItemActive,
+          ActivityType: {
+            TypeID: row.TypeID,
+            TypeName: row.ActivityTypeName,
+            Description: row.ActivityTypeDescription
+          },
+          PriorityLevel: {
+            PriorityLevelID: row.PriorityLevelID,
+            PriorityLevelName: row.PriorityLevelName,
+            PriorityLevelValue: row.PriorityLevelValue
+          }
+        });
+      }
+    });
+
+    return Array.from(sequencesMap.values());
+  } catch (err) {
+    console.error("Database error in getSequencesandItemsByUser:", err);
     throw err;
   }
 }
@@ -440,6 +589,11 @@ async function updateActivity(activityId, userId, updateData) {
       request.input("PriorityLevelID", sql.Int, updateData.priorityLevelId);
     }
 
+    if (updateData.completed !== undefined) {
+      updateFields.push("Completed = @Completed");
+      request.input("Completed", sql.Bit, updateData.completed);
+    }
+
     if (updateFields.length === 0) {
       throw new Error("No fields to update");
     }
@@ -573,7 +727,9 @@ async function getActivityMetadata() {
 // =============
 module.exports = {
   getActivities,
+  getActivitiesByUser,
   getActivityContext,
+  getSequencesandItemsByUser,
   getWorkDashboardSummary,
   getNextActivity,
   completeActivityAndGetNext,

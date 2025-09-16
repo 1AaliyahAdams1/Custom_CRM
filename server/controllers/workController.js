@@ -1,8 +1,7 @@
 const workService = require("../services/workService");
-const sequenceRepo = require("../data/sequenceRepository");
 
 //======================================
-// Get Smart Work Page Activities
+// Get Smart Work Page Activities (Main Entry Point)
 //======================================
 async function getActivities(req, res) {
   try {
@@ -55,6 +54,111 @@ async function getActivities(req, res) {
     console.error('Error in getActivities controller:', error);
     res.status(500).json({ 
       error: 'Failed to fetch activities',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+//======================================
+// Get Activities by User (Legacy/Alternative endpoint)
+//======================================
+async function getActivitiesByUser(req, res) {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ 
+        error: 'Valid User ID is required',
+        received: req.params.userId
+      });
+    }
+
+    console.log(`Fetching activities by user ${userId}`);
+    
+    const activities = await workService.getActivitiesByUser(userId);
+    
+    console.log(`Retrieved ${activities.length} activities for user ${userId}`);
+    
+    res.status(200).json({
+      success: true,
+      data: activities,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in getActivitiesByUser controller:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch activities by user',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+//======================================
+// Get Sequences and Items by User
+//======================================
+async function getSequencesAndItemsByUser(req, res) {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ 
+        error: 'Valid User ID is required',
+        received: req.params.userId
+      });
+    }
+
+    console.log(`Fetching sequences and items for user ${userId}`);
+    
+    const sequences = await workService.getSequencesandItemsByUser(userId);
+    
+    console.log(`Retrieved ${sequences.length} sequences for user ${userId}`);
+    
+    res.status(200).json({
+      success: true,
+      data: sequences,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in getSequencesAndItemsByUser controller:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch sequences and items',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+//======================================
+// Get User Sequences for Context
+//======================================
+async function getUserSequences(req, res) {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ 
+        error: 'Valid User ID is required',
+        received: req.params.userId
+      });
+    }
+
+    console.log(`Fetching sequences for user ${userId} workspace context`);
+    
+    const sequences = await workService.getUserSequencesForContext(userId);
+    
+    console.log(`Retrieved ${sequences.length} sequences for user ${userId}`);
+    
+    res.status(200).json({
+      success: true,
+      data: sequences,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in getUserSequences controller:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch user sequences',
       message: error.message,
       timestamp: new Date().toISOString()
     });
@@ -439,44 +543,9 @@ async function getActivityMetadata(req, res) {
   }
 }
 
-//======================================
-// Get User Sequences for Context
-//======================================
-async function getUserSequences(req, res) {
-  try {
-    const userId = parseInt(req.params.userId);
-
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid User ID is required',
-        received: req.params.userId
-      });
-    }
-
-    console.log(`Fetching sequences for user ${userId} workspace context`);
-    
-    const sequences = await workService.getUserSequencesForContext(userId);
-    
-    console.log(`Retrieved ${sequences.length} sequences for user ${userId}`);
-    
-    res.status(200).json({
-      success: true,
-      data: sequences,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in getUserSequences controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch user sequences',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-}
-
 module.exports = {
+  // Main Smart Work functionality
   getActivities,
-  getActivityForWorkspace,
   getActivityForWorkspace,
   completeActivity,
   markComplete,
@@ -484,8 +553,14 @@ module.exports = {
   deleteActivity,
   getWorkDashboard,
   getNextActivity,
-  getActivitiesByStatus,
   getDayView,
-  getActivityMetadata,
-  getUserSequences
+  
+  // Sequence-related functionality
+  getActivitiesByUser,
+  getSequencesAndItemsByUser,
+  getUserSequences,
+  
+  // Filtering and metadata
+  getActivitiesByStatus,
+  getActivityMetadata
 };
