@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -224,6 +225,12 @@ const CompaniesPage = ({
     }
   };
 
+  const navigate = useNavigate();
+
+const handleCreateCompany = () => {
+  navigate('/companies/create');
+};
+
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
@@ -280,7 +287,7 @@ const CompaniesPage = ({
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={onCreate}
+                onClick={handleCreateCompany}
                 sx={{
                   backgroundColor: 'primary.main',
                   '&:hover': {
