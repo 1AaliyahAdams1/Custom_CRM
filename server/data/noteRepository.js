@@ -1,7 +1,7 @@
 const { sql, poolPromise } = require("../dbConfig");
 
 // =======================
-// Helper: get EntityTypeID by TypeName
+// get EntityTypeID by TypeName
 // =======================
 async function getEntityTypeId(typeName) {
   try {
@@ -55,6 +55,7 @@ async function createNote(entityId, entityTypeName, content, userId) {
     request.input("EntityID", sql.Int, entityId);
     request.input("EntityTypeID", sql.Int, entityTypeId);
     request.input("Content", sql.VarChar(255), content);
+    request.input("CreatedBy", sql.Int, userId);
 
     await request.execute("createNote"); // no recordset expected
     return { message: `Note added to ${entityTypeName} successfully` };

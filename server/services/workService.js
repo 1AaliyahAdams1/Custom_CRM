@@ -1,64 +1,140 @@
-const sequenceRepo = require("../data/sequenceRepository");
+const workRepo = require("../data/sequenceRepository"); // Using the combined repository
 
 //======================================
-// Get Work Page Data (Enhanced activities for UI)
+// Get Smart Work Page Data
 //======================================
-async function getWorkPageData(userId, sortCriteria = 'dueDate', filterCriteria = 'all') {
+async function getSmartWorkPageData(userId, options = {}) {
   try {
     if (!userId) {
       throw new Error('User ID is required');
     }
 
-    const allActivities = await sequenceRepo.getActivitiesByUser(userId);
+    // Parse filter and sort options
+    const filterOptions = parseFilterOptions(options.filter);
+    const sortBy = options.sort || 'dueDate';
     
-    // Filter activities based on criteria
-    let filteredActivities = allActivities;
+    // Get activities with database-level filtering
+    const activities = await workRepo.getActivities(userId, {
+      ...filterOptions,
+      sortBy: sortBy
+    });
     
-    if (filterCriteria !== 'all') {
-      filteredActivities = filterActivities(allActivities, filterCriteria);
-    }
-
-    // Work page specific logic: filter to incomplete only (unless filter is 'completed')
-    if (filterCriteria !== 'completed') {
-      filteredActivities = filteredActivities.filter(a => !a.Completed);
-    }
-    
-    // Add work page specific enhancements
-    const enhancedActivities = filteredActivities.map(activity => ({
+    // Enhance activities with client-side calculations
+    const enhancedActivities = activities.map(activity => ({
       ...activity,
-      Status: getActivityStatus(activity.DueToStart, activity.Completed),
-      TimeUntilDue: getTimeUntilDue(activity.DueToStart),
-      IsOverdue: new Date(activity.DueToStart) < new Date() && !activity.Completed,
-      IsUrgent: isUrgent(activity.DueToStart, activity.Completed),
-      IsHighPriority: activity.PriorityLevelValue >= 8
+      TimeUntilDue: calculateTimeUntilDue(activity.DueToStart, activity.Completed),
+      HasSequence: !!activity.SequenceID,
+      SequenceProgress: activity.DaysFromStart ? {
+        current: activity.DaysFromStart,
+        sequenceName: activity.SequenceName
+      } : null
     }));
-    
-    // Apply work page specific sorting
-    const sortedActivities = sortActivities(enhancedActivities, sortCriteria);
-    
-    // Group activities by status for UI
-    const groupedActivities = {
-      overdue: sortedActivities.filter(a => a.Status === 'overdue'),
-      urgent: sortedActivities.filter(a => a.Status === 'urgent'),
-      normal: sortedActivities.filter(a => a.Status === 'normal'),
-      completed: sortedActivities.filter(a => a.Status === 'completed')
-    };
 
-    // Get summary statistics
-    const summary = await sequenceRepo.getActivitiesSummary(userId);
+    // Group activities by status for buckets
+    const buckets = groupActivitiesByStatus(enhancedActivities);
+    
+    // Calculate counts
+    const counts = calculateActivityCounts(enhancedActivities);
 
     return {
-      activities: sortedActivities,
-      groupedActivities: groupedActivities,
-      summary: summary,
-      totalActivities: sortedActivities.length,
-      overdueCount: groupedActivities.overdue.length,
-      urgentCount: groupedActivities.urgent.length,
-      completedCount: groupedActivities.completed.length
+      activities: enhancedActivities,
+      buckets: buckets,
+      counts: counts,
+      totalActivities: enhancedActivities.length,
+      appliedFilters: {
+        filter: options.filter || 'all',
+        sort: sortBy
+      }
     };
   } catch (error) {
-    console.error('Error in getWorkPageData:', error);
+    console.error('Error in getSmartWorkPageData:', error);
     throw new Error(`Failed to fetch work page data: ${error.message}`);
+  }
+}
+
+//======================================
+// Get Activities by User (for sequences)
+//======================================
+async function getActivitiesByUser(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const activities = await workRepo.getActivitiesByUser(userId);
+    
+    // Enhance activities with client-side calculations
+    const enhancedActivities = activities.map(activity => ({
+      ...activity,
+      TimeUntilDue: calculateTimeUntilDue(activity.DueToStart, activity.Completed),
+      HasSequence: !!activity.SequenceID,
+      SequenceProgress: activity.DaysFromStart ? {
+        current: activity.DaysFromStart,
+        sequenceName: activity.SequenceName
+      } : null
+    }));
+
+    return enhancedActivities;
+  } catch (error) {
+    console.error('Error in getActivitiesByUser:', error);
+    throw new Error(`Failed to fetch activities by user: ${error.message}`);
+  }
+}
+
+//======================================
+// Get Sequences and Items by User
+//======================================
+async function getSequencesandItemsByUser(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const sequences = await workRepo.getSequencesandItemsByUser(userId);
+    
+    // Enhance sequences with additional context
+    const enhancedSequences = sequences.map(sequence => ({
+      ...sequence,
+      ItemCount: sequence.Items ? sequence.Items.length : 0,
+      AccountCount: sequence.Accounts ? sequence.Accounts.length : 0,
+      IsActive: sequence.SequenceActive === 1,
+      Items: sequence.Items.map(item => ({
+        ...item,
+        IsHighPriority: item.PriorityLevel.PriorityLevelValue >= 8,
+        IsMedium: item.PriorityLevel.PriorityLevelValue >= 5 && item.PriorityLevel.PriorityLevelValue < 8,
+        IsLow: item.PriorityLevel.PriorityLevelValue < 5
+      }))
+    }));
+
+    return enhancedSequences;
+  } catch (error) {
+    console.error('Error in getSequencesandItemsByUser:', error);
+    throw new Error(`Failed to fetch sequences and items: ${error.message}`);
+  }
+}
+
+//======================================
+// Get User Sequences (simple)
+//======================================
+async function getUserSequences(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const sequences = await workRepo.getUserSequences(userId);
+    
+    return sequences.map(seq => ({
+      ...seq,
+      IsActive: seq.SequenceActive === 1,
+      AccountContext: {
+        id: seq.AccountID,
+        name: seq.AccountName
+      }
+    }));
+  } catch (error) {
+    console.error('Error in getUserSequences:', error);
+    throw new Error(`Failed to fetch user sequences: ${error.message}`);
   }
 }
 
@@ -71,30 +147,36 @@ async function getActivityForWorkspace(activityId, userId) {
       throw new Error('Activity ID and User ID are required');
     }
 
-    // Get activity with enhanced context
-    const activity = await sequenceRepo.getActivityContext(activityId, userId);
+    const activity = await workRepo.getActivityContext(activityId, userId);
     
     if (!activity) {
       throw new Error('Activity not found or access denied');
     }
 
-    // Enhance with status information
+    // Enhance activity with workspace-specific data
     const enhancedActivity = {
       ...activity,
-      Status: getActivityStatus(activity.DueToStart, activity.Completed),
-      TimeUntilDue: getTimeUntilDue(activity.DueToStart),
-      IsOverdue: new Date(activity.DueToStart) < new Date() && !activity.Completed,
-      IsUrgent: isUrgent(activity.DueToStart, activity.Completed),
-      IsHighPriority: activity.PriorityLevelValue >= 8,
-      // Add sequence context
+      TimeUntilDue: calculateTimeUntilDue(activity.DueToStart, activity.Completed),
       HasSequence: !!activity.SequenceID,
       SequenceProgress: activity.DaysFromStart ? {
         current: activity.DaysFromStart,
+        sequenceName: activity.SequenceName,
         hasPrevious: !!activity.PrevSequenceItemID,
         hasNext: !!activity.NextSequenceItemID,
-        previous: activity.PrevSequenceItemDescription,
-        next: activity.NextSequenceItemDescription
-      } : null
+        previous: {
+          id: activity.PrevSequenceItemID,
+          description: activity.PrevSequenceItemDescription,
+          days: activity.PrevDaysFromStart
+        },
+        next: {
+          id: activity.NextSequenceItemID,
+          description: activity.NextSequenceItemDescription,
+          days: activity.NextDaysFromStart
+        }
+      } : null,
+      CanEdit: !activity.Completed,
+      CanComplete: !activity.Completed,
+      CanDelete: true
     };
 
     return enhancedActivity;
@@ -105,44 +187,43 @@ async function getActivityForWorkspace(activityId, userId) {
 }
 
 //======================================
-// Complete Activity and Get Next (Enhanced)
+// Complete Activity and Get Next (Workflow)
 //======================================
-async function completeActivityAndGetNext(activityId, userId, notes = '') {
+async function completeActivityWorkflow(activityId, userId, notes = '') {
   try {
     if (!activityId || !userId) {
       throw new Error('Activity ID and User ID are required');
     }
 
-    // Complete the activity
-    const completionResult = await sequenceRepo.completeActivity(activityId, userId, notes);
+    const result = await workRepo.completeActivityAndGetNext(activityId, userId, notes);
     
-    if (!completionResult.success) {
-      throw new Error('Activity not found or already completed');
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to complete activity');
     }
 
-    // Get next activity
-    const nextActivity = await sequenceRepo.getNextActivity(userId, activityId);
-    
+    // Enhance next activity if available
     let enhancedNextActivity = null;
-    if (nextActivity) {
+    if (result.nextActivity) {
       enhancedNextActivity = {
-        ...nextActivity,
-        Status: getActivityStatus(nextActivity.DueToStart, nextActivity.Completed),
-        TimeUntilDue: getTimeUntilDue(nextActivity.DueToStart),
-        IsOverdue: new Date(nextActivity.DueToStart) < new Date() && !nextActivity.Completed,
-        IsUrgent: isUrgent(nextActivity.DueToStart, nextActivity.Completed),
-        IsHighPriority: nextActivity.PriorityLevelValue >= 8
+        ...result.nextActivity,
+        TimeUntilDue: calculateTimeUntilDue(result.nextActivity.DueToStart, result.nextActivity.Completed),
+        HasSequence: !!result.nextActivity.SequenceID,
+        SequenceProgress: result.nextActivity.DaysFromStart ? {
+          current: result.nextActivity.DaysFromStart,
+          sequenceName: result.nextActivity.SequenceName
+        } : null
       };
     }
 
     return {
-      completed: true,
-      completedActivityId: activityId,
+      success: true,
+      completedActivityId: result.completedActivityId,
       nextActivity: enhancedNextActivity,
-      hasMore: !!nextActivity
+      hasMore: !!enhancedNextActivity,
+      workflowContinues: !!enhancedNextActivity
     };
   } catch (error) {
-    console.error('Error in completeActivityAndGetNext:', error);
+    console.error('Error in completeActivityWorkflow:', error);
     throw new Error(`Failed to complete activity: ${error.message}`);
   }
 }
@@ -150,65 +231,66 @@ async function completeActivityAndGetNext(activityId, userId, notes = '') {
 //======================================
 // Update Activity in Workspace
 //======================================
-async function updateActivityInWorkspace(activityId, userId, updateData) {
+async function updateActivityWorkspace(activityId, userId, updateData) {
   try {
     if (!activityId || !userId) {
       throw new Error('Activity ID and User ID are required');
     }
 
-    const updateResult = await sequenceRepo.updateActivity(activityId, userId, updateData);
+    // Validate update data
+    const validatedData = validateUpdateData(updateData);
+    
+    const updateResult = await workRepo.updateActivity(activityId, userId, validatedData);
     
     if (!updateResult.success) {
       throw new Error('Activity not found or update failed');
     }
 
     // Return updated activity with context
-    const updatedActivity = await sequenceRepo.getActivityContext(activityId, userId);
+    const updatedActivity = await workRepo.getActivityContext(activityId, userId);
     
     return {
       success: true,
       activity: {
         ...updatedActivity,
-        Status: getActivityStatus(updatedActivity.DueToStart, updatedActivity.Completed),
-        TimeUntilDue: getTimeUntilDue(updatedActivity.DueToStart),
-        IsOverdue: new Date(updatedActivity.DueToStart) < new Date() && !updatedActivity.Completed,
-        IsUrgent: isUrgent(updatedActivity.DueToStart, updatedActivity.Completed),
-        IsHighPriority: updatedActivity.PriorityLevelValue >= 8
+        TimeUntilDue: calculateTimeUntilDue(updatedActivity.DueToStart, updatedActivity.Completed),
+        HasSequence: !!updatedActivity.SequenceID,
+        SequenceProgress: updatedActivity.DaysFromStart ? {
+          current: updatedActivity.DaysFromStart,
+          sequenceName: updatedActivity.SequenceName
+        } : null
       }
     };
   } catch (error) {
-    console.error('Error in updateActivityInWorkspace:', error);
+    console.error('Error in updateActivityWorkspace:', error);
     throw new Error(`Failed to update activity: ${error.message}`);
   }
 }
 
 //======================================
-// Soft Delete Activity in Workspace
+// Delete Activity in Workspace
 //======================================
-async function deleteActivityInWorkspace(activityId, userId) {
+async function deleteActivityWorkspace(activityId, userId) {
   try {
     if (!activityId || !userId) {
       throw new Error('Activity ID and User ID are required');
     }
 
-    const deleteResult = await sequenceRepo.softDeleteActivity(activityId, userId);
+    const deleteResult = await workRepo.softDeleteActivity(activityId, userId);
     
     if (!deleteResult.success) {
       throw new Error('Activity not found or delete failed');
     }
 
     // Get next activity to suggest
-    const nextActivity = await sequenceRepo.getNextActivity(userId, activityId);
+    const nextActivity = await workRepo.getNextActivity(userId, activityId);
     
     let enhancedNextActivity = null;
     if (nextActivity) {
       enhancedNextActivity = {
         ...nextActivity,
-        Status: getActivityStatus(nextActivity.DueToStart, nextActivity.Completed),
-        TimeUntilDue: getTimeUntilDue(nextActivity.DueToStart),
-        IsOverdue: new Date(nextActivity.DueToStart) < new Date() && !nextActivity.Completed,
-        IsUrgent: isUrgent(nextActivity.DueToStart, nextActivity.Completed),
-        IsHighPriority: nextActivity.PriorityLevelValue >= 8
+        TimeUntilDue: calculateTimeUntilDue(nextActivity.DueToStart, nextActivity.Completed),
+        HasSequence: !!nextActivity.SequenceID
       };
     }
 
@@ -218,24 +300,107 @@ async function deleteActivityInWorkspace(activityId, userId) {
       nextActivity: enhancedNextActivity
     };
   } catch (error) {
-    console.error('Error in deleteActivityInWorkspace:', error);
+    console.error('Error in deleteActivityWorkspace:', error);
     throw new Error(`Failed to delete activity: ${error.message}`);
   }
 }
 
 //======================================
-// Get Activity Metadata (for editing forms)
+// Get Work Dashboard Summary
+//======================================
+async function getWorkDashboard(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const [summary, sequences, recentActivities] = await Promise.all([
+      workRepo.getWorkDashboardSummary(userId),
+      workRepo.getUserSequences(userId),
+      workRepo.getActivities(userId, { completed: true, sortBy: 'dueDate' })
+    ]);
+
+    // Get recent completed activities (last 5)
+    const recentCompleted = recentActivities
+      .filter(a => a.Completed)
+      .slice(0, 5)
+      .map(activity => ({
+        ...activity,
+        TimeCompleted: calculateTimeSince(activity.DueToEnd || activity.DueToStart)
+      }));
+
+    // Calculate productivity metrics
+    const productivityMetrics = {
+      completionRate: summary.TotalActivities > 0 ? 
+        Math.round((summary.CompletedActivities / summary.TotalActivities) * 100) : 0,
+      overdueRate: summary.PendingActivities > 0 ? 
+        Math.round((summary.OverdueActivities / summary.PendingActivities) * 100) : 0,
+      urgentRate: summary.PendingActivities > 0 ? 
+        Math.round((summary.UrgentActivities / summary.PendingActivities) * 100) : 0
+    };
+
+    return {
+      summary: {
+        ...summary,
+        ...productivityMetrics
+      },
+      sequenceCount: sequences.length,
+      recentCompleted,
+      workflowReady: summary.PendingActivities > 0,
+      needsAttention: summary.OverdueActivities > 0 || summary.UrgentActivities > 0
+    };
+  } catch (error) {
+    console.error('Error in getWorkDashboard:', error);
+    throw new Error(`Failed to fetch work dashboard: ${error.message}`);
+  }
+}
+
+//======================================
+// Get Next Activity for Workflow
+//======================================
+async function getNextActivityForWorkflow(userId, currentActivityId = null) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const nextActivity = await workRepo.getNextActivity(userId, currentActivityId);
+    
+    if (!nextActivity) {
+      return null;
+    }
+
+    return {
+      ...nextActivity,
+      TimeUntilDue: calculateTimeUntilDue(nextActivity.DueToStart, nextActivity.Completed),
+      HasSequence: !!nextActivity.SequenceID,
+      SequenceProgress: nextActivity.DaysFromStart ? {
+        current: nextActivity.DaysFromStart,
+        sequenceName: nextActivity.SequenceName
+      } : null,
+      WorkflowPosition: 'next'
+    };
+  } catch (error) {
+    console.error('Error in getNextActivityForWorkflow:', error);
+    throw new Error(`Failed to fetch next activity: ${error.message}`);
+  }
+}
+
+//======================================
+// Get Activity Metadata
 //======================================
 async function getActivityMetadata() {
   try {
-    const [priorityLevels, activityTypes] = await Promise.all([
-      sequenceRepo.getPriorityLevels(),
-      sequenceRepo.getActivityTypes()
-    ]);
-
+    const metadata = await workRepo.getActivityMetadata();
+    
     return {
-      priorityLevels,
-      activityTypes
+      priorityLevels: metadata.priorityLevels.map(pl => ({
+        ...pl,
+        IsHigh: pl.PriorityLevelValue >= 8,
+        IsMedium: pl.PriorityLevelValue >= 5 && pl.PriorityLevelValue < 8,
+        IsLow: pl.PriorityLevelValue < 5
+      })),
+      activityTypes: metadata.activityTypes
     };
   } catch (error) {
     console.error('Error in getActivityMetadata:', error);
@@ -244,36 +409,57 @@ async function getActivityMetadata() {
 }
 
 //======================================
-// Get User Sequences (for workspace context)
+// Get User Sequences for Context
 //======================================
-async function getUserSequencesForWorkspace(userId) {
+async function getUserSequencesForContext(userId) {
   try {
     if (!userId) {
       throw new Error('User ID is required');
     }
 
-    const sequences = await sequenceRepo.getUserSequences(userId);
-    const sequenceItems = await sequenceRepo.getSequencesandItemsByUser(userId);
-
-    // Group sequence items by sequence
-    const sequenceMap = {};
-    sequences.forEach(seq => {
-      sequenceMap[seq.SequenceID] = {
-        ...seq,
-        items: []
-      };
-    });
-
-    sequenceItems.forEach(item => {
-      if (sequenceMap[item.SequenceID]) {
-        sequenceMap[item.SequenceID].items.push(item);
+    const sequences = await workRepo.getUserSequences(userId);
+    
+    return sequences.map(seq => ({
+      ...seq,
+      IsActive: seq.SequenceActive === 1,
+      AccountContext: {
+        id: seq.AccountID,
+        name: seq.AccountName
       }
-    });
-
-    return Object.values(sequenceMap);
+    }));
   } catch (error) {
-    console.error('Error in getUserSequencesForWorkspace:', error);
+    console.error('Error in getUserSequencesForContext:', error);
     throw new Error(`Failed to fetch user sequences: ${error.message}`);
+  }
+}
+
+//======================================
+// Get Activities by Status Filter
+//======================================
+async function getActivitiesByStatusFilter(userId, statusFilter) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const filterOptions = parseFilterOptions(statusFilter);
+    const activities = await workRepo.getActivities(userId, filterOptions);
+    
+    const enhancedActivities = activities.map(activity => ({
+      ...activity,
+      TimeUntilDue: calculateTimeUntilDue(activity.DueToStart, activity.Completed),
+      HasSequence: !!activity.SequenceID
+    }));
+
+    return {
+      activities: enhancedActivities,
+      filter: statusFilter,
+      count: enhancedActivities.length,
+      buckets: groupActivitiesByStatus(enhancedActivities)
+    };
+  } catch (error) {
+    console.error('Error in getActivitiesByStatusFilter:', error);
+    throw new Error(`Failed to fetch activities by status: ${error.message}`);
   }
 }
 
@@ -286,36 +472,42 @@ async function getDayViewActivities(userId, date = new Date()) {
       throw new Error('User ID is required');
     }
 
-    const allActivities = await sequenceRepo.getActivitiesByUser(userId);
+    // Set date range for the specific day
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
     
-    // Filter for specific day
-    const dayActivities = allActivities.filter(activity => {
-      const activityDate = new Date(activity.DueToStart);
-      return activityDate.toDateString() === date.toDateString();
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const activities = await workRepo.getActivities(userId, {
+      dateFrom: startOfDay,
+      dateTo: endOfDay,
+      sortBy: 'dueDate'
     });
 
-    // Group by hour for calendar view
+    // Group activities by hour
     const hourlyGroups = {};
-    dayActivities.forEach(activity => {
+    activities.forEach(activity => {
       const hour = new Date(activity.DueToStart).getHours();
       const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
+      
       if (!hourlyGroups[timeSlot]) {
         hourlyGroups[timeSlot] = [];
       }
+      
       hourlyGroups[timeSlot].push({
         ...activity,
-        Status: getActivityStatus(activity.DueToStart, activity.Completed),
-        TimeUntilDue: getTimeUntilDue(activity.DueToStart)
+        TimeUntilDue: calculateTimeUntilDue(activity.DueToStart, activity.Completed)
       });
     });
 
     return {
-      date: date,
-      activities: dayActivities,
+      date: date.toDateString(),
+      activities: activities,
       hourlyGroups: hourlyGroups,
-      totalCount: dayActivities.length,
-      completedCount: dayActivities.filter(a => a.Completed).length,
-      pendingCount: dayActivities.filter(a => !a.Completed).length
+      totalCount: activities.length,
+      completedCount: activities.filter(a => a.Completed).length,
+      pendingCount: activities.filter(a => !a.Completed).length
     };
   } catch (error) {
     console.error('Error in getDayViewActivities:', error);
@@ -324,122 +516,95 @@ async function getDayViewActivities(userId, date = new Date()) {
 }
 
 //======================================
-// Get Activities by Status Filter
+// Mark Activity as Complete (Simple)
 //======================================
-async function getActivitiesByStatus(userId, status) {
+async function markActivityComplete(activityId, userId) {
   try {
-    if (!userId) {
-      throw new Error('User ID is required');
+    if (!activityId || !userId) {
+      throw new Error('Activity ID and User ID are required');
     }
 
-    const allActivities = await sequenceRepo.getActivitiesByUser(userId);
+    const updateResult = await workRepo.updateActivity(activityId, userId, { completed: 1 });
     
-    const enhancedActivities = allActivities.map(activity => ({
-      ...activity,
-      Status: getActivityStatus(activity.DueToStart, activity.Completed),
-      TimeUntilDue: getTimeUntilDue(activity.DueToStart),
-      IsOverdue: new Date(activity.DueToStart) < new Date() && !activity.Completed,
-      IsUrgent: isUrgent(activity.DueToStart, activity.Completed),
-      IsHighPriority: activity.PriorityLevelValue >= 8
-    }));
-
-    if (status === 'all') {
-      return enhancedActivities;
+    if (!updateResult.success) {
+      throw new Error('Activity not found or completion failed');
     }
-    
-    return enhancedActivities.filter(a => {
-      if (status === 'pending') return !a.Completed;
-      return a.Status === status;
-    });
-  } catch (error) {
-    console.error('Error in getActivitiesByStatus:', error);
-    throw new Error(`Failed to fetch activities by status: ${error.message}`);
-  }
-}
-
-//======================================
-// Get Next Activity (Enhanced workflow)
-//======================================
-async function getNextActivityForWorkflow(userId, currentActivityId = null) {
-  try {
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
-
-    const nextActivity = await sequenceRepo.getNextActivity(userId, currentActivityId);
-    
-    if (!nextActivity) {
-      return null;
-    }
-
-    // Enhance with status information
-    const enhancedNextActivity = {
-      ...nextActivity,
-      Status: getActivityStatus(nextActivity.DueToStart, nextActivity.Completed),
-      TimeUntilDue: getTimeUntilDue(nextActivity.DueToStart),
-      IsOverdue: new Date(nextActivity.DueToStart) < new Date() && !nextActivity.Completed,
-      IsUrgent: isUrgent(nextActivity.DueToStart, nextActivity.Completed),
-      IsHighPriority: nextActivity.PriorityLevelValue >= 8
-    };
-
-    return enhancedNextActivity;
-  } catch (error) {
-    console.error('Error in getNextActivityForWorkflow:', error);
-    throw new Error(`Failed to fetch next activity: ${error.message}`);
-  }
-}
-
-//======================================
-// Smart Work Dashboard Summary
-//======================================
-async function getWorkDashboardSummary(userId) {
-  try {
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
-
-    const [summary, sequences] = await Promise.all([
-      sequenceRepo.getActivitiesSummary(userId),
-      sequenceRepo.getUserSequences(userId)
-    ]);
-
-    // Get recent activities
-    const recentActivities = await sequenceRepo.getActivitiesByUser(userId);
-    const recentCompleted = recentActivities
-      .filter(a => a.Completed)
-      .sort((a, b) => new Date(b.ActivityUpdated) - new Date(a.ActivityUpdated))
-      .slice(0, 5);
 
     return {
-      summary,
-      sequences: sequences.length,
-      recentCompleted: recentCompleted.map(activity => ({
-        ...activity,
-        TimeCompleted: getTimeSince(activity.ActivityUpdated)
-      })),
-      workflowReady: summary.PendingActivities > 0
+      success: true,
+      completedActivityId: activityId
     };
   } catch (error) {
-    console.error('Error in getWorkDashboardSummary:', error);
-    throw new Error(`Failed to fetch work dashboard summary: ${error.message}`);
+    console.error('Error in markActivityComplete:', error);
+    throw new Error(`Failed to mark activity as complete: ${error.message}`);
   }
 }
 
 //======================================
-// Helper Functions for Work Page Logic
+// Helper Functions
 //======================================
-function getActivityStatus(dueDate, completed) {
-  if (completed) return 'completed';
+
+function parseFilterOptions(filterString) {
+  const options = {};
   
-  const now = new Date();
-  const due = new Date(dueDate);
+  switch (filterString) {
+    case 'overdue':
+      options.completed = false;
+      // Additional overdue logic handled in SQL
+      break;
+    case 'urgent':
+      options.completed = false;
+      // Additional urgent logic handled in SQL
+      break;
+    case 'high-priority':
+      options.completed = false;
+      options.minPriority = 8;
+      break;
+    case 'completed':
+      options.completed = true;
+      break;
+    case 'pending':
+      options.completed = false;
+      break;
+    case 'today':
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endOfToday = new Date(today);
+      endOfToday.setHours(23, 59, 59, 999);
+      options.dateFrom = today;
+      options.dateTo = endOfToday;
+      break;
+    default:
+      // 'all' - no additional filters
+      break;
+  }
   
-  if (due < now) return 'overdue';
-  if (due <= new Date(now.getTime() + 2 * 60 * 60 * 1000)) return 'urgent'; // 2 hours
-  return 'normal';
+  return options;
 }
 
-function getTimeUntilDue(dueDate) {
+function groupActivitiesByStatus(activities) {
+  return {
+    overdue: activities.filter(a => a.Status === 'overdue'),
+    urgent: activities.filter(a => a.Status === 'urgent'),
+    normal: activities.filter(a => a.Status === 'normal'),
+    completed: activities.filter(a => a.Status === 'completed')
+  };
+}
+
+function calculateActivityCounts(activities) {
+  return {
+    total: activities.length,
+    overdue: activities.filter(a => a.IsOverdue === 1).length,
+    urgent: activities.filter(a => a.IsUrgent === 1).length,
+    highPriority: activities.filter(a => a.IsHighPriority === 1).length,
+    completed: activities.filter(a => a.Completed === 1).length,
+    pending: activities.filter(a => a.Completed === 0).length
+  };
+}
+
+function calculateTimeUntilDue(dueDate, completed) {
+  if (completed) return 'Completed';
+  
   const now = new Date();
   const due = new Date(dueDate);
   const diffMs = due - now;
@@ -452,101 +617,83 @@ function getTimeUntilDue(dueDate) {
     return 'Overdue';
   }
   
-  if (diffMs < 60 * 60 * 1000) return `${Math.floor(diffMs / (60 * 1000))}m`;
-  if (diffMs < 24 * 60 * 60 * 1000) return `${Math.floor(diffMs / (60 * 60 * 1000))}h`;
-  return `${Math.floor(diffMs / (24 * 60 * 60 * 1000))}d`;
+  const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+  if (days > 0) return `${days}d`;
+  
+  const hours = Math.floor(diffMs / (60 * 60 * 1000));
+  if (hours > 0) return `${hours}h`;
+  
+  const minutes = Math.floor(diffMs / (60 * 1000));
+  return `${minutes}m`;
 }
 
-function getTimeSince(date) {
+function calculateTimeSince(date) {
   const now = new Date();
   const past = new Date(date);
   const diffMs = now - past;
   
-  if (diffMs < 60 * 60 * 1000) return `${Math.floor(diffMs / (60 * 1000))}m ago`;
-  if (diffMs < 24 * 60 * 60 * 1000) return `${Math.floor(diffMs / (60 * 60 * 1000))}h ago`;
-  return `${Math.floor(diffMs / (24 * 60 * 60 * 1000))}d ago`;
+  const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+  if (days > 0) return `${days}d ago`;
+  
+  const hours = Math.floor(diffMs / (60 * 60 * 1000));
+  if (hours > 0) return `${hours}h ago`;
+  
+  const minutes = Math.floor(diffMs / (60 * 1000));
+  return `${minutes}m ago`;
 }
 
-function isUrgent(dueDate, completed) {
-  if (completed) return false;
-  const now = new Date();
-  const due = new Date(dueDate);
-  return due <= new Date(now.getTime() + 2 * 60 * 60 * 1000) && due >= now; // 2 hours
-}
-
-function filterActivities(activities, filterCriteria) {
-  switch(filterCriteria) {
-    case 'overdue':
-      return activities.filter(a => new Date(a.DueToStart) < new Date() && !a.Completed);
-    case 'urgent':
-      return activities.filter(a => isUrgent(a.DueToStart, a.Completed));
-    case 'high-priority':
-      return activities.filter(a => a.PriorityLevelValue >= 8 && !a.Completed);
-    case 'completed':
-      return activities.filter(a => a.Completed);
-    case 'today':
-      const today = new Date();
-      return activities.filter(a => {
-        const activityDate = new Date(a.DueToStart);
-        return activityDate.toDateString() === today.toDateString();
-      });
-    case 'pending':
-      return activities.filter(a => !a.Completed);
-    default:
-      return activities;
+function validateUpdateData(updateData) {
+  const validatedData = {};
+  
+  if (updateData.dueToStart) {
+    const dueDate = new Date(updateData.dueToStart);
+    if (isNaN(dueDate.getTime())) {
+      throw new Error('Invalid due start date');
+    }
+    validatedData.dueToStart = dueDate;
   }
-}
-
-function sortActivities(activities, sortCriteria) {
-  switch(sortCriteria) {
-    case 'priority':
-      return activities.sort((a, b) => {
-        // First sort by overdue status
-        const aOverdue = new Date(a.DueToStart) < new Date() && !a.Completed ? 0 : 1;
-        const bOverdue = new Date(b.DueToStart) < new Date() && !b.Completed ? 0 : 1;
-        if (aOverdue !== bOverdue) return aOverdue - bOverdue;
-        // Then by priority value
-        return b.PriorityLevelValue - a.PriorityLevelValue;
-      });
-    case 'overdue':
-      return activities.sort((a, b) => {
-        const aOverdue = new Date(a.DueToStart) < new Date() && !a.Completed ? 0 : 1;
-        const bOverdue = new Date(b.DueToStart) < new Date() && !b.Completed ? 0 : 1;
-        return aOverdue - bOverdue || new Date(a.DueToStart) - new Date(b.DueToStart);
-      });
-    case 'account':
-      return activities.sort((a, b) => a.AccountName.localeCompare(b.AccountName));
-    case 'type':
-      return activities.sort((a, b) => a.ActivityTypeName.localeCompare(b.ActivityTypeName));
-    case 'sequence':
-      return activities.sort((a, b) => {
-        if (!a.SequenceName && !b.SequenceName) return 0;
-        if (!a.SequenceName) return 1;
-        if (!b.SequenceName) return -1;
-        return a.SequenceName.localeCompare(b.SequenceName);
-      });
-    default: // 'dueDate'
-      return activities.sort((a, b) => {
-        // Overdue items first
-        const aOverdue = new Date(a.DueToStart) < new Date() && !a.Completed ? 0 : 1;
-        const bOverdue = new Date(b.DueToStart) < new Date() && !b.Completed ? 0 : 1;
-        if (aOverdue !== bOverdue) return aOverdue - bOverdue;
-        // Then by due date
-        return new Date(a.DueToStart) - new Date(b.DueToStart);
-      });
+  
+  if (updateData.dueToEnd) {
+    const endDate = new Date(updateData.dueToEnd);
+    if (isNaN(endDate.getTime())) {
+      throw new Error('Invalid due end date');
+    }
+    validatedData.dueToEnd = endDate;
   }
+  
+  if (updateData.priorityLevelId !== undefined) {
+    const priorityId = parseInt(updateData.priorityLevelId);
+    if (isNaN(priorityId) || priorityId < 1) {
+      throw new Error('Invalid priority level ID');
+    }
+    validatedData.priorityLevelId = priorityId;
+  }
+
+  if (updateData.completed !== undefined) {
+    validatedData.completed = updateData.completed ? 1 : 0;
+  }
+  
+  if (Object.keys(validatedData).length === 0) {
+    throw new Error('No valid update data provided');
+  }
+  
+  return validatedData;
 }
 
 module.exports = {
-  getWorkPageData,
+  getSmartWorkPageData,
+  getActivitiesByUser,
+  getSequencesandItemsByUser,
+  getUserSequences,
   getActivityForWorkspace,
-  completeActivityAndGetNext,
-  updateActivityInWorkspace,
-  deleteActivityInWorkspace,
-  getDayViewActivities,
-  getActivitiesByStatus,
+  completeActivityWorkflow,
+  updateActivityWorkspace,
+  deleteActivityWorkspace,
+  getWorkDashboard,
   getNextActivityForWorkflow,
   getActivityMetadata,
-  getUserSequencesForWorkspace,
-  getWorkDashboardSummary
+  getUserSequencesForContext,
+  getActivitiesByStatusFilter,
+  getDayViewActivities,
+  markActivityComplete
 };

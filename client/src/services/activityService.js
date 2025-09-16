@@ -79,3 +79,119 @@ export const fetchActivitiesByUser = async (userId) => {
     throw error;
   }
 };
+
+// Bulk mark activities as complete
+export const bulkMarkActivitiesComplete = async (activityIds) => {
+  if (!Array.isArray(activityIds) || activityIds.length === 0) {
+    throw new Error("Activity IDs array is required");
+  }
+  
+  try {
+    const response = await api.patch(`${RESOURCE}/bulk/complete`, {
+      activityIds: activityIds
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error marking activities as complete:", error);
+    throw error;
+  }
+};
+
+// Bulk mark activities as incomplete
+export const bulkMarkActivitiesIncomplete = async (activityIds) => {
+  if (!Array.isArray(activityIds) || activityIds.length === 0) {
+    throw new Error("Activity IDs array is required");
+  }
+  
+  try {
+    const response = await api.patch(`${RESOURCE}/bulk/incomplete`, {
+      activityIds: activityIds
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error marking activities as incomplete:", error);
+    throw error;
+  }
+};
+
+
+// // Bulk delete activities
+// export const bulkDeleteActivities = async (activityIds) => {
+//   if (!Array.isArray(activityIds) || activityIds.length === 0) {
+//     throw new Error("Activity IDs array is required");
+//   }
+  
+//   try {
+//     const response = await api.delete(`${RESOURCE}/bulk`, {
+//       data: { activityIds: activityIds }
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error deleting activities:", error);
+//     throw error;
+//   }
+// };
+
+// Bulk update activity status (generic function)
+export const bulkUpdateActivityStatus = async (activityIds, status) => {
+  if (!Array.isArray(activityIds) || activityIds.length === 0) {
+    throw new Error("Activity IDs array is required");
+  }
+  if (!status) {
+    throw new Error("Status is required");
+  }
+  
+  try {
+    const response = await api.patch(`${RESOURCE}/bulk/status`, {
+      activityIds: activityIds,
+      status: status
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating activity status:", error);
+    throw error;
+  }
+};
+
+// Bulk update activity priority
+export const bulkUpdateActivityPriority = async (activityIds, priorityLevelId) => {
+  if (!Array.isArray(activityIds) || activityIds.length === 0) {
+    throw new Error("Activity IDs array is required");
+  }
+  if (!priorityLevelId) {
+    throw new Error("Priority Level ID is required");
+  }
+  
+  try {
+    const response = await api.patch(`${RESOURCE}/bulk/priority`, {
+      activityIds: activityIds,
+      priorityLevelId: priorityLevelId
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating activity priority:", error);
+    throw error;
+  }
+};
+
+// Bulk update activity due dates
+export const bulkUpdateActivityDueDates = async (activityIds, dueToStart, dueToEnd) => {
+  if (!Array.isArray(activityIds) || activityIds.length === 0) {
+    throw new Error("Activity IDs array is required");
+  }
+  if (!dueToStart && !dueToEnd) {
+    throw new Error("At least one due date (start or end) is required");
+  }
+  
+  try {
+    const response = await api.patch(`${RESOURCE}/bulk/due-dates`, {
+      activityIds: activityIds,
+      dueToStart: dueToStart,
+      dueToEnd: dueToEnd
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating activity due dates:", error);
+    throw error;
+  }
+};
