@@ -98,13 +98,13 @@ const navigation = [
     accessKey: "events",
     section: "CRM Management",
   },
-  {
-    name: "Owners",
-    href: "/owners",
-    icon: WorkIcon,
-    accessKey: "owners",
-    section: "CRM Management",
-  },
+  // {
+  //   name: "Owners",
+  //   href: "/owners",
+  //   icon: WorkIcon,
+  //   accessKey: "owners",
+  //   section: "CRM Management",
+  // },
   {
     name: "Discount Codes",
     href: "/discount-codes",

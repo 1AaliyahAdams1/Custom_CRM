@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -364,6 +365,13 @@ const EventsPage = ({
     }
   }).length;
 
+  const navigate = useNavigate();
+  
+  const handleCreateEvent = () => {
+    navigate('/events/create');
+  };
+  
+
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
@@ -438,7 +446,7 @@ const EventsPage = ({
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={onCreate}
+                onClick={handleCreateEvent}
                 sx={{
                   backgroundColor: 'primary.main',
                   '&:hover': {

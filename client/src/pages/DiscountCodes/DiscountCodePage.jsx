@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -687,6 +688,10 @@ const DiscountCodesPage = ({
       delete: "Delete this discount code from the system"
     }
   };
+  const navigate = useNavigate();
+  const handleCreateDiscountCode = () => {
+  navigate('/discount-codes/create');
+};
 
   // Calculate some stats for display
   const activeCodesCount = discountCodes.filter(code => code.IsActive === true || code.IsActive === 'true').length;
@@ -784,7 +789,7 @@ const DiscountCodesPage = ({
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={onCreate}
+                onClick={handleCreateDiscountCode}
                 sx={{
                   backgroundColor: 'primary.main',
                   '&:hover': {

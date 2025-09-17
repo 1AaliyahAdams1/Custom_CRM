@@ -6,8 +6,8 @@ router.get("/", productController.getAllProducts);
 router.get("/:id", productController.getProductById);
 router.post("/", productController.createProduct);
 router.put("/:id", productController.updateProduct);
-router.patch("/deactivate", productController.deactivateProduct);
-router.patch("/reactivate", productController.reactivateProduct);
-router.delete("/:id/delete", productController.deleteProduct);
+router.delete("/products/:id", productController.deleteProduct);
+router.patch("/products/:id/deactivate", productController.deactivateProduct);
+router.patch("/products/:id/reactivate", productController.reactivateProduct);
 
 module.exports = router;
