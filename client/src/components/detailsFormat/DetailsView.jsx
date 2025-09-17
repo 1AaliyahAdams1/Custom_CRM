@@ -1,5 +1,4 @@
-// UniversalDetailView.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Box,
   Card,
@@ -40,13 +39,15 @@ import theme from "../Theme";
 import DetailsActions from "./DetailsActions";
 import SmartDropdown from "../../components/SmartDropdown";
 import AssignUserDialog from "../AssignUserDialog";
+import TableView from "../../components/tableFormat/TableView";
+import { formatters } from "../../utils/formatters";
 import { claimAccount, assignUser } from "../../services/assignService";
 
-export function UniversalDetailView({
+export const UniversalDetailView = React.memo(function UniversalDetailView({
   title,
   item,
   mainFields = [],
-  relatedTabs = [],
+  relatedTabs = [], // Enhanced to support table configurations
   onBack,
   onSave,
   onDelete,
@@ -59,6 +60,9 @@ export function UniversalDetailView({
   customTheme,
   readOnly = false,
   entityType = "entity",
+  // New props for table functionality
+  onRefreshRelatedData,
+  relatedDataActions = {}, // Actions for each related tab type
 }) {
   const [tab, setTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
@@ -66,56 +70,79 @@ export function UniversalDetailView({
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [statusSeverity, setStatusSeverity] = useState("success");
+  
+  // Enhanced tab data management
   const [tabData, setTabData] = useState({});
   const [tabLoading, setTabLoading] = useState({});
+  const [tabSelected, setTabSelected] = useState({});
+  const [tabErrors, setTabErrors] = useState({});
+
+  // Refs to prevent dependency changes
+  const relatedTabsRef = useRef(relatedTabs);
+  const itemRef = useRef(item);
+  const formDataRef = useRef(formData);
+  const tabSelectedRef = useRef(tabSelected);
+
+  // Update refs when values change
+  useEffect(() => {
+    relatedTabsRef.current = relatedTabs;
+    itemRef.current = item;
+    formDataRef.current = formData;
+    tabSelectedRef.current = tabSelected;
+  }, [relatedTabs, item, formData, tabSelected]);
 
   useEffect(() => {
     if (item) setFormData(item);
   }, [item]);
 
-  useEffect(() => {
-    // Load data for the active tab if it has a dataService
-    if (relatedTabs[tab] && relatedTabs[tab].dataService && !tabData[tab]) {
-      loadTabData(tab);
-    }
-  }, [tab, relatedTabs, tabData]);
-
   const activeTheme = customTheme || theme;
 
-  const handleTabChange = (_, newValue) => setTab(newValue);
+  // Stable handlers using refs
+  const handleTabChange = useCallback((_, newValue) => {
+    setTab(newValue);
+  }, []);
 
-  const updateField = (key, value) => setFormData((prev) => ({ ...prev, [key]: value }));
+  const updateField = useCallback((key, value) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
-  const handleSave = async () => {
-    if (onSave) await onSave(formData);
+  const handleSave = useCallback(async () => {
+    if (onSave) await onSave(formDataRef.current);
     setIsEditing(false);
-  };
+  }, [onSave]);
 
-  const handleCancel = () => setIsEditing(false);
+  const handleCancel = useCallback(() => {
+    setIsEditing(false);
+  }, []);
 
-  const handleDelete = async () => {
-    if (onDelete) await onDelete(formData);
-  };
+  const handleDelete = useCallback(async () => {
+    if (onDelete) await onDelete(formDataRef.current);
+  }, [onDelete]);
 
-  const handleAddNote = () => onAddNote?.(formData);
-  const handleAddAttachment = () => onAddAttachment?.(formData);
+  const handleAddNote = useCallback(() => {
+    if (onAddNote) onAddNote(formDataRef.current);
+  }, [onAddNote]);
 
-  const handleClaimAccount = async () => {
+  const handleAddAttachment = useCallback(() => {
+    if (onAddAttachment) onAddAttachment(formDataRef.current);
+  }, [onAddAttachment]);
+
+  const handleClaimAccount = useCallback(async () => {
     try {
-      await claimAccount(formData.AccountID);
-      setStatusMessage(`Account claimed: ${formData.AccountName}`);
+      await claimAccount(formDataRef.current.AccountID);
+      setStatusMessage(`Account claimed: ${formDataRef.current.AccountName}`);
       setStatusSeverity("success");
       setFormData((prev) => ({ ...prev, ownerStatus: "owned" }));
     } catch (err) {
       setStatusMessage(err.message || "Failed to claim account");
       setStatusSeverity("error");
     }
-  };
+  }, []);
 
-  const handleAssignUser = async (employeeId) => {
+  const handleAssignUser = useCallback(async (employeeId) => {
     try {
-      await assignUser(formData.AccountID, employeeId);
-      setStatusMessage(`User assigned to ${formData.AccountName}`);
+      await assignUser(formDataRef.current.AccountID, employeeId);
+      setStatusMessage(`User assigned to ${formDataRef.current.AccountName}`);
       setStatusSeverity("success");
     } catch (err) {
       console.error(err);
@@ -123,31 +150,128 @@ export function UniversalDetailView({
       setStatusSeverity("error");
       throw err;
     }
-  };
+  }, []);
 
-  const loadTabData = async (tabIndex) => {
-    const tabConfig = relatedTabs[tabIndex];
+  // Ultra-stable loadTabData function
+  const loadTabData = useCallback(async (tabIndex) => {
+    const tabConfig = relatedTabsRef.current[tabIndex];
     if (!tabConfig?.dataService) return;
 
-    setTabLoading(prev => ({ ...prev, [tabIndex]: true }));
+    const tabKey = tabConfig.key || tabIndex;
+    
+    setTabLoading(prev => ({ ...prev, [tabKey]: true }));
+    setTabErrors(prev => ({ ...prev, [tabKey]: null }));
+    
     try {
       let data;
       if (typeof tabConfig.dataService === 'function') {
-        data = await tabConfig.dataService(formData);
+        data = await tabConfig.dataService(formDataRef.current);
       } else {
         // Assume it's a service object with a method
-        data = await tabConfig.dataService.fetchData(formData);
+        data = await tabConfig.dataService.fetchData(formDataRef.current);
       }
-      setTabData(prev => ({ ...prev, [tabIndex]: data?.data || data || [] }));
+      
+      // Process data if needed (e.g., for deals with SymbolValue)
+      let processedData = data?.data || data || [];
+      if (tabConfig.processData && typeof tabConfig.processData === 'function') {
+        processedData = tabConfig.processData(processedData);
+      }
+      
+      setTabData(prev => ({ ...prev, [tabKey]: processedData }));
+      
+      // Initialize selection state
+      if (!tabSelectedRef.current[tabKey]) {
+        setTabSelected(prev => ({ ...prev, [tabKey]: [] }));
+      }
     } catch (err) {
       console.error(`Failed to load ${tabConfig.label} data:`, err);
-      setTabData(prev => ({ ...prev, [tabIndex]: [] }));
+      setTabErrors(prev => ({ ...prev, [tabKey]: err.message || `Failed to load ${tabConfig.label}` }));
+      setTabData(prev => ({ ...prev, [tabKey]: [] }));
     } finally {
-      setTabLoading(prev => ({ ...prev, [tabIndex]: false }));
+      setTabLoading(prev => ({ ...prev, [tabKey]: false }));
     }
-  };
+  }, []);
 
-  const formatCellValue = (value, column) => {
+  // Load tab data effect with minimal dependencies
+  useEffect(() => {
+    const currentTab = relatedTabsRef.current[tab];
+    const tabKey = currentTab?.key || tab;
+    
+    if (currentTab?.dataService && !tabData[tabKey]) {
+      loadTabData(tab);
+    }
+  }, [tab, loadTabData]); // Remove tabData from deps to prevent loops
+
+  // Refresh tab data
+  const refreshTabData = useCallback((tabIndex) => {
+    const tabKey = relatedTabsRef.current[tabIndex]?.key || tabIndex;
+    setTabData(prev => ({ ...prev, [tabKey]: undefined }));
+    loadTabData(tabIndex);
+  }, [loadTabData]);
+
+  // Selection handlers for table tabs
+  const handleTabSelectClick = useCallback((tabKey, id) => {
+    setTabSelected(prev => ({
+      ...prev,
+      [tabKey]: prev[tabKey]?.includes(id) 
+        ? prev[tabKey].filter(i => i !== id)
+        : [...(prev[tabKey] || []), id]
+    }));
+  }, []);
+
+  const handleTabSelectAllClick = useCallback((tabKey, tableConfig, event) => {
+    const currentData = tabData[tabKey] || [];
+    
+    if (event.target.checked) {
+      const allIds = currentData.map(item => item[tableConfig.idField]);
+      setTabSelected(prev => ({
+        ...prev,
+        [tabKey]: allIds
+      }));
+    } else {
+      setTabSelected(prev => ({
+        ...prev,
+        [tabKey]: []
+      }));
+    }
+  }, [tabData]);
+
+  // Memoized action handler creation
+  const createTabActionHandler = useCallback((tabKey, actionType) => {
+    return (item) => {
+      const tabConfig = relatedTabsRef.current.find(tab => (tab.key || relatedTabsRef.current.indexOf(tab)) === tabKey);
+      const actions = relatedDataActions[tabKey] || relatedDataActions[tabConfig?.entityType];
+      
+      if (actions && actions[actionType]) {
+        return actions[actionType](item, formDataRef.current);
+      }
+      
+      // Fallback to default actions if specific ones aren't provided
+      switch (actionType) {
+        case 'view':
+          console.log(`View ${tabKey}:`, item);
+          break;
+        case 'edit':
+          console.log(`Edit ${tabKey}:`, item);
+          break;
+        case 'delete':
+          console.log(`Delete ${tabKey}:`, item);
+          if (onRefreshRelatedData) onRefreshRelatedData(tabKey);
+          break;
+        case 'addNote':
+          console.log(`Add note to ${tabKey}:`, item);
+          break;
+        case 'addAttachment':
+          console.log(`Add attachment to ${tabKey}:`, item);
+          break;
+        default:
+          console.log(`Action ${actionType} on ${tabKey}:`, item);
+      }
+    };
+  }, [relatedDataActions, onRefreshRelatedData]);
+
+  // Stable format function
+  const formatCellValue = useCallback((value, column) => {
     if (value === null || value === undefined || value === '') return '-';
 
     switch (column.type) {
@@ -208,87 +332,181 @@ export function UniversalDetailView({
       default:
         return value;
     }
-  };
+  }, []);
 
-  const renderTableTab = (tabConfig, tabIndex) => {
-    const data = tabData[tabIndex] || [];
-    const isLoading = tabLoading[tabIndex];
+  // Memoized tab content renderer
+  const renderTabContent = useCallback((tabConfig, tabIndex) => {
+    const tabKey = tabConfig.key || tabIndex;
+    
+    // If it's a table configuration
+    if (tabConfig.tableConfig) {
+      const data = tabData[tabKey] || [];
+      const isLoading = tabLoading[tabKey];
+      const error = tabErrors[tabKey];
+      const selected = tabSelected[tabKey] || [];
+      const config = tabConfig.tableConfig;
 
-    if (isLoading) {
+      if (error) {
+        return (
+          <Box sx={{ p: 2 }}>
+            <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+            <Button onClick={() => refreshTabData(tabIndex)} variant="outlined">
+              Retry
+            </Button>
+          </Box>
+        );
+      }
+
+      if (isLoading) {
+        return (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <CircularProgress />
+          </Box>
+        );
+      }
+
       return (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-          <CircularProgress />
+        <Box sx={{ p: 2 }}>
+          <TableView
+            data={data}
+            columns={config.columns}
+            idField={config.idField}
+            selected={selected}
+            onSelectClick={(id) => handleTabSelectClick(tabKey, id)}
+            onSelectAllClick={(event) => handleTabSelectAllClick(tabKey, config, event)}
+            showSelection={true}
+            onView={createTabActionHandler(tabKey, 'view')}
+            onEdit={createTabActionHandler(tabKey, 'edit')}
+            onDelete={createTabActionHandler(tabKey, 'delete')}
+            onAddNote={createTabActionHandler(tabKey, 'addNote')}
+            onAddAttachment={createTabActionHandler(tabKey, 'addAttachment')}
+            formatters={formatters}
+            entityType={tabConfig.entityType || 'item'}
+            tooltips={{
+              search: `Search ${tabConfig.label?.toLowerCase()} for this ${entityType}`,
+              filter: `Filter ${tabConfig.label?.toLowerCase()} by various criteria`,
+              columns: `Customize visible columns for ${tabConfig.label?.toLowerCase()}`,
+              actionMenu: {
+                view: `View detailed information for this ${tabConfig.entityType || 'item'}`,
+                edit: `Edit this ${tabConfig.entityType || 'item'}'s information`,
+                delete: `Delete or deactivate this ${tabConfig.entityType || 'item'}`,
+                addNote: `Add internal notes or comments`,
+                addAttachment: `Attach files or documents`
+              }
+            }}
+          />
+          
+          {/* Show count and selection info */}
+          <Box sx={{ 
+            mt: 2, 
+            p: 2, 
+            borderTop: '1px solid #e5e5e5',
+            backgroundColor: '#fafafa',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <Typography variant="body2" sx={{ color: '#666666' }}>
+              Showing {data.length} {tabConfig.label?.toLowerCase()} for {formData.AccountName || formData.name || title}
+            </Typography>
+            {selected.length > 0 && (
+              <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
+                {selected.length} selected
+              </Typography>
+            )}
+          </Box>
         </Box>
       );
     }
 
-    if (!data.length) {
-      return (
-        <Box textAlign="center" py={4}>
-          <Typography variant="body1" color="textSecondary">
-            No {tabConfig.label.toLowerCase()} found
-          </Typography>
-        </Box>
-      );
-    }
+    // Original table rendering for legacy configs
+    if (tabConfig.columns && tabConfig.dataService) {
+      const data = tabData[tabIndex] || [];
+      const isLoading = tabLoading[tabIndex];
 
-    return (
-      <TableContainer component={Paper} elevation={0}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              {tabConfig.columns.map((column, idx) => (
-                <TableCell key={idx} sx={{ fontWeight: 600 }}>
-                  {column.label}
-                </TableCell>
-              ))}
-              {tabConfig.actions && (
-                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
-              )}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.map((row, rowIdx) => (
-              <TableRow key={row.id || rowIdx} hover>
-                {tabConfig.columns.map((column, colIdx) => (
-                  <TableCell key={colIdx}>
-                    {formatCellValue(row[column.key], column)}
+      if (isLoading) {
+        return (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <CircularProgress />
+          </Box>
+        );
+      }
+
+      if (!data.length) {
+        return (
+          <Box textAlign="center" py={4}>
+            <Typography variant="body1" color="textSecondary">
+              No {tabConfig.label.toLowerCase()} found
+            </Typography>
+          </Box>
+        );
+      }
+
+      return (
+        <TableContainer component={Paper} elevation={0}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                {tabConfig.columns.map((column, idx) => (
+                  <TableCell key={idx} sx={{ fontWeight: 600 }}>
+                    {column.label}
                   </TableCell>
                 ))}
                 {tabConfig.actions && (
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {tabConfig.actions.map((action, actionIdx) => (
-                        <Tooltip key={actionIdx} title={action.label}>
-                          <IconButton 
-                            size="small" 
-                            onClick={() => action.onClick(row)}
-                            color={action.color || 'default'}
-                          >
-                            {action.icon}
-                          </IconButton>
-                        </Tooltip>
-                      ))}
-                    </Box>
-                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
                 )}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {data.map((row, rowIdx) => (
+                <TableRow key={row.id || rowIdx} hover>
+                  {tabConfig.columns.map((column, colIdx) => (
+                    <TableCell key={colIdx}>
+                      {formatCellValue(row[column.key], column)}
+                    </TableCell>
+                  ))}
+                  {tabConfig.actions && (
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        {tabConfig.actions.map((action, actionIdx) => (
+                          <Tooltip key={actionIdx} title={<span>{action.label}</span>}>
+                            <IconButton 
+                              size="small" 
+                              onClick={() => action.onClick(row)}
+                              color={action.color || 'default'}
+                            >
+                              {action.icon}
+                            </IconButton>
+                          </Tooltip>
+                        ))}
+                      </Box>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      );
+    }
+
+    // Custom content rendering
+    return tabConfig.content;
+  }, [tabData, tabLoading, tabErrors, tabSelected, refreshTabData, handleTabSelectClick, handleTabSelectAllClick, createTabActionHandler, formatCellValue, formData, title, entityType]);
+
+  // Memoized visible fields
+  const visibleFields = useMemo(() => {
+    return mainFields.filter(
+      (field) =>
+        isEditing ||
+        (formData[field.key] !== undefined &&
+          formData[field.key] !== null &&
+          formData[field.key] !== "")
     );
-  };
+  }, [mainFields, isEditing, formData]);
 
-  const visibleFields = mainFields.filter(
-    (field) =>
-      isEditing ||
-      (formData[field.key] !== undefined &&
-        formData[field.key] !== null &&
-        formData[field.key] !== "")
-  );
-
-  const renderField = (field) => {
+  // Stable field renderer
+  const renderField = useCallback((field) => {
     const value = formData[field.key] ?? "";
 
     if (!isEditing) {
@@ -403,7 +621,7 @@ export function UniversalDetailView({
           />
         );
     }
-  };
+  }, [formData, isEditing, updateField, item]);
 
   if (loading) {
     return (
@@ -522,19 +740,30 @@ export function UniversalDetailView({
                 scrollButtons="auto"
                 sx={{ backgroundColor: "#ffffff", borderBottom: "1px solid #e5e5e5" }}
               >
-                {relatedTabs.map((t, i) => (
-                  <Tab key={i} label={t.label} />
-                ))}
+                {relatedTabs.map((t, i) => {
+                  const tabKey = t.key || i;
+                  const count = tabData[tabKey]?.length || 0;
+                  const label = count > 0 ? `${t.label} (${count})` : t.label;
+                  
+                  return (
+                    <Tab 
+                      key={i} 
+                      label={label}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        '&.Mui-selected': {
+                          color: '#050505',
+                        }
+                      }}
+                    />
+                  );
+                })}
               </Tabs>
-              <Box sx={{ p: 3 }}>
+              <Box>
                 {relatedTabs.map((t, i) => (
                   <Box key={i} sx={{ display: tab === i ? "block" : "none" }}>
-                    {/* Check if it's a table configuration or regular content */}
-                    {t.columns && t.dataService ? (
-                      renderTableTab(t, i)
-                    ) : (
-                      t.content
-                    )}
+                    {renderTabContent(t, i)}
                   </Box>
                 ))}
               </Box>
@@ -552,4 +781,6 @@ export function UniversalDetailView({
       </Box>
     </ThemeProvider>
   );
-}
+});
+
+// export  UniversalDetailView ;

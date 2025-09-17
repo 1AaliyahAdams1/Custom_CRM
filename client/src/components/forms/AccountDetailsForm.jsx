@@ -125,103 +125,103 @@ export default function AccountDetailsForm({ accountId }) {
   };
 
   // Define the related tabs with table configurations
-  const relatedTabs = [
-    {
-      label: "Contacts",
-      dataService: (accountData) => getContactsByAccountId(accountData.AccountID),
-      columns: [
-        { key: "FirstName", label: "First Name" },
-        { key: "LastName", label: "Last Name" },
-        { key: "Title", label: "Title" },
-        { key: "email", label: "Email", type: "email" },
-        { key: "phone", label: "Phone", type: "phone" },
-        { key: "Active", label: "Status", type: "status" },
-      ],
-      actions: [
-        { 
-          label: "View", 
-          icon: <Visibility />, 
-          onClick: handleViewContact,
-          color: "primary"
-        },
-        { 
-          label: "Edit", 
-          icon: <Edit />, 
-          onClick: handleEditContact,
-          color: "secondary"
-        },
-      ]
-    },
-    {
-      label: "Deals",
-      dataService: (accountData) => fetchDealById (accountData.AccountID),
-      columns: [
-        { key: "DealName", label: "Deal Name" },
-        { key: "Stage", label: "Stage", type: "status" },
-        { key: "Amount", label: "Amount", type: "currency" },
-        { key: "Probability", label: "Probability (%)", type: "number" },
-        { key: "CloseDate", label: "Close Date", type: "date" },
-        { key: "OwnerName", label: "Owner" },
-      ],
-      actions: [
-        { 
-          label: "View", 
-          icon: <Visibility />, 
-          onClick: handleViewDeal,
-          color: "primary"
-        },
-      ]
-    },
-    {
-      label: "Activities",
-      dataService: (accountData) => fetchActivityById(accountData.AccountID),
-      columns: [
-        { key: "Subject", label: "Subject" },
-        { key: "ActivityType", label: "Type" },
-        { key: "Status", label: "Status", type: "status" },
-        { key: "DueDate", label: "Due Date", type: "datetime" },
-        { key: "AssignedToName", label: "Assigned To" },
-        { key: "Priority", label: "Priority", type: "status" },
-      ],
-      actions: [
-        { 
-          label: "View", 
-          icon: <Visibility />, 
-          onClick: handleViewActivity,
-          color: "primary"
-        },
-      ]
-    },
-    {
-      label: "Notes",
-      dataService: (accountData) =>getNotesByEntity.fetchByEntity("account", accountData.AccountID),
-      columns: [
-        { key: "Subject", label: "Subject" },
-        { key: "NoteText", label: "Note" },
-        { key: "CreatedByName", label: "Created By" },
-        { key: "CreatedDate", label: "Created Date", type: "datetime" },
-      ],
-    },
-    {
-      label: "Attachments",
-      dataService: (accountData) =>getAttachmentsByEntity                         .fetchByEntity("account", accountData.AccountID),
-      columns: [
-        { key: "FileName", label: "File Name" },
-        { key: "FileSize", label: "Size" },
-        { key: "FileType", label: "Type" },
-        { key: "UploadedByName", label: "Uploaded By" },
-        { key: "UploadedDate", label: "Uploaded Date", type: "datetime" },
-      ],
-      actions: [
-        { 
-          label: "Download", 
-          icon: <Download />, 
-          onClick: handleDownloadAttachment,
-          color: "primary"
-        },
-      ]
-    },
-  ];
+  // const relatedTabs = [
+  //   {
+  //     label: "Contacts",
+  //     dataService: (accountData) => getContactsByAccountId(accountData.AccountID),
+  //     columns: [
+  //       { key: "FirstName", label: "First Name" },
+  //       { key: "LastName", label: "Last Name" },
+  //       { key: "Title", label: "Title" },
+  //       { key: "email", label: "Email", type: "email" },
+  //       { key: "phone", label: "Phone", type: "phone" },
+  //       { key: "Active", label: "Status", type: "status" },
+  //     ],
+  //     actions: [
+  //       { 
+  //         label: "View", 
+  //         icon: <Visibility />, 
+  //         onClick: handleViewContact,
+  //         color: "primary"
+  //       },
+  //       { 
+  //         label: "Edit", 
+  //         icon: <Edit />, 
+  //         onClick: handleEditContact,
+  //         color: "secondary"
+  //       },
+  //     ]
+  //   },
+  //   {
+  //     label: "Deals",
+  //     dataService: (accountData) => fetchDealById (accountData.AccountID),
+  //     columns: [
+  //       { key: "DealName", label: "Deal Name" },
+  //       { key: "Stage", label: "Stage", type: "status" },
+  //       { key: "Amount", label: "Amount", type: "currency" },
+  //       { key: "Probability", label: "Probability (%)", type: "number" },
+  //       { key: "CloseDate", label: "Close Date", type: "date" },
+  //       { key: "OwnerName", label: "Owner" },
+  //     ],
+  //     actions: [
+  //       { 
+  //         label: "View", 
+  //         icon: <Visibility />, 
+  //         onClick: handleViewDeal,
+  //         color: "primary"
+  //       },
+  //     ]
+  //   },
+  //   {
+  //     label: "Activities",
+  //     dataService: (accountData) => fetchActivityById(accountData.AccountID),
+  //     columns: [
+  //       { key: "Subject", label: "Subject" },
+  //       { key: "ActivityType", label: "Type" },
+  //       { key: "Status", label: "Status", type: "status" },
+  //       { key: "DueDate", label: "Due Date", type: "datetime" },
+  //       { key: "AssignedToName", label: "Assigned To" },
+  //       { key: "Priority", label: "Priority", type: "status" },
+  //     ],
+  //     actions: [
+  //       { 
+  //         label: "View", 
+  //         icon: <Visibility />, 
+  //         onClick: handleViewActivity,
+  //         color: "primary"
+  //       },
+  //     ]
+  //   },
+  //   {
+  //     label: "Note",
+  //     dataService: (accountData) =>getNotesByEntity.fetchByEntity("account", accountData.AccountID),
+  //     columns: [
+  //       { key: "Subject", label: "Subject" },
+  //       { key: "NoteText", label: "Note" },
+  //       { key: "CreatedByName", label: "Created By" },
+  //       { key: "CreatedDate", label: "Created Date", type: "datetime" },
+  //     ],
+  //   },
+  //   {
+  //     label: "Attachments",
+  //     dataService: (accountData) =>getAttachmentsByEntity                         .fetchByEntity("account", accountData.AccountID),
+  //     columns: [
+  //       { key: "FileName", label: "File Name" },
+  //       { key: "FileSize", label: "Size" },
+  //       { key: "FileType", label: "Type" },
+  //       { key: "UploadedByName", label: "Uploaded By" },
+  //       { key: "UploadedDate", label: "Uploaded Date", type: "datetime" },
+  //     ],
+  //     actions: [
+  //       { 
+  //         label: "Download", 
+  //         icon: <Download />, 
+  //         onClick: handleDownloadAttachment,
+  //         color: "primary"
+  //       },
+  //     ]
+  //   },
+  // ];
 
   // Header chips
   const headerChips = [];
@@ -252,7 +252,7 @@ export default function AccountDetailsForm({ accountId }) {
         error={error}
         entityType="account"
         headerChips={headerChips}
-        relatedTabs={relatedTabs} // table configurations
+        // relatedTabs={relatedTabs} // table configurations
       />
 
       <NotesPopup open={notesPopupOpen} onClose={() => setNotesPopupOpen(false)} entityType="account" entityId={account?.AccountID} />
