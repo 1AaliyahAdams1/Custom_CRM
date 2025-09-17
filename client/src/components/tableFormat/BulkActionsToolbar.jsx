@@ -8,12 +8,13 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Assignment, PersonAdd, Cancel } from "@mui/icons-material";
-import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
+import { ROUTE_ACCESS, CLAIM_RULES } from "../../utils/auth/routesAccess";
 
 const BulkActionsToolbar = ({
   selectedCount = 0,
   selectedItems = [],
   entityType = "records",
+  onBulkUnclaim,
   onBulkAssign,
   onBulkClaim,
   onClearSelection,
@@ -24,11 +25,11 @@ const BulkActionsToolbar = ({
   const [bulkLoading, setBulkLoading] = useState("");
 
   // Normalize roles to array
-  const roles = Array.isArray(userRoles) 
-    ? userRoles 
-    : typeof userRoles === "string" 
-    ? [userRoles] 
-    : [];
+  const roles = Array.isArray(userRoles)
+    ? userRoles
+    : typeof userRoles === "string"
+      ? [userRoles]
+      : [];
 
   // Helper function to check access using ROUTE_ACCESS
   const hasAccess = (routeKey) => {
@@ -50,22 +51,15 @@ const BulkActionsToolbar = ({
 
   if (selectedCount === 0) return null;
 
-  // Check permissions using ROUTE_ACCESS
   const canAssign = hasAccess("accountAssign");
   const canClaim = hasAccess("accountClaim");
+  const canUnclaim = hasAccess("accountUnclaim");
 
-  // Calculate claimable items based on role and item status
   let claimableCount = 0;
   if (canClaim) {
-    claimableCount = selectedItems.filter(item => {
-      // Different logic for different roles
-      if (roles.includes("Sales Representative")) {
-        return item.ownerStatus === "unowned";
-      } else if (roles.includes("C-level")) {
-        return item.ownerStatus === "n/a" || item.ownerStatus === "unowned";
-      }
-      return false;
-    }).length;
+    claimableCount = selectedItems.filter((item) =>
+      roles.some((role) => CLAIM_RULES[role]?.(item))
+    ).length;
   }
 
   return (
@@ -106,11 +100,11 @@ const BulkActionsToolbar = ({
 
       {/* Right side: actions */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        {/* Bulk Claim - only show if user has claim access */}
+        {/* Bulk Claim */}
         {canClaim && (
           <Tooltip
             title={
-              claimableCount > 0 
+              claimableCount > 0
                 ? `Claim ${claimableCount} ${entityType}${claimableCount !== 1 ? "s" : ""}`
                 : `No ${entityType}s available to claim`
             }
@@ -146,12 +140,46 @@ const BulkActionsToolbar = ({
           </Tooltip>
         )}
 
-        {/* Bulk Assign - only show if user has assign access */}
+        {/* Bulk Unclaim*/}
+        {canUnclaim && (
+          <Tooltip
+            title={`Unclaim ${selectedCount} ${entityType}${selectedCount !== 1 ? "s" : ""
+              }`}
+          >
+            <span>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={
+                  bulkLoading === "unclaim" ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : (
+                    <Cancel /> 
+                  )
+                }
+                onClick={() => handleBulkAction("unclaim", onBulkUnclaim)}
+                disabled={loading || bulkLoading || disabled}
+                sx={{
+                  backgroundColor: "rgba(255,255,255,0.15)",
+                  color: "inherit",
+                  "&:hover": { backgroundColor: "rgba(255,255,255,0.25)" },
+                  "&:disabled": {
+                    backgroundColor: "rgba(255,255,255,0.05)",
+                    color: "rgba(255,255,255,0.5)",
+                  },
+                }}
+              >
+                {bulkLoading === "unclaim" ? "Unclaiming..." : "Unclaim"}
+              </Button>
+            </span>
+          </Tooltip>
+        )}
+
+        {/* Bulk Assign */}
         {canAssign && (
           <Tooltip
-            title={`Assign team members to ${selectedCount} ${entityType}${
-              selectedCount !== 1 ? "s" : ""
-            }`}
+            title={`Assign team members to ${selectedCount} ${entityType}${selectedCount !== 1 ? "s" : ""
+              }`}
           >
             <span>
               <Button

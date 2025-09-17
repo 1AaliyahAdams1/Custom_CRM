@@ -16,10 +16,10 @@ import {
 import { Add, Info } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import TableView from "../../components/tableFormat/TableView";
-import BulkActionsToolbar from "../../components/BulkActionsToolbar";
+import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import theme from "../../components/Theme";
 import { formatters } from "../../utils/formatters";
-import StatusMessage from "../../components/StatusMessage";
+import StatusMessage from "../../components/tableFormat/StatusMessage";
 
 const AccountsPage = ({
   accounts = [],
@@ -36,6 +36,7 @@ const AccountsPage = ({
   onAddNote,
   onAddAttachment,
   onClaimAccount,
+  onUnclaimAccount,
   onAssignUser,
   onFilterChange,
   onBulkClaim,
@@ -106,7 +107,7 @@ const AccountsPage = ({
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ width: "100%", backgroundColor: "#fafafa", minHeight: "100vh", p: 3 }}>
-        
+
         {/* Status Message */}
         {statusMessage && (
           <Box sx={{ mb: 2 }}>
@@ -211,6 +212,7 @@ const AccountsPage = ({
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
               onClaimAccount={onClaimAccount}
+              onUnClaimAccount={onUnclaimAccount}
               onAssignUser={onAssignUser}
               formatters={formatters}
               entityType="account"

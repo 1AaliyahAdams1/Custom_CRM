@@ -1,19 +1,23 @@
-const ALL = ["C-level", "Sales Manager", "Sales Representative"];
+const ALL = ["C-level", "Sales Manager", "Sales Representative", "Customer Support", "Reporter"];
 const MANAGEMENT = ["C-level", "Sales Manager"]; 
+const HR = ["HR", "C-level"];
 const CLEVEL = ["C-level"];
 
 export const ROUTE_ACCESS = {
   // Core
   dashboard: ALL,
-  roles: CLEVEL,
+  roles: HR,
 
   // Accounts
   accounts: ALL,
   accountsDetails: ALL,
   accountsCreate: ALL,
   accountsEdit: ALL,
+
+  //Assign logic
   accountAssign: CLEVEL, 
   accountClaim: ALL, 
+  accountUnclaim: ALL, 
 
   // Contacts
   contacts: ALL,
@@ -83,4 +87,13 @@ export const ROUTE_ACCESS = {
 
   // Settings
   settings: ALL,
+};
+
+export const CLAIM_RULES = {
+  "Sales Representative": (item) => item.ownerStatus === "unowned",
+  "Sales Manager": (item) => item.ownerStatus === "unowned", 
+  "Reporter": (item) => item.ownerStatus === "unowned",   
+  "Customer Support": (item) => item.ownerStatus === "unowned",   
+  "C-level": (item) =>
+    item.ownerStatus === "unowned" || item.ownerStatus === "n/a",
 };

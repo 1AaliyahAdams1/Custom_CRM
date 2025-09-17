@@ -7,7 +7,7 @@ import {
   fetchActiveUnassignedAccounts,
   deactivateAccount,
 } from "../../services/accountService";
-import { claimAccount, assignUser } from "../../services/assignService";
+import { claimAccount, assignUser,removeAssignedUser} from "../../services/assignService";
 import {
   createNote,
   updateNote,
@@ -297,6 +297,28 @@ const AccountsContainer = () => {
     }
   };
 
+  const handleUnclaimAccount = async (account) => {
+    if (!hasAccess("accountUnclaim")) return; // check permission
+
+    try {
+      await removeAssignedUser(account.AccountID); // call your API
+      setStatusMessage(`Account unclaimed: ${account.AccountName}`);
+      setStatusSeverity("success");
+
+      // Update the local account state
+      const updateAccounts = (accounts) =>
+        accounts.map((a) =>
+          a.AccountID === account.AccountID ? { ...a, ownerStatus: "unowned" } : a
+        );
+
+      setAllAccounts(updateAccounts);
+      setFilteredAccounts(updateAccounts);
+    } catch (err) {
+      setStatusMessage(err.message || "Failed to unclaim account");
+      setStatusSeverity("error");
+    }
+  };
+
   // ---------------- SELECTION ----------------
   const handleSelectClick = (id) => {
     setSelected((prev) =>
@@ -411,6 +433,7 @@ const AccountsContainer = () => {
       onAddAttachment={handleAddAttachment}
       onClaimAccount={handleClaimAccount}
       onAssignUser={handleAssignUser}
+      onUnclaimAccount={handleUnclaimAccount}
       onFilterChange={handleFilterChange}
       onBulkClaim={handleBulkClaim}
       onBulkAssign={handleBulkAssign}
