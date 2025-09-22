@@ -18,18 +18,16 @@ async function updateProduct(id, data, changedBy = 2) {
   return await productRepo.updateProduct(id, data, changedBy, 2);
 }
 
-async function deactivateProduct(data, changedBy = 0) {
-
-  return await productRepo.deactivateProduct(data, changedBy, 8);
+async function deleteProduct(productId, changedBy) {
+  return await productRepository.deleteProduct(productId, changedBy);
 }
 
-async function reactivateProduct(data, changedBy = 0) {
-
-  return await productRepo.reactivateProduct(data, changedBy, 7);
+async function deactivateProduct(productId, changedBy) {
+  return await productRepository.deactivateProduct(productId, changedBy);
 }
 
-async function deleteProduct(data, changedBy = 0) {
-  return await productRepo.deleteProduct(data, changedBy, 3);
+async function reactivateProduct(productId, changedBy) {
+  return await productRepository.reactivateProduct(productId, changedBy);
 }
 
 module.exports = {
