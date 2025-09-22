@@ -22,12 +22,108 @@ import { getAllAccounts } from '../../services/accountService';
 import { cityService, jobTitleService } from '../../services/dropdownServices';
 import theme from "../../components/Theme";
 
+// Modular validation function for contacts
+const validateContactField = (fieldName, value) => {
+  if (!value || (typeof value === 'string' && value.trim().length === 0)) {
+    // Required fields validation
+    const requiredFields = ['AccountID', 'PersonID', 'JobTitleID', 'WorkEmail'];
+    if (requiredFields.includes(fieldName)) {
+      return `${fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
+    }
+    return null; // No validation for empty optional fields
+  }
+
+  switch (fieldName) {
+    case 'WorkEmail':
+    case 'personal_email':
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value.trim())) {
+        return 'Invalid email format';
+      }
+      break;
+
+    case 'WorkPhone':
+    case 'personal_mobile':
+      const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
+      if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
+        return 'Invalid phone number - Phone number requires at least 8 numbers';
+      }
+      break;
+
+    case 'linkedin_link':
+      const urlRegex = /^https?:\/\/.+\..+/;
+      if (!urlRegex.test(value.trim())) {
+        return 'Invalid URL - URL requires a prefix ( http:// , https:// ) and a suffix ( .com , .co.za , etc )';
+      }
+      break;
+
+    case 'first_name':
+    case 'surname':
+      if (value.trim().length < 2) {
+        return `${fieldName.replace('_', ' ')} must be at least 2 characters`;
+      } else if (value.trim().length > 100) {
+        return `${fieldName.replace('_', ' ')} must be 100 characters or less`;
+      }
+      break;
+
+    case 'middle_name':
+    case 'Title':
+      if (value.trim().length > 100) {
+        return `${fieldName.replace('_', ' ')} must be 100 characters or less`;
+      }
+      break;
+  }
+
+  return null; // No error
+};
+
+// Validate entire contact data
+const validateContactData = (contactData, personData, isNewPerson) => {
+  const errors = [];
+
+  // Validate contact fields
+  const contactFieldsToValidate = ['AccountID', 'JobTitleID', 'WorkEmail', 'WorkPhone'];
+  contactFieldsToValidate.forEach(field => {
+    const error = validateContactField(field, contactData[field]);
+    if (error) {
+      errors.push(error);
+    }
+  });
+
+  // Validate person fields if creating new person
+  if (isNewPerson) {
+    const personFieldsToValidate = ['first_name', 'surname', 'middle_name', 'Title', 'personal_email', 'personal_mobile', 'linkedin_link'];
+    personFieldsToValidate.forEach(field => {
+      const error = validateContactField(field, personData[field]);
+      if (error) {
+        errors.push(error);
+      }
+    });
+
+    // Required person fields for new person
+    if (!personData.first_name || personData.first_name.trim().length === 0) {
+      errors.push('First name is required for new person');
+    }
+    if (!personData.surname || personData.surname.trim().length === 0) {
+      errors.push('Surname is required for new person');
+    }
+  } else {
+    // Validate PersonID selection for existing person
+    if (!contactData.PersonID) {
+      errors.push('Please select a person');
+    }
+  }
+
+  return errors;
+};
 
 const CreateContactsPage = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const [isNewPerson, setIsNewPerson] = useState(true);
 
@@ -51,6 +147,24 @@ const CreateContactsPage = () => {
     WorkEmail: '',
     WorkPhone: '',
   });
+
+  // Enhanced error display with icon
+  const getFieldError = (fieldName, isPersonField = false) => {
+    const data = isPersonField ? personData : contactData;
+    const touchedKey = `${isPersonField ? 'person' : 'contact'}_${fieldName}`;
+    
+    return touched[touchedKey] && fieldErrors[touchedKey] ? (
+      <span style={{ display: 'flex', alignItems: 'center' }}>
+        <span style={{ color: '#ff4444', marginRight: '4px' }}>✗</span>
+        {fieldErrors[touchedKey]}
+      </span>
+    ) : '';
+  };
+
+  const isFieldInvalid = (fieldName, isPersonField = false) => {
+    const touchedKey = `${isPersonField ? 'person' : 'contact'}_${fieldName}`;
+    return touched[touchedKey] && fieldErrors[touchedKey];
+  };
 
   // Services wrapped for dropdowns
   const accountService = {
@@ -82,6 +196,11 @@ const CreateContactsPage = () => {
     const checked = event.target.checked;
     setIsNewPerson(checked);
 
+    // Clear validation states
+    setFieldErrors({});
+    setTouched({});
+    setError(null);
+
     if (checked) {
       // Clear personData when switching to new person
       setPersonData({
@@ -111,21 +230,87 @@ const CreateContactsPage = () => {
     }
   };
 
-  // Input handlers for personData
+  // Input handlers for personData with validation
   const handlePersonChange = (e) => {
     const { name, value } = e.target;
     setPersonData((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    const touchedKey = `person_${name}`;
+    setTouched(prev => ({
+      ...prev,
+      [touchedKey]: true
+    }));
+
+    // Real-time validation
+    if (touched[touchedKey]) {
+      const error = validateContactField(name, value);
+      setFieldErrors(prev => ({
+        ...prev,
+        [touchedKey]: error || undefined
+      }));
+    }
+
+    if (error) setError(null);
   };
 
-  // Input handlers for contactData
+  const handlePersonBlur = (e) => {
+    const { name, value } = e.target;
+    const touchedKey = `person_${name}`;
+    
+    setTouched(prev => ({
+      ...prev,
+      [touchedKey]: true
+    }));
+
+    const error = validateContactField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [touchedKey]: error || undefined
+    }));
+  };
+
+  // Input handlers for contactData with validation
   const handleContactChange = (e) => {
     const { name, value, type, checked } = e.target;
     setContactData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
+    }));
+
+    const touchedKey = `contact_${name}`;
+    setTouched(prev => ({
+      ...prev,
+      [touchedKey]: true
+    }));
+
+    // Real-time validation
+    if (touched[touchedKey]) {
+      const error = validateContactField(name, value);
+      setFieldErrors(prev => ({
+        ...prev,
+        [touchedKey]: error || undefined
+      }));
+    }
+
+    if (error) setError(null);
+  };
+
+  const handleContactBlur = (e) => {
+    const { name, value } = e.target;
+    const touchedKey = `contact_${name}`;
+    
+    setTouched(prev => ({
+      ...prev,
+      [touchedKey]: true
+    }));
+
+    const error = validateContactField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [touchedKey]: error || undefined
     }));
   };
 
@@ -133,18 +318,23 @@ const CreateContactsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!contactData.AccountID) {
-      setError('Account is required');
-      return;
+    // Mark all fields as touched
+    const allTouched = {};
+    Object.keys(contactData).forEach(key => {
+      allTouched[`contact_${key}`] = true;
+    });
+    if (isNewPerson) {
+      Object.keys(personData).forEach(key => {
+        allTouched[`person_${key}`] = true;
+      });
     }
+    setTouched(allTouched);
 
-    if (isNewPerson && !personData.first_name.trim()) {
-      setError('First name is required for new person');
-      return;
-    }
-
-    if (!isNewPerson && !contactData.PersonID) {
-      setError('Please select a person');
+    // Validate all data
+    const validationErrors = validateContactData(contactData, personData, isNewPerson);
+    
+    if (validationErrors.length > 0) {
+      setError(`Please fix the following errors:\n• ${validationErrors.join('\n• ')}`);
       return;
     }
 
@@ -192,7 +382,18 @@ const CreateContactsPage = () => {
 
     } catch (error) {
       console.error('Error creating contact/person:', error);
-      setError('Failed to create contact. Please try again.');
+      
+      if (error.isValidation) {
+        setError(error.message);
+      } else if (error.response?.status === 409) {
+        setError('Contact with this information already exists');
+      } else if (error.response?.status === 400) {
+        setError(error.response.data?.error || 'Invalid data provided');
+      } else if (error.response?.status >= 500) {
+        setError('Server error. Please try again later');
+      } else {
+        setError('Failed to create contact. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -277,6 +478,8 @@ const CreateContactsPage = () => {
                     placeholder="Search for account..."
                     required
                     disabled={isSubmitting}
+                    error={isFieldInvalid('AccountID', false)}
+                    helperText={getFieldError('AccountID', false)}
                   />
                 </Box>
 
@@ -333,6 +536,8 @@ const CreateContactsPage = () => {
                       customDisplayFormatter={(item) =>
                         `${item.first_name || ''} ${item.surname || ''}`.trim()
                       }
+                      error={isFieldInvalid('PersonID', false)}
+                      helperText={getFieldError('PersonID', false)}
                     />
                   </Box>
                 )}
@@ -343,11 +548,17 @@ const CreateContactsPage = () => {
                     <Box>
                       <TextField
                         fullWidth
-                        label="Title"
+                        label="Title (Optional)"
                         name="Title"
                         value={personData.Title}
                         onChange={handlePersonChange}
+                        onBlur={handlePersonBlur}
                         disabled={isSubmitting}
+                        error={isFieldInvalid('Title', true)}
+                        helperText={getFieldError('Title', true)}
+                        FormHelperTextProps={{
+                          component: 'div'
+                        }}
                       />
                     </Box>
                     <Box>
@@ -357,18 +568,30 @@ const CreateContactsPage = () => {
                         name="first_name"
                         value={personData.first_name}
                         onChange={handlePersonChange}
+                        onBlur={handlePersonBlur}
                         required
                         disabled={isSubmitting}
+                        error={isFieldInvalid('first_name', true)}
+                        helperText={getFieldError('first_name', true)}
+                        FormHelperTextProps={{
+                          component: 'div'
+                        }}
                       />
                     </Box>
                     <Box>
                       <TextField
                         fullWidth
-                        label="Middle Name"
+                        label="Middle Name (Optional)"
                         name="middle_name"
                         value={personData.middle_name}
                         onChange={handlePersonChange}
+                        onBlur={handlePersonBlur}
                         disabled={isSubmitting}
+                        error={isFieldInvalid('middle_name', true)}
+                        helperText={getFieldError('middle_name', true)}
+                        FormHelperTextProps={{
+                          component: 'div'
+                        }}
                       />
                     </Box>
                     <Box>
@@ -378,13 +601,19 @@ const CreateContactsPage = () => {
                         name="surname"
                         value={personData.surname}
                         onChange={handlePersonChange}
+                        onBlur={handlePersonBlur}
                         required
                         disabled={isSubmitting}
+                        error={isFieldInvalid('surname', true)}
+                        helperText={getFieldError('surname', true)}
+                        FormHelperTextProps={{
+                          component: 'div'
+                        }}
                       />
                     </Box>
                     <Box>
                       <SmartDropdown
-                        label="City"
+                        label="City (Optional)"
                         name="CityID"
                         value={personData.CityID}
                         onChange={handlePersonChange}
@@ -398,38 +627,56 @@ const CreateContactsPage = () => {
                     <Box>
                       <TextField
                         fullWidth
-                        label="Personal Email"
+                        label="Personal Email (Optional)"
                         name="personal_email"
                         value={personData.personal_email}
                         onChange={handlePersonChange}
+                        onBlur={handlePersonBlur}
                         type="email"
                         disabled={isSubmitting}
+                        error={isFieldInvalid('personal_email', true)}
+                        helperText={getFieldError('personal_email', true)}
+                        FormHelperTextProps={{
+                          component: 'div'
+                        }}
                       />
                     </Box>
                     <Box>
                       <TextField
                         fullWidth
-                        label="Personal Mobile"
+                        label="Personal Mobile (Optional)"
                         name="personal_mobile"
                         value={personData.personal_mobile}
                         onChange={handlePersonChange}
+                        onBlur={handlePersonBlur}
                         disabled={isSubmitting}
+                        error={isFieldInvalid('personal_mobile', true)}
+                        helperText={getFieldError('personal_mobile', true)}
+                        FormHelperTextProps={{
+                          component: 'div'
+                        }}
                       />
                     </Box>
                     <Box>
                       <TextField
                         fullWidth
-                        label="LinkedIn Link"
+                        label="LinkedIn Link (Optional)"
                         name="linkedin_link"
                         value={personData.linkedin_link}
                         onChange={handlePersonChange}
+                        onBlur={handlePersonBlur}
                         disabled={isSubmitting}
+                        error={isFieldInvalid('linkedin_link', true)}
+                        helperText={getFieldError('linkedin_link', true)}
+                        FormHelperTextProps={{
+                          component: 'div'
+                        }}
                       />
                     </Box>
                   </>
                 )}
 
-                {/* Job Title Dropdown */}
+                {/* Job Title Dropdown - Required */}
                 <Box>
                   <SmartDropdown
                     label="Job Title"
@@ -440,11 +687,14 @@ const CreateContactsPage = () => {
                     displayField="JobTitleName"
                     valueField="JobTitleID"
                     placeholder="Search for job title..."
+                    required
                     disabled={isSubmitting}
+                    error={isFieldInvalid('JobTitleID', false)}
+                    helperText={getFieldError('JobTitleID', false)}
                   />
                 </Box>
 
-                {/* Work Email */}
+                {/* Work Email - Required */}
                 <Box>
                   <TextField
                     fullWidth
@@ -452,20 +702,33 @@ const CreateContactsPage = () => {
                     name="WorkEmail"
                     value={contactData.WorkEmail}
                     onChange={handleContactChange}
+                    onBlur={handleContactBlur}
                     type="email"
+                    required
                     disabled={isSubmitting}
+                    error={isFieldInvalid('WorkEmail', false)}
+                    helperText={getFieldError('WorkEmail', false)}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
                   />
                 </Box>
 
-                {/* Work Phone */}
+                {/* Work Phone - Optional */}
                 <Box>
                   <TextField
                     fullWidth
-                    label="Work Phone"
+                    label="Work Phone (Optional)"
                     name="WorkPhone"
                     value={contactData.WorkPhone}
                     onChange={handleContactChange}
+                    onBlur={handleContactBlur}
                     disabled={isSubmitting}
+                    error={isFieldInvalid('WorkPhone', false)}
+                    helperText={getFieldError('WorkPhone', false)}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
                   />
                 </Box>
               </Box>
