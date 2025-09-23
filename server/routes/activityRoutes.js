@@ -123,4 +123,40 @@ module.exports = router;
 //   activityController.bulkUpdateActivityDueDates
 // );
 
+// // Bulk Operations 
+// router.patch(
+//   "/bulk/complete",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level", "Sales Manager"], "activity"),
+//   activityController.bulkMarkActivitiesComplete
+// );
+
+// router.patch(
+//   "/bulk/incomplete",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level", "Sales Manager"], "activity"),
+//   activityController.bulkMarkActivitiesIncomplete
+// );
+
+// router.patch(
+//   "/bulk/status",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level", "Sales Manager"], "activity"),
+//   activityController.bulkUpdateActivityStatus
+// );
+
+// router.patch(
+//   "/bulk/priority",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level", "Sales Manager"], "activity"),
+//   activityController.bulkUpdateActivityPriority
+// );
+
+// router.patch(
+//   "/bulk/due-dates",
+//   authenticateJWT,
+//   authorizeRoleDynamic(["C-level", "Sales Manager"], "activity"),
+//   activityController.bulkUpdateActivityDueDates
+// );
+
 // module.exports = router;

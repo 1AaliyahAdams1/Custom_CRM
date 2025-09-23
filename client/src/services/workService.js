@@ -14,6 +14,18 @@ const RESOURCE = "/work";
  * @returns {Promise<Object>} Work page data with activities
  */
 export const getWorkPageData = async (userId, sortCriteria = 'dueDate', filter = 'all') => {
+// =======================
+// SMART WORK PAGE SERVICES
+// =======================
+
+/**
+ * Get smart work page data with sorting and filtering
+ * @param {number} userId - User ID
+ * @param {string} sortCriteria - Sort criteria (dueDate, priority, account, type, sequence, status)
+ * @param {string} filter - Filter type (all, overdue, urgent, high-priority, today, pending, completed)
+ * @returns {Promise<Object>} Work page data with activities
+ */
+export const getWorkPageData = async (userId, sortCriteria = 'dueDate', filter = 'all') => {
   if (!userId) throw new Error("User ID is required");
   
   try {
@@ -90,6 +102,13 @@ export const getActivityForWorkspace = async (activityId, userId) => {
   }
 };
 
+/**
+ * Complete activity using smart workflow (gets next activity automatically)
+ * @param {number} activityId - Activity ID to complete
+ * @param {number} userId - User ID
+ * @param {string} notes - Optional completion notes
+ * @returns {Promise<Object>} Completion result with next activity
+ */
 /**
  * Complete activity using smart workflow (gets next activity automatically)
  * @param {number} activityId - Activity ID to complete
@@ -193,10 +212,17 @@ export const deleteActivity = async (activityId, userId) => {
     };
   } catch (error) {
     console.error("Error deleting activity:", error);
+    console.error("Error deleting activity:", error);
     throw error;
   }
 };
 
+/**
+ * Get activities by status filter
+ * @param {number} userId - User ID
+ * @param {string} status - Status filter (overdue, urgent, normal, completed, etc.)
+ * @returns {Promise<Object>} Filtered activities
+ */
 /**
  * Get activities by status filter
  * @param {number} userId - User ID
@@ -229,6 +255,13 @@ export const getActivitiesByStatus = async (userId, status) => {
  * @returns {Promise<Object>} Next activity data
  */
 export const getNextActivity = async (userId, currentActivityId = null) => {
+/**
+ * Get next activity in smart workflow
+ * @param {number} userId - User ID
+ * @param {number} currentActivityId - Current activity to exclude (optional)
+ * @returns {Promise<Object>} Next activity data
+ */
+export const getNextActivity = async (userId, currentActivityId = null) => {
   if (!userId) throw new Error("User ID is required");
 
   try {
@@ -246,6 +279,7 @@ export const getNextActivity = async (userId, currentActivityId = null) => {
       data: response.data
     };
   } catch (error) {
+    console.error("Error fetching next activity:", error);
     console.error("Error fetching next activity:", error);
     throw error;
   }
@@ -266,6 +300,7 @@ export const getActivityMetadata = async () => {
       data: response.data
     };
   } catch (error) {
+    console.error("Error fetching activity metadata:", error);
     console.error("Error fetching activity metadata:", error);
     throw error;
   }
