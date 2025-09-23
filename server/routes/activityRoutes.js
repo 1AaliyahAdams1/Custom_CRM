@@ -10,6 +10,7 @@ router.patch("/:id/deactivate", activityController.deactivateActivity);
 router.patch("/:id/reactivate", activityController.reactivateActivity);
 router.delete("/:id/delete", activityController.deleteActivity);
 
+
 // Bulk Operations Routes
 router.patch("/bulk/complete", activityController.bulkMarkActivitiesComplete);
 router.patch("/bulk/incomplete", activityController.bulkMarkActivitiesIncomplete);

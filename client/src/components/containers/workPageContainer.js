@@ -20,8 +20,8 @@ const WorkPageContainer = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [refreshFlag, setRefreshFlag] = useState(false);
 
-  // Filter and sort state
-  const [currentSort, setCurrentSort] = useState('dueDate');  // Changed from 'overdue' to 'dueDate'
+  // Filter and sort state - Fix: These need to be properly managed
+  const [currentSort, setCurrentSort] = useState('dueDate');
   const [currentFilter, setCurrentFilter] = useState('all');
 
   // Debug logging for state changes
@@ -52,67 +52,64 @@ const WorkPageContainer = () => {
   const userId = storedUser.UserID || storedUser.id || null;
 
   // ---------------- FETCH ACTIVITIES ----------------
-// Replace your fetchActivities function in WorkPageContainer.js with this:
-
-const fetchActivities = useCallback(async () => {
-  if (!userId) {
-    setError("User ID not found. Please log in again.");
-    return;
-  }
-
-  console.log('=== FETCH ACTIVITIES DEBUG ===');
-  console.log('UserId:', userId);
-  console.log('CurrentSort:', currentSort);
-  console.log('CurrentFilter:', currentFilter);
-  console.log('About to call getWorkPageData...');
-
-  setLoading(true);
-  setError(null);
-  
-  try {
-    const response = await getWorkPageData(userId, currentSort, currentFilter);
-    console.log('=== RESPONSE DEBUG ===');
-    console.log('Full response:', response);
-    
-    // The service should return { activities: [...], buckets: {...}, counts: {...} }
-    let activitiesData = [];
-    
-    if (response && Array.isArray(response.activities)) {
-      // Expected structure from fixed service
-      activitiesData = response.activities;
-      console.log('Found activities in response.activities:', activitiesData.length);
-    } else if (Array.isArray(response)) {
-      // Fallback: direct array
-      activitiesData = response;
-      console.log('Response is direct array:', activitiesData.length);
-    } else {
-      console.warn('=== UNEXPECTED RESPONSE STRUCTURE ===');
-      console.warn('Response:', response);
-      console.warn('Could not find activities array in response');
-      activitiesData = [];
+  const fetchActivities = useCallback(async () => {
+    if (!userId) {
+      setError("User ID not found. Please log in again.");
+      return;
     }
+
+    console.log('=== CONTAINER FETCH DEBUG ===');
+    console.log('UserId:', userId);
+    console.log('CurrentSort:', currentSort);
+    console.log('CurrentFilter:', currentFilter);
+
+    setLoading(true);
+    setError(null);
     
-    console.log('=== FINAL ACTIVITIES DEBUG ===');
-    console.log('Setting activities array with length:', activitiesData.length);
-    console.log('Sample activity:', activitiesData[0]);
-    
-    setActivities(activitiesData);
-    
-    if (activitiesData.length === 0) {
-      console.warn('=== NO ACTIVITIES WARNING ===');
-      console.warn('Backend returned 0 activities');
-      console.warn('Current filter:', currentFilter);
-      console.warn('Current sort:', currentSort);
-      console.warn('Try changing filter to "pending" or "all"');
+    try {
+      // Call the service with the current sort and filter
+      const workPageData = await getWorkPageData(userId, currentSort, currentFilter);
+      
+      console.log('=== CONTAINER RECEIVED DATA ===');
+      console.log('Full workPageData:', workPageData);
+      console.log('Type of workPageData:', typeof workPageData);
+      console.log('workPageData.activities:', workPageData?.activities);
+      console.log('workPageData.activities length:', workPageData?.activities?.length);
+      
+      // Extract activities array from the data structure
+      let activitiesArray = [];
+      
+      if (workPageData && Array.isArray(workPageData.activities)) {
+        activitiesArray = workPageData.activities;
+        console.log('Extracted activities array with length:', activitiesArray.length);
+      } else {
+        console.error('Invalid data structure received');
+        console.error('Expected: { activities: [...] }');
+        console.error('Received:', workPageData);
+      }
+      
+      console.log('=== FINAL SET STATE ===');
+      console.log('Setting activities with length:', activitiesArray.length);
+      if (activitiesArray.length > 0) {
+        console.log('Sample activity from container:', activitiesArray[0]);
+      }
+      
+      // Set the activities state with the extracted array
+      setActivities(activitiesArray);
+      
+      if (activitiesArray.length === 0) {
+        console.warn('No activities returned - check filter/sort settings');
+      }
+      
+    } catch (err) {
+      console.error('CONTAINER FETCH ERROR:', err);
+      console.error('Error message:', err.message);
+      console.error('Error response:', err.response?.data);
+      setError(err.message || "Failed to load activities. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error('=== FETCH ERROR ===', err);
-    console.error('Error details:', err.response?.data || err.message);
-    setError(err.message || "Failed to load activities. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-}, [userId, currentSort, currentFilter]);
+  }, [userId, currentSort, currentFilter]);
 
   // ---------------- FETCH METADATA ----------------
   const fetchMetadata = useCallback(async () => {
@@ -129,24 +126,27 @@ const fetchActivities = useCallback(async () => {
   // ---------------- EFFECTS ----------------
   useEffect(() => {
     fetchActivities();
-  }, [fetchActivities, refreshFlag]);
+  }, [fetchActivities]);
 
   useEffect(() => {
     fetchMetadata();
   }, [fetchMetadata]);
 
   // ---------------- FILTER & SORT HANDLERS ----------------
-  const handleSortChange = (sortBy) => {
+  // FIX: These handlers now properly update state and trigger re-fetch
+  const handleSortChange = useCallback((sortBy) => {
     console.log('=== SORT CHANGE DEBUG ===');
     console.log('Changing sort from:', currentSort, 'to:', sortBy);
     setCurrentSort(sortBy);
-  };
+    // The useEffect with fetchActivities dependency will handle the re-fetch
+  }, [currentSort]);
 
-  const handleFilterChange = (filterType) => {
+  const handleFilterChange = useCallback((filterType) => {
     console.log('=== FILTER CHANGE DEBUG ===');
     console.log('Changing filter from:', currentFilter, 'to:', filterType);
     setCurrentFilter(filterType);
-  };
+    // The useEffect with fetchActivities dependency will handle the re-fetch
+  }, [currentFilter]);
 
   // ---------------- TAB MANAGEMENT ----------------
   const handleActivityClick = async (activity) => {
