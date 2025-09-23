@@ -287,6 +287,7 @@ const getActivityMetadata = async (req, res) => {
 };
 
 module.exports = {
+  // Main Smart Work functionality
   getActivities,
   getActivitiesByUser,
   getActivityForWorkspace,
