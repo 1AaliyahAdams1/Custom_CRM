@@ -54,7 +54,7 @@ const EditEventPage = lazy(() => import("./pages/Events/EditEventsPage"));
 
 // Discount Codes
 const DiscountCodesPage = lazy(() => import("./pages/DiscountCodes/DiscountCodePage"));
-const DiscountCodesDetailsPage = lazy(() => import("./pages/DiscountCodes/DiscountCodeDetails"));
+const DiscountCodesDetailsPage = lazy(() => import("./pages/DiscountCodes/DiscountCodeDetailsPage"));
 const CreateDiscountCodePage = lazy(() => import("./pages/DiscountCodes/CreateDiscountCodePage"));
 const EditDiscountCodePage = lazy(() => import("./pages/DiscountCodes/EditDiscountCodePage"));
 
