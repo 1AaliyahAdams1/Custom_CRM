@@ -315,6 +315,15 @@ const AppRoutes = () => {
         }
       />
 
+      <Route
+        path="/companies/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.companiesDetails}> 
+            <CompaniesDetailsPage />
+          </PrivateRoute>
+        }
+      />
+
 
       {/* --- Events Routes --- */}
       <Route
@@ -338,6 +347,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsEdit}>
             <EditEventPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/events/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsDetails}>
+            <EventsDetailsPage />
           </PrivateRoute>
         }
       />
@@ -382,6 +399,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesEdit}>
             <EditDiscountCodePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/discount-codes/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesDetails}>
+            <DiscountCodesDetailsPage />
           </PrivateRoute>
         }
       />
