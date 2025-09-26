@@ -1,396 +1,305 @@
 const workService = require("../services/workService");
-const sequenceRepo = require("../data/sequenceRepository");
 
-// Get work page activities with sorting and filtering
-async function getActivities(req, res) {
+//======================================
+// Get activities with filtering (main work page)
+//======================================
+const getActivities = async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const sortCriteria = req.query.sort || 'dueDate';
-    const filterCriteria = req.query.filter || 'all';
+    const userId = parseInt(req.params.userId, 10);
+    const sortBy = req.query.sort || 'dueDate';
+    const filter = req.query.filter || 'all';
 
     if (!userId || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid User ID is required',
-        received: req.params.userId
-      });
+      return res.status(400).json({ error: "Valid User ID is required" });
     }
 
-    console.log(`Fetching work page data for user ${userId} with sort: ${sortCriteria}, filter: ${filterCriteria}`);
-    
-    const workPageData = await workService.getWorkPageData(userId, sortCriteria, filterCriteria);
-    
-    console.log(`Retrieved ${workPageData.totalActivities} activities for user ${userId}`);
-    
-    res.status(200).json({
-      success: true,
-      data: workPageData,
-      timestamp: new Date().toISOString()
+    const data = await workService.getSmartWorkPageData(userId, {
+      sort: sortBy,
+      filter: filter
     });
-  } catch (error) {
-    console.error('Error in getActivities controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch activities',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
+    
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Get single activity for workspace tab
-async function getActivityForWorkspace(req, res) {
+//======================================
+// Get activities by user 
+//======================================
+const getActivitiesByUser = async (req, res) => {
   try {
-    const activityId = parseInt(req.params.activityId);
-    const userId = parseInt(req.params.userId);
+    const userId = parseInt(req.params.userId, 10);
+    
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: "Valid User ID is required" });
+    }
+
+    const data = await workService.getActivitiesByUser(userId);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get activity by ID for workspace
+//======================================
+const getActivityForWorkspace = async (req, res) => {
+  try {
+    const activityId = parseInt(req.params.activityId, 10);
+    const userId = parseInt(req.params.userId, 10);
 
     if (!activityId || !userId || isNaN(activityId) || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid Activity ID and User ID are required',
-        received: { activityId: req.params.activityId, userId: req.params.userId }
-      });
+      return res.status(400).json({ error: "Valid Activity ID and User ID are required" });
     }
 
-    console.log(`Fetching activity ${activityId} for workspace for user ${userId}`);
+    const activity = await workService.getActivityByID(activityId, userId);
     
-    const activity = await workService.getActivityForWorkspace(activityId, userId);
-    
-    res.status(200).json({
-      success: true,
-      data: activity,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in getActivityForWorkspace controller:', error);
-    const statusCode = error.message.includes('not found') ? 404 : 500;
-    res.status(statusCode).json({ 
-      error: 'Failed to fetch activity',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-}
+    if (!activity) {
+      return res.status(404).json({ error: "Activity not found" });
+    }
 
-// Complete an activity and get next
-async function completeActivity(req, res) {
+    res.status(200).json(activity);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Update activity
+//======================================
+const updateActivity = async (req, res) => {
   try {
-    const activityId = parseInt(req.params.id);
-    const userId = parseInt(req.body.userId);
-    const notes = req.body.notes || '';
+    const activityId = parseInt(req.params.activityId, 10);
+    const userId = parseInt(req.params.userId, 10);
 
     if (!activityId || !userId || isNaN(activityId) || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid Activity ID and User ID are required',
-        received: { activityId: req.params.id, userId: req.body.userId }
-      });
+      return res.status(400).json({ error: "Valid Activity ID and User ID are required" });
     }
 
-    console.log(`Completing activity ${activityId} for user ${userId}`);
-    
-    const result = await workService.completeActivityAndGetNext(activityId, userId, notes);
-    
-    console.log(`Activity ${activityId} completed. Next activity available: ${!!result.nextActivity}`);
-    
-    res.status(200).json({
-      success: true,
-      data: result,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in completeActivity controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to complete activity',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
+    await workService.updateActivity(activityId, userId, req.body);
+    res.status(200).json({ message: "Activity updated successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Update activity in workspace
-async function updateActivity(req, res) {
+//======================================
+// Complete activity and get next
+//======================================
+const completeActivity = async (req, res) => {
   try {
-    const activityId = parseInt(req.params.activityId);
-    const userId = parseInt(req.params.userId); // Get from params for consistency
-    const updateData = req.body; // The entire body is the update data
+    const activityId = parseInt(req.params.id, 10);
+    const userId = parseInt(req.body.userId, 10);
 
     if (!activityId || !userId || isNaN(activityId) || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid Activity ID and User ID are required',
-        received: { activityId: req.params.activityId, userId: req.params.userId }
-      });
+      return res.status(400).json({ error: "Valid Activity ID and User ID are required" });
     }
 
-    console.log(`Updating activity ${activityId} for user ${userId}`, updateData);
-    
-    const result = await workService.updateActivityInWorkspace(activityId, userId, updateData);
-    
-    console.log(`Activity ${activityId} updated successfully`);
-    
-    res.status(200).json({
-      success: true,
-      data: result,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in updateActivity controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to update activity',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
+    const result = await workService.completeActivityAndGetNext(activityId, userId);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Soft delete activity
-async function deleteActivity(req, res) {
+//======================================
+// Mark activity as complete
+//======================================
+const markComplete = async (req, res) => {
   try {
-    const activityId = parseInt(req.params.activityId);
-    const userId = parseInt(req.params.userId); // Get from params for consistency
+    const activityId = parseInt(req.params.activityId, 10);
+    const userId = parseInt(req.params.userId, 10);
 
     if (!activityId || !userId || isNaN(activityId) || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid Activity ID and User ID are required',
-        received: { activityId: req.params.activityId, userId: req.params.userId }
-      });
+      return res.status(400).json({ error: "Valid Activity ID and User ID are required" });
     }
 
-    console.log(`Soft deleting activity ${activityId} for user ${userId}`);
-    
-    const result = await workService.deleteActivityInWorkspace(activityId, userId);
-    
-    console.log(`Activity ${activityId} soft deleted successfully`);
-    
-    res.status(200).json({
-      success: true,
-      data: result,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in deleteActivity controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to delete activity',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
+    await workService.updateActivity(activityId, userId, { Completed: 1 });
+    res.status(200).json({ message: "Activity marked as complete" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Get next activity for workflow
-async function getNextActivity(req, res) {
+//======================================
+// Delete activity
+//======================================
+const deleteActivity = async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const currentActivityId = req.query.currentActivityId ? parseInt(req.query.currentActivityId) : null;
+    const activityId = parseInt(req.params.activityId, 10);
+    const userId = parseInt(req.params.userId, 10);
+
+    if (!activityId || !userId || isNaN(activityId) || isNaN(userId)) {
+      return res.status(400).json({ error: "Valid Activity ID and User ID are required" });
+    }
+
+    await workService.deleteActivity(activityId, userId);
+    res.status(200).json({ message: "Activity deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get work dashboard summary
+//======================================
+const getWorkDashboard = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
 
     if (!userId || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid User ID is required',
-        received: req.params.userId
-      });
+      return res.status(400).json({ error: "Valid User ID is required" });
     }
 
-    console.log(`Fetching next activity for user ${userId}, excluding activity ${currentActivityId}`);
-    
-    const nextActivity = await workService.getNextActivityForWorkflow(userId, currentActivityId);
-    
-    res.status(200).json({
-      success: true,
-      data: nextActivity,
-      hasNext: !!nextActivity,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in getNextActivity controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch next activity',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
+    const data = await workService.getWorkDashboardSummary(userId);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Get day view activities (calendar style)
-async function getDayView(req, res) {
+//======================================
+// Get sequences and items by user
+//======================================
+const getSequencesAndItemsByUser = async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const userId = parseInt(req.params.userId, 10);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: "Valid User ID is required" });
+    }
+
+    const data = await workService.getSequencesAndItemsByUser(userId);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get user sequences
+//======================================
+const getUserSequences = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: "Valid User ID is required" });
+    }
+
+    const data = await workService.getUserSequences(userId);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get next activity
+//======================================
+const getNextActivity = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    const currentActivityId = req.query.currentActivityId ? parseInt(req.query.currentActivityId, 10) : null;
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: "Valid User ID is required" });
+    }
+
+    const data = await workService.getNextActivity(userId, currentActivityId);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get activities by status filter
+//======================================
+const getActivitiesByStatus = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    const status = req.params.status;
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: "Valid User ID is required" });
+    }
+
+    const filterOptions = workService.parseFilterOptions(status);
+    const data = await workService.getActivities(userId, filterOptions);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get day view activities
+//======================================
+const getDayView = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
     const date = req.query.date ? new Date(req.query.date) : new Date();
 
     if (!userId || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid User ID is required',
-        received: req.params.userId
-      });
+      return res.status(400).json({ error: "Valid User ID is required" });
     }
 
-    // Validate date if provided
     if (req.query.date && isNaN(date.getTime())) {
-      return res.status(400).json({ 
-        error: 'Invalid date format',
-        received: req.query.date
-      });
+      return res.status(400).json({ error: "Invalid date format" });
     }
 
-    console.log(`Fetching day view for user ${userId} on ${date.toDateString()}`);
+    // Set date range for the specific day
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
     
-    const dayViewData = await workService.getDayViewActivities(userId, date);
-    
-    console.log(`Retrieved ${dayViewData.totalCount} activities for day view`);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const data = await workService.getActivities(userId, {
+      dateFrom: startOfDay,
+      dateTo: endOfDay,
+      sortBy: 'dueDate'
+    });
     
     res.status(200).json({
-      success: true,
-      data: dayViewData,
-      timestamp: new Date().toISOString()
+      date: date.toDateString(),
+      activities: data,
+      totalCount: data.length
     });
-  } catch (error) {
-    console.error('Error in getDayView controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch day view',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-}
+};
 
-// Get activities by status filter
-async function getActivitiesByStatus(req, res) {
+//======================================
+// Get activity metadata
+//======================================
+const getActivityMetadata = async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const status = req.params.status; // 'overdue', 'urgent', 'normal', 'all', 'completed', etc.
-
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid User ID is required',
-        received: req.params.userId
-      });
-    }
-
-    const validStatuses = ['overdue', 'urgent', 'normal', 'all', 'completed', 'high-priority', 'today', 'pending'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        error: 'Invalid status filter',
-        validOptions: validStatuses,
-        received: status
-      });
-    }
-
-    console.log(`Fetching activities with status '${status}' for user ${userId}`);
-    
-    const activities = await workService.getActivitiesByStatus(userId, status);
-    
-    console.log(`Retrieved ${activities.length} activities with status '${status}'`);
-    
-    res.status(200).json({
-      success: true,
-      data: {
-        activities,
-        status,
-        count: activities.length
-      },
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in getActivitiesByStatus controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch activities by status',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
+    const data = await workService.getActivityMetadata();
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-}
-
-// Get activity metadata (priority levels, activity types for editing)
-async function getActivityMetadata(req, res) {
-  try {
-    console.log('Fetching activity metadata for editing forms');
-    
-    const metadata = await workService.getActivityMetadata();
-    
-    res.status(200).json({
-      success: true,
-      data: metadata,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in getActivityMetadata controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch activity metadata',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-}
-
-// Get user sequences for workspace context
-async function getUserSequences(req, res) {
-  try {
-    const userId = parseInt(req.params.userId);
-
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid User ID is required',
-        received: req.params.userId
-      });
-    }
-
-    console.log(`Fetching sequences for user ${userId} workspace context`);
-    
-    const sequences = await workService.getUserSequencesForWorkspace(userId);
-    
-    console.log(`Retrieved ${sequences.length} sequences for user ${userId}`);
-    
-    res.status(200).json({
-      success: true,
-      data: sequences,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in getUserSequences controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch user sequences',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-}
-
-// Get work dashboard summary
-async function getWorkDashboard(req, res) {
-  try {
-    const userId = parseInt(req.params.userId);
-
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ 
-        error: 'Valid User ID is required',
-        received: req.params.userId
-      });
-    }
-
-    console.log(`Fetching work dashboard summary for user ${userId}`);
-    
-    const dashboardData = await workService.getWorkDashboardSummary(userId);
-    
-    res.status(200).json({
-      success: true,
-      data: dashboardData,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in getWorkDashboard controller:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch work dashboard',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-}
+};
 
 module.exports = {
+  // Main Smart Work functionality
   getActivities,
+  getActivitiesByUser,
   getActivityForWorkspace,
-  completeActivity,
   updateActivity,
+  completeActivity,
+  markComplete,
   deleteActivity,
-  getNextActivity,
-  getDayView,
-  getActivitiesByStatus,
-  getActivityMetadata,
+  getWorkDashboard,
+  getSequencesAndItemsByUser,
   getUserSequences,
-  getWorkDashboard
+  getNextActivity,
+  getActivitiesByStatus,
+  getDayView,
+  getActivityMetadata,
 };
