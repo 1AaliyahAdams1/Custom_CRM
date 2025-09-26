@@ -2,172 +2,329 @@ import api from "../utils/api";
 
 const RESOURCE = "/work";
 
-// Get work page activities with sorting and filtering
-export const getWorkPageData = async (userId, sortCriteria = 'dueDate') => {
+// =======================
+// SMART WORK PAGE SERVICES
+// =======================
+
+/**
+ * Get smart work page data with sorting and filtering
+ * @param {number} userId - User ID
+ * @param {string} sortCriteria - Sort criteria (dueDate, priority, account, type, sequence, status)
+ * @param {string} filter - Filter type (all, overdue, urgent, high-priority, today, pending, completed)
+ * @returns {Promise<Object>} Work page data with activities
+ */
+export const getWorkPageData = async (userId, sortCriteria = 'dueDate', filter = 'all') => {
+// =======================
+// SMART WORK PAGE SERVICES
+// =======================
+
+/**
+ * Get smart work page data with sorting and filtering
+ * @param {number} userId - User ID
+ * @param {string} sortCriteria - Sort criteria (dueDate, priority, account, type, sequence, status)
+ * @param {string} filter - Filter type (all, overdue, urgent, high-priority, today, pending, completed)
+ * @returns {Promise<Object>} Work page data with activities
+ */
+export const getWorkPageData = async (userId, sortCriteria = 'dueDate', filter = 'all') => {
   if (!userId) throw new Error("User ID is required");
   
   try {
-    const response = await api.get(`${RESOURCE}/user/${userId}/activities?sort=${sortCriteria}`);
-    return response.data;
+    const params = new URLSearchParams();
+    if (sortCriteria && sortCriteria !== 'dueDate') params.append('sort', sortCriteria);
+    if (filter && filter !== 'all') params.append('filter', filter);
+    
+    const queryString = params.toString();
+    const url = `${RESOURCE}/user/${userId}/activities${queryString ? `?${queryString}` : ''}`;
+    
+    console.log('=== WORK SERVICE DEBUG ===');
+    console.log('Fetching URL:', url);
+    console.log('Request params:', { sort: sortCriteria, filter });
+    
+    const response = await api.get(url);
+    
+    console.log('=== RESPONSE DEBUG ===');
+    console.log('Full response:', response);
+    console.log('response.data:', response.data);
+    
+    // Your backend returns the data structure directly, not nested in success/data
+    // Based on your test result, the response structure is: { activities: [...], totalActivities: 9, appliedFilters: {...} }
+    
+    if (response.data) {
+      console.log('Successfully received data structure');
+      console.log('Activities array length:', response.data.activities?.length || 0);
+      
+      if (response.data.activities && Array.isArray(response.data.activities)) {
+        console.log('Sample activity:', response.data.activities[0]);
+      }
+      
+      // Return the data directly as it comes from backend
+      return response.data;
+    }
+    
+    // Fallback if no data
+    console.error('No data in response');
+    return {
+      activities: [],
+      totalActivities: 0,
+      appliedFilters: { filter: 'all', sort: 'dueDate' }
+    };
+    
   } catch (error) {
     console.error("Error fetching work page data:", error);
+    console.error("Error details:", error.response?.data || error.message);
     throw error;
   }
 };
 
-// Complete an activity and get next
+/**
+ * Get single activity for workspace tab with full context
+ * @param {number} activityId - Activity ID
+ * @param {number} userId - User ID
+ * @returns {Promise<Object>} Detailed activity data
+ */
+export const getActivityForWorkspace = async (activityId, userId) => {
+  if (!activityId) throw new Error("Activity ID is required");
+  if (!userId) throw new Error("User ID is required");
+
+  try {
+    const url = `${RESOURCE}/user/${userId}/activity/${activityId}/workspace`;
+    console.log('Fetching activity for workspace:', url);
+    const response = await api.get(url);
+    
+    // Return success structure for consistency with container expectations
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error("Error fetching activity for workspace:", error);
+    throw error;
+  }
+};
+
+/**
+ * Complete activity using smart workflow (gets next activity automatically)
+ * @param {number} activityId - Activity ID to complete
+ * @param {number} userId - User ID
+ * @param {string} notes - Optional completion notes
+ * @returns {Promise<Object>} Completion result with next activity
+ */
+/**
+ * Complete activity using smart workflow (gets next activity automatically)
+ * @param {number} activityId - Activity ID to complete
+ * @param {number} userId - User ID
+ * @param {string} notes - Optional completion notes
+ * @returns {Promise<Object>} Completion result with next activity
+ */
 export const completeActivity = async (activityId, userId, notes = '') => {
   if (!activityId) throw new Error("Activity ID is required");
   if (!userId) throw new Error("User ID is required");
 
   try {
-    const response = await api.post(`${RESOURCE}/activities/${activityId}/complete`, {
-      userId: userId,
-      notes: notes
-    });
-    return response.data;
+    const url = `${RESOURCE}/activities/${activityId}/complete`;
+    const payload = { userId, notes };
+    
+    console.log('Completing activity with workflow:', url, payload);
+    const response = await api.post(url, payload);
+    
+    return {
+      success: true,
+      data: response.data
+    };
   } catch (error) {
-    console.error("Error completing activity:", error);
+    console.error("Error completing activity workflow:", error);
     throw error;
   }
 };
 
-// Get activities by status filter
+/**
+ * Mark activity as complete (simple completion without workflow)
+ * @param {number} activityId - Activity ID
+ * @param {number} userId - User ID
+ * @returns {Promise<Object>} Completion result
+ */
+export const markActivityComplete = async (activityId, userId) => {
+  if (!activityId) throw new Error("Activity ID is required");
+  if (!userId) throw new Error("User ID is required");
+
+  try {
+    const url = `${RESOURCE}/user/${userId}/activity/${activityId}/complete`;
+    console.log('Marking activity complete:', url);
+    const response = await api.patch(url);
+    
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error("Error marking activity complete:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update activity in workspace
+ * @param {number} activityId - Activity ID
+ * @param {number} userId - User ID
+ * @param {Object} updateData - Fields to update
+ * @returns {Promise<Object>} Updated activity data
+ */
+export const updateActivity = async (activityId, userId, updateData) => {
+  if (!activityId) throw new Error("Activity ID is required");
+  if (!userId) throw new Error("User ID is required");
+  if (!updateData || typeof updateData !== 'object') {
+    throw new Error("Update data is required");
+  }
+
+  try {
+    const url = `${RESOURCE}/user/${userId}/activity/${activityId}`;
+    console.log('Updating activity:', url, updateData);
+    const response = await api.put(url, updateData);
+    
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error("Error updating activity:", error);
+    throw error;
+  }
+};
+
+/**
+ * Soft delete activity (sets Active = 0, suggests next activity)
+ * @param {number} activityId - Activity ID
+ * @param {number} userId - User ID
+ * @returns {Promise<Object>} Deletion result with suggested next activity
+ */
+export const deleteActivity = async (activityId, userId) => {
+  if (!activityId) throw new Error("Activity ID is required");
+  if (!userId) throw new Error("User ID is required");
+
+  try {
+    const url = `${RESOURCE}/user/${userId}/activity/${activityId}`;
+    console.log('Deleting activity:', url);
+    const response = await api.delete(url);
+    
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error("Error deleting activity:", error);
+    console.error("Error deleting activity:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get activities by status filter
+ * @param {number} userId - User ID
+ * @param {string} status - Status filter (overdue, urgent, normal, completed, etc.)
+ * @returns {Promise<Object>} Filtered activities
+ */
+/**
+ * Get activities by status filter
+ * @param {number} userId - User ID
+ * @param {string} status - Status filter (overdue, urgent, normal, completed, etc.)
+ * @returns {Promise<Object>} Filtered activities
+ */
 export const getActivitiesByStatus = async (userId, status) => {
   if (!userId) throw new Error("User ID is required");
   if (!status) throw new Error("Status is required");
 
   try {
-    const response = await api.get(`${RESOURCE}/user/${userId}/activities/${status}`);
-    return response.data;
+    const url = `${RESOURCE}/user/${userId}/activities/${status}`;
+    console.log('Fetching activities by status:', url);
+    const response = await api.get(url);
+    
+    return {
+      success: true,
+      data: response.data
+    };
   } catch (error) {
     console.error("Error fetching activities by status:", error);
     throw error;
   }
 };
 
-// Get day view activities (calendar style)
-export const getDayViewActivities = async (userId, date = new Date()) => {
+/**
+ * Get next activity in smart workflow
+ * @param {number} userId - User ID
+ * @param {number} currentActivityId - Current activity to exclude (optional)
+ * @returns {Promise<Object>} Next activity data
+ */
+export const getNextActivity = async (userId, currentActivityId = null) => {
+/**
+ * Get next activity in smart workflow
+ * @param {number} userId - User ID
+ * @param {number} currentActivityId - Current activity to exclude (optional)
+ * @returns {Promise<Object>} Next activity data
+ */
+export const getNextActivity = async (userId, currentActivityId = null) => {
   if (!userId) throw new Error("User ID is required");
 
   try {
-    const dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-    const response = await api.get(`${RESOURCE}/user/${userId}/day-view?date=${dateStr}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching day view activities:", error);
-    throw error;
-  }
-};
-
-// Update activity order (drag & drop)
-export const updateActivityOrder = async (userId, activityOrder) => {
-  if (!userId) throw new Error("User ID is required");
-  if (!activityOrder || !Array.isArray(activityOrder)) {
-    throw new Error("Activity order array is required");
-  }
-
-  try {
-    const response = await api.put(`${RESOURCE}/activities/reorder`, {
-      userId: userId,
-      activityOrder: activityOrder
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error updating activity order:", error);
-    throw error;
-  }
-};
-
-// Transform database activity to UI format
-export const transformActivityForUI = (dbActivity) => {
-  if (!dbActivity) return null;
-
-  return {
-    id: dbActivity.ActivityID?.toString(),
-    title: generateActivityTitle(dbActivity),
-    description: dbActivity.SequenceItemDescription || 'No description available',
-    type: mapActivityType(dbActivity.ActivityTypeName),
-    priority: mapPriority(dbActivity.PriorityLevelName),
-    status: mapStatus(dbActivity),
-    dueDate: new Date(dbActivity.DueToStart),
-    estimatedDuration: 30, // Default, you might want to add this to your DB
-    createdAt: new Date(dbActivity.ActivityCreated),
-    updatedAt: new Date(dbActivity.ActivityUpdated),
-    accountName: dbActivity.AccountName,
-    sequenceName: dbActivity.SequenceName,
-    notes: dbActivity.Notes || '',
-  };
-};
-
-// Generate activity title based on type and description
-const generateActivityTitle = (dbActivity) => {
-  const activityType = dbActivity.ActivityTypeName;
-  const account = dbActivity.AccountName;
-  
-  if (dbActivity.SequenceItemDescription) {
-    return `${activityType}: ${dbActivity.SequenceItemDescription}`;
-  }
-  
-  return `${activityType} - ${account}`;
-};
-
-// Map database activity type to UI type
-const mapActivityType = (activityTypeName) => {
-  if (!activityTypeName) return 'task';
-  
-  const type = activityTypeName.toLowerCase();
-  if (type.includes('call')) return 'call';
-  if (type.includes('email')) return 'email';
-  if (type.includes('meeting')) return 'meeting';
-  return 'task';
-};
-
-// Map database priority to UI priority
-const mapPriority = (priorityLevelName) => {
-  if (!priorityLevelName) return 'medium';
-  
-  const priority = priorityLevelName.toLowerCase();
-  if (priority.includes('high') || priority.includes('urgent')) return 'high';
-  if (priority.includes('low')) return 'low';
-  return 'medium';
-};
-
-// Map database status to UI status
-const mapStatus = (dbActivity) => {
-  if (dbActivity.Completed) return 'completed';
-  
-  const dueDate = new Date(dbActivity.DueToStart);
-  const now = new Date();
-  
-  if (dueDate < now) return 'overdue';
-  return 'pending';
-};
-
-// Transform work page data for UI
-export const transformWorkPageData = (workPageData) => {
-  if (!workPageData || !workPageData.activities) {
+    const params = new URLSearchParams();
+    if (currentActivityId) params.append('currentActivityId', currentActivityId.toString());
+    
+    const queryString = params.toString();
+    const url = `${RESOURCE}/user/${userId}/next-activity${queryString ? `?${queryString}` : ''}`;
+    
+    console.log('Fetching next activity:', url);
+    const response = await api.get(url);
+    
     return {
-      activities: [],
-      groupedActivities: { overdue: [], urgent: [], normal: [] },
-      sequences: [],
-      totalActivities: 0,
-      overdueCount: 0,
-      urgentCount: 0
+      success: true,
+      data: response.data
     };
+  } catch (error) {
+    console.error("Error fetching next activity:", error);
+    console.error("Error fetching next activity:", error);
+    throw error;
   }
+};
 
-  const transformedActivities = workPageData.activities.map(activity => 
-    transformActivityForUI(activity)
-  ).filter(Boolean); // Remove any null results
+/**
+ * Get activity metadata (priority levels, activity types for editing forms)
+ * @returns {Promise<Object>} Activity metadata
+ */
+export const getActivityMetadata = async () => {
+  try {
+    const url = `${RESOURCE}/metadata/activity`;
+    console.log('Fetching activity metadata:', url);
+    const response = await api.get(url);
+    
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error("Error fetching activity metadata:", error);
+    console.error("Error fetching activity metadata:", error);
+    throw error;
+  }
+};
 
-  return {
-    ...workPageData,
-    activities: transformedActivities,
-    groupedActivities: {
-      overdue: transformedActivities.filter(a => a.status === 'overdue'),
-      urgent: transformedActivities.filter(a => a.status === 'urgent'),
-      normal: transformedActivities.filter(a => a.status === 'pending')
-    }
-  };
+/**
+ * Get user sequences for workspace context
+ * @param {number} userId - User ID
+ * @returns {Promise<Object>} User sequences data
+ */
+export const getUserSequences = async (userId) => {
+  if (!userId) throw new Error("User ID is required");
+
+  try {
+    const url = `${RESOURCE}/user/${userId}/sequences`;
+    console.log('Fetching user sequences:', url);
+    const response = await api.get(url);
+    
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error("Error fetching user sequences:", error);
+    throw error;
+  }
 };
