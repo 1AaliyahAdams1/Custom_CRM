@@ -484,23 +484,34 @@ const WorkPage = ({
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
                           <Box sx={{ textAlign: 'left' }}>
-                            <Typography variant="caption" sx={{ fontWeight: 500, display: 'block' }}>
+                            <Typography variant="primary" sx={{ fontWeight: 500, display: 'block' }}>
                               {tab.title}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                            <Typography variant="primary" color="text.secondary" sx={{ display: 'block' }}>
                               {tab.subtitle}
                             </Typography>
                           </Box>
-                          <IconButton
-                            size="small"
+                          <Box
+                            component="span"
                             onClick={(e) => {
-                              e.stopPropagation();
-                              onTabClose(index);
-                            }}
-                            sx={{ ml: 1, p: 0.5 }}
-                          >
-                            <Close fontSize="small" />
-                          </IconButton>
+                            e.stopPropagation();
+                            onTabClose(index);
+                          }}
+                          sx={{ 
+                                ml: 1, 
+                                p: 0.5,
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                '&:hover': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                              }
+                           }}
+                         >
+                          <Close fontSize="small" />
+                        </Box>
                         </Box>
                       }
                       sx={{ minHeight: 48, textTransform: 'none' }}
@@ -567,7 +578,7 @@ const WorkPage = ({
                       </Box>
                     ) : currentActivity ? (
                       <Box sx={{ p: 3, height: '100%', overflow: 'auto' }}>
-                        <Card sx={{ maxWidth: 800, mx: 'auto' }}>
+                        <Card sx={{ width: '100%', height: 'fit-content' }}>
                           <CardContent>
                             {/* Activity Header */}
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>

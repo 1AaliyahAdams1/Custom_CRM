@@ -55,5 +55,24 @@ export const ROUTE_ACCESS = {
 
   settings: ["C-level", "Sales Manager", "Sales Representative"],
 
+  currency: ["C-level", "Sales Manager", "Sales Representative"],
+  currencyCreate: ["C-level", "Sales Manager"],
+
+  companies: ["C-level", "Sales Manager", "Sales Representative"],
+  companiesDetails: ["C-level", "Sales Manager", "Sales Representative"],
+  companiesCreate: ["C-level", "Sales Manager", "Sales Representative"],
+  companiesEdit: ["C-level", "Sales Manager", "Sales Representative"],
+
+  events: ["C-level", "Sales Manager", "Sales Representative"],
+  eventsCreate: ["C-level", "Sales Manager", "Sales Representative"],
+  eventsEdit: ["C-level", "Sales Manager", "Sales Representative"],
+  eventsDetails: ["C-level", "Sales Manager", "Sales Representative"],
+
+  owners: ["C-level", "Sales Manager", "Sales Representative"],
+  ownersCreate: ["C-level", "Sales Manager"],
+
+  discountcodes: ["C-level", "Sales Manager", "Sales Representative"],
+  discountcodesCreate: ["C-level", "Sales Manager"],
+
   
 };

@@ -99,6 +99,7 @@ const ActivitiesPage = ({
   activityTypesProps = {},
 }) => {
   const [currentTab, setCurrentTab] = useState(0);
+  
 
   // Local state for filter
   const [activityFilter, setActivityFilter] = useState(currentFilter);

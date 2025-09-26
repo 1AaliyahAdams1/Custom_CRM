@@ -40,9 +40,20 @@ async function updateProduct(req, res) {
   }
 }
 
+
+async function deleteProduct(req, res) {
+  try {
+    const result = await productService.deleteProduct(req.params.id, req.body.changedBy || 0);
+    res.json(result);
+  } catch (err) {
+    console.error("Error deleting product:", err);
+    res.status(500).json({ error: "Failed to delete product" });
+  }
+}
+
 async function deactivateProduct(req, res) {
   try {
-    const result = await productService.deactivateProduct(req.body, req.body.changedBy || 0);
+    const result = await productService.deactivateProduct(req.params.id, req.body.changedBy || 0);
     res.json(result);
   } catch (err) {
     console.error("Error deactivating product:", err);
@@ -52,21 +63,11 @@ async function deactivateProduct(req, res) {
 
 async function reactivateProduct(req, res) {
   try {
-    const result = await productService.reactivateProduct(req.body, req.body.changedBy || 0);
+    const result = await productService.reactivateProduct(req.params.id, req.body.changedBy || 0);
     res.json(result);
   } catch (err) {
     console.error("Error reactivating product:", err);
     res.status(500).json({ error: "Failed to reactivate product" });
-  }
-}
-
-async function deleteProduct(req, res) {
-  try {
-    const result = await productService.deleteProduct(req.body, req.body.changedBy || 0);
-    res.json(result);
-  } catch (err) {
-    console.error("Error deleting product:", err);
-    res.status(500).json({ error: "Failed to delete product" });
   }
 }
 

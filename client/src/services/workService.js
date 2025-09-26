@@ -13,62 +13,29 @@ const RESOURCE = "/work";
  * @param {string} filter - Filter type (all, overdue, urgent, high-priority, today, pending, completed)
  * @returns {Promise<Object>} Work page data with activities
  */
-export const getWorkPageData = async (userId, sortCriteria = 'dueDate', filter = 'all') => {
-// =======================
-// SMART WORK PAGE SERVICES
-// =======================
-
-/**
- * Get smart work page data with sorting and filtering
- * @param {number} userId - User ID
- * @param {string} sortCriteria - Sort criteria (dueDate, priority, account, type, sequence, status)
- * @param {string} filter - Filter type (all, overdue, urgent, high-priority, today, pending, completed)
- * @returns {Promise<Object>} Work page data with activities
- */
-export const getWorkPageData = async (userId, sortCriteria = 'dueDate', filter = 'all') => {
+export const getWorkPageData = async (userId, sortCriteria = "dueDate", filter = "all") => {
   if (!userId) throw new Error("User ID is required");
-  
+
   try {
     const params = new URLSearchParams();
-    if (sortCriteria && sortCriteria !== 'dueDate') params.append('sort', sortCriteria);
-    if (filter && filter !== 'all') params.append('filter', filter);
-    
+    if (sortCriteria && sortCriteria !== "dueDate") params.append("sort", sortCriteria);
+    if (filter && filter !== "all") params.append("filter", filter);
+
     const queryString = params.toString();
-    const url = `${RESOURCE}/user/${userId}/activities${queryString ? `?${queryString}` : ''}`;
-    
-    console.log('=== WORK SERVICE DEBUG ===');
-    console.log('Fetching URL:', url);
-    console.log('Request params:', { sort: sortCriteria, filter });
-    
+    const url = `${RESOURCE}/user/${userId}/activities${queryString ? `?${queryString}` : ""}`;
+
     const response = await api.get(url);
-    
-    console.log('=== RESPONSE DEBUG ===');
-    console.log('Full response:', response);
-    console.log('response.data:', response.data);
-    
-    // Your backend returns the data structure directly, not nested in success/data
-    // Based on your test result, the response structure is: { activities: [...], totalActivities: 9, appliedFilters: {...} }
-    
+
     if (response.data) {
-      console.log('Successfully received data structure');
-      console.log('Activities array length:', response.data.activities?.length || 0);
-      
-      if (response.data.activities && Array.isArray(response.data.activities)) {
-        console.log('Sample activity:', response.data.activities[0]);
-      }
-      
-      // Return the data directly as it comes from backend
       return response.data;
     }
-    
-    // Fallback if no data
-    console.error('No data in response');
+
+    // fallback
     return {
       activities: [],
       totalActivities: 0,
-      appliedFilters: { filter: 'all', sort: 'dueDate' }
+      appliedFilters: { filter: "all", sort: "dueDate" },
     };
-    
   } catch (error) {
     console.error("Error fetching work page data:", error);
     console.error("Error details:", error.response?.data || error.message);
@@ -103,12 +70,26 @@ export const getActivityForWorkspace = async (activityId, userId) => {
 };
 
 /**
- * Complete activity using smart workflow (gets next activity automatically)
- * @param {number} activityId - Activity ID to complete
+ * Get single activity for workspace tab with full context
+ * @param {number} activityId - Activity ID
  * @param {number} userId - User ID
- * @param {string} notes - Optional completion notes
- * @returns {Promise<Object>} Completion result with next activity
+ * @returns {Promise<Object>} Detailed activity data
  */
+export const getActivityForWorkspace = async (activityId, userId) => {
+  if (!activityId) throw new Error("Activity ID is required");
+  if (!userId) throw new Error("User ID is required");
+
+  try {
+    const url = `${RESOURCE}/user/${userId}/activity/${activityId}/workspace`;
+    const response = await api.get(url);
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error fetching activity for workspace:", error);
+    throw error;
+  }
+};
+
 /**
  * Complete activity using smart workflow (gets next activity automatically)
  * @param {number} activityId - Activity ID to complete
@@ -116,21 +97,16 @@ export const getActivityForWorkspace = async (activityId, userId) => {
  * @param {string} notes - Optional completion notes
  * @returns {Promise<Object>} Completion result with next activity
  */
-export const completeActivity = async (activityId, userId, notes = '') => {
+export const completeActivity = async (activityId, userId, notes = "") => {
   if (!activityId) throw new Error("Activity ID is required");
   if (!userId) throw new Error("User ID is required");
 
   try {
     const url = `${RESOURCE}/activities/${activityId}/complete`;
     const payload = { userId, notes };
-    
-    console.log('Completing activity with workflow:', url, payload);
     const response = await api.post(url, payload);
-    
-    return {
-      success: true,
-      data: response.data
-    };
+
+    return { success: true, data: response.data };
   } catch (error) {
     console.error("Error completing activity workflow:", error);
     throw error;
@@ -149,13 +125,9 @@ export const markActivityComplete = async (activityId, userId) => {
 
   try {
     const url = `${RESOURCE}/user/${userId}/activity/${activityId}/complete`;
-    console.log('Marking activity complete:', url);
     const response = await api.patch(url);
-    
-    return {
-      success: true,
-      data: response.data
-    };
+
+    return { success: true, data: response.data };
   } catch (error) {
     console.error("Error marking activity complete:", error);
     throw error;
@@ -172,19 +144,15 @@ export const markActivityComplete = async (activityId, userId) => {
 export const updateActivity = async (activityId, userId, updateData) => {
   if (!activityId) throw new Error("Activity ID is required");
   if (!userId) throw new Error("User ID is required");
-  if (!updateData || typeof updateData !== 'object') {
+  if (!updateData || typeof updateData !== "object") {
     throw new Error("Update data is required");
   }
 
   try {
     const url = `${RESOURCE}/user/${userId}/activity/${activityId}`;
-    console.log('Updating activity:', url, updateData);
     const response = await api.put(url, updateData);
-    
-    return {
-      success: true,
-      data: response.data
-    };
+
+    return { success: true, data: response.data };
   } catch (error) {
     console.error("Error updating activity:", error);
     throw error;
@@ -203,26 +171,15 @@ export const deleteActivity = async (activityId, userId) => {
 
   try {
     const url = `${RESOURCE}/user/${userId}/activity/${activityId}`;
-    console.log('Deleting activity:', url);
     const response = await api.delete(url);
-    
-    return {
-      success: true,
-      data: response.data
-    };
+
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error deleting activity:", error);
     console.error("Error deleting activity:", error);
     throw error;
   }
 };
 
-/**
- * Get activities by status filter
- * @param {number} userId - User ID
- * @param {string} status - Status filter (overdue, urgent, normal, completed, etc.)
- * @returns {Promise<Object>} Filtered activities
- */
 /**
  * Get activities by status filter
  * @param {number} userId - User ID
@@ -235,13 +192,9 @@ export const getActivitiesByStatus = async (userId, status) => {
 
   try {
     const url = `${RESOURCE}/user/${userId}/activities/${status}`;
-    console.log('Fetching activities by status:', url);
     const response = await api.get(url);
-    
-    return {
-      success: true,
-      data: response.data
-    };
+
+    return { success: true, data: response.data };
   } catch (error) {
     console.error("Error fetching activities by status:", error);
     throw error;
@@ -255,31 +208,19 @@ export const getActivitiesByStatus = async (userId, status) => {
  * @returns {Promise<Object>} Next activity data
  */
 export const getNextActivity = async (userId, currentActivityId = null) => {
-/**
- * Get next activity in smart workflow
- * @param {number} userId - User ID
- * @param {number} currentActivityId - Current activity to exclude (optional)
- * @returns {Promise<Object>} Next activity data
- */
-export const getNextActivity = async (userId, currentActivityId = null) => {
   if (!userId) throw new Error("User ID is required");
 
   try {
     const params = new URLSearchParams();
-    if (currentActivityId) params.append('currentActivityId', currentActivityId.toString());
-    
+    if (currentActivityId) params.append("currentActivityId", currentActivityId.toString());
+
     const queryString = params.toString();
-    const url = `${RESOURCE}/user/${userId}/next-activity${queryString ? `?${queryString}` : ''}`;
-    
-    console.log('Fetching next activity:', url);
+    const url = `${RESOURCE}/user/${userId}/next-activity${queryString ? `?${queryString}` : ""}`;
+
     const response = await api.get(url);
-    
-    return {
-      success: true,
-      data: response.data
-    };
+
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error fetching next activity:", error);
     console.error("Error fetching next activity:", error);
     throw error;
   }
@@ -292,15 +233,10 @@ export const getNextActivity = async (userId, currentActivityId = null) => {
 export const getActivityMetadata = async () => {
   try {
     const url = `${RESOURCE}/metadata/activity`;
-    console.log('Fetching activity metadata:', url);
     const response = await api.get(url);
-    
-    return {
-      success: true,
-      data: response.data
-    };
+
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error fetching activity metadata:", error);
     console.error("Error fetching activity metadata:", error);
     throw error;
   }
@@ -316,13 +252,9 @@ export const getUserSequences = async (userId) => {
 
   try {
     const url = `${RESOURCE}/user/${userId}/sequences`;
-    console.log('Fetching user sequences:', url);
     const response = await api.get(url);
-    
-    return {
-      success: true,
-      data: response.data
-    };
+
+    return { success: true, data: response.data };
   } catch (error) {
     console.error("Error fetching user sequences:", error);
     throw error;

@@ -129,7 +129,7 @@ const getActivities = async (userId, options = {}) => {
 };
 
 //======================================
-// Get activities by user
+// Get activities by user (FIXED)
 //======================================
 const getActivitiesByUser = async (userId) => {
   try {
@@ -154,17 +154,7 @@ const getActivitiesByUser = async (userId) => {
             seq.SequenceID, 
             seq.SequenceName, 
             seq.SequenceDescription,
-            seq.SequenceDescription,
             si.SequenceItemDescription, 
-            si.DaysFromStart,
-            a.Active AS ActivityActive,
-            -- Status calculations
-            CASE 
-              WHEN a.Completed = 1 THEN 'completed'
-              WHEN a.DueToStart < GETDATE() THEN 'overdue'
-              WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) THEN 'urgent'
-              ELSE 'normal'
-            END AS Status
             si.DaysFromStart,
             a.Active AS ActivityActive,
             -- Status calculations
@@ -181,15 +171,8 @@ const getActivitiesByUser = async (userId) => {
         INNER JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
         LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
         LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
-        LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
-        LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
         WHERE au.UserID = @UserID 
           AND a.Active = 1 
-          AND au.Active = 1
-        ORDER BY 
-          CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END,
-          a.DueToStart ASC, 
-          pl.PriorityLevelValue DESC
           AND au.Active = 1
         ORDER BY 
           CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END,
@@ -204,8 +187,9 @@ const getActivitiesByUser = async (userId) => {
   }
 };
 
+
 //======================================
-// Get activity by ID with context
+// Get activity by ID with context (FIXED)
 //======================================
 const getActivityByID = async (activityId, userId) => {
   try {
@@ -231,37 +215,8 @@ const getActivityByID = async (activityId, userId) => {
             seq.SequenceID, 
             seq.SequenceName, 
             seq.SequenceDescription,
-            seq.SequenceDescription,
             si.SequenceItemDescription, 
             si.DaysFromStart,
-            a.Active AS ActivityActive,
-            -- Previous sequence item
-            prev_si.SequenceItemID AS PrevSequenceItemID,
-            prev_si.SequenceItemDescription AS PrevSequenceItemDescription,
-            prev_si.DaysFromStart AS PrevDaysFromStart,
-            -- Next sequence item
-            next_si.SequenceItemID AS NextSequenceItemID,
-            next_si.SequenceItemDescription AS NextSequenceItemDescription,
-            next_si.DaysFromStart AS NextDaysFromStart,
-            -- Status calculations
-            CASE 
-              WHEN a.Completed = 1 THEN 'completed'
-              WHEN a.DueToStart < GETDATE() THEN 'overdue'
-              WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) THEN 'urgent'
-              ELSE 'normal'
-            END AS Status,
-            CASE 
-              WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 1
-              ELSE 0
-            END AS IsOverdue,
-            CASE 
-              WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) AND a.DueToStart >= GETDATE() AND a.Completed = 0 THEN 1
-              ELSE 0
-            END AS IsUrgent,
-            CASE 
-              WHEN pl.PriorityLevelValue >= 8 THEN 1
-              ELSE 0
-            END AS IsHighPriority
             a.Active AS ActivityActive,
             -- Previous sequence item
             prev_si.SequenceItemID AS PrevSequenceItemID,
@@ -303,18 +258,9 @@ const getActivityByID = async (activityId, userId) => {
         LEFT JOIN SequenceItem next_si ON seq.SequenceID = next_si.SequenceID 
           AND next_si.DaysFromStart = (si.DaysFromStart + 1)
           AND next_si.Active = 1
-        LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
-        LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
-        LEFT JOIN SequenceItem prev_si ON seq.SequenceID = prev_si.SequenceID 
-          AND prev_si.DaysFromStart = (si.DaysFromStart - 1)
-          AND prev_si.Active = 1
-        LEFT JOIN SequenceItem next_si ON seq.SequenceID = next_si.SequenceID 
-          AND next_si.DaysFromStart = (si.DaysFromStart + 1)
-          AND next_si.Active = 1
         WHERE a.ActivityID = @ActivityID
           AND au.UserID = @UserID 
           AND a.Active = 1 
-          AND au.Active = 1
           AND au.Active = 1
       `);
 
@@ -324,7 +270,6 @@ const getActivityByID = async (activityId, userId) => {
     throw error;
   }
 };
-
 //======================================
 // Update activity
 //======================================
@@ -455,7 +400,7 @@ const completeActivityAndGetNext = async (activityId, userId) => {
 };
 
 //======================================
-// Soft delete activity
+// Soft delete activity (FIXED)
 //======================================
 const deleteActivity = async (activityId, userId) => {
   try {
@@ -465,7 +410,6 @@ const deleteActivity = async (activityId, userId) => {
       .input("UserID", sql.Int, userId)
       .query(`
         UPDATE Activity 
-        SET Active = 0
         SET Active = 0
         WHERE ActivityID = @ActivityID 
           AND AccountID IN (
@@ -658,7 +602,7 @@ const getNextActivity = async (userId, currentActivityId = null) => {
 };
 
 //======================================
-// Get activity metadata
+// Get activity metadata (FIXED)
 //======================================
 const getActivityMetadata = async () => {
   try {
@@ -666,21 +610,18 @@ const getActivityMetadata = async () => {
     const [priorityResult, typeResult] = await Promise.all([
       pool.request().query(`
         SELECT 
-          PriorityLevelID,
-          PriorityLevelName,
-          PriorityLevelValue
+          PriorityLevelID as id,
+          PriorityLevelName as name,
+          PriorityLevelValue as value
         FROM PriorityLevel 
         WHERE Active = 1
         ORDER BY PriorityLevelValue DESC
       `),
       pool.request().query(`
-        ORDER BY PriorityLevelValue DESC
-      `),
-      pool.request().query(`
         SELECT 
-          TypeID,
-          TypeName,
-          Description
+          TypeID as id,
+          TypeName as name,
+          Description as description
         FROM ActivityType 
         WHERE Active = 1
         ORDER BY TypeName
@@ -698,10 +639,9 @@ const getActivityMetadata = async () => {
 };
 
 //======================================
-// Exports
+// Exports (FIXED - removed duplicate)
 //======================================
 module.exports = {
-  getActivities,
   getActivities,
   getActivitiesByUser,
   getActivityByID,
