@@ -19,7 +19,7 @@ const Activities = lazy(() => import("./components/containers/ActivitiesContaine
 
 const ProductsContainer = lazy(() => import("./components/containers/ProductsContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
-const SmartWorkPage = lazy(() => import("./pages/SmartWorkPage"));
+const SmartWorkPage = lazy(() => import("./components/containers/workPageContainer"));
 const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));

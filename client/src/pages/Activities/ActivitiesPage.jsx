@@ -99,7 +99,7 @@ const ActivitiesPage = ({
   activityTypesProps = {},
 }) => {
   const [currentTab, setCurrentTab] = useState(0);
-  const [dueDatesDialogOpen, setDueDatesDialogOpen] = useState(false);
+  
 
   // Local state for filter
   const [activityFilter, setActivityFilter] = useState(currentFilter);
