@@ -1,13 +1,18 @@
 // src/AppRoutes.jsx
 import { lazy } from "react";
+// src/AppRoutes.jsx
+import { lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import PrivateRoute from "./components/auth/PrivateRoute";
 import { ROUTE_ACCESS } from "./utils/auth/routesAccess";
 
 // Import Unauthorized directly
+
+// Import Unauthorized directly
 import Unauthorized from "./pages/Unauthorized";
 
+// Lazy load pages
 // Lazy load pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Accounts = lazy(() => import("./components/containers/AccountsContainer"));
@@ -17,12 +22,11 @@ const Activities = lazy(() => import("./components/containers/ActivitiesContaine
 
 const ProductsContainer = lazy(() => import("./components/containers/ProductsContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
-const SmartWorkPage = lazy(() => import("./components/containers/workPageContainer"));
+const WorkPage = lazy(() => import("./pages/WorkPage"));
 const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
 const CityPage = lazy(() => import("./pages/GeographicData/CityPage"));
-const CurrencyPage = lazy(() => import("./pages/GeographicData/CurrencyPage"));
 const StateProvincePage = lazy(() => import("./pages/GeographicData/StateProvincePage"));
 const IndustryContainer = lazy(() => import("./components/containers/IndustryContainer"));
 const PriorityLevelContainer = lazy(() => import("./components/containers/PriorityLevelContainer"));
@@ -69,7 +73,12 @@ const AppRoutes = () => {
   console.log("AppRoutes component is rendering");
 
   return (
+const AppRoutes = () => {
+  console.log("AppRoutes component is rendering");
+
+  return (
     <Routes>
+      {/* Public routes */}
       {/* Public routes */}
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
@@ -313,105 +322,190 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/companies/:id"
+        path="/accounts/:id"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.companiesDetails}> 
-            <CompaniesDetailsPage />
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.accountsDetails}>
+            <AccountsDetailsPage />
           </PrivateRoute>
         }
       />
 
+      <Route
+        path="/accounts/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.accountsCreate}>
+            <CreateAccountPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/accounts/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.accountsEdit}>
+            <EditAccountPage />
+          </PrivateRoute>
+        }
 
-      {/* --- Events Routes --- */}
+      />
+      {/* --- Contacts Routes --- */}
       <Route
-        path="/events"
+        path="/contacts"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.events}>
-            <EventsPage />
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.contacts}>
+            <Contacts />
           </PrivateRoute>
         }
       />
       <Route
-        path="/events/create"
+        path="/contacts/:id"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsCreate}>
-            <CreateEventPage />
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.contactsDetails}>
+            <ContactsDetailsPage />
           </PrivateRoute>
         }
       />
       <Route
-        path="/events/edit/:id"
+        path="/contacts/create"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsEdit}>
-            <EditEventPage />
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.contactsCreate}>
+            <CreateContactsPage />
           </PrivateRoute>
         }
       />
       <Route
-        path="/events/:id"
+        path="/contacts/edit/:id"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsDetails}>
-            <EventsDetailsPage />
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.contactsEdit}>
+            <EditContactPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Deal Routes --- */}
+      <Route
+        path="/deals"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.deals}>
+            <Deals />
           </PrivateRoute>
         }
       />
       <Route
-        path="/events/:id"
+        path="/deals/:id"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsDetails}>
-            <EventsDetailsPage />
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealsDetails}>
+            <DealsDetailsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/deals/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealsCreate}>
+            <CreateDealPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/deals/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealsEdit}>
+            <EditDealPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/deal-stages"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealStage}>
+            <DealStagePage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Activity Routes --- */}
+      <Route
+        path="/activities"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activities}>
+            <Activities />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/activities/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activitiesDetails}>
+            <ActivitiesDetailsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/activities/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activitiesCreate}>
+            <CreateActivitiesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/activities/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activitiesEdit}>
+            <EditActivityPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/activity-types"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.activityTypes}>
+            <ActivityTypePage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Products Routes --- */}
+      <Route
+        path="/products"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.products}>
+            <ProductsContainer />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/products/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.productsCreate}>
+            <CreateProduct />
           </PrivateRoute>
         }
       />
 
-    
-      {/* --- Owners Routes --- */}
+      {/* --- Geography Routes (Updated) --- */}
+      {/* Main geography route - shows countries by default */}
       <Route
-        path="/owners"
+        path="/countries"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.owners}>
-            <OwnersPage />
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.country}>
+            <CountryContainer />
           </PrivateRoute>
         }
       />
-      {/* --- Discount Codes Routes --- */}
+
+      {/* Geography sub-routes - all use the same container but with different tabs */}
       <Route
-        path="/discount-codes"
+        path="/countries/states"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodes}>
-            <DiscountCodesPage />
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.states}>
+            <CountryContainer />
           </PrivateRoute>
         }
       />
+
       <Route
-        path="/discount-codes/create"
-        element={   
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesCreate}>
-            <CreateDiscountCodePage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/discount-codes/edit/:id"
+        path="/countries/cities"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesEdit}>
-            <EditDiscountCodePage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/discount-codes/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesDetails}>
-            <DiscountCodesDetailsPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/discount-codes/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesDetails}>
-            <DiscountCodesDetailsPage />
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.city}>
+            <CountryContainer />
           </PrivateRoute>
         }
       />
@@ -527,8 +621,11 @@ const AppRoutes = () => {
       />
 
       {/* Catch all */}
+      {/* Catch all */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+  );
+};
   );
 };
 

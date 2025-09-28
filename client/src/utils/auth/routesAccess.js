@@ -1,6 +1,6 @@
-const ALL = ["C-level", "Sales Manager", "Sales Representative", "Customer Support", "Reporter"];
-const MANAGEMENT = ["C-level", "Sales Manager"]; 
-const HR = ["HR", "C-level"];
+const ALL = ["C-level", "Sales Manager", "HR Manager", "Sales Representative", "Reporter", "Customer Support", "Marketing", "Finance"];
+const MANAGEMENT = ["C-level", "Sales Manager", "HR Manager"]; 
+const HR = ["C-level", "HR Manager"];
 const CLEVEL = ["C-level"];
 
 export const ROUTE_ACCESS = {
@@ -92,6 +92,7 @@ export const ROUTE_ACCESS = {
 export const CLAIM_RULES = {
   "Sales Representative": (item) => item.ownerStatus === "unowned",
   "Sales Manager": (item) => item.ownerStatus === "unowned", 
+  "HR Manager": (item) => item.ownerStatus === "unowned",
   "Reporter": (item) => item.ownerStatus === "unowned",   
   "Customer Support": (item) => item.ownerStatus === "unowned",   
   "C-level": (item) =>
