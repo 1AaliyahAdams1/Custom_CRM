@@ -173,6 +173,51 @@ async function getActivitiesByUser(userId) {
   }
 }
 
+// =======================
+// Get activities by Account ID
+// =======================
+async function getActivitiesByAccountID(accountId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT
+            act.[ActivityID],
+            act.[ActivityName],
+            act.[ActivityDescription],
+            act.[AccountID],
+            a.[AccountName],              
+            act.[ActivityTypeID],
+            at.[TypeName],            
+            act.[StartDate],
+            act.[EndDate],
+            act.[Priority],
+            act.[Status],
+            act.[AssignedTo],
+            u.[FirstName],
+            u.[LastName],
+            act.[CreatedAt],
+            act.[UpdatedAt],
+            act.[Active]
+        FROM [8589_CRM].[dbo].[Activity] act
+        JOIN [8589_CRM].[dbo].[Account] a 
+            ON act.AccountID = a.AccountID AND a.Active = 1
+        LEFT JOIN [8589_CRM].[dbo].[ActivityType] at 
+            ON act.ActivityTypeID = at.ActivityTypeID
+        LEFT JOIN [8589_CRM].[dbo].[User] u 
+            ON act.AssignedTo = u.UserID
+        WHERE act.AccountID = @AccountID
+          AND act.Active = 1
+        ORDER BY act.StartDate DESC;
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Activity Repo Error [getActivitiesByAccountID]:", error);
+    throw error;
+  }
+}
 
 
 //======================================
@@ -187,4 +232,5 @@ module.exports = {
   reactivateActivity,
   deleteActivity,
   getActivitiesByUser,
+  getActivitiesByAccountID
 };

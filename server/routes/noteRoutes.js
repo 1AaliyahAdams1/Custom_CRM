@@ -20,4 +20,7 @@ router.patch("/:id/reactivate", noteController.reactivateNote);
 // Delete note (hard delete)
 router.delete("/:id", noteController.deleteNote);
 
+// Get notes by AccountID
+router.get("/account/:accountId", noteController.getNotesByAccountID);
+
 module.exports = router;

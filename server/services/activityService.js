@@ -40,6 +40,10 @@ const getActivitiesByUser = async (UserID) => {
   return await activityRepo.getActivitiesByUser(UserID);
 };
 
+const getActivitiesByAccountID = async (AccountID) => {
+  return await activityRepo.getActivitiesByAccountID(AccountID);
+};
+
 // Bulk Operations
 const bulkMarkActivitiesComplete = async (activityIds) => {
   if (!Array.isArray(activityIds) || activityIds.length === 0) {
@@ -173,6 +177,7 @@ module.exports = {
   reactivateActivity,
   deleteActivity,
   getActivitiesByUser,
+  getActivitiesByAccountID,
 
   // Bulk operations
   bulkMarkActivitiesComplete,

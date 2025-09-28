@@ -128,6 +128,18 @@ export const reactivateAttachment = async (attachmentId) => {
   }
 };
 
+export const fetchAttachmentsByAccountID = async (accountId) => {
+  if (!accountId) throw new Error("Account ID is required");
+  try {
+    const response = await api.get(`${RESOURCE}/account/${accountId}`);
+    return response.data;
+  }
+  catch (error) {
+    console.error(`Error fetching attachments for account ${accountId}:`, error);
+    throw error;
+  }
+};
+
 export const downloadAttachment = async (attachment) => {
   if (!attachment) throw new Error("Attachment is required");
   const attachmentId = attachment.AttachmentID || attachment.attachmentId;

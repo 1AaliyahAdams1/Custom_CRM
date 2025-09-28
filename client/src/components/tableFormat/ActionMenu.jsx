@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+
+
 import { Menu, MenuItem, Tooltip } from '@mui/material';
 import { Info, Edit, Delete, Note, AttachFile, Business, PersonAdd, PersonRemove, RestoreFromTrash, DeleteForever, Block } from '@mui/icons-material';
 
@@ -33,11 +35,9 @@ const ActionMenu = ({
       return [];
     }
   }, []);
+   const hasRole = (role) => roles.includes(role);
 
-  const hasAccess = (routeKey) => {
-    if (!ROUTE_ACCESS[routeKey]) return false;
-    return roles.some((role) => ROUTE_ACCESS[routeKey].includes(role));
-  };
+ 
 
 
   const handleClick = (callback) => {
@@ -80,7 +80,7 @@ const ActionMenu = ({
         show:
           entityType === "account" &&
           !!onClaimAccount &&
-          hasAccess("accountClaim") &&
+          hasRole('Sales Representative') &&
           menuRow?.ownerStatus !== "owned",
         tooltip: getTooltip("claimAccount", "Claim ownership of this record"),
       },
@@ -106,17 +106,7 @@ const ActionMenu = ({
           menuRow?.ownerStatus === 'owned',
         tooltip: getTooltip('unclaimAccount', 'Release ownership of this record'),
       },
-      {
-        label: "Unclaim Account",
-        icon: <Business sx={{ mr: 1, color: "#000" }} />,
-        onClick: () => handleClick(onUnclaimAccount),
-        show:
-          entityType === "account" &&
-          !!onUnclaimAccount &&
-          hasAccess("accountUnclaim") &&
-          menuRow?.ownerStatus === "owned",
-        tooltip: getTooltip("unclaimAccount", "Unclaim this record"),
-      },
+      
       {
         label: "View Details",
         icon: <Info sx={{ mr: 1, color: "#000" }} />,
@@ -188,7 +178,7 @@ const ActionMenu = ({
     menuItems,
     idField,
     tooltips,
-    hasAccess,
+    
   ]);
 
   return (

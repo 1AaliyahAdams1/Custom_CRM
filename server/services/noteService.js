@@ -88,6 +88,16 @@ async function deleteNote(noteId) {
   return await noteRepo.deleteNote(noteId, userId);
 }
 
+// =======================
+// Get notes by AccountID
+// =======================
+async function getNotesByAccountID(accountId) {
+  if (!accountId) {
+    throw new Error("AccountID is required");
+  }
+  return await noteRepo.getNotesByAccountID(accountId);
+}
+
 module.exports = {
   getNotes,
   createNote,
@@ -95,4 +105,5 @@ module.exports = {
   deactivateNote,
   reactivateNote,
   deleteNote,
+  getNotesByAccountID
 };
