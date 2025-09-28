@@ -44,6 +44,7 @@ import theme from "../../components/Theme";
 import { formatters } from '../../utils/formatters';
 import StateProvincePage from './StateProvincePage';
 import CityPage from './CityPage';
+import CurrencyPage from "./CurrencyPage";
 
 // Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {
@@ -107,6 +108,9 @@ const CountryPage = ({
   // State/Province props (pass through to StateProvincePage)
   stateProvinceProps = {},
 
+  // Currency props (pass through to CurrencyPage)
+  currencyProps = {},
+
   // Tab management
   currentTab = 0,
   onTabChange,
@@ -121,6 +125,54 @@ const CountryPage = ({
   });
   const [addCountryLoading, setAddCountryLoading] = useState(false);
 
+  // Utility function to get consistent Country ID (prioritizing EFM fields)
+  const getCountryId = (country) => {
+    return country.EFMCountryID || country.CountryID;
+  };
+
+  // Utility function to get consistent Currency ID (prioritizing EFM fields)
+  const getCurrencyId = (country) => {
+    return country.EFMCurrencyID || country.CurrencyID;
+  };
+
+  // Create currency map for quick lookup
+  const currencyMap = React.useMemo(() => {
+    const map = {};
+    currencies.forEach(currency => {
+      // Handle multiple naming conventions - prioritize EFM fields
+      const currencyId = currency.EFMCurrencyID || currency.CurrencyID;
+      const currencyName = currency.CurrencyName;
+      const currencyCode = currency.CurrencyCode;
+      if (currencyId) {
+        map[currencyId] = {
+          name: currencyName,
+          code: currencyCode
+        };
+      }
+    });
+    return map;
+  }, [currencies]);
+
+  // Enhanced countries data with currency names
+  const enhancedCountries = React.useMemo(() => {
+    return countries.map(country => {
+      const currencyId = getCurrencyId(country);
+      const currencyInfo = currencyMap[currencyId];
+      
+      return {
+        ...country,
+        // Ensure consistent field names
+        CountryID: getCountryId(country),
+        CountryName: country.CountryName,
+        CountryCode: country.CountryCode,
+        CurrencyID: currencyId,
+        // Enhanced display fields
+        CurrencyName: currencyInfo?.name || 'No Currency',
+        CurrencyCode: currencyInfo?.code || null
+      };
+    });
+  }, [countries, currencyMap]);
+
   // Define available tabs
   const availableTabs = [
     {
@@ -129,14 +181,14 @@ const CountryPage = ({
       component: 'countries'
     },
     {
-      id: 'states-provinces',
-      label: 'States/Provinces',
-      component: 'statesProvinces'
-    },
-    {
       id: 'cities',
       label: 'Cities',
       component: 'cities'
+    },
+    {
+      id: 'currencies',
+      label: 'Currencies',
+      component: 'currencies'
     },
   ];
 
@@ -150,11 +202,13 @@ const CountryPage = ({
   const columns = [
     { field: 'CountryName', headerName: 'Country Name', type: 'tooltip', defaultVisible: true },
     { field: 'CountryCode', headerName: 'Country Code', defaultVisible: true },
-    //{ field: 'CurrencyID', headerName: 'CurrencyID', defaultVisible: true },
+    { field: 'CurrencyName', headerName: 'Currency', defaultVisible: true },
+    { field: 'Active', headerName: 'Status', defaultVisible: true },
   ];
 
   // Enhanced menu items for countries
   const getMenuItems = (country) => {
+    const countryId = getCountryId(country); // Use utility function for consistent ID handling
     const baseItems = [
       {
         label: 'View Details',
@@ -188,14 +242,14 @@ const CountryPage = ({
       baseItems.push({
         label: 'Deactivate',
         icon: <PowerOffIcon sx={{ mr: 1, color: '#ff9800' }} />,
-        onClick: () => onDeactivate && onDeactivate(country.CountryID),
+        onClick: () => onDeactivate && onDeactivate(countryId),
         show: !!onDeactivate,
       });
     } else {
       baseItems.push({
         label: 'Reactivate',
         icon: <PowerIcon sx={{ mr: 1, color: '#4caf50' }} />,
-        onClick: () => onReactivate && onReactivate(country.CountryID),
+        onClick: () => onReactivate && onReactivate(countryId),
         show: !!onReactivate,
       });
     }
@@ -204,7 +258,7 @@ const CountryPage = ({
     baseItems.push({
       label: 'Delete',
       icon: <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />,
-      onClick: () => onDelete && onDelete(country.CountryID),
+      onClick: () => onDelete && onDelete(countryId),
       show: !!onDelete,
     });
 
@@ -242,8 +296,37 @@ const CountryPage = ({
         />
       );
     },
-    CurrencyName: (value) => {
-      return value || 'No Currency';
+    CurrencyName: (value, row) => {
+      if (!value || value === 'No Currency') {
+        return (
+          <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic' }}>
+            No Currency
+          </Typography>
+        );
+      }
+      
+      // Display currency name with code if available
+      const currencyCode = row?.CurrencyCode;
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="body2">
+            {value}
+          </Typography>
+          {currencyCode && (
+            <Chip
+              label={currencyCode}
+              size="small"
+              sx={{
+                fontSize: '0.75rem',
+                height: '20px',
+                backgroundColor: '#e3f2fd',
+                color: '#1565c0',
+                fontWeight: 'bold'
+              }}
+            />
+          )}
+        </Box>
+      );
     }
   };
 
@@ -465,7 +548,7 @@ const CountryPage = ({
                     </Box>
                   ) : (
                     <TableView
-                      data={countries}
+                      data={enhancedCountries}
                       columns={columns}
                       idField="CountryID"
                       selected={selected}
@@ -496,7 +579,7 @@ const CountryPage = ({
                     }}
                   >
                     <Typography variant="body2" sx={{ color: "#666666" }}>
-                      Showing {countries.length} countries
+                      Showing {enhancedCountries.length} countries
                     </Typography>
                     {selected.length > 0 && (
                       <Typography
@@ -518,6 +601,11 @@ const CountryPage = ({
               {/* Cities Tab Content */}
               {tab.component === 'cities' && (
                 <CityPage {...cityProps} />
+              )}
+              
+              {/* Currencies Tab Content */}
+              {tab.component === 'currencies' && (
+                <CurrencyPage {...currencyProps} />
               )}
 
             </TabPanel>
@@ -582,11 +670,14 @@ const CountryPage = ({
                   <MenuItem value="">
                     <em>No Currency</em>
                   </MenuItem>
-                  {currencies.map((currency) => (
-                    <MenuItem key={currency.CurrencyID} value={currency.CurrencyID}>
-                      {currency.CurrencyName} ({currency.CurrencyCode})
-                    </MenuItem>
-                  ))}
+                  {currencies.map((currency) => {
+                    const currencyId = currency.EFMCurrencyID || currency.CurrencyID;
+                    return (
+                      <MenuItem key={currencyId} value={currencyId}>
+                        {currency.CurrencyName} ({currency.CurrencyCode})
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
               </FormControl>
 
