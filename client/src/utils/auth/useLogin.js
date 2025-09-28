@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login as loginService } from "../../services/auth/authService";
-import { fetchActiveAccountsByUser } from "../../services/accountService"; // ✅ existing service
+import { fetchActiveAccountsByUser } from "../../services/accountService";
 
 export default function useLogin() {
   const [error, setError] = useState("");
@@ -14,17 +14,11 @@ export default function useLogin() {
       // Call backend login
       const response = await loginService(identifier, password);
 
-      console.log("=== Login Response Debug ===");
-      console.log("Full response:", response);
-
-      // Save token
-      localStorage.setItem("token", response.token);
-
       // Fetch accounts owned by this user and extract only IDs
       let ownedAccountIds = [];
       try {
         const accounts = await fetchActiveAccountsByUser(response.user.UserID);
-        ownedAccountIds = accounts.map(account => account.id); // ✅ map to IDs
+        ownedAccountIds = accounts.map(account => account.id);
         console.log("Owned account IDs:", ownedAccountIds);
       } catch (err) {
         console.error("Failed to fetch owned accounts:", err);
@@ -33,23 +27,20 @@ export default function useLogin() {
       // Build user object for localStorage
       const userToStore = {
         ...response.user,
-        roles: response.roles || [],
-        RoleNames: Array.isArray(response.roles)
-          ? response.roles.join(", ")
-          : (response.roles || ""),
-        ownedAccountIds, 
+        token: response.token,
+        roles: Array.isArray(response.roles) ? response.roles : [], // always array
+        RoleNames: Array.isArray(response.roles) ? response.roles.join(", ") : "",
+        ownedAccountIds,
       };
 
-      console.log("Storing user data:", userToStore);
-
       // Save in localStorage
+      localStorage.setItem("token", response.token); // always save token
       localStorage.setItem("user", JSON.stringify(userToStore));
 
       // Trigger storage event so other components refresh
       window.dispatchEvent(new Event("storage"));
 
-      // Redirect to dashboard
-      //Changed to accounts for now
+      // Redirect to accounts page
       window.location.href = "/accounts";
 
       return true;

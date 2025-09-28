@@ -25,10 +25,10 @@ import {
   ArrowDownward,
 } from "@mui/icons-material";
 
-import ColumnsDialog from "./ColumnsDialog";
-import FiltersDialog from "./FiltersDialog";
+import ColumnsDialog from "../dialogs/ColumnsDialog";
+import FiltersDialog from "../dialogs/FiltersDialog";
 import ActionMenu from "./ActionMenu";
-import AssignUserDialog from "../AssignUserDialog"; 
+import AssignUserDialog from "../../components/dialogs/AssignUserDialog"; 
 
 const TableView = ({
   data = [],
