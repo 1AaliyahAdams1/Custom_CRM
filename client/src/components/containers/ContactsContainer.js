@@ -268,12 +268,6 @@ const ContactsContainer = () => {
       setFilteredContacts(filtered);
     }
   }, [allContacts, currentFilter, accountOwnership]);
-  useEffect(() => {
-    if (allContacts.length > 0 && accountOwnership.size > 0) {
-      const filtered = applyFilter(allContacts, currentFilter);
-      setFilteredContacts(filtered);
-    }
-  }, [allContacts, currentFilter, accountOwnership]);
 
   // ---------------- SELECTION HANDLERS ----------------
   const handleSelectClick = (id) => {

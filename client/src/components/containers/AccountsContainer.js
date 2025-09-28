@@ -47,9 +47,9 @@ const AccountsContainer = () => {
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [accountToDelete, setAccountToDelete] = useState(null);
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -103,14 +103,6 @@ const AccountsContainer = () => {
     }
   };
 
-  // ---------------- FILTER HANDLER ----------------
-  const handleFilterChange = (filterType) => {
-    setCurrentFilter(filterType);
-    const filtered = applyFilter(allAccounts, filterType);
-    setFilteredAccounts(filtered);
-    setSelected([]);
-  };
-
   useEffect(() => {
     fetchAccounts();
   }, [refreshFlag]);
@@ -129,6 +121,12 @@ const AccountsContainer = () => {
       default:
         return accounts;
     }
+  };
+
+  const handleFilterChange = (filterType) => {
+    setCurrentFilter(filterType);
+    setFilteredAccounts(applyFilter(allAccounts, filterType));
+    setSelected([]);
   };
 
   // ---------------- ACCOUNT ACTIONS ----------------
