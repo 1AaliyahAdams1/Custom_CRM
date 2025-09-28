@@ -2,7 +2,7 @@ import api from "../utils/api";
 
 const RESOURCE = "/attachments";
 
-export const uploadAttachment = async ({ file, entityId, entityTypeName }) => {
+export const uploadAttachment = async ({ file, entityId, entityTypeName, userName }) => {
   if (!file) throw new Error("File is required");
   if (!entityId) throw new Error("Entity ID is required");
   if (!entityTypeName) throw new Error("Entity type is required");
@@ -29,6 +29,11 @@ export const uploadAttachment = async ({ file, entityId, entityTypeName }) => {
   formData.append("file", file);
   formData.append("entityId", entityId);
   formData.append("entityTypeName", entityTypeName);
+  
+  // Add createdBy parameter - this was missing!
+  if (userName) {
+    formData.append("createdBy", userName);
+  }
 
   try {
     return await api.post(`${RESOURCE}/upload`, formData, {
@@ -48,6 +53,7 @@ export const uploadMultipleAttachments = async (attachments) => {
       file: att.file,
       entityId: att.EntityID,
       entityTypeName: att.EntityType,
+      userName: att.userName, // Pass userName for multiple uploads too
     });
     results.push(result);
   }
@@ -79,12 +85,45 @@ export const getAttachmentById = async (attachmentId) => {
   }
 };
 
+export const updateAttachment = async (attachmentId, updateData) => {
+  if (!attachmentId) throw new Error("Attachment ID is required");
+  
+  try {
+    return await api.put(`${RESOURCE}/${attachmentId}`, updateData);
+  } catch (error) {
+    console.error("Error updating attachment:", error?.response || error);
+    throw error;
+  }
+};
+
 export const deleteAttachment = async (attachmentId) => {
   if (!attachmentId) throw new Error("Attachment ID is required");
   try {
     return await api.delete(`${RESOURCE}/${attachmentId}`);
   } catch (error) {
     console.error("Error deleting attachment:", error?.response || error);
+    throw error;
+  }
+};
+
+export const deactivateAttachment = async (attachmentId) => {
+  if (!attachmentId) throw new Error("Attachment ID is required");
+  
+  try {
+    return await api.patch(`${RESOURCE}/${attachmentId}/deactivate`);
+  } catch (error) {
+    console.error("Error deactivating attachment:", error?.response || error);
+    throw error;
+  }
+};
+
+export const reactivateAttachment = async (attachmentId) => {
+  if (!attachmentId) throw new Error("Attachment ID is required");
+  
+  try {
+    return await api.patch(`${RESOURCE}/${attachmentId}/reactivate`);
+  } catch (error) {
+    console.error("Error reactivating attachment:", error?.response || error);
     throw error;
   }
 };
@@ -97,7 +136,13 @@ export const downloadAttachment = async (attachment) => {
     const response = await api.get(`${RESOURCE}/${attachmentId}/download`, { responseType: "blob" });
 
     const contentDisposition = response.headers["content-disposition"];
-    let filename = attachment.FileName || attachment.fileName || "download";
+    // Extract filename from FileUrl since FileName isn't stored
+    let filename = "download";
+    
+    if (attachment.FileUrl || attachment.fileUrl) {
+      const fileUrl = attachment.FileUrl || attachment.fileUrl;
+      filename = fileUrl.split('/').pop() || filename;
+    }
 
     if (contentDisposition) {
       const match = contentDisposition.match(/filename="?(.+)"?/);
@@ -120,8 +165,12 @@ export const downloadAttachment = async (attachment) => {
   }
 };
 
-export const getFileIcon = (fileName) => {
-  const ext = fileName.split(".").pop().toLowerCase();
+export const getFileIcon = (fileUrl) => {
+  if (!fileUrl) return "📎";
+  
+  const fileName = fileUrl.split('/').pop() || "";
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  
   const map = {
     pdf: "📄",
     doc: "📝", docx: "📝",
@@ -134,4 +183,3 @@ export const getFileIcon = (fileName) => {
   };
   return map[ext] || "📎";
 };
-

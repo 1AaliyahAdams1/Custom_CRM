@@ -1,7 +1,7 @@
 const attachmentRepo = require("../data/attachmentRepository");
 
 // ==============================
-// ATTACHMENT SERVICE FUNCTIONS - FIXED
+// ATTACHMENT SERVICE FUNCTIONS
 // ==============================
 
 // Helper function to format file size
@@ -28,27 +28,27 @@ function formatDate(dateString) {
 // Upload Attachment
 async function uploadAttachment(attachmentData) {
   try {
-    const { entityId, entityTypeName, fileName, fileUrl } = attachmentData;
+    const { entityId, entityTypeName, fileUrl, createdBy } = attachmentData;
     
-    if (!entityId || !entityTypeName || !fileName || !fileUrl) {
+    if (!entityId || !entityTypeName || !fileUrl || !createdBy) {
       throw new Error('Missing required attachment data');
     }
 
     const result = await attachmentRepo.addAttachment(
       parseInt(entityId),
       entityTypeName,
-      fileName,
-      fileUrl
+      fileUrl,
+      createdBy
     );
     
     return {
       success: true,
       message: result.message,
       data: {
-        fileName,
         fileUrl,
         entityId: parseInt(entityId),
-        entityTypeName
+        entityTypeName,
+        createdBy: createdBy
       }
     };
   } catch (error) {
@@ -57,7 +57,7 @@ async function uploadAttachment(attachmentData) {
   }
 }
 
-// Get Attachments for Entity - FIXED
+// Get Attachments for Entity
 async function getAttachmentsForEntity(entityId, entityTypeName) {
   try {
     const rawData = await attachmentRepo.getAttachments(
@@ -67,32 +67,31 @@ async function getAttachmentsForEntity(entityId, entityTypeName) {
     
     // Transform the data for better frontend consumption
     const transformedData = rawData.map(attachment => ({
-      // Include both formats for compatibility
       AttachmentID: attachment.AttachmentID,
       attachmentId: attachment.AttachmentID,
       EntityID: attachment.EntityID,
       entityId: attachment.EntityID,
       EntityTypeID: attachment.EntityTypeID,
       entityTypeId: attachment.EntityTypeID,
-      FileName: attachment.FileName,
-      fileName: attachment.FileName,
       FileUrl: attachment.FileUrl,
       fileUrl: attachment.FileUrl,
-      fileExtension: getFileExtension(attachment.FileName),
+      fileExtension: getFileExtension(attachment.FileUrl),
       UploadedAt: attachment.UploadedAt,
       uploadedAt: attachment.UploadedAt,
       formattedUploadDate: formatDate(attachment.UploadedAt),
-      IsActive: attachment.IsActive,
-      isActive: attachment.IsActive,
+      Active: attachment.Active,
+      active: attachment.Active,
+      CreatedBy: attachment.CreatedBy,
+      createdBy: attachment.CreatedBy,
       // Add file type classification for UI
-      fileType: classifyFileType(attachment.FileName),
+      fileType: classifyFileType(attachment.FileUrl),
       downloadUrl: `/attachments/${attachment.AttachmentID}/download`
     }));
     
     // Calculate summary
     const summary = {
       totalAttachments: transformedData.length,
-      activeAttachments: transformedData.filter(att => att.isActive).length,
+      activeAttachments: transformedData.filter(att => att.active !== 0).length,
       fileTypes: [...new Set(transformedData.map(att => att.fileType))],
       lastUpload: transformedData.length > 0 ? transformedData[0].formattedUploadDate : null
     };
@@ -128,17 +127,17 @@ async function getAttachmentById(attachmentId) {
       entityId: rawData.EntityID,
       EntityTypeID: rawData.EntityTypeID,
       entityTypeId: rawData.EntityTypeID,
-      FileName: rawData.FileName,
-      fileName: rawData.FileName,
       FileUrl: rawData.FileUrl,
       fileUrl: rawData.FileUrl,
-      fileExtension: getFileExtension(rawData.FileName),
+      fileExtension: getFileExtension(rawData.FileUrl),
       UploadedAt: rawData.UploadedAt,
       uploadedAt: rawData.UploadedAt,
       formattedUploadDate: formatDate(rawData.UploadedAt),
-      IsActive: rawData.IsActive,
-      isActive: rawData.IsActive,
-      fileType: classifyFileType(rawData.FileName),
+      Active: rawData.Active,
+      active: rawData.Active,
+      CreatedBy: rawData.CreatedBy,
+      createdBy: rawData.CreatedBy,
+      fileType: classifyFileType(rawData.FileUrl),
       downloadUrl: `/attachments/${rawData.AttachmentID}/download`
     };
     
@@ -152,13 +151,12 @@ async function getAttachmentById(attachmentId) {
 // Update Attachment
 async function updateAttachment(attachmentId, attachmentData) {
   try {
-    const { entityId, entityTypeName, fileName, fileUrl } = attachmentData;
+    const { entityId, entityTypeName, fileUrl } = attachmentData;
     
     const result = await attachmentRepo.updateAttachment(
       parseInt(attachmentId),
       parseInt(entityId),
       entityTypeName,
-      fileName,
       fileUrl
     );
     
@@ -184,13 +182,13 @@ async function deleteAttachment(attachmentId) {
       throw new Error("Attachment not found");
     }
 
-    await attachmentRepo.deleteAttachment(parseInt(attachmentId));
+    const result = await attachmentRepo.deleteAttachment(parseInt(attachmentId));
 
     return {
       success: true,
-      message: "Attachment deleted successfully",
+      message: result.message,
       attachmentId: parseInt(attachmentId),
-      fileUrl: attachment.FileUrl, // Return correct field name
+      fileUrl: attachment.FileUrl,
     };
   } catch (error) {
     console.error("Error in deleteAttachment service:", error);
@@ -201,11 +199,11 @@ async function deleteAttachment(attachmentId) {
 // Deactivate Attachment
 async function deactivateAttachment(attachmentId) {
   try {
-    await attachmentRepo.deactivateAttachment(parseInt(attachmentId));
+    const result = await attachmentRepo.deactivateAttachment(parseInt(attachmentId));
     
     return {
       success: true,
-      message: 'Attachment deactivated successfully',
+      message: result.message,
       attachmentId: parseInt(attachmentId)
     };
   } catch (error) {
@@ -217,11 +215,11 @@ async function deactivateAttachment(attachmentId) {
 // Reactivate Attachment
 async function reactivateAttachment(attachmentId) {
   try {
-    await attachmentRepo.reactivateAttachment(parseInt(attachmentId));
+    const result = await attachmentRepo.reactivateAttachment(parseInt(attachmentId));
     
     return {
       success: true,
-      message: 'Attachment reactivated successfully',
+      message: result.message,
       attachmentId: parseInt(attachmentId)
     };
   } catch (error) {
@@ -231,7 +229,8 @@ async function reactivateAttachment(attachmentId) {
 }
 
 // Helper function to classify file types for UI
-function classifyFileType(fileName) {
+function classifyFileType(fileUrl) {
+  const fileName = fileUrl.split('/').pop();
   const extension = getFileExtension(fileName).toLowerCase();
   
   const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'];
