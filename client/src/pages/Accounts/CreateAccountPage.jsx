@@ -65,21 +65,48 @@ const CreateAccount = () => {
     return touched[fieldName] && fieldErrors[fieldName] && fieldErrors[fieldName].length > 0;
   };
 
+  // Validation function based on database schema
   const validateField = (name, value) => {
     const errors = [];
 
+    // Required fields validation (based on NOT NULL columns)
+    const requiredFields = ['AccountName', 'CountryID', 'StateProvinceID', 'CityID', 'PrimaryPhone', 'IndustryID'];
+    
+    if (requiredFields.includes(name)) {
+      if (!value || (typeof value === 'string' && value.trim().length === 0)) {
+        errors.push(`${name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`);
+        return errors; // Return early for required field validation
+      }
+    }
+
     switch (name) {
       case 'AccountName':
-        if (!value || value.trim().length === 0) {
-          errors.push('Account name is required');
-        } else if (value.trim().length < 2) {
+        if (value && value.trim().length < 2) {
           errors.push('Account name must be at least 2 characters');
-        } else if (value.trim().length > 100) {
-          errors.push('Account name must be 100 characters or less');
+        } else if (value && value.trim().length > 255) {
+          errors.push('Account name must be 255 characters or less');
+        }
+        break;
+
+      case 'CountryID':
+      case 'StateProvinceID':
+      case 'CityID':
+      case 'IndustryID':
+        // These are required dropdown fields - validation handled above
+        break;
+
+      case 'PrimaryPhone':
+        // PrimaryPhone is required, so validation handled above
+        if (value && value.trim()) {
+          const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
+          if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
+            errors.push('Invalid Phone Number - Phone number requires at least 8 numbers');
+          }
         }
         break;
 
       case 'email':
+        // Email is optional
         if (value && value.trim()) {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(value.trim())) {
@@ -88,34 +115,37 @@ const CreateAccount = () => {
         }
         break;
 
-      case 'PrimaryPhone':
       case 'fax':
+        // Fax is optional
         if (value && value.trim()) {
           const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
           if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
-            errors.push(`Invalid ${name === 'PrimaryPhone' ? 'phone' : 'fax'} format`);
+            errors.push('Invalid Fax - Fax number requires at least 8 numbers');
           }
         }
         break;
 
       case 'Website':
+        // Website is optional
         if (value && value.trim()) {
           const urlRegex = /^https?:\/\/.+\..+/;
           if (!urlRegex.test(value.trim())) {
-            errors.push('Website must start with http:// or https://');
+            errors.push('Invalid Website - Website requires a prefix ( http:// , https:// ) and a suffix ( .com , .co.za , etc )');
           }
         }
         break;
 
       case 'postal_code':
-        if (value && value.trim().length > 20) {
-          errors.push('Postal code must be 20 characters or less');
+        // Postal code is optional
+        if (value && value.trim().length > 31) {
+          errors.push('Postal code must be 31 characters or less');
         }
         break;
 
       case 'street_address1':
       case 'street_address2':
       case 'street_address3':
+        // Address fields are optional
         if (value && value.trim().length > 255) {
           errors.push('Address must be 255 characters or less');
         }
@@ -125,6 +155,7 @@ const CreateAccount = () => {
       case 'number_of_venues':
       case 'number_of_releases':
       case 'number_of_events_anually':
+        // These fields are optional
         if (value && value.trim()) {
           const num = parseInt(value);
           if (isNaN(num) || num < 0) {
@@ -136,6 +167,7 @@ const CreateAccount = () => {
         break;
 
       case 'annual_revenue':
+        // Annual revenue is optional
         if (value && value.trim()) {
           const revenue = parseFloat(value);
           if (isNaN(revenue) || revenue < 0) {
@@ -324,6 +356,8 @@ const CreateAccount = () => {
           <Paper elevation={0} sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+                
+                {/* REQUIRED FIELDS */}
                 <Box sx={{ gridColumn: '1 / -1' }}>
                   <TextField
                     fullWidth
@@ -335,30 +369,10 @@ const CreateAccount = () => {
                     required
                     disabled={isSubmitting}
                     error={isFieldInvalid('AccountName')}
-                    helpertext={getFieldError('AccountName')}
-                    FormhelpertextProps={{
+                    helperText={getFieldError('AccountName')}
+                    FormHelperTextProps={{
                       component: 'div'
                     }}
-                  />
-                </Box>
-
-                <Box sx={{ gridColumn: '1 / -1' }}>
-                  <SmartDropdown
-                    label="Parent Account"
-                    name="ParentAccount"
-                    value={formData.ParentAccount}
-                    onChange={handleInputChange}
-                    service={{
-                      getAll: async () => {
-                        const response = await getAllAccounts();
-                        return response.data || response;
-                      }
-                    }}
-                    displayField="AccountName"
-                    valueField="AccountID"
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('ParentAccount')}
-                    helpertext={getFieldError('ParentAccount')}
                   />
                 </Box>
 
@@ -372,8 +386,9 @@ const CreateAccount = () => {
                     displayField="CountryName"
                     valueField="CountryID"
                     disabled={isSubmitting}
+                    required
                     error={isFieldInvalid('CountryID')}
-                    helpertext={getFieldError('CountryID')}
+                    helperText={getFieldError('CountryID')}
                   />
                 </Box>
 
@@ -391,10 +406,11 @@ const CreateAccount = () => {
                     displayField="StateProvince_Name"
                     valueField="StateProvinceID"
                     disabled={isSubmitting || !formData.CountryID}
+                    required
                     placeholder={!formData.CountryID ? "Select a country first" : "Select a state/province"}
                     error={isFieldInvalid('StateProvinceID')}
-                    helpertext={getFieldError('StateProvinceID')}
-                    key={`state-${formData.CountryID}`} // Force re-render when country changes
+                    helperText={getFieldError('StateProvinceID')}
+                    key={`state-${formData.CountryID}`}
                   />
                 </Box>
 
@@ -415,6 +431,7 @@ const CreateAccount = () => {
                     displayField="CityName"
                     valueField="CityID"
                     disabled={isSubmitting || (!formData.StateProvinceID && !formData.CountryID)}
+                    required
                     placeholder={
                       !formData.CountryID 
                         ? "Select a country first" 
@@ -423,8 +440,8 @@ const CreateAccount = () => {
                           : "Select a city"
                     }
                     error={isFieldInvalid('CityID')}
-                    helpertext={getFieldError('CityID')}
-                    key={`city-${formData.StateProvinceID}-${formData.CountryID}`} // Force re-render when dependencies change
+                    helperText={getFieldError('CityID')}
+                    key={`city-${formData.StateProvinceID}-${formData.CountryID}`}
                   />
                 </Box>
 
@@ -438,76 +455,9 @@ const CreateAccount = () => {
                     displayField="IndustryName"
                     valueField="IndustryID"
                     disabled={isSubmitting}
+                    required
                     error={isFieldInvalid('IndustryID')}
-                    helpertext={getFieldError('IndustryID')}
-                  />
-                </Box>
-
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Street Address 1"
-                    name="street_address1"
-                    value={formData.street_address1}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('street_address1')}
-                    helpertext={getFieldError('street_address1')}
-                    FormhelpertextProps={{
-                      component: 'div'
-                    }}
-                  />
-                </Box>
-
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Street Address 2"
-                    name="street_address2"
-                    value={formData.street_address2}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('street_address2')}
-                    helpertext={getFieldError('street_address2')}
-                    FormhelpertextProps={{
-                      component: 'div'
-                    }}
-                  />
-                </Box>
-
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Street Address 3"
-                    name="street_address3"
-                    value={formData.street_address3}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('street_address3')}
-                    helpertext={getFieldError('street_address3')}
-                    FormhelpertextProps={{
-                      component: 'div'
-                    }}
-                  />
-                </Box>
-
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Postal Code"
-                    name="postal_code"
-                    value={formData.postal_code}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('postal_code')}
-                    helpertext={getFieldError('postal_code')}
-                    FormhelpertextProps={{
-                      component: 'div'
-                    }}
+                    helperText={getFieldError('IndustryID')}
                   />
                 </Box>
 
@@ -520,10 +470,49 @@ const CreateAccount = () => {
                     value={formData.PrimaryPhone}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
+                    required
                     disabled={isSubmitting}
                     error={isFieldInvalid('PrimaryPhone')}
-                    helpertext={getFieldError('PrimaryPhone')}
-                    FormhelpertextProps={{
+                    helperText={getFieldError('PrimaryPhone')}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
+                  />
+                </Box>
+
+                {/* OPTIONAL FIELDS */}
+                <Box sx={{ gridColumn: '1 / -1' }}>
+                  <SmartDropdown
+                    label="Parent Account (Optional)"
+                    name="ParentAccount"
+                    value={formData.ParentAccount}
+                    onChange={handleInputChange}
+                    service={{
+                      getAll: async () => {
+                        const response = await getAllAccounts();
+                        return response.data || response;
+                      }
+                    }}
+                    displayField="AccountName"
+                    valueField="AccountID"
+                    disabled={isSubmitting}
+                    error={isFieldInvalid('ParentAccount')}
+                    helperText={getFieldError('ParentAccount')}
+                  />
+                </Box>
+
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Street Address 1 (Optional)"
+                    name="street_address1"
+                    value={formData.street_address1}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    disabled={isSubmitting}
+                    error={isFieldInvalid('street_address1')}
+                    helperText={getFieldError('street_address1')}
+                    FormHelperTextProps={{
                       component: 'div'
                     }}
                   />
@@ -532,7 +521,58 @@ const CreateAccount = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Email"
+                    label="Street Address 2 (Optional)"
+                    name="street_address2"
+                    value={formData.street_address2}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    disabled={isSubmitting}
+                    error={isFieldInvalid('street_address2')}
+                    helperText={getFieldError('street_address2')}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
+                  />
+                </Box>
+
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Street Address 3 (Optional)"
+                    name="street_address3"
+                    value={formData.street_address3}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    disabled={isSubmitting}
+                    error={isFieldInvalid('street_address3')}
+                    helperText={getFieldError('street_address3')}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
+                  />
+                </Box>
+
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Postal Code (Optional)"
+                    name="postal_code"
+                    value={formData.postal_code}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    disabled={isSubmitting}
+                    error={isFieldInvalid('postal_code')}
+                    helperText={getFieldError('postal_code')}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
+                  />
+                </Box>
+
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Email (Optional)"
                     name="email"
                     type="email"
                     value={formData.email}
@@ -540,8 +580,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('email')}
-                    helpertext={getFieldError('email')}
-                    FormhelpertextProps={{
+                    helperText={getFieldError('email')}
+                    FormHelperTextProps={{
                       component: 'div'
                     }}
                   />
@@ -550,7 +590,7 @@ const CreateAccount = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Fax"
+                    label="Fax (Optional)"
                     name="fax"
                     type="tel"
                     value={formData.fax}
@@ -558,8 +598,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('fax')}
-                    helpertext={getFieldError('fax')}
-                    FormhelpertextProps={{
+                    helperText={getFieldError('fax')}
+                    FormHelperTextProps={{
                       component: 'div'
                     }}
                   />
@@ -568,7 +608,7 @@ const CreateAccount = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Website"
+                    label="Website (Optional)"
                     name="Website"
                     type="url"
                     value={formData.Website}
@@ -576,8 +616,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('Website')}
-                    helpertext={getFieldError('Website')}
-                    FormhelpertextProps={{
+                    helperText={getFieldError('Website')}
+                    FormHelperTextProps={{
                       component: 'div'
                     }}
                   />
@@ -586,7 +626,7 @@ const CreateAccount = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Annual Revenue"
+                    label="Annual Revenue (Optional)"
                     name="annual_revenue"
                     type="number"
                     value={formData.annual_revenue}
@@ -594,8 +634,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('annual_revenue')}
-                    helpertext={getFieldError('annual_revenue')}
-                    FormhelpertextProps={{
+                    helperText={getFieldError('annual_revenue')}
+                    FormHelperTextProps={{
                       component: 'div'
                     }}
                   />
@@ -604,7 +644,7 @@ const CreateAccount = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Number of Employees"
+                    label="Number of Employees (Optional)"
                     name="number_of_employees"
                     type="number"
                     value={formData.number_of_employees}
@@ -612,8 +652,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('number_of_employees')}
-                    helpertext={getFieldError('number_of_employees')}
-                    FormhelpertextProps={{
+                    helperText={getFieldError('number_of_employees')}
+                    FormHelperTextProps={{
                       component: 'div'
                     }}
                   />
@@ -622,7 +662,7 @@ const CreateAccount = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Number of Releases"
+                    label="Number of Releases (Optional)"
                     name="number_of_releases"
                     type="number"
                     value={formData.number_of_releases}
@@ -630,8 +670,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('number_of_releases')}
-                    helpertext={getFieldError('number_of_releases')}
-                    FormhelpertextProps={{
+                    helperText={getFieldError('number_of_releases')}
+                    FormHelperTextProps={{
                       component: 'div'
                     }}
                   />
@@ -640,7 +680,7 @@ const CreateAccount = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Number of Events Annually"
+                    label="Number of Events Annually (Optional)"
                     name="number_of_events_anually"
                     type="number"
                     value={formData.number_of_events_anually}
@@ -648,8 +688,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('number_of_events_anually')}
-                    helpertext={getFieldError('number_of_events_anually')}
-                    FormhelpertextProps={{
+                    helperText={getFieldError('number_of_events_anually')}
+                    FormHelperTextProps={{
                       component: 'div'
                     }}
                   />
@@ -658,7 +698,7 @@ const CreateAccount = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Number of Venues"
+                    label="Number of Venues (Optional)"
                     name="number_of_venues"
                     type="number"
                     value={formData.number_of_venues}
@@ -666,8 +706,8 @@ const CreateAccount = () => {
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('number_of_venues')}
-                    helpertext={getFieldError('number_of_venues')}
-                    FormhelpertextProps={{
+                    helperText={getFieldError('number_of_venues')}
+                    FormHelperTextProps={{
                       component: 'div'
                     }}
                   />

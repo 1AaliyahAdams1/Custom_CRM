@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -26,6 +25,67 @@ import {
 import SmartDropdown from '../../components/SmartDropdown';
 import theme from "../../components/Theme";
 
+// Modular validation function for contacts
+const validateContactField = (fieldName, value) => {
+  if (!value || (typeof value === 'string' && value.trim().length === 0)) {
+    // Required fields validation
+    const requiredFields = ['first_name', 'surname', 'WorkEmail'];
+    if (requiredFields.includes(fieldName)) {
+      return `${fieldName.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, str => str.toUpperCase())} is required`;
+    }
+    return null; // No validation for empty optional fields
+  }
+
+  switch (fieldName) {
+    case 'WorkEmail':
+    case 'personal_email':
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value.trim())) {
+        return 'Invalid email format';
+      }
+      break;
+
+    case 'WorkPhone':
+    case 'personal_mobile':
+      const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
+      if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
+        return 'Invalid phone number - Phone number requires at least 8 numbers';
+      }
+      break;
+
+    case 'first_name':
+    case 'surname':
+      if (value.trim().length < 2) {
+        return `${fieldName.replace('_', ' ')} must be at least 2 characters`;
+      } else if (value.trim().length > 100) {
+        return `${fieldName.replace('_', ' ')} must be 100 characters or less`;
+      }
+      break;
+
+    case 'middle_name':
+      if (value.trim().length > 100) {
+        return 'Middle name must be 100 characters or less';
+      }
+      break;
+  }
+
+  return null; // No error
+};
+
+// Validate entire contact data
+const validateContactData = (formData) => {
+  const errors = [];
+  const fieldsToValidate = ['first_name', 'surname', 'middle_name', 'WorkEmail', 'WorkPhone', 'personal_email', 'personal_mobile'];
+
+  fieldsToValidate.forEach(field => {
+    const error = validateContactField(field, formData[field]);
+    if (error) {
+      errors.push(error);
+    }
+  });
+
+  return errors;
+};
 
 const EditContactPage = () => {
   const navigate = useNavigate();
@@ -34,6 +94,8 @@ const EditContactPage = () => {
   const [industries, setIndustries] = useState([]);
   const [countries, setCountries] = useState([]);
   const [stateProvinces, setStateProvinces] = useState([]);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const [formData, setFormData] = useState({
     ContactID: "",
@@ -43,7 +105,6 @@ const EditContactPage = () => {
     first_name: "",
     middle_name: "",
     surname: "",
-    Still_employed: "",
     JobTitleID: "",
     JobTitleName: "",
     WorkEmail: "",
@@ -66,6 +127,20 @@ const EditContactPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Enhanced error display with icon
+  const getFieldError = (fieldName) => {
+    return touched[fieldName] && fieldErrors[fieldName] ? (
+      <span style={{ display: 'flex', alignItems: 'center' }}>
+        <span style={{ color: '#ff4444', marginRight: '4px' }}>✗</span>
+        {fieldErrors[fieldName]}
+      </span>
+    ) : '';
+  };
+
+  const isFieldInvalid = (fieldName) => {
+    return touched[fieldName] && fieldErrors[fieldName];
+  };
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -108,7 +183,6 @@ const EditContactPage = () => {
           first_name: contactData.first_name || "",
           middle_name: contactData.middle_name || "",
           surname: contactData.surname || "",
-          Still_employed: contactData.Still_employed || false,
           JobTitleID: contactData.JobTitleID || "",
           JobTitleName: contactData.JobTitleName || "",
           WorkEmail: contactData.WorkEmail || "",
@@ -146,12 +220,43 @@ const EditContactPage = () => {
     }
   }, [successMessage]);
 
-  // Handle input changes
+  // Handle input changes with validation
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
+    }));
+
+    // Real-time validation for touched fields
+    if (touched[name]) {
+      const error = validateContactField(name, value);
+      setFieldErrors(prev => ({
+        ...prev,
+        [name]: error || undefined
+      }));
+    }
+
+    if (error) setError(null);
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
+    }));
+
+    const error = validateContactField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: error || undefined
     }));
   };
 
@@ -159,9 +264,18 @@ const EditContactPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation
-    if (!formData.first_name.trim() || !formData.surname.trim()) {
-      setError("First name and surname are required");
+    // Mark all fields as touched
+    const allTouched = {};
+    Object.keys(formData).forEach(key => {
+      allTouched[key] = true;
+    });
+    setTouched(allTouched);
+
+    // Validate form before submission
+    const validationErrors = validateContactData(formData);
+    
+    if (validationErrors.length > 0) {
+      setError(`Please fix the following errors:\n• ${validationErrors.join('\n• ')}`);
       return;
     }
 
@@ -185,7 +299,18 @@ const EditContactPage = () => {
 
     } catch (error) {
       console.error("Failed to update contact:", error);
-      setError("Failed to update contact. Please try again.");
+      
+      if (error.isValidation) {
+        setError(error.message);
+      } else if (error.response?.status === 409) {
+        setError('Contact with this information already exists');
+      } else if (error.response?.status === 400) {
+        setError(error.response.data?.error || 'Invalid data provided');
+      } else if (error.response?.status >= 500) {
+        setError('Server error. Please try again later');
+      } else {
+        setError('Failed to update contact. Please try again.');
+      }
     } finally {
       setSaving(false);
     }
@@ -292,8 +417,14 @@ const EditContactPage = () => {
                     name="first_name"
                     value={formData.first_name}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     required
                     disabled={saving}
+                    error={isFieldInvalid('first_name')}
+                    helperText={getFieldError('first_name')}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
                   />
                 </Box>
 
@@ -301,11 +432,17 @@ const EditContactPage = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Middle Name"
+                    label="Middle Name (Optional)"
                     name="middle_name"
                     value={formData.middle_name}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     disabled={saving}
+                    error={isFieldInvalid('middle_name')}
+                    helperText={getFieldError('middle_name')}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
                   />
                 </Box>
 
@@ -317,8 +454,14 @@ const EditContactPage = () => {
                     name="surname"
                     value={formData.surname}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     required
                     disabled={saving}
+                    error={isFieldInvalid('surname')}
+                    helperText={getFieldError('surname')}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
                   />
                 </Box>
 
@@ -374,12 +517,19 @@ const EditContactPage = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Email"
+                    label="Work Email"
                     name="WorkEmail"
                     value={formData.WorkEmail}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     type="email"
+                    required
                     disabled={saving}
+                    error={isFieldInvalid('WorkEmail')}
+                    helperText={getFieldError('WorkEmail')}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
                   />
                 </Box>
 
@@ -387,34 +537,57 @@ const EditContactPage = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Mobile"
+                    label="Work Phone (Optional)"
                     name="WorkPhone"
                     value={formData.WorkPhone}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     type="tel"
                     disabled={saving}
+                    error={isFieldInvalid('WorkPhone')}
+                    helperText={getFieldError('WorkPhone')}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
                   />
                 </Box>
 
-                {/* Still Employed Checkbox - Full Width */}
-                <Box sx={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <input
-                    type="checkbox"
-                    id="Still_employed"
-                    name="Still_employed"
-                    checked={formData.Still_employed}
+                {/* Personal Email */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Personal Email (Optional)"
+                    name="personal_email"
+                    value={formData.personal_email}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    type="email"
                     disabled={saving}
-                    style={{
-                      marginRight: '12px',
-                      width: '18px',
-                      height: '18px',
-                      accentColor: '#050505'
+                    error={isFieldInvalid('personal_email')}
+                    helperText={getFieldError('personal_email')}
+                    FormHelperTextProps={{
+                      component: 'div'
                     }}
                   />
-                  <Typography variant="body1" sx={{ color: '#050505', fontWeight: 500 }}>
-                    Still Employed
-                  </Typography>
+                </Box>
+
+                {/* Personal Mobile */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Personal Mobile (Optional)"
+                    name="personal_mobile"
+                    value={formData.personal_mobile}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    type="tel"
+                    disabled={saving}
+                    error={isFieldInvalid('personal_mobile')}
+                    helperText={getFieldError('personal_mobile')}
+                    FormHelperTextProps={{
+                      component: 'div'
+                    }}
+                  />
                 </Box>
               </Box>
             </form>

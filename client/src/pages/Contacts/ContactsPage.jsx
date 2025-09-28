@@ -43,7 +43,6 @@ const ContactsPage = ({
     { field: 'WorkEmail', headerName: 'Email', defaultVisible: true },
     { field: 'WorkPhone', headerName: 'Phone', defaultVisible: true },
     { field: 'JobTitleName', headerName: 'Job Title', defaultVisible: true },
-    { field: 'Still_employed', headerName: 'Still Employed', type: 'boolean', defaultVisible: false },
     { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
     {

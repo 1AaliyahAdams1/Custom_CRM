@@ -25,10 +25,10 @@ import {
   ArrowDownward,
 } from "@mui/icons-material";
 
-import ColumnsDialog from "./ColumnsDialog";
-import FiltersDialog from "./FiltersDialog";
+import ColumnsDialog from "../dialogs/ColumnsDialog";
+import FiltersDialog from "../dialogs/FiltersDialog";
 import ActionMenu from "./ActionMenu";
-import AssignUserDialog from "../AssignUserDialog"; 
+import AssignUserDialog from "../../components/dialogs/AssignUserDialog"; 
 
 const TableView = ({
   data = [],
@@ -237,11 +237,42 @@ const TableView = ({
   const filteredData = getFilteredData();
   const displayedColumns = columns.filter((col) => visibleColumns[col.field]);
 
+  // --- Handle clickable cell content ---
+  const handleCellClick = (event, row, column) => {
+    if (column.type === 'clickable' && column.onClick) {
+      event.stopPropagation();
+      column.onClick(row);
+    }
+  };
+
   const renderCellContent = (row, column) => {
     const value = row[column.field];
     if (formatters[column.field]) return formatters[column.field](value, row);
 
     switch (column.type) {
+      case "clickable":
+        return (
+          <Box
+            component="span"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (column.onClick) {
+                column.onClick(row);
+              }
+            }}
+            sx={{
+              color: 'primary.main',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              '&:hover': {
+                textDecoration: 'underline',
+              },
+              ...column.clickableStyle,
+            }}
+          >
+            {value || "-"}
+          </Box>
+        );
       case "chip":
         return (
           <Chip
@@ -283,7 +314,7 @@ const TableView = ({
       case "truncated":
         if (!value) return "-";
         return (
-          <Tooltip title={value}>
+          <Tooltip title={<span>{value}</span>}>
             <span
               style={{
                 display: "block",
@@ -298,7 +329,11 @@ const TableView = ({
           </Tooltip>
         );
       case "tooltip":
-        return <Tooltip title={value || ""}>{value || "-"}</Tooltip>;
+        return (
+          <Tooltip title={<span>{value || ""}</span>}>
+            <span>{value || "-"}</span>
+          </Tooltip>
+        );
       default:
         return value || "-";
     }
@@ -314,7 +349,7 @@ const TableView = ({
       {/* Toolbar with Tooltips */}
       <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
         <Tooltip 
-          title={getFilterTooltip()} 
+          title={<span>{getFilterTooltip()}</span>} 
           arrow
           enterDelay={300}
         >
@@ -334,7 +369,7 @@ const TableView = ({
             {filtersExpanded ? "Hide Filters" : "Show Filters"}
             {Object.keys(filters).length > 0 && (
               <Tooltip 
-                title={`${Object.keys(filters).length} active filter${Object.keys(filters).length === 1 ? '' : 's'}`} 
+                title={<span>{`${Object.keys(filters).length} active filter${Object.keys(filters).length === 1 ? '' : 's'}`}</span>} 
                 arrow
               >
                 <Chip 
@@ -348,7 +383,7 @@ const TableView = ({
         </Tooltip>
 
         <Tooltip 
-          title={getSearchTooltip()} 
+          title={<span>{getSearchTooltip()}</span>} 
           arrow
           enterDelay={300}
         >
@@ -373,7 +408,7 @@ const TableView = ({
         </Tooltip>
 
         <Tooltip 
-          title={getColumnsTooltip()} 
+          title={<span>{getColumnsTooltip()}</span>} 
           arrow
           enterDelay={300}
         >
@@ -414,7 +449,7 @@ const TableView = ({
                     position: 'relative'
                   }}
                 >
-                  <Tooltip title="Select all visible records" arrow>
+                  <Tooltip title={<span>Select all visible records</span>} arrow>
                     <Checkbox
                       color="primary"
                       indeterminate={
@@ -447,9 +482,12 @@ const TableView = ({
                     {column.sortable !== false ? (
                       <Tooltip 
                         title={
-                          orderBy === column.field 
-                            ? `Currently sorted ${order === 'asc' ? 'ascending' : 'descending'}. Click to sort ${order === 'asc' ? 'descending' : 'ascending'}.`
-                            : `Click to sort by ${column.headerName || column.field}`
+                          <span>
+                            {orderBy === column.field 
+                              ? `Currently sorted ${order === 'asc' ? 'ascending' : 'descending'}. Click to sort ${order === 'asc' ? 'descending' : 'ascending'}.`
+                              : `Click to sort by ${column.headerName || column.field}`
+                            }
+                          </span>
                         }
                         arrow
                         enterDelay={500}
@@ -476,7 +514,7 @@ const TableView = ({
                       </Tooltip>
                     ) : (
                       <Tooltip 
-                        title="This column is not sortable"
+                        title={<span>This column is not sortable</span>}
                         arrow
                         enterDelay={700}
                       >
@@ -489,7 +527,7 @@ const TableView = ({
                     {/* Resize Handle */}
                     {index < displayedColumns.length - 1 && (
                       <Tooltip 
-                        title="Drag to resize column width" 
+                        title={<span>Drag to resize column width</span>} 
                         arrow 
                         enterDelay={700}
                         placement="top"
@@ -545,7 +583,7 @@ const TableView = ({
                 >
                   {showSelection && (
                     <TableCell padding="checkbox">
-                      <Tooltip title={`${isItemSelected ? 'Deselect' : 'Select'} this record`} arrow>
+                      <Tooltip title={<span>{`${isItemSelected ? 'Deselect' : 'Select'} this record`}</span>} arrow>
                         <Checkbox color="primary" checked={isItemSelected} />
                       </Tooltip>
                     </TableCell>
@@ -564,7 +602,7 @@ const TableView = ({
                   ))}
                   {showActions && (
                     <TableCell>
-                      <Tooltip title={getActionsTooltip()} arrow>
+                      <Tooltip title={<span>{getActionsTooltip()}</span>} arrow>
                         <IconButton 
                           size="small" 
                           onClick={(e) => handleMenuClick(e, row)}
@@ -629,5 +667,6 @@ const TableView = ({
     </>
   );
 };
+
 
 export default TableView;

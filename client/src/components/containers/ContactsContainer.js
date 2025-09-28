@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ContactsPage from "../../pages/Contacts/ContactsPage";
 import {
@@ -15,18 +15,17 @@ import {
   createNote, 
   updateNote, 
   deleteNote, 
-  getNotesByEntity 
 } from "../../services/noteService";
 import { 
   uploadAttachment, 
-  getAttachmentsByEntity, 
   deleteAttachment, 
   downloadAttachment 
 } from "../../services/attachmentService";
-import ConfirmDialog from "../../components/ConfirmDialog";
+import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import { formatters } from '../../utils/formatters';
+import { ROUTE_ACCESS } from "../../utils/auth/routesAccess";
 
 const ContactsContainer = () => {
   const navigate = useNavigate();
@@ -34,7 +33,7 @@ const ContactsContainer = () => {
   const [allContacts, setAllContacts] = useState([]);
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [currentFilter, setCurrentFilter] = useState('all');
-  const [accountOwnership, setAccountOwnership] = useState(new Map()); // Map of AccountID -> ownerStatus
+  const [accountOwnership, setAccountOwnership] = useState(new Map()); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -49,30 +48,25 @@ const ContactsContainer = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState(null);
 
-  // User roles
+  // User roles and permissions
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
   const userId = storedUser.UserID || storedUser.id || null;
 
-  const isCLevel = roles.includes("C-level");
-  const isSalesRep = roles.includes("Sales Representative");
-
-  // Helper function to normalize boolean values
-  const normalizeBoolean = (value) => {
-    if (value === null || value === undefined) return null;
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'string') {
-      const lower = value.toLowerCase();
-      if (lower === 'true' || lower === '1' || lower === 'yes') return true;
-      if (lower === 'false' || lower === '0' || lower === 'no') return false;
-    }
-    if (typeof value === 'number') {
-      return value === 1;
-    }
-    return null;
+  // Helper function to check access using ROUTE_ACCESS
+  const hasAccess = (routeKey) => {
+    if (!ROUTE_ACCESS[routeKey]) return false;
+    return roles.some((role) => ROUTE_ACCESS[routeKey].includes(role));
   };
 
-  // ---------------- IMPROVED FILTER LOGIC ----------------
+  // Replace hard-coded role checks with hasAccess calls
+  const canViewContacts = hasAccess("contacts");
+  const canCreateContacts = hasAccess("contactsCreate");
+  const canEditContacts = hasAccess("contactsEdit");
+  const canViewDetails = hasAccess("contactsDetails");
+  const isManagement = hasAccess("reports"); // Management roles have report access
+
+  // ---------------- FILTER LOGIC ----------------
   const applyFilter = (contacts, filterType) => {
     console.log('=== CONTACTS FILTER DEBUG ===');
     console.log('Applying filter:', filterType, 'to contacts:', contacts.length);
@@ -83,24 +77,23 @@ const ContactsContainer = () => {
     let filteredContacts;
     switch (filterType) {
       case 'my':
-        // Contacts from accounts I own
-        if (isSalesRep) {
+        // Contacts from accounts I own - only for sales reps
+        if (hasAccess("accountClaim")) { // Sales reps have claim access
           filteredContacts = contacts.filter(contact => {
             const ownerStatus = accountOwnership.get(contact.AccountID);
             console.log(`Contact ${contact.PersonFullName} (Account: ${contact.AccountID}) - Owner Status: ${ownerStatus}`);
             return ownerStatus === 'owned';
           });
         } else {
-          // Non-sales reps might not have "owned" accounts
           filteredContacts = [];
         }
         break;
         
       case 'team':
-        if (isCLevel) {
-          // C-level sees all contacts
+        if (isManagement) {
+          // Management sees all contacts
           filteredContacts = contacts;
-        } else if (isSalesRep) {
+        } else if (hasAccess("accountClaim")) {
           // Sales rep sees contacts from owned and unassigned accounts
           filteredContacts = contacts.filter(contact => {
             const ownerStatus = accountOwnership.get(contact.AccountID);
@@ -113,40 +106,16 @@ const ContactsContainer = () => {
         break;
         
       case 'unassigned':
-        if (isCLevel) {
-          // C-level sees contacts from unassigned accounts only
+        if (isManagement || hasAccess("accountClaim")) {
+          // Show contacts from unassigned accounts
           filteredContacts = contacts.filter(contact => {
             const ownerStatus = accountOwnership.get(contact.AccountID);
             console.log(`Unassigned filter - Contact ${contact.PersonFullName}: ${ownerStatus}`);
-            return ownerStatus === 'unowned'; // Changed from 'n/a' || 'unowned' to just 'unowned'
-          });
-        } else if (isSalesRep) {
-          // Sales rep sees contacts from unassigned accounts
-          filteredContacts = contacts.filter(contact => {
-            const ownerStatus = accountOwnership.get(contact.AccountID);
             return ownerStatus === 'unowned';
           });
         } else {
           filteredContacts = [];
         }
-        break;
-
-      case 'employed':
-        // Currently employed contacts
-        filteredContacts = contacts.filter(contact => {
-          const employed = normalizeBoolean(contact.Still_employed);
-          console.log(`Employment filter - Contact ${contact.PersonFullName}: Still_employed = ${contact.Still_employed} (normalized: ${employed})`);
-          return employed === true;
-        });
-        break;
-
-      case 'not_employed':
-        // Not currently employed contacts
-        filteredContacts = contacts.filter(contact => {
-          const employed = normalizeBoolean(contact.Still_employed);
-          console.log(`Not employed filter - Contact ${contact.PersonFullName}: Still_employed = ${contact.Still_employed} (normalized: ${employed})`);
-          return employed === false;
-        });
         break;
         
       case 'all':
@@ -156,20 +125,6 @@ const ContactsContainer = () => {
     }
     
     console.log(`Filter "${filterType}" returned:`, filteredContacts.length, 'contacts');
-    
-    // Additional debugging for employment status
-    if (filterType === 'employed' || filterType === 'not_employed') {
-      console.log('Employment status breakdown:');
-      const employmentStats = contacts.reduce((stats, contact) => {
-        const employed = normalizeBoolean(contact.Still_employed);
-        if (employed === true) stats.employed++;
-        else if (employed === false) stats.notEmployed++;
-        else stats.unknown++;
-        return stats;
-      }, { employed: 0, notEmployed: 0, unknown: 0 });
-      console.log('Employment stats:', employmentStats);
-    }
-    
     console.log('=== END CONTACTS FILTER DEBUG ===');
     return filteredContacts;
   };
@@ -180,19 +135,17 @@ const ContactsContainer = () => {
     try {
       const ownershipMap = new Map();
 
-      if (isCLevel) {
-        console.log('Fetching all accounts for C-level user');
+      if (isManagement) {
+        console.log('Fetching all accounts for management user');
         const response = await getAllAccounts();
-        const accountsData = response.data || response || []; // Handle different response formats
+        const accountsData = response.data || response || [];
         console.log('All accounts received:', accountsData.length);
         
-        // For C-level, we need to determine which accounts are assigned vs unassigned
-        // First, get all assigned accounts
+        // For management, we need to determine which accounts are assigned vs unassigned
         const assignedRes = await fetchActiveAccountsByUser(userId);
         const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
         const assignedAccountIds = new Set(assignedAccounts.map(acc => acc.AccountID));
         
-        // Then get unassigned accounts
         const unassignedRes = await fetchActiveUnassignedAccounts();
         const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
         const unassignedAccountIds = new Set(unassignedAccounts.map(acc => acc.AccountID));
@@ -204,11 +157,11 @@ const ContactsContainer = () => {
           } else if (unassignedAccountIds.has(acc.AccountID)) {
             ownershipMap.set(acc.AccountID, 'unowned');
           } else {
-            ownershipMap.set(acc.AccountID, 'unknown'); // Fallback
+            ownershipMap.set(acc.AccountID, 'unknown');
           }
         });
         
-      } else if (isSalesRep) {
+      } else if (hasAccess("accountClaim")) {
         console.log('Fetching accounts for Sales Rep');
         
         const assignedRes = await fetchActiveAccountsByUser(userId);
@@ -231,15 +184,6 @@ const ContactsContainer = () => {
 
       console.log('Account ownership map created with', ownershipMap.size, 'entries');
       
-      // Debug: Show some entries
-      let debugCount = 0;
-      for (let [accountId, status] of ownershipMap.entries()) {
-        if (debugCount < 5) {
-          console.log(`Account ${accountId}: ${status}`);
-          debugCount++;
-        }
-      }
-      
       setAccountOwnership(ownershipMap);
       return ownershipMap;
     } catch (err) {
@@ -251,6 +195,11 @@ const ContactsContainer = () => {
 
   // ---------------- FETCH CONTACTS ----------------
   const fetchContacts = async () => {
+    if (!canViewContacts) {
+      setError("You don't have permission to view contacts");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -259,10 +208,10 @@ const ContactsContainer = () => {
       // First fetch account ownership information
       const ownershipMap = await fetchAccountOwnership();
 
-      if (isCLevel) {
+      if (isManagement) {
         const allContacts = await getAllContacts();
         data = allContacts;
-      } else if (isSalesRep && userId) {
+      } else if (hasAccess("accountClaim") && userId) {
         const userContacts = await fetchContactsByUser(userId);
         data = userContacts;
       }
@@ -352,6 +301,10 @@ const ContactsContainer = () => {
 
   // ---------------- CONTACT HANDLERS ----------------
   const handleDeactivate = (id) => {
+    if (!canEditContacts) {
+      setError("You don't have permission to delete contacts");
+      return;
+    }
     if (!id) {
       setError("Cannot delete contact - missing ID");
       return;
@@ -361,6 +314,10 @@ const ContactsContainer = () => {
   };
 
   const handleEdit = (contact) => {
+    if (!canEditContacts) {
+      setError("You don't have permission to edit contacts");
+      return;
+    }
     if (!contact?.ContactID) {
       setError("Cannot edit contact - missing ID");
       return;
@@ -369,6 +326,10 @@ const ContactsContainer = () => {
   };
 
   const handleView = (contact) => {
+    if (!canViewDetails) {
+      setError("You don't have permission to view contact details");
+      return;
+    }
     if (!contact?.ContactID) {
       setError("Cannot view contact - missing ID");
       return;
@@ -376,7 +337,13 @@ const ContactsContainer = () => {
     navigate(`/contacts/${contact.ContactID}`);
   };
 
-  const handleCreate = () => navigate("/contacts/create");
+  const handleCreate = () => {
+    if (!canCreateContacts) {
+      setError("You don't have permission to create contacts");
+      return;
+    }
+    navigate("/contacts/create");
+  };
 
   // ---------------- NOTES HANDLERS ----------------
   const handleAddNote = (contact) => {
@@ -484,6 +451,7 @@ const ContactsContainer = () => {
         onAddAttachment={handleAddAttachment}
         onFilterChange={handleFilterChange}
         userRoles={roles}
+        hasAccess={hasAccess}
         formatters={formatters}
         totalCount={allContacts.length}
         currentFilter={currentFilter}

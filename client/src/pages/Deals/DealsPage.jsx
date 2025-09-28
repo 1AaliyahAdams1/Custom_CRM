@@ -287,10 +287,38 @@ const DealsPage = ({
                 entityType="deal"
               />
             )}
-          </TabPanel>
-        </Paper>
-      </Box>
-    </ThemeProvider>
+            </TabPanel>
+
+            {/* Footer with counts */}
+           <Box sx={{ p: 2, borderTop: '1px solid #e5e5e5', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Tooltip title="Total number of deals displayed in the table" arrow>
+                        <Typography variant="body2" sx={{ color: '#666666', cursor: 'help' }}>
+                          Showing {deals.length} deals
+                        </Typography>
+                      </Tooltip>
+                      {selected.length > 0 && (
+                        <Tooltip title="Number of deals currently selected for bulk operations" arrow>
+                          <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500, cursor: 'help' }}>
+                            {selected.length} selected
+                          </Typography>
+                        </Tooltip>
+                      )}
+                    </Box>
+                  </Paper>
+          
+                  {/* Status Snackbar with tooltip context
+                  <Snackbar
+                    open={!!statusMessage}
+                    autoHideDuration={4000}
+                    onClose={() => setStatusMessage('')}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  >
+                    <Alert onClose={() => setStatusMessage('')} severity={statusSeverity} sx={{ width: '100%' }}>
+                      {statusMessage}
+                    </Alert>
+                  </Snackbar> */}
+                </Box>
+              </ThemeProvider>
   );
 };
 

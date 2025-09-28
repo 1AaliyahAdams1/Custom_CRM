@@ -84,6 +84,72 @@ const getActivitiesByUser = async (req, res) => {
   }
 };
 
+//Bulk Operations Controllers
+const bulkMarkActivitiesComplete = async (req, res) => {
+  try {
+    const { activityIds } = req.body;
+    const result = await activityService.bulkMarkActivitiesComplete(activityIds);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+const bulkMarkActivitiesIncomplete = async (req, res) => {
+  try {
+    const { activityIds } = req.body;
+    const result = await activityService.bulkMarkActivitiesIncomplete(activityIds);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+const bulkUpdateActivityStatus = async (req, res) => {
+  try {
+    const { activityIds, status } = req.body;
+    const result = await activityService.bulkUpdateActivityStatus(activityIds, status);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+const bulkUpdateActivityPriority = async (req, res) => {
+  try {
+    const { activityIds, priorityLevelId } = req.body;
+    const result = await activityService.bulkUpdateActivityPriority(activityIds, priorityLevelId);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+const bulkUpdateActivityDueDates = async (req, res) => {
+  try {
+    const { activityIds, dueToStart, dueToEnd } = req.body;
+    const result = await activityService.bulkUpdateActivityDueDates(activityIds, dueToStart, dueToEnd);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
 module.exports = {
   getAllActivities,
   getActivityByID,
@@ -92,5 +158,11 @@ module.exports = {
   deactivateActivity,
   reactivateActivity,
   deleteActivity,
-  getActivitiesByUser
+  getActivitiesByUser,
+  // Bulk operations
+  bulkMarkActivitiesComplete,
+  bulkMarkActivitiesIncomplete,
+  bulkUpdateActivityStatus,
+  bulkUpdateActivityPriority,
+  bulkUpdateActivityDueDates,
 };

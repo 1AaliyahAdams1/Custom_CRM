@@ -22,7 +22,7 @@ import {
 import IndustryPage from '../../pages/Industry/IndustryPage';
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
-import ConfirmDialog from "../../components/ConfirmDialog"; // Make sure this exists
+import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 
 const IndustryContainer = () => {
   const [industries, setIndustries] = useState([]);

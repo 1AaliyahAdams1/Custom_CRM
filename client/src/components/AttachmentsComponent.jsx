@@ -47,6 +47,7 @@ const AttachmentsPopup = ({
   entityType = 'account',
   entityId,
   entityName,
+  userName, // Add userName prop to track who is uploading
   maxFileSize = 10,
   maxFiles = 5,
   acceptedFileTypes = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.gif', '.mp4', '.mov', '.mp3', '.txt', '.zip'],
@@ -149,7 +150,8 @@ const AttachmentsPopup = ({
         await uploadAttachment({
           file,
           entityId,
-          entityTypeName: entityType
+          entityTypeName: entityType,
+          userName: userName || 'Unknown User' // Pass userName to service
         });
         
         setUploadProgress(prev => ({ ...prev, [i]: 100 }));
@@ -203,10 +205,13 @@ const AttachmentsPopup = ({
     }
   };
 
-  const getFileIcon = (fileName) => {
-    if (!fileName) return <InsertDriveFile />;
+  const getFileIcon = (fileUrl) => {
+    if (!fileUrl) return <InsertDriveFile />;
     
+    // Extract filename from FileUrl since FileName isn't stored
+    const fileName = fileUrl.split('/').pop() || '';
     const ext = fileName.split('.').pop()?.toLowerCase() || '';
+    
     const iconMap = {
       // Documents
       pdf: <PictureAsPdf />,
@@ -253,6 +258,14 @@ const AttachmentsPopup = ({
     } catch {
       return 'Unknown';
     }
+  };
+
+  // Extract filename from FileUrl for display
+  const getDisplayFileName = (attachment) => {
+    const fileUrl = attachment.FileUrl || attachment.fileUrl;
+    if (!fileUrl) return 'Unknown File';
+    
+    return fileUrl.split('/').pop() || 'Unknown File';
   };
 
   const handleClose = () => {
@@ -420,11 +433,20 @@ const AttachmentsPopup = ({
                   }}
                 >
                   <ListItemIcon>
-                    {getFileIcon(att.FileName || att.fileName)}
+                    {getFileIcon(att.FileUrl || att.fileUrl)}
                   </ListItemIcon>
                   <ListItemText
-                    primary={att.FileName || att.fileName || 'Unknown'}
-                    secondary={`Uploaded: ${formatDate(att.UploadedAt || att.uploadedAt)}`}
+                    primary={getDisplayFileName(att)}
+                    secondary={
+                      <Box>
+                        <Typography variant="caption" display="block">
+                          Uploaded: {formatDate(att.UploadedAt || att.uploadedAt)}
+                        </Typography>
+                        <Typography variant="caption" display="block" color="text.secondary">
+                          By: {att.CreatedBy || att.createdBy || 'Unknown'}
+                        </Typography>
+                      </Box>
+                    }
                   />
                   <ListItemSecondaryAction>
                     <Box sx={{ display: 'flex', gap: 1 }}>

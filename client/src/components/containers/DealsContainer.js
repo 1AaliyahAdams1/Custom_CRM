@@ -23,7 +23,7 @@ import {
   deleteAttachment, 
   downloadAttachment 
 } from "../../services/attachmentService";
-import ConfirmDialog from "../../components/ConfirmDialog";
+import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 
