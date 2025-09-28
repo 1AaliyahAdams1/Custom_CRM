@@ -21,7 +21,18 @@ async function claimAccount(userId, accountId) {
   await assignUser(userId, accountId);
 }
 
+
+async function removeAssignedUser(accountUserId) {
+  try {
+    await assignedUserRepository.deactivateAssignedUser(accountUserId);
+    await assignedUserRepository.deleteAssignedUser(accountUserId);
+  } catch (err) {
+    console.warn("Deleting failed", err.message);
+  }
+}
+
 module.exports = {
   assignUser,
-  claimAccount
+  claimAccount,
+  removeAssignedUser
 };

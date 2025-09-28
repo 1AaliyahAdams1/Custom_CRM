@@ -33,7 +33,7 @@ const ContactsContainer = () => {
   const [allContacts, setAllContacts] = useState([]);
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [currentFilter, setCurrentFilter] = useState('all');
-  const [accountOwnership, setAccountOwnership] = useState(new Map()); // Map of AccountID -> ownerStatus
+  const [accountOwnership, setAccountOwnership] = useState(new Map()); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -66,22 +66,7 @@ const ContactsContainer = () => {
   const canViewDetails = hasAccess("contactsDetails");
   const isManagement = hasAccess("reports"); // Management roles have report access
 
-  // Helper function to normalize boolean values
-  const normalizeBoolean = (value) => {
-    if (value === null || value === undefined) return null;
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'string') {
-      const lower = value.toLowerCase();
-      if (lower === 'true' || lower === '1' || lower === 'yes') return true;
-      if (lower === 'false' || lower === '0' || lower === 'no') return false;
-    }
-    if (typeof value === 'number') {
-      return value === 1;
-    }
-    return null;
-  };
-
-  // ---------------- IMPROVED FILTER LOGIC ----------------
+  // ---------------- FILTER LOGIC ----------------
   const applyFilter = (contacts, filterType) => {
     console.log('=== CONTACTS FILTER DEBUG ===');
     console.log('Applying filter:', filterType, 'to contacts:', contacts.length);

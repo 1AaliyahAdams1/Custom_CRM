@@ -212,14 +212,14 @@ async function getContactsByUser(userId) {
         p.[CityID], ci.[CityName], ci.[StateProvinceID],
         sp.[StateProvince_Name], sp.[CountryID], co.[CountryName], 
         c.[Active], c.[CreatedAt], c.[UpdatedAt]
-        FROM [CRM].[dbo].[Contact] c
-        INNER JOIN [CRM].[dbo].[Account] a ON c.AccountID = a.AccountID
-        INNER JOIN [CRM].[dbo].[Person] p ON c.PersonID = p.PersonID
-        JOIN [CRM].[dbo].[AssignedUser] au ON c.AccountID = au.AccountID AND au.Active = 1
-        LEFT JOIN [CRM].[dbo].[City] ci ON p.CityID = ci.CityID
-        LEFT JOIN [CRM].[dbo].[StateProvince] sp ON ci.StateProvinceID = sp.StateProvinceID
-        LEFT JOIN [CRM].[dbo].[Country] co ON sp.CountryID = co.CountryID
-        LEFT JOIN [CRM].[dbo].[JobTitle] jt ON c.JobTitleID = jt.JobTitleID 
+        FROM [8589_CRM].[dbo].[Contact] c
+        INNER JOIN [8589_CRM].[dbo].[Account] a ON c.AccountID = a.AccountID
+        INNER JOIN [8589_CRM].[dbo].[Person] p ON c.PersonID = p.PersonID
+        JOIN [8589_CRM].[dbo].[AssignedUser] au ON c.AccountID = au.AccountID AND au.Active = 1
+        LEFT JOIN [8589_CRM].[dbo].[City] ci ON p.CityID = ci.CityID
+        LEFT JOIN [8589_CRM].[dbo].[StateProvince] sp ON ci.StateProvinceID = sp.StateProvinceID
+        LEFT JOIN [8589_CRM].[dbo].[Country] co ON sp.CountryID = co.CountryID
+        LEFT JOIN [8589_CRM].[dbo].[JobTitle] jt ON c.JobTitleID = jt.JobTitleID 
         WHERE au.UserID = @UserID
         AND c.Active = 1;
       `);
