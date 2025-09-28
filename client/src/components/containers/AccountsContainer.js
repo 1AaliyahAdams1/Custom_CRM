@@ -47,7 +47,6 @@ const AccountsContainer = () => {
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [accountToDelete, setAccountToDelete] = useState(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
@@ -130,12 +129,6 @@ const AccountsContainer = () => {
       default:
         return accounts;
     }
-  };
-
-  const handleFilterChange = (filterType) => {
-    setCurrentFilter(filterType);
-    setFilteredAccounts(applyFilter(allAccounts, filterType));
-    setSelected([]);
   };
 
   // ---------------- ACCOUNT ACTIONS ----------------

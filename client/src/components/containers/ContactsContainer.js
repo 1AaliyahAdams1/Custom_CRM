@@ -240,10 +240,6 @@ const ContactsContainer = () => {
       setAllContacts(processedData);
       const filtered = applyFilter(processedData, currentFilter);
       setFilteredContacts(filtered);
-
-      setAllContacts(processedData);
-      const filtered = applyFilter(processedData, currentFilter);
-      setFilteredContacts(filtered);
     } catch (err) {
       console.error('Error fetching contacts:', err);
       console.error('Error fetching contacts:', err);
@@ -251,15 +247,6 @@ const ContactsContainer = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // ---------------- FILTER HANDLER ----------------
-  const handleFilterChange = (filterType) => {
-    console.log('Filter changed to:', filterType);
-    setCurrentFilter(filterType);
-    const filtered = applyFilter(allContacts, filterType);
-    setFilteredContacts(filtered);
-    setSelected([]);
   };
 
   // ---------------- FILTER HANDLER ----------------
@@ -476,8 +463,6 @@ const ContactsContainer = () => {
         userRoles={roles}
         hasAccess={hasAccess}
         formatters={formatters}
-        totalCount={allContacts.length}
-        currentFilter={currentFilter}
         totalCount={allContacts.length}
         currentFilter={currentFilter}
       />
