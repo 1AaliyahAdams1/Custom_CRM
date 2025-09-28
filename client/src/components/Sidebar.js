@@ -165,6 +165,7 @@ const DRAWER_WIDTH_COLLAPSED = 64;
 // Navigation configuration
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: DashboardIcon, accessKey: "dashboard", section: "Main" },
+  { name: "Smart Work", href: "/smart-work", icon: WorkspacesOutlineIcon, accessKey: "smartWork", section: "Main"},
 
   // CRM
   { name: "Accounts", href: "/accounts", icon: BusinessIcon, accessKey: "accounts", section: "CRM Management" },
@@ -176,7 +177,6 @@ const NAV_ITEMS = [
   { name: "Events", href: "/events", icon: EventIcon, accessKey: "events", section: "CRM Management" },
   { name: "Owners", href: "/owners", icon: WorkIcon, accessKey: "owners", section: "CRM Management" },
   { name: "Discount Codes", href: "/discount-codes", icon: DiscountIcon, accessKey: "discountcodes", section: "CRM Management" },
-  { name: "Smart Work", href: "/smart-work", icon: WorkspacesOutlineIcon, accessKey: "smartWork", section: "CRM Management" },
 
   // Reports
   { name: "Reports", href: "/reports", icon: BarChartIcon, accessKey: "reports", section: "Analysis & Reports" },
