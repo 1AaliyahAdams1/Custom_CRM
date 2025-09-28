@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Menu, MenuItem, Tooltip } from '@mui/material';
-import { Info, Edit, Delete, Note, AttachFile, Business, PersonAdd } from '@mui/icons-material';
+import { Info, Edit, Delete, Note, AttachFile, Business, PersonAdd, PersonRemove, RestoreFromTrash, DeleteForever, Block } from '@mui/icons-material';
 
 const ActionMenu = ({
   anchorEl,
@@ -15,7 +15,11 @@ const ActionMenu = ({
   onAddNote,
   onAddAttachment,
   onClaimAccount,
+  onUnclaimAccount,
   onAssignUser,
+  onUnassignUser,
+  onReactivate,
+  onPermanentDelete,
   menuItems = [],
   tooltips = {}, // Generic tooltips passed from parent
 }) => {
@@ -48,8 +52,21 @@ const ActionMenu = ({
         label: 'Assign User',
         icon: <PersonAdd sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onAssignUser),
-        show: entityType === 'account' && !!onAssignUser && hasRole('C-level'),
+        show: entityType === 'account' && 
+              !!onAssignUser && 
+              hasRole('C-level') && 
+              (!menuRow?.assignedUserId || menuRow?.assignedUserId === null),
         tooltip: getTooltip('assignUser', 'Assign a team member to this record'),
+      },
+      {
+        label: 'Unassign User',
+        icon: <PersonRemove sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(onUnassignUser),
+        show: entityType === 'account' && 
+              !!onUnassignUser && 
+              hasRole('C-level') && 
+              (menuRow?.assignedUserId && menuRow?.assignedUserId !== null),
+        tooltip: getTooltip('unassignUser', 'Remove assigned user from this record'),
       },
       {
         label: 'Claim Account',
@@ -61,6 +78,17 @@ const ActionMenu = ({
           hasRole('Sales Representative') &&
           menuRow?.ownerStatus !== 'owned',
         tooltip: getTooltip('claimAccount', 'Claim ownership of this record'),
+      },
+      {
+        label: 'Unclaim Account',
+        icon: <Business sx={{ mr: 1, color: '#666' }} />,
+        onClick: () => handleClick(onUnclaimAccount),
+        show:
+          entityType === 'account' &&
+          !!onUnclaimAccount &&
+          hasRole('Sales Representative') &&
+          menuRow?.ownerStatus === 'owned',
+        tooltip: getTooltip('unclaimAccount', 'Release ownership of this record'),
       },
       {
         label: 'View Details',
@@ -91,14 +119,25 @@ const ActionMenu = ({
         tooltip: getTooltip('addAttachment', 'Attach files or documents'),
       },
       {
-        label: 'Delete',
-        icon: <Delete sx={{ mr: 1, color: '#000' }} />,
+        label: 'Reactivate',
+        icon: <RestoreFromTrash sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(() => onReactivate(menuRow[idField])),
+        show: !!onReactivate && menuRow?.Active === false,
+        tooltip: getTooltip('reactivate', 'Reactivate this record'),
+      },
+      {
+        label: 'Deactivate',
+        icon: <Block sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(() => onDelete(menuRow[idField])),
-        show: !!onDelete,
-        disabled: (menuRow) => menuRow?.Active === false,
-        tooltip: menuRow?.Active === false 
-          ? 'Record is already deactivated' 
-          : getTooltip('delete', 'Delete or deactivate this record'),
+        show: !!onDelete && menuRow?.Active !== false,
+        tooltip: getTooltip('delete', 'Deactivate this record'),
+      },
+      {
+        label: 'Delete Permanently',
+        icon: <DeleteForever sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(() => onPermanentDelete(menuRow[idField])),
+        show: !!onPermanentDelete && menuRow?.Active === false,
+        tooltip: getTooltip('permanentDelete', 'Permanently delete this record (cannot be undone)'),
       },
     ];
 
@@ -114,7 +153,11 @@ const ActionMenu = ({
     onAddNote,
     onAddAttachment,
     onClaimAccount,
+    onUnclaimAccount,
     onAssignUser,
+    onUnassignUser,
+    onReactivate,
+    onPermanentDelete,
     menuItems,
     hasRole,
     idField,
