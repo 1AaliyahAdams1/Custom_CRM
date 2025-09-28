@@ -114,6 +114,35 @@ const navigation = [
     section: "CRM Management",
   },
   {
+    name: "Companies",
+    href: "/companies",
+    icon: CorporateFareIcon,
+    accessKey: "companies",
+    section: "CRM Management",
+  },
+  {
+    name: "Events",
+    href: "/events",
+    icon: EventIcon,
+    accessKey: "events",
+    section: "CRM Management",
+  },
+  
+  // {
+  //   name: "Owners",
+  //   href: "/owners",
+  //   icon: WorkIcon,
+  //   accessKey: "owners",
+  //   section: "CRM Management",
+  // },
+  {
+    name: "Discount Codes",
+    href: "/discount-codes",
+    icon: DiscountIcon,
+    accessKey: "discountcodes",
+    section: "CRM Management",
+  },
+  {
     name: "Work Page",
     href: "/smart-work",
     icon: WorkspacesOutlineIcon,
