@@ -54,6 +54,25 @@ async function assignUser(req, res) {
       error: err.message || "Failed to assign user" 
     });
   }
+
 }
 
-module.exports = { claimAccount, assignUser };
+const removeAssignedUser = async (req, res) => {
+  try {
+    const { accountUserId } = req.params;
+    if (!accountUserId) {
+      return res.status(400).json({ message: "accountUserId is required" });
+    }
+
+    await assignedUserService.removeAssignedUser(parseInt(accountUserId));
+    res.status(200).json({ message: "Assigned user removed (deactivated or deleted)" });
+  } catch (err) {
+    res.status(400).json({ message: err.message || "Failed to remove assigned user" });
+  }
+};
+
+module.exports = { 
+  claimAccount, 
+  assignUser,
+  removeAssignedUser 
+};

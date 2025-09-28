@@ -14,7 +14,7 @@ import {
 } from "../../services/attachmentService";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
-import ConfirmDialog from "../../components/ConfirmDialog"; 
+import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 
 const ProductsContainer = () => {
   const navigate = useNavigate();
