@@ -8,6 +8,9 @@ import {
   bulkMarkActivitiesComplete,
   bulkMarkActivitiesIncomplete,
   bulkUpdateActivityDueDates
+  bulkMarkActivitiesComplete,
+  bulkMarkActivitiesIncomplete,
+  bulkUpdateActivityDueDates
 } from "../../services/activityService";
 import {
   getAllAccounts,
@@ -288,6 +291,7 @@ const ActivitiesContainer = () => {
     <>
       <ActivitiesPage
         activities={finalFilteredActivities}
+        activities={finalFilteredActivities}
         loading={loading}
         error={error}
         successMessage={successMessage}
@@ -308,6 +312,7 @@ const ActivitiesContainer = () => {
         onAddNote={handleAddNote}
         onAddAttachment={handleAddAttachment}
         onFilterChange={handleFilterChange}
+        onFilterChange={handleFilterChange}
         searchTerm={searchTerm}
         statusFilter={statusFilter}
         priorityFilter={priorityFilter}
@@ -315,6 +320,8 @@ const ActivitiesContainer = () => {
         setStatusFilter={setStatusFilter}
         setPriorityFilter={setPriorityFilter}
         clearFilters={clearFilters}
+        totalCount={allActivities.length}
+        currentFilter={currentFilter}
         totalCount={allActivities.length}
         currentFilter={currentFilter}
       />

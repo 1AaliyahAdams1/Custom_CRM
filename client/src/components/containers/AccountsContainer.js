@@ -50,6 +50,7 @@ const AccountsContainer = () => {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [accountToDelete, setAccountToDelete] = useState(null);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -101,6 +102,14 @@ const AccountsContainer = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ---------------- FILTER HANDLER ----------------
+  const handleFilterChange = (filterType) => {
+    setCurrentFilter(filterType);
+    const filtered = applyFilter(allAccounts, filterType);
+    setFilteredAccounts(filtered);
+    setSelected([]);
   };
 
   useEffect(() => {

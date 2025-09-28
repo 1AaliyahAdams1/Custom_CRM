@@ -223,6 +223,9 @@ const ContactsContainer = () => {
       console.log('Raw contacts received:', data.length);
 
       // Process contacts with PersonFullName
+      console.log('Raw contacts received:', data.length);
+
+      // Process contacts with PersonFullName
       const processedData = data.map((contact) => ({
         ...contact,
         PersonFullName: [
@@ -237,7 +240,12 @@ const ContactsContainer = () => {
       setAllContacts(processedData);
       const filtered = applyFilter(processedData, currentFilter);
       setFilteredContacts(filtered);
+
+      setAllContacts(processedData);
+      const filtered = applyFilter(processedData, currentFilter);
+      setFilteredContacts(filtered);
     } catch (err) {
+      console.error('Error fetching contacts:', err);
       console.error('Error fetching contacts:', err);
       setError("Failed to load contacts. Please try again.");
     } finally {
@@ -254,10 +262,25 @@ const ContactsContainer = () => {
     setSelected([]);
   };
 
+  // ---------------- FILTER HANDLER ----------------
+  const handleFilterChange = (filterType) => {
+    console.log('Filter changed to:', filterType);
+    setCurrentFilter(filterType);
+    const filtered = applyFilter(allContacts, filterType);
+    setFilteredContacts(filtered);
+    setSelected([]);
+  };
+
   useEffect(() => {
     fetchContacts();
   }, [refreshFlag]);
 
+  useEffect(() => {
+    if (allContacts.length > 0 && accountOwnership.size > 0) {
+      const filtered = applyFilter(allContacts, currentFilter);
+      setFilteredContacts(filtered);
+    }
+  }, [allContacts, currentFilter, accountOwnership]);
   useEffect(() => {
     if (allContacts.length > 0 && accountOwnership.size > 0) {
       const filtered = applyFilter(allContacts, currentFilter);
@@ -453,6 +476,8 @@ const ContactsContainer = () => {
         userRoles={roles}
         hasAccess={hasAccess}
         formatters={formatters}
+        totalCount={allContacts.length}
+        currentFilter={currentFilter}
         totalCount={allContacts.length}
         currentFilter={currentFilter}
       />

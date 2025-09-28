@@ -487,7 +487,7 @@ const AppRoutes = () => {
         path="/smart-work"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.smartWork}>
-            <SmartWorkPage />
+            <WorkPage />
           </PrivateRoute>
         }
       />
