@@ -98,6 +98,7 @@ const navigation = [
     accessKey: "events",
     section: "CRM Management",
   },
+  
   // {
   //   name: "Owners",
   //   href: "/owners",
@@ -112,13 +113,13 @@ const navigation = [
     accessKey: "discountcodes",
     section: "CRM Management",
   },
-  // {
-  //   name: "Work Page",
-  //   href: "/smart-work",
-  //   icon: WorkspacesOutlineIcon,
-  //   accessKey: "smartWork",
-  //   section: "CRM Management",
-  // },
+  {
+    name: "Work Page",
+    href: "/smart-work",
+    icon: WorkspacesOutlineIcon,
+    accessKey: "smartWork",
+    section: "CRM Management",
+  },
   {
     name: "Reports",
     href: "/reports",
