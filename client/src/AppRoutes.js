@@ -44,7 +44,7 @@ const ActivitiesDetailsPage = lazy(() => import("./pages/Activities/ActivitiesDe
 const ProductDetailsPage = lazy(() => import("./pages/Products/ProductDetailsPage"));
 const CompaniesDetailsPage = lazy(() => import("./pages/Companies/CompanyDetailsPage"));
 const EventsDetailsPage = lazy(() => import("./pages/Events/EventDetailsPage"));
-const DiscountCodesDetailsPage = lazy(() => import("./pages/DiscountCodes/DiscountCodeDetailsPage"));
+const DiscountCodesDetailsPage = lazy(() => import("./pages/DiscountCodes/DiscountCodeDetails"));
 
 const CreateAccountPage = lazy(() => import("./pages/Accounts/CreateAccountPage"));
 const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPage"));
