@@ -2,6 +2,451 @@ const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
 //======================================
+// SEQUENCE CRUD OPERATIONS
+//======================================
+
+//======================================
+// Get all sequences
+//======================================
+async function getAllSequences() {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .query(`
+        SELECT 
+          SequenceID,
+          SequenceName,
+          SequenceDescription,
+          CreatedAt,
+          UpdatedAt,
+          Active
+        FROM Sequence
+        ORDER BY SequenceName
+      `);
+
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getAllSequences:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Get sequence details by ID
+//======================================
+async function getSequenceDetails(id) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query(`
+        SELECT 
+          SequenceID,
+          SequenceName,
+          SequenceDescription,
+          CreatedAt,
+          UpdatedAt,
+          Active
+        FROM Sequence
+        WHERE SequenceID = @SequenceID
+      `);
+
+    return result.recordset[0] || null;
+  } catch (err) {
+    console.error("Database error in getSequenceDetails:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Get sequence with all its items
+//======================================
+async function getSequenceWithItems(id) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query(`
+        SELECT 
+          seq.SequenceID,
+          seq.SequenceName,
+          seq.SequenceDescription,
+          seq.CreatedAt AS SequenceCreatedAt,
+          seq.UpdatedAt AS SequenceUpdatedAt,
+          seq.Active AS SequenceActive,
+          si.SequenceItemID,
+          si.TypeID,
+          at.TypeName AS ActivityTypeName,
+          si.SequenceItemDescription,
+          si.DaysFromStart,
+          si.CreatedAt AS ItemCreatedAt,
+          si.UpdatedAt AS ItemUpdatedAt,
+          si.Active AS ItemActive,
+          si.PriorityLevelID,
+          pl.PriorityLevelName,
+          pl.PriorityLevelValue
+        FROM Sequence seq
+        LEFT JOIN SequenceItem si ON seq.SequenceID = si.SequenceID
+        LEFT JOIN ActivityType at ON si.TypeID = at.TypeID AND at.Active = 1
+        LEFT JOIN PriorityLevel pl ON si.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
+        WHERE seq.SequenceID = @SequenceID
+        ORDER BY si.DaysFromStart
+      `);
+
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getSequenceWithItems:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Create sequence
+//======================================
+async function createSequence(sequenceData, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const {
+      SequenceName,
+      SequenceDescription = null,
+      Active = true
+    } = sequenceData;
+
+    const result = await pool.request()
+      .input("SequenceName", sql.NVarChar(255), SequenceName)
+      .input("SequenceDescription", sql.NVarChar(sql.MAX), SequenceDescription)
+      .input("Active", sql.Bit, Active)
+      .query(`
+        INSERT INTO Sequence (SequenceName, SequenceDescription, CreatedAt, UpdatedAt, Active)
+        OUTPUT INSERTED.SequenceID
+        VALUES (@SequenceName, @SequenceDescription, GETDATE(), GETDATE(), @Active)
+      `);
+
+    const newSequenceID = result.recordset[0].SequenceID;
+
+    // Log the action in SequenceHistory if you have that table
+    // Otherwise, you can add logging here similar to accounts
+
+    return { SequenceID: newSequenceID };
+  } catch (err) {
+    console.error("Database error in createSequence:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Update sequence
+//======================================
+async function updateSequence(id, sequenceData, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+
+    // First get the existing sequence details
+    const existingResult = await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query('SELECT * FROM Sequence WHERE SequenceID = @SequenceID');
+
+    if (existingResult.recordset.length === 0) {
+      throw new Error("Sequence not found");
+    }
+
+    const existing = existingResult.recordset[0];
+
+    const {
+      SequenceName = existing.SequenceName,
+      SequenceDescription = existing.SequenceDescription
+    } = sequenceData;
+
+    await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .input("SequenceName", sql.NVarChar(255), SequenceName)
+      .input("SequenceDescription", sql.NVarChar(sql.MAX), SequenceDescription)
+      .query(`
+        UPDATE Sequence
+        SET 
+          SequenceName = @SequenceName,
+          SequenceDescription = @SequenceDescription,
+          UpdatedAt = GETDATE()
+        WHERE SequenceID = @SequenceID
+      `);
+
+    return { message: "Sequence updated", SequenceID: id };
+  } catch (err) {
+    console.error("Database error in updateSequence:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Deactivate sequence
+//======================================
+async function deactivateSequence(id, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+
+    // Get existing sequence details first
+    const existingResult = await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query('SELECT * FROM Sequence WHERE SequenceID = @SequenceID');
+
+    if (existingResult.recordset.length === 0) {
+      throw new Error("Sequence not found");
+    }
+
+    const existing = existingResult.recordset[0];
+
+    if (!existing.Active) {
+      throw new Error("Sequence is already deactivated");
+    }
+
+    // Update the sequence status
+    await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query('UPDATE Sequence SET Active = 0, UpdatedAt = GETDATE() WHERE SequenceID = @SequenceID');
+
+    // Also deactivate all associated sequence items
+    await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query('UPDATE SequenceItem SET Active = 0, UpdatedAt = GETDATE() WHERE SequenceID = @SequenceID');
+
+    return { message: "Sequence deactivated", SequenceID: id };
+  } catch (err) {
+    console.error("Database error in deactivateSequence:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Reactivate sequence
+//======================================
+async function reactivateSequence(id, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+
+    // Get existing sequence details first
+    const existingResult = await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query('SELECT * FROM Sequence WHERE SequenceID = @SequenceID');
+
+    if (existingResult.recordset.length === 0) {
+      throw new Error("Sequence not found");
+    }
+
+    const existing = existingResult.recordset[0];
+
+    if (existing.Active) {
+      throw new Error("Sequence is already active");
+    }
+
+    // Update the sequence status
+    await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query('UPDATE Sequence SET Active = 1, UpdatedAt = GETDATE() WHERE SequenceID = @SequenceID');
+
+    return { message: "Sequence reactivated", SequenceID: id };
+  } catch (err) {
+    console.error("Database error in reactivateSequence:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Delete sequence (permanently)
+//======================================
+async function deleteSequence(id, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+
+    // Get existing sequence details first
+    const existingResult = await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query('SELECT * FROM Sequence WHERE SequenceID = @SequenceID');
+
+    if (existingResult.recordset.length === 0) {
+      throw new Error("Sequence not found");
+    }
+
+    const existing = existingResult.recordset[0];
+
+    if (existing.Active) {
+      throw new Error("Sequence must be deactivated before permanent deletion");
+    }
+
+    // Delete all associated sequence items first
+    await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query('DELETE FROM SequenceItem WHERE SequenceID = @SequenceID');
+
+    // Then delete the sequence
+    await pool.request()
+      .input("SequenceID", sql.Int, id)
+      .query('DELETE FROM Sequence WHERE SequenceID = @SequenceID');
+
+    return { message: "Sequence permanently deleted", SequenceID: id };
+  } catch (err) {
+    console.error("Database error in deleteSequence:", err);
+    throw err;
+  }
+}
+
+//======================================
+// SEQUENCE ITEM CRUD OPERATIONS
+//======================================
+
+//======================================
+// Get sequence item details
+//======================================
+async function getSequenceItemDetails(id) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("SequenceItemID", sql.Int, id)
+      .query(`
+        SELECT 
+          si.SequenceItemID,
+          si.SequenceID,
+          si.TypeID,
+          at.TypeName AS ActivityTypeName,
+          si.SequenceItemDescription,
+          si.DaysFromStart,
+          si.CreatedAt,
+          si.UpdatedAt,
+          si.Active,
+          si.PriorityLevelID,
+          pl.PriorityLevelName,
+          pl.PriorityLevelValue
+        FROM SequenceItem si
+        LEFT JOIN ActivityType at ON si.TypeID = at.TypeID AND at.Active = 1
+        LEFT JOIN PriorityLevel pl ON si.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
+        WHERE si.SequenceItemID = @SequenceItemID
+      `);
+
+    return result.recordset[0] || null;
+  } catch (err) {
+    console.error("Database error in getSequenceItemDetails:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Create sequence item
+//======================================
+async function createSequenceItem(itemData, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const {
+      SequenceID,
+      TypeID,
+      SequenceItemDescription,
+      DaysFromStart,
+      PriorityLevelID,
+      Active = true
+    } = itemData;
+
+    const result = await pool.request()
+      .input("SequenceID", sql.Int, SequenceID)
+      .input("TypeID", sql.Int, TypeID)
+      .input("SequenceItemDescription", sql.NVarChar(sql.MAX), SequenceItemDescription)
+      .input("DaysFromStart", sql.Int, DaysFromStart)
+      .input("PriorityLevelID", sql.Int, PriorityLevelID)
+      .input("Active", sql.Bit, Active)
+      .query(`
+        INSERT INTO SequenceItem (SequenceID, TypeID, SequenceItemDescription, CreatedAt, UpdatedAt, Active, PriorityLevelID, DaysFromStart)
+        OUTPUT INSERTED.SequenceItemID
+        VALUES (@SequenceID, @TypeID, @SequenceItemDescription, GETDATE(), GETDATE(), @Active, @PriorityLevelID, @DaysFromStart)
+      `);
+
+    const newItemID = result.recordset[0].SequenceItemID;
+
+    return { SequenceItemID: newItemID };
+  } catch (err) {
+    console.error("Database error in createSequenceItem:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Update sequence item
+//======================================
+async function updateSequenceItem(id, itemData, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+
+    // First get the existing item details
+    const existingResult = await pool.request()
+      .input("SequenceItemID", sql.Int, id)
+      .query('SELECT * FROM SequenceItem WHERE SequenceItemID = @SequenceItemID');
+
+    if (existingResult.recordset.length === 0) {
+      throw new Error("Sequence item not found");
+    }
+
+    const existing = existingResult.recordset[0];
+
+    const {
+      TypeID = existing.TypeID,
+      SequenceItemDescription = existing.SequenceItemDescription,
+      DaysFromStart = existing.DaysFromStart,
+      PriorityLevelID = existing.PriorityLevelID
+    } = itemData;
+
+    await pool.request()
+      .input("SequenceItemID", sql.Int, id)
+      .input("TypeID", sql.Int, TypeID)
+      .input("SequenceItemDescription", sql.NVarChar(sql.MAX), SequenceItemDescription)
+      .input("DaysFromStart", sql.Int, DaysFromStart)
+      .input("PriorityLevelID", sql.Int, PriorityLevelID)
+      .query(`
+        UPDATE SequenceItem
+        SET 
+          TypeID = @TypeID,
+          SequenceItemDescription = @SequenceItemDescription,
+          DaysFromStart = @DaysFromStart,
+          PriorityLevelID = @PriorityLevelID,
+          UpdatedAt = GETDATE()
+        WHERE SequenceItemID = @SequenceItemID
+      `);
+
+    return { message: "Sequence item updated", SequenceItemID: id };
+  } catch (err) {
+    console.error("Database error in updateSequenceItem:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Delete sequence item
+//======================================
+async function deleteSequenceItem(id, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+
+    // Get existing item details first
+    const existingResult = await pool.request()
+      .input("SequenceItemID", sql.Int, id)
+      .query('SELECT * FROM SequenceItem WHERE SequenceItemID = @SequenceItemID');
+
+    if (existingResult.recordset.length === 0) {
+      throw new Error("Sequence item not found");
+    }
+
+    // Soft delete by setting Active to 0
+    await pool.request()
+      .input("SequenceItemID", sql.Int, id)
+      .query('UPDATE SequenceItem SET Active = 0, UpdatedAt = GETDATE() WHERE SequenceItemID = @SequenceItemID');
+
+    return { message: "Sequence item deleted", SequenceItemID: id };
+  } catch (err) {
+    console.error("Database error in deleteSequenceItem:", err);
+    throw err;
+  }
+}
+
+//======================================
+// ACTIVITY/WORK FUNCTIONS
+//======================================
+
+//======================================
 // Get all activities with filtering
 //======================================
 const getActivities = async (userId, options = {}) => {
@@ -107,7 +552,7 @@ const getActivities = async (userId, options = {}) => {
             ELSE 0
           END AS IsUrgent,
           CASE 
-            WHEN pl.PriorityLevelValue >= 8 THEN 1
+            WHEN pl.PriorityLevelValue >= 3 THEN 1
             ELSE 0
           END AS IsHighPriority
       FROM Activity a 
@@ -129,7 +574,7 @@ const getActivities = async (userId, options = {}) => {
 };
 
 //======================================
-// Get activities by user (FIXED)
+// Get activities by user
 //======================================
 const getActivitiesByUser = async (userId) => {
   try {
@@ -187,9 +632,8 @@ const getActivitiesByUser = async (userId) => {
   }
 };
 
-
 //======================================
-// Get activity by ID with context (FIXED)
+// Get activity by ID with context 
 //======================================
 const getActivityByID = async (activityId, userId) => {
   try {
@@ -270,6 +714,7 @@ const getActivityByID = async (activityId, userId) => {
     throw error;
   }
 };
+
 //======================================
 // Update activity
 //======================================
@@ -400,7 +845,7 @@ const completeActivityAndGetNext = async (activityId, userId) => {
 };
 
 //======================================
-// Soft delete activity (FIXED)
+// Soft delete activity 
 //======================================
 const deleteActivity = async (activityId, userId) => {
   try {
@@ -441,7 +886,7 @@ const getWorkDashboardSummary = async (userId) => {
           SUM(CASE WHEN a.Completed = 1 THEN 1 ELSE 0 END) AS CompletedActivities,
           SUM(CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 1 ELSE 0 END) AS OverdueActivities,
           SUM(CASE WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) AND a.DueToStart >= GETDATE() AND a.Completed = 0 THEN 1 ELSE 0 END) AS UrgentActivities,
-          SUM(CASE WHEN pl.PriorityLevelValue >= 8 AND a.Completed = 0 THEN 1 ELSE 0 END) AS HighPriorityActivities,
+          SUM(CASE WHEN pl.PriorityLevelValue >= 3 AND a.Completed = 0 THEN 1 ELSE 0 END) AS HighPriorityActivities,
           SUM(CASE WHEN CAST(a.DueToStart AS DATE) = CAST(GETDATE() AS DATE) AND a.Completed = 0 THEN 1 ELSE 0 END) AS TodayActivities
         FROM Activity a 
         INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
@@ -602,7 +1047,7 @@ const getNextActivity = async (userId, currentActivityId = null) => {
 };
 
 //======================================
-// Get activity metadata (FIXED)
+// Get activity metadata 
 //======================================
 const getActivityMetadata = async () => {
   try {
@@ -639,9 +1084,26 @@ const getActivityMetadata = async () => {
 };
 
 //======================================
-// Exports (FIXED - removed duplicate)
+// Exports
 //======================================
 module.exports = {
+  // Sequence CRUD
+  getAllSequences,
+  getSequenceDetails,
+  getSequenceWithItems,
+  createSequence,
+  updateSequence,
+  deactivateSequence,
+  reactivateSequence,
+  deleteSequence,
+  
+  // Sequence Item CRUD
+  getSequenceItemDetails,
+  createSequenceItem,
+  updateSequenceItem,
+  deleteSequenceItem,
+  
+  // Activity/Work functions
   getActivities,
   getActivitiesByUser,
   getActivityByID,

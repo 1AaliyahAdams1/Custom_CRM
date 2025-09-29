@@ -8,6 +8,12 @@ export const ROUTE_ACCESS = {
   dashboard: ALL,
   roles: HR,
 
+   // Accounts
+  sequences: ALL,
+  sequencesDetails: ALL,
+  sequencesCreate: ALL,
+  sequencesEdit: ALL,
+
   // Accounts
   accounts: ALL,
   accountsDetails: ALL,

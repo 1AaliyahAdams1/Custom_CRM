@@ -161,42 +161,6 @@ const getWorkDashboard = async (req, res) => {
 };
 
 //======================================
-// Get sequences and items by user
-//======================================
-const getSequencesAndItemsByUser = async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId, 10);
-
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ error: "Valid User ID is required" });
-    }
-
-    const data = await workService.getSequencesAndItemsByUser(userId);
-    res.status(200).json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-//======================================
-// Get user sequences
-//======================================
-const getUserSequences = async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId, 10);
-
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ error: "Valid User ID is required" });
-    }
-
-    const data = await workService.getUserSequences(userId);
-    res.status(200).json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-//======================================
 // Get next activity
 //======================================
 const getNextActivity = async (req, res) => {
@@ -251,7 +215,6 @@ const getDayView = async (req, res) => {
       return res.status(400).json({ error: "Invalid date format" });
     }
 
-    // Set date range for the specific day
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     
@@ -287,7 +250,6 @@ const getActivityMetadata = async (req, res) => {
 };
 
 module.exports = {
-  // Main Smart Work functionality
   getActivities,
   getActivitiesByUser,
   getActivityForWorkspace,
@@ -296,8 +258,6 @@ module.exports = {
   markComplete,
   deleteActivity,
   getWorkDashboard,
-  getSequencesAndItemsByUser,
-  getUserSequences,
   getNextActivity,
   getActivitiesByStatus,
   getDayView,

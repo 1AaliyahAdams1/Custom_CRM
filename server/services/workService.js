@@ -1,80 +1,73 @@
-const workRepo = require("../data/sequenceRepository");
+const sequenceRepo = require("../data/sequenceRepository");
 
 //======================================
 // Get activities with filtering
 //======================================
 const getActivities = async (userId, options = {}) => {
-  return await workRepo.getActivities(userId, options);
+  return await sequenceRepo.getActivities(userId, options);
 };
 
 //======================================
 // Get activities by user
 //======================================
 const getActivitiesByUser = async (userId) => {
-  return await workRepo.getActivitiesByUser(userId);
+  return await sequenceRepo.getActivitiesByUser(userId);
 };
 
 //======================================
 // Get activity by ID
 //======================================
 const getActivityByID = async (activityId, userId) => {
-  return await workRepo.getActivityByID(activityId, userId);
+  return await sequenceRepo.getActivityByID(activityId, userId);
+};
+
+//======================================
+// Get activity for workspace (detailed view)
+//======================================
+const getActivityForWorkspace = async (activityId, userId) => {
+  return await sequenceRepo.getActivityByID(activityId, userId);
 };
 
 //======================================
 // Update activity
 //======================================
 const updateActivity = async (activityId, userId, activityData) => {
-  return await workRepo.updateActivity(activityId, userId, activityData);
+  return await sequenceRepo.updateActivity(activityId, userId, activityData);
 };
 
 //======================================
 // Complete activity and get next
 //======================================
 const completeActivityAndGetNext = async (activityId, userId) => {
-  return await workRepo.completeActivityAndGetNext(activityId, userId);
+  return await sequenceRepo.completeActivityAndGetNext(activityId, userId);
 };
 
 //======================================
 // Delete activity
 //======================================
 const deleteActivity = async (activityId, userId) => {
-  return await workRepo.deleteActivity(activityId, userId);
+  return await sequenceRepo.deleteActivity(activityId, userId);
 };
 
 //======================================
 // Get work dashboard summary
 //======================================
 const getWorkDashboardSummary = async (userId) => {
-  return await workRepo.getWorkDashboardSummary(userId);
-};
-
-//======================================
-// Get sequences and items by user
-//======================================
-const getSequencesAndItemsByUser = async (userId) => {
-  return await workRepo.getSequencesAndItemsByUser(userId);
-};
-
-//======================================
-// Get user sequences
-//======================================
-const getUserSequences = async (userId) => {
-  return await workRepo.getUserSequences(userId);
+  return await sequenceRepo.getWorkDashboardSummary(userId);
 };
 
 //======================================
 // Get next activity
 //======================================
 const getNextActivity = async (userId, currentActivityId = null) => {
-  return await workRepo.getNextActivity(userId, currentActivityId);
+  return await sequenceRepo.getNextActivity(userId, currentActivityId);
 };
 
 //======================================
 // Get activity metadata
 //======================================
 const getActivityMetadata = async () => {
-  return await workRepo.getActivityMetadata();
+  return await sequenceRepo.getActivityMetadata();
 };
 
 //======================================
@@ -92,7 +85,7 @@ const parseFilterOptions = (filterString) => {
       break;
     case 'high-priority':
       options.completed = false;
-      options.minPriority = 8;
+      options.minPriority = 3;
       break;
     case 'completed':
       options.completed = true;
@@ -123,7 +116,7 @@ const getSmartWorkPageData = async (userId, options = {}) => {
   const filterOptions = parseFilterOptions(options.filter);
   const sortBy = options.sort || 'dueDate';
   
-  const activities = await workRepo.getActivities(userId, {
+  const activities = await sequenceRepo.getActivities(userId, {
     ...filterOptions,
     sortBy: sortBy
   });
@@ -146,11 +139,9 @@ module.exports = {
   completeActivityAndGetNext,
   deleteActivity,
   getWorkDashboardSummary,
-  getSequencesAndItemsByUser,
-  getUserSequences,
   getNextActivity,
   getActivityMetadata,
   getSmartWorkPageData,
+  getActivityForWorkspace,
   parseFilterOptions,
 };
-    

@@ -31,7 +31,7 @@ import {
 } from "@mui/icons-material";
 import PriorityHighIcon from "@mui/icons-material/PriorityHigh";
 import WorkspacesOutlineIcon from "@mui/icons-material/WorkspacesOutline";
-
+import TimelineIcon from '@mui/icons-material/Timeline';
 import CorporateFareIcon from '@mui/icons-material/CorporateFare';
 import WorkIcon from '@mui/icons-material/Work';
 import DiscountIcon from '@mui/icons-material/Discount';
@@ -209,6 +209,7 @@ const NAV_ITEMS = [
   { name: "Contacts", href: "/contacts", icon: PeopleIcon, accessKey: "contacts", section: "CRM Management" },
   { name: "Deals", href: "/deals", icon: HandshakeIcon, accessKey: "deals", section: "CRM Management" },
   { name: "Activities", href: "/activities", icon: EventIcon, accessKey: "activities", section: "CRM Management" },
+  { name: "Sequences", href: "/sequences", icon: TimelineIcon, accessKey: "sequences", section: "CRM Management" },
   { name: "Products", href: "/products", icon: InventoryIcon, accessKey: "products", section: "CRM Management" },
   { name: "Companies", href: "/companies", icon: CorporateFareIcon, accessKey: "companies", section: "CRM Management" },
   { name: "Events", href: "/events", icon: EventIcon, accessKey: "events", section: "CRM Management" },
