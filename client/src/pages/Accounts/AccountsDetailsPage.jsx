@@ -3,162 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Box, Alert, Typography } from "@mui/material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { fetchAccountById } from "../../services/accountService";
-
-// MOck data will replace with API calls :(
-const MOCK_DATA = {
-  contacts: [
-    {
-      ContactID: 1,
-      PersonFullName: 'John Smith',
-      WorkEmail: 'john.smith@example.com',
-      WorkPhone: '+1-555-0101',
-      JobTitleName: 'Sales Manager',
-      Still_employed: true,
-      CreatedAt: '2024-01-15T10:30:00Z',
-      Active: true
-    },
-    {
-      ContactID: 2,
-      PersonFullName: 'Sarah Johnson',
-      WorkEmail: 'sarah.johnson@example.com',
-      WorkPhone: '+1-555-0102',
-      JobTitleName: 'Marketing Director',
-      Still_employed: true,
-      CreatedAt: '2024-02-01T14:20:00Z',
-      Active: true
-    },
-    {
-      ContactID: 3,
-      PersonFullName: 'Mike Wilson',
-      WorkEmail: 'mike.wilson@example.com',
-      WorkPhone: '+1-555-0103',
-      JobTitleName: 'IT Manager',
-      Still_employed: false,
-      CreatedAt: '2023-11-20T09:15:00Z',
-      Active: false
-    }
-  ],
-  deals: [
-    {
-      DealID: 1,
-      DealName: 'Q1 Software License Renewal',
-      StageName: 'Negotiation',
-      Value: 50000,
-      Symbol: '$',
-      Prefix: true,
-      LocalName: 'USD',
-      CloseDate: '2024-03-31T00:00:00Z',
-      Progression: 75,
-      CreatedAt: '2024-01-10T08:00:00Z',
-      Active: true
-    },
-    {
-      DealID: 2,
-      DealName: 'Enterprise Support Package',
-      StageName: 'Proposal',
-      Value: 25000,
-      Symbol: '$',
-      Prefix: true,
-      LocalName: 'USD',
-      CloseDate: '2024-04-15T00:00:00Z',
-      Progression: 60,
-      CreatedAt: '2024-02-05T11:30:00Z',
-      Active: true
-    },
-    {
-      DealID: 3,
-      DealName: 'Training Services',
-      StageName: 'Closed Won',
-      Value: 15000,
-      Symbol: '$',
-      Prefix: true,
-      LocalName: 'USD',
-      CloseDate: '2024-02-28T00:00:00Z',
-      Progression: 100,
-      CreatedAt: '2024-01-20T16:45:00Z',
-      Active: true
-    }
-  ],
-  activities: [
-    {
-      ActivityID: 1,
-      ActivityType: 'Phone Call',
-      Description: 'Follow up on software renewal discussion and pricing concerns',
-      DueToStart: '2024-03-15T14:00:00Z',
-      DueToEnd: '2024-03-15T15:00:00Z',
-      Completed: false,
-      CreatedAt: '2024-03-10T09:00:00Z'
-    },
-    {
-      ActivityID: 2,
-      ActivityType: 'Email',
-      Description: 'Send proposal for enterprise support package with detailed feature breakdown',
-      DueToStart: '2024-03-12T10:00:00Z',
-      DueToEnd: '2024-03-12T11:00:00Z',
-      Completed: true,
-      CreatedAt: '2024-03-08T13:20:00Z'
-    },
-    {
-      ActivityID: 3,
-      ActivityType: 'Meeting',
-      Description: 'Quarterly business review with stakeholders to discuss usage and future needs',
-      DueToStart: '2024-03-20T13:00:00Z',
-      DueToEnd: '2024-03-20T14:30:00Z',
-      Completed: false,
-      CreatedAt: '2024-03-01T08:15:00Z'
-    }
-  ],
-  notes: [
-    {
-      NoteID: 1,
-      Title: 'Contract Renewal Discussion',
-      Content: 'Customer expressed interest in upgrading to premium tier. Need to schedule demo of advanced features.',
-      CreatedBy: 'Sales Rep',
-      CreatedAt: '2024-03-08T16:30:00Z',
-      UpdatedAt: '2024-03-08T16:30:00Z'
-    },
-    {
-      NoteID: 2,
-      Title: 'Technical Requirements',
-      Content: 'IT team requires integration with their existing CRM system. They use Salesforce Enterprise edition.',
-      CreatedBy: 'Technical Consultant',
-      CreatedAt: '2024-02-25T11:45:00Z',
-      UpdatedAt: '2024-02-25T11:45:00Z'
-    }
-  ],
-  attachments: [
-    {
-      AttachmentID: 1,
-      FileName: 'Contract_Proposal_2024.pdf',
-      FileType: 'PDF',
-      FileSize: '2.4 MB',
-      UploadedBy: 'Account Manager',
-      UploadedAt: '2024-03-05T14:20:00Z'
-    },
-    {
-      AttachmentID: 2,
-      FileName: 'Technical_Specifications.docx',
-      FileType: 'DOCX',
-      FileSize: '1.8 MB',
-      UploadedBy: 'Technical Consultant',
-      UploadedAt: '2024-02-28T09:10:00Z'
-    },
-    {
-      AttachmentID: 3,
-      FileName: 'Integration_Diagram.png',
-      FileType: 'PNG',
-      FileSize: '856 KB',
-      UploadedBy: 'Solutions Architect',
-      UploadedAt: '2024-02-20T15:35:00Z'
-    }
-  ]
-};
+import { getAllContacts } from "../../services/contactService";
+import { getAllDeals } from "../../services/dealService";
+import { getAllActivities } from "../../services/activityService";
 
 export default function AccountDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   
- 
   const idRef = useRef(id);
   const navigateRef = useRef(navigate);
 
@@ -167,7 +19,6 @@ export default function AccountDetailsPage() {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
- 
   useEffect(() => {
     idRef.current = id;
     navigateRef.current = navigate;
@@ -185,7 +36,7 @@ export default function AccountDetailsPage() {
     } finally {
       setLoading(false);
     }
-  }, []); // No dependencies to prevent recreation
+  }, []);
 
   useEffect(() => {
     if (!id) {
@@ -196,7 +47,6 @@ export default function AccountDetailsPage() {
     refreshAccount();
   }, [id, refreshAccount]);
 
-  
   const handleBack = useCallback(() => {
     navigateRef.current("/accounts");
   }, []);
@@ -219,21 +69,27 @@ export default function AccountDetailsPage() {
     { key: 'UpdatedAt', label: 'Updated At', type: 'datetime' },
   ], []);
 
-  
-  const dataServiceRefs = useRef({});
-  
-  const createStableDataService = useCallback((dataKey, delay = 500) => {
-    const cacheKey = `${dataKey}_${delay}`;
-    if (!dataServiceRefs.current[cacheKey]) {
-      dataServiceRefs.current[cacheKey] = async () => {
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return { data: MOCK_DATA[dataKey] };
-      };
-    }
-    return dataServiceRefs.current[cacheKey];
+  // Real API data services with client-side filtering
+  const createFilteredDataService = useCallback((serviceFunction, filterField) => {
+    return async () => {
+      try {
+        const response = await serviceFunction();
+        const allData = response?.data || response;
+        const accountId = parseInt(idRef.current, 10);
+        
+        // Filter data by AccountID
+        const filteredData = allData.filter(item => 
+          item[filterField] === accountId
+        );
+        
+        return { data: filteredData };
+      } catch (error) {
+        console.error('Error fetching and filtering data:', error);
+        throw error;
+      }
+    };
   }, []);
 
-  
   const processDealData = useCallback((data) => {
     return data.map(deal => ({
       ...deal,
@@ -243,7 +99,7 @@ export default function AccountDetailsPage() {
     }));
   }, []);
 
-  // Define related tabs 
+  // Define related tabs with real API calls
   const relatedTabs = useMemo(() => {
     const tabs = [
       {
@@ -269,7 +125,7 @@ export default function AccountDetailsPage() {
             }
           ]
         },
-        dataService: createStableDataService('contacts', 500)
+        dataService: createFilteredDataService(getAllContacts, 'AccountID')
       },
       {
         key: 'deals',
@@ -295,7 +151,7 @@ export default function AccountDetailsPage() {
             }
           ]
         },
-        dataService: createStableDataService('deals', 700),
+        dataService: createFilteredDataService(getAllDeals, 'AccountID'),
         processData: processDealData
       },
       {
@@ -305,51 +161,20 @@ export default function AccountDetailsPage() {
         tableConfig: {
           idField: 'ActivityID',
           columns: [
-            { field: 'ActivityType', headerName: 'Activity Type', type: 'text', defaultVisible: true },
-            { field: 'Description', headerName: 'Description', type: 'truncated', maxWidth: 300, defaultVisible: true },
-            { field: 'DueToStart', headerName: 'Due To Start', type: 'date', defaultVisible: true },
-            { field: 'DueToEnd', headerName: 'Due To End', type: 'date', defaultVisible: true },
-            { field: 'Completed', headerName: 'Completed', type: 'boolean', defaultVisible: true },
+            { field: 'TypeName', headerName: 'Activity Type', type: 'text', defaultVisible: true },
+            { field: 'ActivityDescription', headerName: 'Description', type: 'truncated', maxWidth: 300, defaultVisible: true },
+            { field: 'StartDate', headerName: 'Start Date', type: 'date', defaultVisible: true },
+            { field: 'EndDate', headerName: 'End Date', type: 'date', defaultVisible: true },
+            { field: 'Status', headerName: 'Status', type: 'text', defaultVisible: true },
+            { field: 'Priority', headerName: 'Priority', type: 'text', defaultVisible: true },
             { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
           ]
         },
-        dataService: createStableDataService('activities', 600)
-      },
-      {
-        key: 'notes',
-        label: 'Notes',
-        entityType: 'note',
-        tableConfig: {
-          idField: 'NoteID',
-          columns: [
-            { field: 'Title', headerName: 'Title', type: 'text', defaultVisible: true },
-            { field: 'Content', headerName: 'Content', type: 'truncated', maxWidth: 400, defaultVisible: true },
-            { field: 'CreatedBy', headerName: 'Created By', type: 'text', defaultVisible: true },
-            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
-            { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
-          ]
-        },
-        dataService: createStableDataService('notes', 400)
-      },
-      {
-        key: 'attachments',
-        label: 'Attachments',
-        entityType: 'attachment',
-        tableConfig: {
-          idField: 'AttachmentID',
-          columns: [
-            { field: 'FileName', headerName: 'File Name', type: 'text', defaultVisible: true },
-            { field: 'FileType', headerName: 'Type', type: 'text', defaultVisible: true },
-            { field: 'FileSize', headerName: 'Size', type: 'text', defaultVisible: true },
-            { field: 'UploadedBy', headerName: 'Uploaded By', type: 'text', defaultVisible: true },
-            { field: 'UploadedAt', headerName: 'Uploaded', type: 'dateTime', defaultVisible: true },
-          ]
-        },
-        dataService: createStableDataService('attachments', 300)
+        dataService: createFilteredDataService(getAllActivities, 'AccountID')
       }
     ];
     return tabs;
-  }, [createStableDataService, processDealData]);
+  }, [createFilteredDataService, processDealData]);
 
   // action handlers
   const relatedDataActions = useMemo(() => {

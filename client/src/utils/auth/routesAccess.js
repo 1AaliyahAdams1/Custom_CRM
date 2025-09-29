@@ -87,6 +87,9 @@ export const ROUTE_ACCESS = {
 
   // Settings
   settings: ALL,
+
+  //DealRooom
+  dealRoom: ALL,
 };
 
 export const CLAIM_RULES = {

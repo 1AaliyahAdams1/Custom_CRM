@@ -21,6 +21,17 @@ export const fetchActivityById = async (activityId) => {
   }
 };
 
+export const fetchActivitiesByAccountID = async (accountId) => {
+  if (!accountId) throw new Error("Account ID is required");
+  try {
+    const response = await api.get(`${RESOURCE}/account/${accountId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching activities for account ${accountId}:`, error);
+    throw error;
+  }
+};
+
 export const createActivity = async (activityData) => {
   try {
     return await api.post(RESOURCE, activityData);

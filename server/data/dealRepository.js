@@ -265,7 +265,49 @@ WHERE au.UserID = @UserID
     throw error;
   }
 }
+// =======================
+// Get deals by Account ID
+// =======================
+async function getDealsByAccountID(accountId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT
+            d.[DealID],
+            d.[DealName],
+            d.[AccountID],
+            a.[AccountName],              
+            d.[DealStageID],
+            ds.[StageName],            
+            d.[Value],
+            c.[Symbol],               
+            c.[LocalName],
+            c.[Prefix],                    
+            d.[CloseDate],
+            d.[Probability] AS Progression,
+            d.[CreatedAt],
+            d.[UpdatedAt],
+            d.[Active]
+        FROM [8589_CRM].[dbo].[Deal] d
+        JOIN [8589_CRM].[dbo].[Account] a 
+            ON d.AccountID = a.AccountID AND a.Active = 1
+        LEFT JOIN [8589_CRM].[dbo].[DealStage] ds 
+            ON d.DealStageID = ds.DealStageID
+        LEFT JOIN [8589_CRM].[dbo].[Currency] c 
+            ON d.CurrencyID = c.CurrencyID
+        WHERE d.AccountID = @AccountID
+          AND d.Active = 1
+        ORDER BY d.CreatedAt DESC;
+      `);
 
+    return result.recordset;
+  } catch (error) {
+    console.error("Deal Repo Error [getDealsByAccountID]:", error);
+    throw error;
+  }
+}
 
 module.exports = {
   getAllDeals,
@@ -275,5 +317,6 @@ module.exports = {
   deactivateDeal,
   reactivateDeal,
   deleteDeal,
-  getDealsByUser
+  getDealsByUser,
+  getDealsByAccountID
 };

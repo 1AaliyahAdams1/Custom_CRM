@@ -81,3 +81,14 @@ export const getNotesByEntity = async (entityType, entityId) => {
     throw error;
   }
 };
+
+export const getNotesByAccountID = async (accountId) => {
+  if (!accountId) throw new Error("Account ID is required");
+  try {
+    const response = await api.get(`${RESOURCE}/account/${accountId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching notes for account ${accountId}:`, error?.response || error);
+    throw error;
+  }
+};

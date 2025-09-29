@@ -68,6 +68,8 @@ const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
+const DealRoomPage = lazy(() => import("./pages/DealRoom/DealRoom"));
+
 const AppRoutes = () => {
   console.log("AppRoutes component is rendering");
 
@@ -525,6 +527,15 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.settings}>
             <SettingsPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Deal Room Route --- */}
+      <Route
+        path="/deal-room"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealRoom}>
+            <DealRoomPage />
           </PrivateRoute>
         }
       />

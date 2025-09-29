@@ -49,6 +49,7 @@ const navigation = [
   //   accessKey: "dashboard",
   //   section: "Main",
   // },
+ 
   {
     name: "Accounts",
     href: "/accounts",
@@ -68,6 +69,13 @@ const navigation = [
     href: "/deals",
     icon: HandshakeIcon,
     accessKey: "deals",
+    section: "CRM Management",
+  },
+   {
+    name:"Deal Room",
+    href:"/deal-room",
+    icon: BusinessIcon,
+    accessKey: "dealRoom",
     section: "CRM Management",
   },
   {
