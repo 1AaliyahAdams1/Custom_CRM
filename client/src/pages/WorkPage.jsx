@@ -106,24 +106,23 @@ const WorkPage = ({
     priorityLevelId: ""
   });
 
-  // Sort and filter options
+  // Sort options
   const sortOptions = [
-    { value: 'dueDate', label: 'Due Date', icon: <Today /> },
-    { value: 'priority', label: 'Priority', icon: <PriorityHigh /> },
-    { value: 'account', label: 'Account', icon: <Business /> },
-    { value: 'type', label: 'Type', icon: <Assignment /> },
-    { value: 'sequence', label: 'Sequence', icon: <Sort /> },
-    { value: 'status', label: 'Status', icon: <AccessTime /> },
+    { value: 'dueDate', label: 'Due Date', icon: <Today />, tooltip: 'Sort by due date - overdue activities first, then upcoming by date'},
+    { value: 'priority', label: 'Priority', icon: <PriorityHigh />, tooltip: 'Sort by priority level - highest priority activities first'},
+    { value: 'account', label: 'Account', icon: <Business />, tooltip: 'Sort alphabetically by account name (A-Z)'},
+    { value: 'type', label: 'Type', icon: <Assignment />, tooltip: 'Sort alphabetically by activity type (A-Z)'},
+    { value: 'sequence', label: 'Sequence', icon: <Sort />, tooltip: 'Sort by sequence name and step order within sequences'},
+    { value: 'status', label: 'Status', icon: <AccessTime />, tooltip: 'Sort by urgency - overdue, then urgent, then normal activities'},
   ];
 
+  // Filter options
   const filterOptions = [
-    { value: 'all', label: 'All Activities' },
-    { value: 'overdue', label: 'Overdue' },
-    { value: 'urgent', label: 'Urgent' },
-    { value: 'high-priority', label: 'High Priority' },
-    { value: 'today', label: 'Due Today' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'completed', label: 'Completed' },
+    { value: 'all', label: 'All Activities', tooltip: 'Show all activities regardless of status' },
+    { value: 'overdue', label: 'Overdue', tooltip: 'Show activities past their due date'  },
+    { value: 'high-priority', label: 'High Priority', tooltip: 'Show high priority activities' },
+    { value: 'today', label: 'Due Today', tooltip: 'Show activities due today'},
+    { value: 'completed', label: 'Completed', tooltip: 'Show completed activities only' },
   ];
 
   // Helper functions
@@ -143,11 +142,19 @@ const WorkPage = ({
   };
 
   const getPriorityColor = (priorityValue) => {
-    const priority = parseInt(priorityValue) || 0;
-    if (priority >= 8) return '#f44336';
-    if (priority >= 5) return '#ff9800';
-    return '#4caf50';
-  };
+  const priority = parseInt(priorityValue) || 1;
+  switch(priority) {
+    case 4: // CRITICAL
+      return '#d32f2f'; 
+    case 3: // HIGH  
+      return '#f57c00'; 
+    case 2: // MEDIUM
+      return '#1976d2'; 
+    case 1: // LOW
+    default:
+      return '#4caf50'; 
+  }
+};
 
   const formatDueDate = (dueDate) => {
     if (!dueDate) return 'No due date';
@@ -294,24 +301,25 @@ const WorkPage = ({
               
               {/* Sort and Filter Controls */}
               <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
-                  <InputLabel>Sort by</InputLabel>
-                  <Select
-                    value={currentSort}
-                    onChange={(e) => onSortChange(e.target.value)}
-                    label="Sort by"
-                  >
-                    {sortOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {option.icon}
-                          {option.label}
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                
+
+                  <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
+                    <InputLabel>Sort by</InputLabel>
+                    <Select
+                      value={currentSort}
+                      onChange={(e) => onSortChange(e.target.value)}
+                      label="Sort by"
+                    >
+                      {sortOptions.map((option) => (
+                          <MenuItem value={option.value}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {option.icon}
+                              {option.label}
+                            </Box>
+                        </MenuItem>
+                      ))},
+                    </Select>
+                  </FormControl>
+
                 <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
                   <InputLabel>Filter</InputLabel>
                   <Select
@@ -385,12 +393,6 @@ const WorkPage = ({
                     sx={{ mr: 1 }}
                   >
                     Show All
-                  </Button>
-                  <Button 
-                    variant="outlined" 
-                    onClick={() => onFilterChange('pending')}
-                  >
-                    Show Pending
                   </Button>
                 </Box>
               ) : (
@@ -812,7 +814,7 @@ const WorkPage = ({
           <DialogTitle>Delete Activity</DialogTitle>
           <DialogContent>
             <Typography>
-              Are you sure you want to delete this activity? This action cannot be undone.
+              Are you sure you want to delete this activity?
             </Typography>
           </DialogContent>
           <DialogActions>
@@ -826,25 +828,31 @@ const WorkPage = ({
           open={!!statusMessage}
           autoHideDuration={4000}
           onClose={() => showStatus('')}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          sx={{
+              '& .MuiSnackbarContent-root': {
+                fontSize: '1.1rem',
+                minWidth: '400px',
+              }
+          }}
         >
-          <Alert onClose={() => showStatus('')} severity={statusSeverity} sx={{ width: '100%' }}>
+          <Alert 
+            onClose={() => showStatus('')} 
+            severity={statusSeverity} 
+            sx={{ 
+              width: '100%',
+              fontSize: '1.1rem', // Increased font size
+              '& .MuiAlert-message': {
+                fontSize: '1.1rem', // Ensure message text is larger
+                fontWeight: 500, // Make text slightly bolder
+              }
+            }}
+          >
             {statusMessage}
           </Alert>
         </Snackbar>
 
-        {/* Error Alert */}
-        {error && (
-          <Alert 
-            severity="error" 
-            sx={{ position: 'fixed', top: 16, right: 16, zIndex: 1300 }}
-            onClose={onClearMessages}
-          >
-            {error}
-          </Alert>
-        )}
-
-        {/* Success Message */}
+        {/* Success Message
         {successMessage && (
           <Alert 
             severity="success" 
@@ -852,6 +860,29 @@ const WorkPage = ({
             onClose={onClearMessages}
           >
             {successMessage}
+          </Alert>
+        )}*/}
+
+        {/* Error Alert - Also centered for consistency */}
+        {error && (
+          <Alert 
+            severity="error" 
+            sx={{ 
+              position: 'fixed', 
+              top: 16, 
+              left: '50%', // Position at center
+              transform: 'translateX(-50%)', // Center horizontally
+              zIndex: 1300,
+              fontSize: '1.1rem', // Increased font size
+              minWidth: '400px', // Minimum width
+              '& .MuiAlert-message': {
+                fontSize: '1.1rem', // Ensure message text is larger
+                fontWeight: 500, // Make text slightly bolder
+              }
+            }}
+            onClose={onClearMessages}
+          >
+            {error}
           </Alert>
         )}
       </Box>
