@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 
 import { Menu, MenuItem, Tooltip } from '@mui/material';
 import { Info, Edit, Delete, Note, AttachFile, Business, PersonAdd, PersonRemove, RestoreFromTrash, DeleteForever, Block } from '@mui/icons-material';
+import { Info, Edit, Delete, Note, AttachFile, Business, PersonAdd, PersonRemove, RestoreFromTrash, DeleteForever, Block } from '@mui/icons-material';
 
 const ActionMenu = ({
   anchorEl,
@@ -19,6 +20,9 @@ const ActionMenu = ({
   onClaimAccount,
   onUnclaimAccount,
   onAssignUser,
+  onUnassignUser,
+  onReactivate,
+  onPermanentDelete,
   onUnassignUser,
   onReactivate,
   onPermanentDelete,
@@ -62,8 +66,25 @@ const ActionMenu = ({
               hasRole('C-level') && 
               (!menuRow?.assignedUserId || menuRow?.assignedUserId === null),
         tooltip: getTooltip('assignUser', 'Assign a team member to this record'),
+        show: entityType === 'account' && 
+              !!onAssignUser && 
+              hasRole('C-level') && 
+              (!menuRow?.assignedUserId || menuRow?.assignedUserId === null),
+        tooltip: getTooltip('assignUser', 'Assign a team member to this record'),
       },
       {
+        label: 'Unassign User',
+        icon: <PersonRemove sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(onUnassignUser),
+        show: entityType === 'account' && 
+              !!onUnassignUser && 
+              hasRole('C-level') && 
+              (menuRow?.assignedUserId && menuRow?.assignedUserId !== null),
+        tooltip: getTooltip('unassignUser', 'Remove assigned user from this record'),
+      },
+      {
+        label: 'Claim Account',
+        icon: <Business sx={{ mr: 1, color: '#000' }} />,
         label: 'Unassign User',
         icon: <PersonRemove sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onUnassignUser),
@@ -145,7 +166,25 @@ const ActionMenu = ({
       {
         label: 'Deactivate',
         icon: <Block sx={{ mr: 1, color: '#000' }} />,
+        label: 'Reactivate',
+        icon: <RestoreFromTrash sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(() => onReactivate(menuRow[idField])),
+        show: !!onReactivate && menuRow?.Active === false,
+        tooltip: getTooltip('reactivate', 'Reactivate this record'),
+      },
+      {
+        label: 'Deactivate',
+        icon: <Block sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(() => onDelete(menuRow[idField])),
+        show: !!onDelete && menuRow?.Active !== false,
+        tooltip: getTooltip('delete', 'Deactivate this record'),
+      },
+      {
+        label: 'Delete Permanently',
+        icon: <DeleteForever sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(() => onPermanentDelete(menuRow[idField])),
+        show: !!onPermanentDelete && menuRow?.Active === false,
+        tooltip: getTooltip('permanentDelete', 'Permanently delete this record (cannot be undone)'),
         show: !!onDelete && menuRow?.Active !== false,
         tooltip: getTooltip('delete', 'Deactivate this record'),
       },
@@ -172,6 +211,9 @@ const ActionMenu = ({
     onClaimAccount,
     onUnclaimAccount,
     onAssignUser,
+    onUnassignUser,
+    onReactivate,
+    onPermanentDelete,
     onUnassignUser,
     onReactivate,
     onPermanentDelete,
