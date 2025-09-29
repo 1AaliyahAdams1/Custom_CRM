@@ -151,18 +151,16 @@ async function getActivitiesByUser(userId) {
             act.[DueToStart],
             act.[DueToEnd],
             act.[Completed],
-            act.[CreatedAt],
-            act.[UpdatedAt],
             act.[Active],
             act.[SequenceItemID]
-        FROM [CRM].[dbo].[Activity] act
-        JOIN [CRM].[dbo].[AssignedUser] au 
+        FROM [8589_CRM].[dbo].[Activity] act
+        JOIN [8589_CRM].[dbo].[AssignedUser] au 
             ON act.AccountID = au.AccountID AND au.Active = 1
-        JOIN [CRM].[dbo].[Account] a 
+        JOIN [8589_CRM].[dbo].[Account] a 
             ON act.AccountID = a.AccountID AND a.Active = 1
-        LEFT JOIN [CRM].[dbo].[ActivityType] at 
+        LEFT JOIN [8589_CRM].[dbo].[ActivityType] at 
             ON act.TypeID = at.TypeID
-        LEFT JOIN [CRM].[dbo].[PriorityLevel] pl 
+        LEFT JOIN [8589_CRM].[dbo].[PriorityLevel] pl 
             ON act.PriorityLevelID = pl.PriorityLevelID
         WHERE au.UserID = @UserID
           AND act.Active = 1;

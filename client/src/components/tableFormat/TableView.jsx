@@ -25,10 +25,10 @@ import {
   ArrowDownward,
 } from "@mui/icons-material";
 
-import ColumnsDialog from "./ColumnsDialog";
-import FiltersDialog from "./FiltersDialog";
+import ColumnsDialog from "../dialogs/ColumnsDialog";
+import FiltersDialog from "../dialogs/FiltersDialog";
 import ActionMenu from "./ActionMenu";
-import AssignUserDialog from "../AssignUserDialog"; 
+import AssignUserDialog from "../../components/dialogs/AssignUserDialog"; 
 
 const TableView = ({
   data = [],
@@ -45,7 +45,11 @@ const TableView = ({
   onAddNote,
   onAddAttachment,
   onClaimAccount,
+  onUnclaimAccount, // New prop
   onAssignUser,
+  onUnassignUser, // New prop
+  onReactivate, // New prop
+  onPermanentDelete, // New prop
   entityType = "records",
   menuItems = [],
   formatters = {},
@@ -639,10 +643,14 @@ const TableView = ({
           onAddNote={onAddNote}
           onAddAttachment={onAddAttachment}
           onClaimAccount={onClaimAccount}
+          onUnclaimAccount={onUnclaimAccount}
           onAssignUser={(row) => {
             setCurrentRow(row);
             setAssignDialogOpen(true);
           }}
+          onUnassignUser={onUnassignUser}
+          onReactivate={onReactivate}
+          onPermanentDelete={onPermanentDelete}
           menuItems={menuItems}
           tooltips={tooltips}
         />

@@ -5,40 +5,31 @@ import {
   getAllActivities,
   fetchActivitiesByUser,
   deactivateActivity,
-  bulkMarkActivitiesComplete,
   bulkMarkActivitiesIncomplete,
-  bulkUpdateActivityDueDates
+  bulkUpdateActivityDueDates,
+  bulkMarkActivitiesComplete
 } from "../../services/activityService";
 import {
   getAllAccounts,
   fetchActiveAccountsByUser,
   fetchActiveUnassignedAccounts,
 } from "../../services/accountService";
-import { 
-  createNote, 
-  updateNote, 
-  deleteNote, 
-  getNotesByEntity 
-} from "../../services/noteService";
-import { 
-  uploadAttachment, 
-  getAttachmentsByEntity, 
-  deleteAttachment, 
-  downloadAttachment 
-} from "../../services/attachmentService";
+import { createNote, updateNote, deleteNote } from "../../services/noteService";
+import { uploadAttachment, deleteAttachment, downloadAttachment } from "../../services/attachmentService";
 import { activityTypeService, priorityLevelService } from "../../services/dropdownServices";
-import ConfirmDialog from "../../components/ConfirmDialog";
+import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
-import BulkDueDatesDialog from "../../components/BulkDueDatesDialog";
+import { ROUTE_ACCESS } from "../../utils/auth/routesAccess";
 
 const ActivitiesContainer = () => {
   const navigate = useNavigate();
 
+  // ---------------- STATE ----------------
   const [allActivities, setAllActivities] = useState([]);
   const [filteredActivities, setFilteredActivities] = useState([]);
-  const [currentFilter, setCurrentFilter] = useState('all');
-  const [accountOwnership, setAccountOwnership] = useState(new Map()); // Map of AccountID -> ownerStatus
+  const [currentFilter, setCurrentFilter] = useState("all");
+  const [accountOwnership, setAccountOwnership] = useState(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -49,155 +40,81 @@ const ActivitiesContainer = () => {
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
 
-  // Additional filters (search, status, priority)
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
 
-  // Lookups
   const [accounts, setAccounts] = useState([]);
   const [activityTypes, setActivityTypes] = useState([]);
   const [priorityLevels, setPriorityLevels] = useState([]);
 
-  // Delete confirm dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activityToDelete, setActivityToDelete] = useState(null);
 
+  // ---------------- USER & ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
   const userId = storedUser.UserID || storedUser.id || null;
 
-  const isCLevel = roles.includes("C-level");
-  const isSalesRep = roles.includes("Sales Representative");
+  // ---------------- ROLE ACCESS ----------------
+  const canAccess = (routeKey) => {
+    const allowedRoles = ROUTE_ACCESS[routeKey] || [];
+    return roles.some(role => allowedRoles.includes(role));
+  };
+
+  const canView = canAccess("activities");
 
   // ---------------- FILTER LOGIC ----------------
   const applyFilter = (activities, filterType) => {
-    console.log('=== ACTIVITIES FILTER DEBUG ===');
-    console.log('Applying filter:', filterType, 'to activities:', activities.length);
-    console.log('Account ownership map size:', accountOwnership.size);
-    
-    let filteredActivities;
+    let filtered;
     switch (filterType) {
-      case 'my':
-        // Activities from accounts I own
-        if (isSalesRep) {
-          filteredActivities = activities.filter(activity => {
-            const ownerStatus = accountOwnership.get(activity.AccountID);
-            console.log(`Activity ${activity.ActivityType} (Account: ${activity.AccountID}) - Owner Status: ${ownerStatus}`);
-            return ownerStatus === 'owned';
-          });
-        } else {
-          // Non-sales reps might not have "owned" accounts
-          filteredActivities = [];
-        }
+      case "my":
+        filtered = activities.filter(a => accountOwnership.get(a.AccountID) === "owned");
         break;
-        
-      case 'team':
-        if (isCLevel) {
-          // C-level sees all activities
-          filteredActivities = activities;
-        } else if (isSalesRep) {
-          // Sales rep sees activities from owned and unassigned accounts
-          filteredActivities = activities.filter(activity => {
-            const ownerStatus = accountOwnership.get(activity.AccountID);
-            return ownerStatus === 'owned' || ownerStatus === 'unowned';
-          });
-        } else {
-          // Other roles see all activities (adjust as needed)
-          filteredActivities = activities;
-        }
+
+      case "team":
+        filtered = roles.includes("C-level") || roles.includes("Sales Manager")
+          ? activities
+          : activities.filter(a => {
+              const status = accountOwnership.get(a.AccountID);
+              return status === "owned" || status === "unowned";
+            });
         break;
-        
-      case 'unassigned':
-        if (isCLevel) {
-          // C-level sees activities from unassigned accounts only
-          filteredActivities = activities.filter(activity => {
-            const ownerStatus = accountOwnership.get(activity.AccountID);
-            console.log(`Unassigned filter - Activity ${activity.ActivityType}: ${ownerStatus}`);
-            return ownerStatus === 'unowned';
-          });
-        } else if (isSalesRep) {
-          // Sales rep sees activities from unassigned accounts
-          filteredActivities = activities.filter(activity => {
-            const ownerStatus = accountOwnership.get(activity.AccountID);
-            return ownerStatus === 'unowned';
-          });
-        } else {
-          filteredActivities = [];
-        }
+
+      case "unassigned":
+        filtered = activities.filter(a => accountOwnership.get(a.AccountID) === "unowned");
         break;
-        
-      case 'all':
+
+      case "all":
       default:
-        filteredActivities = activities;
+        filtered = activities;
         break;
     }
-    
-    console.log(`Filter "${filterType}" returned:`, filteredActivities.length, 'activities');
-    console.log('=== END ACTIVITIES FILTER DEBUG ===');
-    return filteredActivities;
+    return filtered;
   };
 
   // ---------------- FETCH ACCOUNT OWNERSHIP ----------------
   const fetchAccountOwnership = async () => {
-    console.log('=== FETCHING ACCOUNT OWNERSHIP FOR ACTIVITIES ===');
     try {
-      const ownershipMap = new Map();
+      const map = new Map();
+      if (canAccess("accounts")) {
+        const allAccounts = await getAllAccounts();
+        const assigned = await fetchActiveAccountsByUser(userId);
+        const unassigned = await fetchActiveUnassignedAccounts();
 
-      if (isCLevel) {
-        console.log('Fetching all accounts for C-level user');
-        const response = await getAllAccounts();
-        const accountsData = response.data || response || [];
-        console.log('All accounts received:', accountsData.length);
-        
-        // For C-level, determine which accounts are assigned vs unassigned
-        const assignedRes = await fetchActiveAccountsByUser(userId);
-        const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
-        const assignedAccountIds = new Set(assignedAccounts.map(acc => acc.AccountID));
-        
-        const unassignedRes = await fetchActiveUnassignedAccounts();
-        const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
-        const unassignedAccountIds = new Set(unassignedAccounts.map(acc => acc.AccountID));
-        
-        // Mark each account appropriately
-        accountsData.forEach(acc => {
-          if (assignedAccountIds.has(acc.AccountID)) {
-            ownershipMap.set(acc.AccountID, 'owned');
-          } else if (unassignedAccountIds.has(acc.AccountID)) {
-            ownershipMap.set(acc.AccountID, 'unowned');
-          } else {
-            ownershipMap.set(acc.AccountID, 'unknown');
-          }
-        });
-        
-      } else if (isSalesRep) {
-        console.log('Fetching accounts for Sales Rep');
-        
-        const assignedRes = await fetchActiveAccountsByUser(userId);
-        const unassignedRes = await fetchActiveUnassignedAccounts();
+        const assignedIds = new Set((assigned || []).map(a => a.AccountID));
+        const unassignedIds = new Set((unassigned || []).map(a => a.AccountID));
 
-        const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
-        const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
-
-        console.log('Assigned accounts:', assignedAccounts.length);
-        console.log('Unassigned accounts:', unassignedAccounts.length);
-
-        assignedAccounts.forEach(acc => {
-          ownershipMap.set(acc.AccountID, 'owned');
-        });
-
-        unassignedAccounts.forEach(acc => {
-          ownershipMap.set(acc.AccountID, 'unowned');
+        (allAccounts || []).forEach(acc => {
+          if (assignedIds.has(acc.AccountID)) map.set(acc.AccountID, "owned");
+          else if (unassignedIds.has(acc.AccountID)) map.set(acc.AccountID, "unowned");
+          else map.set(acc.AccountID, "unknown");
         });
       }
-
-      console.log('Account ownership map created with', ownershipMap.size, 'entries');
-      
-      setAccountOwnership(ownershipMap);
-      return ownershipMap;
+      setAccountOwnership(map);
+      return map;
     } catch (err) {
-      console.error('Failed to fetch account ownership:', err);
-      setError('Failed to load account information for filtering');
+      setError("Failed to load account ownership");
       return new Map();
     }
   };
@@ -223,66 +140,49 @@ const ActivitiesContainer = () => {
     setLoading(true);
     setError(null);
     try {
+      await fetchAccountOwnership();
       let activitiesData = [];
 
-      // First fetch account ownership information
-      const ownershipMap = await fetchAccountOwnership();
-
-      if (isCLevel) {
+      if (canView) {
         activitiesData = await getAllActivities(true);
-      } else if (isSalesRep && userId) {
+      } else {
         activitiesData = await fetchActivitiesByUser(userId);
       }
 
-      console.log('Raw activities received:', activitiesData.length);
-
       setAllActivities(activitiesData || []);
-      const filtered = applyFilter(activitiesData || [], currentFilter);
-      setFilteredActivities(filtered);
+      setFilteredActivities(applyFilter(activitiesData || [], currentFilter));
     } catch {
-      setError("Failed to load activities. Please try again.");
+      setError("Failed to load activities.");
     } finally {
       setLoading(false);
     }
   };
 
+  // ---------------- EFFECTS ----------------
   useEffect(() => {
     fetchLookups();
     fetchActivities();
   }, [refreshFlag]);
 
   useEffect(() => {
-    if (allActivities.length > 0 && accountOwnership.size > 0) {
-      const filtered = applyFilter(allActivities, currentFilter);
-      setFilteredActivities(filtered);
+    if (allActivities.length && accountOwnership.size) {
+      setFilteredActivities(applyFilter(allActivities, currentFilter));
     }
   }, [allActivities, currentFilter, accountOwnership]);
 
-  // ---------------- FILTER HANDLER ----------------
+  // ---------------- FILTER & SELECTION HANDLERS ----------------
   const handleFilterChange = (filterType) => {
-    console.log('Filter changed to:', filterType);
     setCurrentFilter(filterType);
-    const filtered = applyFilter(allActivities, filterType);
-    setFilteredActivities(filtered);
+    setFilteredActivities(applyFilter(allActivities, filterType));
     setSelected([]);
   };
 
-  // ---------------- FINAL FILTERED ACTIVITIES (with search, status, priority) ----------------
-  const finalFilteredActivities = useMemo(() => {
-    return filteredActivities.filter((a) => {
-      const matchesSearch =
-        !searchTerm ||
-        a.AccountName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.ActivityType?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus =
-        !statusFilter || (statusFilter === "completed" ? a.Completed : !a.Completed);
-      const matchesPriority =
-        !priorityFilter || a.PriorityLevelName === priorityFilter;
-      return matchesSearch && matchesStatus && matchesPriority;
-    });
-  }, [filteredActivities, searchTerm, statusFilter, priorityFilter]);
+  const handleSelectClick = (id) =>
+    setSelected(prev => prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]);
 
-  // ---------------- HANDLERS ----------------
+  const handleSelectAllClick = (e) =>
+    setSelected(e.target.checked ? filteredActivities.map(a => a.ActivityID) : []);
+
   const handleDeactivateClick = (activity) => {
     setActivityToDelete(activity);
     setDeleteDialogOpen(true);
@@ -293,220 +193,96 @@ const ActivitiesContainer = () => {
     try {
       await deactivateActivity(activityToDelete.ActivityID);
       setSuccessMessage("Activity deleted successfully.");
-      setRefreshFlag((f) => !f);
+      setRefreshFlag(f => !f);
     } catch {
-      setError("Failed to delete activity. Please try again.");
+      setError("Failed to delete activity.");
     } finally {
       setDeleteDialogOpen(false);
       setActivityToDelete(null);
     }
   };
 
-  const handleEdit = (activity) =>
-    navigate(`/activities/edit/${activity.ActivityID}`, { state: { activity } });
-
+  const handleEdit = (activity) => navigate(`/activities/edit/${activity.ActivityID}`, { state: { activity } });
   const handleView = (activity) => navigate(`/activities/${activity.ActivityID}`);
-
   const handleCreate = () => navigate("/activities/create");
 
-  // ---------------- SELECTION ----------------
-  const handleSelectClick = (id) =>
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
-    );
-
-  const handleSelectAllClick = (e) =>
-    setSelected(e.target.checked ? finalFilteredActivities.map((a) => a.ActivityID) : []);
-
-  // ---------------- NOTES ----------------
-  const handleAddNote = (activity) => {
-    setSelectedActivity(activity);
-    setNotesPopupOpen(true);
-  };
-
+  // ---------------- NOTES & ATTACHMENTS ----------------
+  const handleAddNote = (activity) => { setSelectedActivity(activity); setNotesPopupOpen(true); };
   const handleSaveNote = async (noteData) => {
     try {
-      const notePayload = {
-        EntityID: selectedActivity.ActivityID,
-        EntityType: "Activity",
-        Content: noteData.Content,
-      };
-      await createNote(notePayload);
+      await createNote({ EntityID: selectedActivity.ActivityID, EntityType: "Activity", Content: noteData.Content });
       setSuccessMessage("Note added successfully!");
       setNotesPopupOpen(false);
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to save note");
-    }
+      setRefreshFlag(f => !f);
+    } catch (err) { setError(err.message || "Failed to save note"); }
   };
 
-  const handleEditNote = async (noteData) => {
-    try {
-      await updateNote(noteData.NoteID, noteData);
-      setSuccessMessage("Note updated successfully!");
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to update note");
-    }
-  };
+  const handleEditNote = async (noteData) => { try { await updateNote(noteData.NoteID, noteData); setSuccessMessage("Note updated!"); setRefreshFlag(f => !f); } catch { setError("Failed to update note"); } };
+  const handleDeleteNote = async (noteId) => { try { await deleteNote(noteId); setSuccessMessage("Note deleted!"); setRefreshFlag(f => !f); } catch { setError("Failed to delete note"); } };
 
-  const handleDeleteNote = async (noteId) => {
-    try {
-      await deleteNote(noteId);
-      setSuccessMessage("Note deleted successfully!");
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to delete note");
-    }
+  const handleAddAttachment = (activity) => { setSelectedActivity(activity); setAttachmentsPopupOpen(true); };
+  const handleUploadAttachment = async (files) => { 
+    try { 
+      await Promise.all(files.map(f => uploadAttachment({ file: f, entityId: selectedActivity.ActivityID, entityTypeName: "Activity" }))); 
+      setSuccessMessage(`${files.length} attachment(s) uploaded!`); 
+      setAttachmentsPopupOpen(false); 
+      setRefreshFlag(f => !f); 
+    } catch { setError("Failed to upload attachments"); }
   };
+  const handleDeleteAttachment = async (id) => { try { await deleteAttachment(id); setSuccessMessage("Attachment deleted"); setRefreshFlag(f => !f); } catch { setError("Failed to delete attachment"); } };
+  const handleDownloadAttachment = async (attachment) => { try { await downloadAttachment(attachment); } catch { setError("Failed to download attachment"); } };
 
-  // ---------------- ATTACHMENTS ----------------
-  const handleAddAttachment = (activity) => {
-    setSelectedActivity(activity);
-    setAttachmentsPopupOpen(true);
-  };
+  const clearFilters = () => { setSearchTerm(""); setStatusFilter(""); setPriorityFilter(""); };
 
-  const handleUploadAttachment = async (files) => {
-    try {
-      const uploadPromises = files.map(file => 
-        uploadAttachment({
-          file,
-          entityId: selectedActivity.ActivityID,
-          entityTypeName: "Activity"
-        })
-      );
-      await Promise.all(uploadPromises);
-      setSuccessMessage(`${files.length} attachment(s) uploaded successfully!`);
-      setAttachmentsPopupOpen(false);
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to upload attachments");
-    }
-  };
+  // ---------------- FINAL FILTERED ACTIVITIES ----------------
+  const finalFilteredActivities = useMemo(() => {
+    return filteredActivities.filter(a => {
+      const matchesSearch = !searchTerm || a.AccountName?.toLowerCase().includes(searchTerm.toLowerCase()) || a.ActivityType?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = !statusFilter || (statusFilter === "completed" ? a.Completed : !a.Completed);
+      const matchesPriority = !priorityFilter || a.PriorityLevelName === priorityFilter;
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  }, [filteredActivities, searchTerm, statusFilter, priorityFilter]);
 
-  const handleDeleteAttachment = async (attachmentId) => {
-    try {
-      await deleteAttachment(attachmentId);
-      setSuccessMessage("Attachment deleted successfully!");
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to delete attachment");
-    }
-  };
-
-  const handleDownloadAttachment = async (attachment) => {
-    try {
-      await downloadAttachment(attachment);
-    } catch (err) {
-      setError(err.message || "Failed to download attachment");
-    }
-  };
-
-  const clearFilters = () => {
-    setSearchTerm("");
-    setStatusFilter("");
-    setPriorityFilter("");
-  };
-
-  // ---------------- BULK ACTION HANDLERS ----------------
+  // ---------------- BULK ACTIONS ----------------
   const handleBulkMarkComplete = async (selectedActivities) => {
     try {
-      setLoading(true);
-      const incompleteActivities = selectedActivities.filter(activity => !activity.Completed);
-      
-      if (incompleteActivities.length === 0) {
-        setError('No incomplete activities selected');
-        return;
-      }
-
-      // Call bulk complete service
-      await bulkMarkActivitiesComplete(incompleteActivities.map(a => a.ActivityID));
-      
-      setSuccessMessage(`Successfully marked ${incompleteActivities.length} activit${incompleteActivities.length === 1 ? 'y' : 'ies'} as complete`);
+      const incomplete = selectedActivities.filter(a => !a.Completed);
+      if (incomplete.length === 0) { setError('No incomplete activities selected'); return; }
+      await bulkMarkActivitiesComplete(incomplete.map(a => a.ActivityID));
+      setSuccessMessage(`Marked ${incomplete.length} activit${incomplete.length===1?'y':'ies'} complete`);
       setSelected([]);
       setRefreshFlag(f => !f);
-    } catch (error) {
-      console.error('Bulk mark complete failed:', error);
-      setError(error.message || 'Failed to mark activities as complete');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError('Failed to mark activities complete'); }
   };
 
   const handleBulkMarkIncomplete = async (selectedActivities) => {
     try {
-      setLoading(true);
-      const completeActivities = selectedActivities.filter(activity => activity.Completed);
-      
-      if (completeActivities.length === 0) {
-        setError('No complete activities selected');
-        return;
-      }
-
-      // Call bulk incomplete service
-      await bulkMarkActivitiesIncomplete(completeActivities.map(a => a.ActivityID));
-      
-      setSuccessMessage(`Successfully marked ${completeActivities.length} activit${completeActivities.length === 1 ? 'y' : 'ies'} as incomplete`);
+      const complete = selectedActivities.filter(a => a.Completed);
+      if (complete.length === 0) { setError('No complete activities selected'); return; }
+      await bulkMarkActivitiesIncomplete(complete.map(a => a.ActivityID));
+      setSuccessMessage(`Marked ${complete.length} activit${complete.length===1?'y':'ies'} incomplete`);
       setSelected([]);
       setRefreshFlag(f => !f);
-    } catch (error) {
-      console.error('Bulk mark incomplete failed:', error);
-      setError(error.message || 'Failed to mark activities as incomplete');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError('Failed to mark activities incomplete'); }
   };
 
-  const handleBulkUpdateDueDates = async (selectedActivities) => {
-    // This is called from the toolbar - we don't need to do anything here
-    // The actual dialog opening is handled in the ActivitiesPage component
-    console.log('Bulk update due dates initiated for', selectedActivities.length, 'activities');
-  };
-
-  // This is the handler that gets called when the dialog confirms the update
+  const handleBulkUpdateDueDates = async (selectedActivities) => { console.log('Bulk update due dates initiated', selectedActivities.length); };
   const handleConfirmDueDatesUpdate = async (dateData) => {
     try {
-      setLoading(true);
-      
-      const selectedActivityIds = selected.map(id => id);
-      
-      if (selectedActivityIds.length === 0) {
-        setError('No activities selected');
-        return;
-      }
-
-      // Call the bulk update service
-      await bulkUpdateActivityDueDates(
-        selectedActivityIds,
-        dateData.dueToStart,
-        dateData.dueToEnd
-      );
-      
-      const updatedCount = selectedActivityIds.length;
-      let message = `Successfully updated due dates for ${updatedCount} activit${updatedCount === 1 ? 'y' : 'ies'}`;
-      
-      if (dateData.dueToStart && dateData.dueToEnd) {
-        message += ' (both start and end dates)';
-      } else if (dateData.dueToStart) {
-        message += ' (start date)';
-      } else if (dateData.dueToEnd) {
-        message += ' (end date)';
-      }
-      
-      setSuccessMessage(message);
+      const ids = selected;
+      if (!ids.length) { setError("No activities selected"); return; }
+      await bulkUpdateActivityDueDates(ids, dateData.dueToStart, dateData.dueToEnd);
+      setSuccessMessage(`Updated due dates for ${ids.length} activit${ids.length===1?'y':'ies'}`);
       setSelected([]);
       setRefreshFlag(f => !f);
-    } catch (error) {
-      console.error('Bulk update due dates failed:', error);
-      setError(error.message || 'Failed to update activity due dates');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError("Failed to update due dates"); }
   };
 
-  const handleClearSelection = () => {
-    setSelected([]);
-  };
+  // ---------------- RENDER ----------------
+  if (!canView) {
+    return <div>You are not authorized to view this page.</div>;
+  }
 
   return (
     <>
@@ -517,8 +293,8 @@ const ActivitiesContainer = () => {
         successMessage={successMessage}
         setSuccessMessage={setSuccessMessage}
         selected={selected}
-        onClearSelection={handleClearSelection}
-        userRole={storedUser.roles || []}
+        onClearSelection={() => setSelected([])}
+        userRole={roles}
         onBulkMarkComplete={handleBulkMarkComplete}
         onBulkMarkIncomplete={handleBulkMarkIncomplete}
         onBulkUpdateDueDates={handleBulkUpdateDueDates}
@@ -543,7 +319,6 @@ const ActivitiesContainer = () => {
         currentFilter={currentFilter}
       />
 
-      {/* Notes Popup */}
       <NotesPopup
         open={notesPopupOpen}
         onClose={() => setNotesPopupOpen(false)}
@@ -553,10 +328,9 @@ const ActivitiesContainer = () => {
         entityType="Activity"
         entityId={selectedActivity?.ActivityID}
         entityName={selectedActivity?.ActivityType}
-        showExistingNotes={true}
+        showExistingNotes
       />
 
-      {/* Attachments Popup */}
       <AttachmentsPopup
         open={attachmentsPopupOpen}
         onClose={() => setAttachmentsPopupOpen(false)}
@@ -568,15 +342,10 @@ const ActivitiesContainer = () => {
         onDownload={handleDownloadAttachment}
       />
 
-      {/* Confirm delete dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Delete Activity"
-        description={`Are you sure you want to delete this activity${
-          activityToDelete?.ActivityType
-            ? ` (${activityToDelete.ActivityType})`
-            : ""
-        }?`}
+        description={`Are you sure you want to delete this activity${activityToDelete?.ActivityType ? ` (${activityToDelete.ActivityType})` : ""}?`}
         onConfirm={confirmDeactivate}
         onCancel={() => setDeleteDialogOpen(false)}
       />

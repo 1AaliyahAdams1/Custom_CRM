@@ -22,7 +22,7 @@ import TableView from '../../components/tableFormat/TableView';
 import ActivityTypePage from './ActivityTypePage'; 
 import ActivitiesBulkActionsToolbar from './ActivitiesBulkActionsToolbar';
 import theme from "../../components/Theme";
-import BulkDueDatesDialog from '../../components/BulkDueDatesDialog';
+import BulkDueDatesDialog from '../../components/dialogs/BulkDueDatesDialog';
 
 // Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {

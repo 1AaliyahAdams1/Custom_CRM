@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Menu, MenuItem, Tooltip } from '@mui/material';
-import { Info, Edit, Delete, Note, AttachFile, Business, PersonAdd } from '@mui/icons-material';
+import { Info, Edit, Delete, Note, AttachFile, Business, PersonAdd, PersonRemove, RestoreFromTrash, DeleteForever, Block } from '@mui/icons-material';
 
 const ActionMenu = ({
   anchorEl,
@@ -15,10 +15,15 @@ const ActionMenu = ({
   onAddNote,
   onAddAttachment,
   onClaimAccount,
+  onUnclaimAccount,
   onAssignUser,
+  onUnassignUser,
+  onReactivate,
+  onPermanentDelete,
   menuItems = [],
-  tooltips = {}, // Generic tooltips passed from parent
+  tooltips = {},
 }) => {
+
   // Get current user roles once
   const roles = useMemo(() => {
     try {
@@ -29,7 +34,11 @@ const ActionMenu = ({
     }
   }, []);
 
-  const hasRole = (role) => roles.includes(role);
+  const hasAccess = (routeKey) => {
+    if (!ROUTE_ACCESS[routeKey]) return false;
+    return roles.some((role) => ROUTE_ACCESS[routeKey].includes(role));
+  };
+
 
   const handleClick = (callback) => {
     if (callback && menuRow) callback(menuRow);
@@ -45,16 +54,40 @@ const ActionMenu = ({
   const visibleItems = useMemo(() => {
     const defaultItems = [
       {
-        label: 'Assign User',
-        icon: <PersonAdd sx={{ mr: 1, color: '#000' }} />,
+        label: "Assign User",
+        icon: <PersonAdd sx={{ mr: 1, color: "#000" }} />,
         onClick: () => handleClick(onAssignUser),
-        show: entityType === 'account' && !!onAssignUser && hasRole('C-level'),
+        show: entityType === 'account' && 
+              !!onAssignUser && 
+              hasRole('C-level') && 
+              (!menuRow?.assignedUserId || menuRow?.assignedUserId === null),
         tooltip: getTooltip('assignUser', 'Assign a team member to this record'),
+      },
+      {
+        label: 'Unassign User',
+        icon: <PersonRemove sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(onUnassignUser),
+        show: entityType === 'account' && 
+              !!onUnassignUser && 
+              hasRole('C-level') && 
+              (menuRow?.assignedUserId && menuRow?.assignedUserId !== null),
+        tooltip: getTooltip('unassignUser', 'Remove assigned user from this record'),
       },
       {
         label: 'Claim Account',
         icon: <Business sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onClaimAccount),
+        show:
+          entityType === "account" &&
+          !!onClaimAccount &&
+          hasAccess("accountClaim") &&
+          menuRow?.ownerStatus !== "owned",
+        tooltip: getTooltip("claimAccount", "Claim ownership of this record"),
+      },
+      {
+        label: 'Unclaim Account',
+        icon: <Business sx={{ mr: 1, color: '#666' }} />,
+        onClick: () => handleClick(onUnclaimAccount),
         show:
           entityType === 'account' &&
           !!onClaimAccount &&
@@ -63,42 +96,75 @@ const ActionMenu = ({
         tooltip: getTooltip('claimAccount', 'Claim ownership of this record'),
       },
       {
-        label: 'View Details',
-        icon: <Info sx={{ mr: 1, color: '#000' }} />,
+        label: 'Unclaim Account',
+        icon: <Business sx={{ mr: 1, color: '#666' }} />,
+        onClick: () => handleClick(onUnclaimAccount),
+        show:
+          entityType === 'account' &&
+          !!onUnclaimAccount &&
+          hasRole('Sales Representative') &&
+          menuRow?.ownerStatus === 'owned',
+        tooltip: getTooltip('unclaimAccount', 'Release ownership of this record'),
+      },
+      {
+        label: "Unclaim Account",
+        icon: <Business sx={{ mr: 1, color: "#000" }} />,
+        onClick: () => handleClick(onUnclaimAccount),
+        show:
+          entityType === "account" &&
+          !!onUnclaimAccount &&
+          hasAccess("accountUnclaim") &&
+          menuRow?.ownerStatus === "owned",
+        tooltip: getTooltip("unclaimAccount", "Unclaim this record"),
+      },
+      {
+        label: "View Details",
+        icon: <Info sx={{ mr: 1, color: "#000" }} />,
         onClick: () => handleClick(onView),
         show: !!onView,
-        tooltip: getTooltip('view', 'View detailed information for this record'),
+        tooltip: getTooltip("view", "View detailed information for this record"),
       },
       {
-        label: 'Edit',
-        icon: <Edit sx={{ mr: 1, color: '#000' }} />,
+        label: "Edit",
+        icon: <Edit sx={{ mr: 1, color: "#000" }} />,
         onClick: () => handleClick(onEdit),
         show: !!onEdit,
-        tooltip: getTooltip('edit', 'Edit this record\'s information'),
+        tooltip: getTooltip("edit", "Edit this record's information"),
       },
       {
-        label: 'Add Notes',
-        icon: <Note sx={{ mr: 1, color: '#000' }} />,
+        label: "Add Notes",
+        icon: <Note sx={{ mr: 1, color: "#000" }} />,
         onClick: () => handleClick(onAddNote),
         show: !!onAddNote,
-        tooltip: getTooltip('addNote', 'Add internal notes or comments'),
+        tooltip: getTooltip("addNote", "Add internal notes or comments"),
       },
       {
-        label: 'Add Attachments',
-        icon: <AttachFile sx={{ mr: 1, color: '#000' }} />,
+        label: "Add Attachments",
+        icon: <AttachFile sx={{ mr: 1, color: "#000" }} />,
         onClick: () => handleClick(onAddAttachment),
         show: !!onAddAttachment,
-        tooltip: getTooltip('addAttachment', 'Attach files or documents'),
+        tooltip: getTooltip("addAttachment", "Attach files or documents"),
       },
       {
-        label: 'Delete',
-        icon: <Delete sx={{ mr: 1, color: '#000' }} />,
+        label: 'Reactivate',
+        icon: <RestoreFromTrash sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(() => onReactivate(menuRow[idField])),
+        show: !!onReactivate && menuRow?.Active === false,
+        tooltip: getTooltip('reactivate', 'Reactivate this record'),
+      },
+      {
+        label: 'Deactivate',
+        icon: <Block sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(() => onDelete(menuRow[idField])),
-        show: !!onDelete,
-        disabled: (menuRow) => menuRow?.Active === false,
-        tooltip: menuRow?.Active === false 
-          ? 'Record is already deactivated' 
-          : getTooltip('delete', 'Delete or deactivate this record'),
+        show: !!onDelete && menuRow?.Active !== false,
+        tooltip: getTooltip('delete', 'Deactivate this record'),
+      },
+      {
+        label: 'Delete Permanently',
+        icon: <DeleteForever sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(() => onPermanentDelete(menuRow[idField])),
+        show: !!onPermanentDelete && menuRow?.Active === false,
+        tooltip: getTooltip('permanentDelete', 'Permanently delete this record (cannot be undone)'),
       },
     ];
 
@@ -114,20 +180,24 @@ const ActionMenu = ({
     onAddNote,
     onAddAttachment,
     onClaimAccount,
+    onUnclaimAccount,
     onAssignUser,
+    onUnassignUser,
+    onReactivate,
+    onPermanentDelete,
     menuItems,
-    hasRole,
     idField,
     tooltips,
+    hasAccess,
   ]);
 
   return (
     <Menu anchorEl={anchorEl} open={open} onClose={onClose}>
       {visibleItems.map((item, idx) => (
-        <Tooltip 
-          key={idx} 
-          title={item.tooltip} 
-          placement="left" 
+        <Tooltip
+          key={idx}
+          title={item.tooltip}
+          placement="left"
           arrow
           enterDelay={500}
         >

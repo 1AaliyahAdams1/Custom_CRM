@@ -1,45 +1,35 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Navigate, useParams, useLocation } from "react-router-dom";
+import { AuthContext } from "../../context/auth/authContext";
 
-const PrivateRoute = ({ children, allowedRoles }) => {
+const PrivateRoute = ({ children, allowedRoles = [], entityType = null }) => {
+  const { user } = useContext(AuthContext);
   const { id } = useParams();
   const location = useLocation();
 
-  // 1) Read user
-  let user = null;
-  try {
-    user = JSON.parse(localStorage.getItem("user"));
-  } catch {}
-
   if (!user) return <Navigate to="/login" replace />;
 
-  // 2) Role check (case-insensitive)
   const roles = Array.isArray(user.roles) ? user.roles : [];
-  const normalizedRoles = roles.map(r => (r || "").toLowerCase().trim());
-  const isCLevel = normalizedRoles.includes("c-level");
+  const normalizedRoles = roles.map(r => r.toLowerCase().trim());
 
-  if (allowedRoles?.length) {
-    const allowedLower = allowedRoles.map(r => (r || "").toLowerCase().trim());
-    const hasRoleAccess = allowedLower.some(role => normalizedRoles.includes(role));
-    if (!hasRoleAccess) return <Navigate to="/unauthorized" replace />;
+  if (allowedRoles.length > 0) {
+    const allowedLower = allowedRoles.map(r => r.toLowerCase().trim());
+    const hasRole = allowedLower.some(r => normalizedRoles.includes(r));
+    if (!hasRole) return <Navigate to="/unauthorized" replace />;
   }
 
-  // 3) Ownership check ONLY for /accounts/:id (not for contacts/deals/activities)
-  const isAccountsDetailRoute =
-    location.pathname.startsWith("/accounts/") && !!id && !location.pathname.includes("/create");
-
-  if (isAccountsDetailRoute && !isCLevel) {
-    const ownedAccountIds = Array.isArray(user.ownedAccountIds) ? user.ownedAccountIds : [];
-
-    // Safety: if we don't know ownership yet, don't block falsely.
-    if (ownedAccountIds.length > 0) {
-      const ownsAccount = ownedAccountIds.some(ownedId => String(ownedId) === String(id));
-      if (!ownsAccount) return <Navigate to="/unauthorized" replace />;
-    }
-    // If length === 0, we skip blocking here. (Step 2 will populate it.)
+  if (entityType && id && user[`owned${capitalize(entityType)}Ids`]?.length > 0) {
+    const ownedIds = user[`owned${capitalize(entityType)}Ids`];
+    const ownsEntity = ownedIds.some(ownedId => String(ownedId) === String(id));
+    if (!ownsEntity) return <Navigate to="/unauthorized" replace />;
   }
 
   return children;
 };
+
+function capitalize(str) {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 export default PrivateRoute;

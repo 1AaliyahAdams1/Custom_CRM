@@ -38,33 +38,6 @@ export const getWorkPageData = async (userId, sortCriteria = "dueDate", filter =
     };
   } catch (error) {
     console.error("Error fetching work page data:", error);
-    console.error("Error details:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-/**
- * Get single activity for workspace tab with full context
- * @param {number} activityId - Activity ID
- * @param {number} userId - User ID
- * @returns {Promise<Object>} Detailed activity data
- */
-export const getActivityForWorkspace = async (activityId, userId) => {
-  if (!activityId) throw new Error("Activity ID is required");
-  if (!userId) throw new Error("User ID is required");
-
-  try {
-    const url = `${RESOURCE}/user/${userId}/activity/${activityId}/workspace`;
-    console.log('Fetching activity for workspace:', url);
-    const response = await api.get(url);
-    
-    // Return success structure for consistency with container expectations
-    return {
-      success: true,
-      data: response.data
-    };
-  } catch (error) {
-    console.error("Error fetching activity for workspace:", error);
     throw error;
   }
 };
