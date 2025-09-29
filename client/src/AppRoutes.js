@@ -64,6 +64,11 @@ const EditCompanyPage = lazy(() => import("./pages/Companies/EditCompanyPage"));
 const EditDiscountCodePage = lazy(() => import("./pages/DiscountCodes/EditDiscountCodePage"));
 const EditEventPage = lazy(() => import("./pages/Events/EditEventsPage"));
 
+const SequencesPage = lazy(() => import("./components/containers/SequencesContainer"));
+const SequencesDetailPage = lazy(() => import("./pages/Sequences/SequencesDetailsPage"));
+const CreateSequencesPage = lazy(() => import("./pages/Sequences/CreateSequencesPage"));
+const EditSequencesPage = lazy(() => import("./pages/Sequences/EditSequencesPage"));
+
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
@@ -280,6 +285,39 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.productsDetails}>  
             <ProductDetailsPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Sequences Routes --- */}
+      <Route
+        path="/sequences"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequences}>
+            <SequencesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/sequences/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesCreate}>
+            <CreateSequencesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/sequences/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesDetails}>
+            <SequencesDetailPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/sequences/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesEdit}>
+            <EditSequencesPage />
           </PrivateRoute>
         }
       />

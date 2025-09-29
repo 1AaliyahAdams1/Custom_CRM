@@ -43,6 +43,7 @@ const reportRoutes = require("./routes/reportRoutes");
 const countryRoutes = require("./routes/countryRoutes")
 const authRoutes = require("./routes/auth/authRoutes");
 const workRoutes = require('./routes/workRoutes');
+const sequenceRoutes = require('./routes/sequenceRoutes');
 const attachmentRoutes = require("./routes/attachmentRoutes");
 const assignUserRoutes = require("./routes/assignUserRoutes");  
 const employeeRoutes = require("./routes/employeeRoutes"); 
@@ -83,6 +84,7 @@ app.use("/reports", reportRoutes);
 app.use("/countries", countryRoutes)
 app.use("/auth", authRoutes);
 app.use('/work', workRoutes);
+app.use('/sequences', sequenceRoutes);
 app.use("/attachments", attachmentRoutes);
 app.use('/assign', assignUserRoutes);
 app.use("/employees", employeeRoutes);
