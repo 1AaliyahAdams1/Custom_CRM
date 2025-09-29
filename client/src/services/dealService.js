@@ -85,3 +85,14 @@ export async function fetchDealsByUser(userId) {
     throw error;
   }
 }
+
+export async function getDealsByAccountID(accountId) {
+  if (!accountId) throw new Error('Account ID is required');
+  try {
+    const response = await api.get(`${RESOURCE}/account/${accountId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching deals for account ${accountId}:`, error);
+    throw error;
+  }
+}

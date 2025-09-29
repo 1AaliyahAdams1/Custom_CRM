@@ -85,6 +85,21 @@ async function getDealsByUser(req, res) {
   }
 }
 
+async function getDealsByAccountID(req, res) {
+  try {
+    const accountId = parseInt(req.params.accountId, 10);
+    if (isNaN(accountId)) {
+      return res.status(400).json({ error: "Invalid account ID" });
+    }
+
+    const deals = await dealService.getDealsByAccountID(accountId);
+    res.json(deals);
+  } catch (err) {
+    console.error("Error fetching deals by account ID:", err);
+    res.status(500).json({ error: "Failed to get deals for account" });
+  }
+}
+
 module.exports = {
   getAllDeals,
   getDealById,
@@ -93,5 +108,6 @@ module.exports = {
   deactivateDeal,
   reactivateDeal,
   deleteDeal,
-  getDealsByUser
+  getDealsByUser,
+  getDealsByAccountID
 };

@@ -157,6 +157,53 @@ async function deleteAttachment(attachmentId) {
 }
 
 // =======================
+// Get attachments by Account ID
+// =======================
+async function getAttachmentsByAccountID(accountId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT
+            att.[AttachmentID],
+            att.[FileName],
+            att.[OriginalFileName],
+            att.[FileSize],
+            att.[FileType],
+            att.[MimeType],
+            att.[FilePath],
+            att.[FileUrl],
+            att.[AccountID],
+            a.[AccountName],              
+            att.[RelatedEntityID],
+            att.[RelatedEntityType],
+            att.[Description],
+            att.[IsPublic],
+            att.[UploadedBy],
+            u.[FirstName] AS UploadedByFirstName,
+            u.[LastName] AS UploadedByLastName,
+            att.[UploadedAt],
+            att.[UpdatedAt],
+            att.[Active]
+        FROM [8589_CRM].[dbo].[Attachment] att
+        JOIN [8589_CRM].[dbo].[Account] a 
+            ON att.AccountID = a.AccountID AND a.Active = 1
+        LEFT JOIN [8589_CRM].[dbo].[User] u 
+            ON att.UploadedBy = u.UserID
+        WHERE att.AccountID = @AccountID
+          AND att.Active = 1
+        ORDER BY att.UploadedAt DESC;
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Attachment Repo Error [getAttachmentsByAccountID]:", error);
+    throw error;
+  }
+}
+
+// =======================
 // Exports
 // =======================
 module.exports = {
@@ -167,4 +214,5 @@ module.exports = {
   deactivateAttachment,
   reactivateAttachment,
   deleteAttachment,
+  getAttachmentsByAccountID
 };

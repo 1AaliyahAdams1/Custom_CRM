@@ -84,6 +84,21 @@ const getActivitiesByUser = async (req, res) => {
   }
 };
 
+async function getActivitiesByAccountID(req, res) {
+  try {
+    const accountId = parseInt(req.params.accountId, 10);
+    if (isNaN(accountId)) {
+      return res.status(400).json({ error: "Invalid account ID" });
+    }
+
+    const activities = await activityService.getActivitiesByAccountID(accountId);
+    res.json(activities);
+  } catch (err) {
+    console.error("Error fetching activities by account ID:", err);
+    res.status(500).json({ error: "Failed to get activities for account" });
+  }
+}
+
 //Bulk Operations Controllers
 const bulkMarkActivitiesComplete = async (req, res) => {
   try {
@@ -159,6 +174,7 @@ module.exports = {
   reactivateActivity,
   deleteActivity,
   getActivitiesByUser,
+  getActivitiesByAccountID,
   // Bulk operations
   bulkMarkActivitiesComplete,
   bulkMarkActivitiesIncomplete,

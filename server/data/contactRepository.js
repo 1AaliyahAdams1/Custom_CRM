@@ -232,6 +232,7 @@ async function getContactsByUser(userId) {
 }
 
 
+
 module.exports = {
   getAllContacts,
   getAllContactDetails,
@@ -242,5 +243,5 @@ module.exports = {
   reactivateContact,
   deleteContact,
   getContactsByAccountId,
-  getContactsByUser
+  getContactsByUser,
 };

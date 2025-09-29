@@ -93,6 +93,23 @@ async function deleteNote(req, res) {
     res.status(400).json({ message: error.message });
   }
 }
+// =======================
+// Get notes by Account ID
+// =======================
+async function getNotesByAccountID(req, res) {
+  try {
+    const accountId = parseInt(req.params.accountId, 10);
+    if (isNaN(accountId)) {
+      return res.status(400).json({ error: "Invalid account ID" });
+    }
+
+    const notes = await noteService.getNotesByAccountID(accountId);
+    res.json(notes);
+  } catch (err) {
+    console.error("Error fetching notes by account ID:", err);
+    res.status(500).json({ error: "Failed to get notes for account" });
+  }
+}
 
 module.exports = {
   getNotes,
@@ -101,4 +118,5 @@ module.exports = {
   deactivateNote,
   reactivateNote,
   deleteNote,
+  getNotesByAccountID
 };
