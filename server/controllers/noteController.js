@@ -1,5 +1,15 @@
 const noteService = require("../services/noteService");
 
+async function getAllNotes(req, res) {
+  try {
+    const notes = await noteService.getAllNotes();
+    res.json(notes);
+  } catch (err) {
+    console.error("Error getting all notes:", err);
+    res.status(500).json({ error: "Failed to get notes" });
+  }
+}
+
 // =======================
 // Get notes for entity
 // =======================
@@ -118,5 +128,6 @@ module.exports = {
   deactivateNote,
   reactivateNote,
   deleteNote,
-  getNotesByAccountID
+  getNotesByAccountID,
+  getAllNotes
 };

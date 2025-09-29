@@ -23,4 +23,7 @@ router.delete("/:id", noteController.deleteNote);
 // Get notes by AccountID
 router.get("/account/:accountId", noteController.getNotesByAccountID);
 
+// Get all notes
+router.get("/all", noteController.getAllNotes);
+
 module.exports = router;
