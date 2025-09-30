@@ -75,10 +75,10 @@ const Dashboard = () => {
         <WelcomeBanner />
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards
       <div className="col-span-12">
         <MetricsGrid />
-      </div>
+      </div> */}
 
       {/* Row 1 */}
       <div className="col-span-12 lg:col-span-6">
