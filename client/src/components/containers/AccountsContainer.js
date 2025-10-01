@@ -74,8 +74,7 @@ const AccountsContainer = () => {
 
       if (canViewAll) {
         if (isCLevel) {
-          const response = await getAllAccounts();
-          accountsData = response.data || [];
+         accountsData = await getAllAccounts();  // did this work?
           accountsData.forEach((acc) => (acc.ownerStatus = "n/a"));
         } else {
           const assignedRes = await fetchActiveAccountsByUser(userId);

@@ -225,23 +225,46 @@ export default function DealDetailsPage() {
         dataService: createContactDataService()
       },
       {
-        key: 'activities',
-        label: 'Activities',
-        entityType: 'activity',
-        tableConfig: {
-          idField: 'ActivityID',
-          columns: [
-            { field: 'TypeName', headerName: 'Activity Type', type: 'text', defaultVisible: true },
-            { field: 'ActivityDescription', headerName: 'Description', type: 'truncated', maxWidth: 300, defaultVisible: true },
-            { field: 'StartDate', headerName: 'Start Date', type: 'date', defaultVisible: true },
-            { field: 'EndDate', headerName: 'End Date', type: 'date', defaultVisible: true },
-            { field: 'Status', headerName: 'Status', type: 'text', defaultVisible: true },
-            { field: 'Priority', headerName: 'Priority', type: 'text', defaultVisible: true },
-            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
-          ]
-        },
-        dataService: createFilteredDataService(getAllActivities, 'DealID')
-      },
+  key: 'activities',
+  label: 'Activities',
+  entityType: 'activity',
+  tableConfig: {
+    idField: 'ActivityID',
+    columns: [
+      { field: 'ActivityType', headerName: 'Activity Type', type: 'text', defaultVisible: true },
+      { field: 'AccountName', headerName: 'Account', type: 'text', defaultVisible: true },
+      { field: 'PriorityLevelName', headerName: 'Priority', type: 'text', defaultVisible: true },
+      { field: 'DueToStart', headerName: 'Due Start', type: 'date', defaultVisible: true },
+      { field: 'DueToEnd', headerName: 'Due End', type: 'date', defaultVisible: true },
+      { field: 'Completed', headerName: 'Completed', type: 'boolean', defaultVisible: true },
+    ]
+  },
+  dataService: async () => {
+    try {
+      // For deals, filter activities by the deal's AccountID
+      if (!deal?.AccountID) return { data: [] };
+      
+      const response = await getAllActivities();
+      const allData = response?.data || response;
+      
+      // Filter by AccountName since activities don't have AccountID
+      const accountResponse = await getAllAccounts();
+      const accounts = accountResponse?.data || accountResponse;
+      const dealAccount = accounts.find(acc => acc.AccountID === deal.AccountID);
+      
+      if (!dealAccount) return { data: [] };
+      
+      const filteredData = allData.filter(item => 
+        item.AccountName === dealAccount.AccountName
+      );
+      
+      return { data: filteredData };
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      return { data: [] };
+    }
+  }
+},
       {
         key: 'notes',
         label: 'Notes',
