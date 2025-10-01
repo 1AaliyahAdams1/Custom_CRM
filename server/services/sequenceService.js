@@ -136,6 +136,59 @@ const deleteSequenceItem = async (itemId) => {
   return await sequenceRepo.deleteSequenceItem(itemId, null);
 };
 
+//======================================
+// Create sequence with items
+//======================================
+const createSequenceWithItems = async (sequenceData, items) => {
+  const { SequenceName, SequenceDescription } = sequenceData;
+
+  if (!SequenceName) {
+    throw new Error("Sequence name is required");
+  }
+
+  if (!items || items.length === 0) {
+    throw new Error("At least one sequence item is required");
+  }
+
+  // Validate all items have required fields
+  for (const item of items) {
+    if (!item.TypeID || !item.SequenceItemDescription || item.DaysFromStart === undefined || !item.PriorityLevelID) {
+      throw new Error("Each sequence item must have TypeID, Description, DaysFromStart, and PriorityLevelID");
+    }
+  }
+
+  return await sequenceRepo.createSequenceWithItems(sequenceData, items, null);
+};
+
+//======================================
+// Assign sequence to account
+//======================================
+const assignSequenceToAccount = async (accountId, sequenceId) => {
+  if (!accountId || !sequenceId) {
+    throw new Error("Both AccountID and SequenceID are required");
+  }
+
+  return await sequenceRepo.assignSequenceToAccount(accountId, sequenceId, null);
+};
+
+//======================================
+// Unassign sequence from account
+//======================================
+const unassignSequenceFromAccount = async (accountId) => {
+  if (!accountId) {
+    throw new Error("AccountID is required");
+  }
+
+  return await sequenceRepo.unassignSequenceFromAccount(accountId, null);
+};
+
+//======================================
+// Get accounts using a sequence
+//======================================
+const getAccountsBySequence = async (sequenceId) => {
+  return await sequenceRepo.getAccountsBySequence(sequenceId);
+};
+
 module.exports = {
   getAllSequences,
   getSequenceByID,
@@ -149,4 +202,8 @@ module.exports = {
   createSequenceItem,
   updateSequenceItem,
   deleteSequenceItem,
+  createSequenceWithItems,
+  assignSequenceToAccount,
+  unassignSequenceFromAccount,
+  getAccountsBySequence,
 };

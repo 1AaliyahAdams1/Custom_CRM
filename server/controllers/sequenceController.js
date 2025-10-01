@@ -240,6 +240,84 @@ const deleteSequenceItem = async (req, res) => {
   }
 };
 
+//======================================
+// Create sequence with items
+//======================================
+const createSequenceWithItems = async (req, res) => {
+  try {
+    const { sequence, items } = req.body;
+    
+    if (!sequence || !items) {
+      return res.status(400).json({ error: "Both sequence and items are required" });
+    }
+
+    const changedBy = req.user?.UserID || req.body.changedBy || 1;
+    const result = await sequenceRepo.createSequenceWithItems(sequence, items, changedBy);
+    res.status(201).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Assign sequence to account
+//======================================
+const assignSequenceToAccount = async (req, res) => {
+  try {
+    const { accountId, sequenceId } = req.body;
+    
+    if (!accountId || !sequenceId) {
+      return res.status(400).json({ error: "Both accountId and sequenceId are required" });
+    }
+
+    const changedBy = req.user?.UserID || req.body.changedBy || 1;
+    const result = await sequenceRepo.assignSequenceToAccount(accountId, sequenceId, changedBy);
+    res.status(200).json(result);
+  } catch (err) {
+    if (err.message.includes("not found") || err.message.includes("inactive")) {
+      return res.status(404).json({ error: err.message });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Unassign sequence from account
+//======================================
+const unassignSequenceFromAccount = async (req, res) => {
+  try {
+    const accountId = parseInt(req.params.accountId, 10);
+    
+    if (!accountId || isNaN(accountId)) {
+      return res.status(400).json({ error: "Valid Account ID is required" });
+    }
+
+    const changedBy = req.user?.UserID || req.body.changedBy || 1;
+    const result = await sequenceRepo.unassignSequenceFromAccount(accountId, changedBy);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get accounts by sequence
+//======================================
+const getAccountsBySequence = async (req, res) => {
+  try {
+    const sequenceId = parseInt(req.params.id, 10);
+    
+    if (!sequenceId || isNaN(sequenceId)) {
+      return res.status(400).json({ error: "Valid Sequence ID is required" });
+    }
+
+    const accounts = await sequenceRepo.getAccountsBySequence(sequenceId);
+    res.status(200).json(accounts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getAllSequences,
   getSequenceByID,
@@ -253,4 +331,8 @@ module.exports = {
   createSequenceItem,
   updateSequenceItem,
   deleteSequenceItem,
+  createSequenceWithItems,
+  assignSequenceToAccount,
+  unassignSequenceFromAccount,
+  getAccountsBySequence,
 };

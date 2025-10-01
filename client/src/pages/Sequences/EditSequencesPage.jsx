@@ -301,18 +301,6 @@ const EditSequencesPage = () => {
                 border: '1px solid #e9ecef' 
               }}
             >
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#495057' }}>
-                Manage Sequence Items
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#6c757d', lineHeight: 1.6, mb: 2 }}>
-                After updating the sequence, you can manage sequence items on the detail page:
-              </Typography>
-              <ul style={{ color: '#6c757d', marginTop: '8px' }}>
-                <li>Add, edit, or remove sequence items</li>
-                <li>Define activity timing (days from start)</li>
-                <li>Set priority levels and activity types</li>
-                <li>Reorder workflow steps</li>
-              </ul>
             </Paper>
           </Paper>
         </Box>

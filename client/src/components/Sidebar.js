@@ -202,7 +202,7 @@ const DRAWER_WIDTH_COLLAPSED = 64;
 // Navigation configuration
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: DashboardIcon, accessKey: "dashboard", section: "Main" },
-  { name: "Smart Work", href: "/smart-work", icon: WorkspacesOutlineIcon, accessKey: "smartWork", section: "Main"},
+  { name: "Work Page", href: "/smart-work", icon: WorkspacesOutlineIcon, accessKey: "smartWork", section: "Main"},
 
   // CRM
   { name: "Accounts", href: "/accounts", icon: BusinessIcon, accessKey: "accounts", section: "CRM Management" },
