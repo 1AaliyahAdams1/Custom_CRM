@@ -1,5 +1,8 @@
 const noteService = require("../services/noteService");
 
+// =======================
+// Get all notes
+// =======================
 async function getAllNotes(req, res) {
   try {
     const notes = await noteService.getAllNotes();
@@ -16,13 +19,11 @@ async function getAllNotes(req, res) {
 async function getNotes(req, res) {
   try {
     const { entityId, entityTypeName } = req.query;
-
     if (!entityId || !entityTypeName) {
       return res.status(400).json({
         message: "entityId and entityTypeName are required query parameters"
       });
     }
-
     const notes = await noteService.getNotes(parseInt(entityId), entityTypeName);
     res.status(200).json(notes);
   } catch (error) {
@@ -36,7 +37,14 @@ async function getNotes(req, res) {
 async function createNote(req, res) {
   try {
     const noteData = req.body;
-    const updatedNotes = await noteService.createNote(noteData); // returns full updated notes
+    // Get userId from authenticated user (adjust based on your auth setup)
+    const userId = req.user?.id || req.userId || req.body.CreatedBy;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "User authentication required" });
+    }
+    
+    const updatedNotes = await noteService.createNote(noteData, userId);
     res.status(201).json(updatedNotes);
   } catch (error) {
     if (error.message.includes("required") || error.message.includes("empty") || error.message.includes("characters")) {
@@ -54,7 +62,14 @@ async function updateNote(req, res) {
   try {
     const noteId = parseInt(req.params.id);
     const noteData = req.body;
-    const updatedNotes = await noteService.updateNote(noteId, noteData); // return full notes after update
+    // Get userId from authenticated user (adjust based on your auth setup)
+    const userId = req.user?.id || req.userId || req.body.UserId;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "User authentication required" });
+    }
+    
+    const updatedNotes = await noteService.updateNote(noteId, noteData, userId);
     res.status(200).json(updatedNotes);
   } catch (error) {
     if (error.message.includes("required") || error.message.includes("empty") || error.message.includes("characters")) {
@@ -71,7 +86,14 @@ async function updateNote(req, res) {
 async function deactivateNote(req, res) {
   try {
     const noteId = parseInt(req.params.id);
-    const result = await noteService.deactivateNote(noteId);
+    // Get userId from authenticated user (adjust based on your auth setup)
+    const userId = req.user?.id || req.userId || req.body.UserId;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "User authentication required" });
+    }
+    
+    const result = await noteService.deactivateNote(noteId, userId);
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -84,40 +106,17 @@ async function deactivateNote(req, res) {
 async function reactivateNote(req, res) {
   try {
     const noteId = parseInt(req.params.id);
-    const result = await noteService.reactivateNote(noteId);
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-}
-
-// =======================
-// Delete note
-// =======================
-async function deleteNote(req, res) {
-  try {
-    const noteId = parseInt(req.params.id);
-    const result = await noteService.deleteNote(noteId);
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-}
-// =======================
-// Get notes by Account ID
-// =======================
-async function getNotesByAccountID(req, res) {
-  try {
-    const accountId = parseInt(req.params.accountId, 10);
-    if (isNaN(accountId)) {
-      return res.status(400).json({ error: "Invalid account ID" });
+    // Get userId from authenticated user (adjust based on your auth setup)
+    const userId = req.user?.id || req.userId || req.body.UserId;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "User authentication required" });
     }
-
-    const notes = await noteService.getNotesByAccountID(accountId);
-    res.json(notes);
-  } catch (err) {
-    console.error("Error fetching notes by account ID:", err);
-    res.status(500).json({ error: "Failed to get notes for account" });
+    
+    const result = await noteService.reactivateNote(noteId, userId);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 }
 
@@ -127,7 +126,5 @@ module.exports = {
   updateNote,
   deactivateNote,
   reactivateNote,
-  deleteNote,
-  getNotesByAccountID,
   getAllNotes
 };

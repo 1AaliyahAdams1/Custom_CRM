@@ -12,7 +12,8 @@ import {
 import {
   createNote,
   updateNote,
-  deleteNote
+  deactivateNote,
+  reactivateNote,
 } from "../../services/noteService";
 import {
   uploadAttachment,
@@ -171,7 +172,8 @@ const IndustryContainer = () => {
     }
   }, [selected, loadIndustries]);
 
-  // Notes handlers
+
+// Notes handlers
   const handleAddNote = useCallback((industry) => {
     setSelectedIndustry(industry);
     setNotesPopupOpen(true);
@@ -182,36 +184,54 @@ const IndustryContainer = () => {
       await createNote({
         EntityID: selectedIndustry.IndustryID,
         EntityType: "Industry",
-        Content: noteData.Content
+        Content: noteData.Content || noteData,
       });
       setSuccessMessage("Note added successfully!");
       setStatusMessage('Note added successfully');
       setStatusSeverity('success');
-      setNotesPopupOpen(false);
     } catch (err) {
       setError(err.message || "Failed to save note");
+      throw err;
     }
   };
 
   const handleEditNote = async (noteData) => {
     try {
-      await updateNote(noteData.NoteID, noteData);
+      await updateNote(noteData.NoteID, {
+        EntityID: selectedIndustry.IndustryID,
+        EntityType: "Industry",
+        Content: noteData.Content,
+      });
       setSuccessMessage("Note updated successfully!");
       setStatusMessage('Note updated successfully');
       setStatusSeverity('success');
     } catch (err) {
       setError(err.message || "Failed to update note");
+      throw err;
     }
   };
 
-  const handleDeleteNote = async (noteId) => {
+  const handleDeactivateNote = async (noteId) => {
     try {
-      await deleteNote(noteId);
-      setSuccessMessage("Note deleted successfully!");
-      setStatusMessage('Note deleted successfully');
+      await deactivateNote(noteId);
+      setSuccessMessage("Note deactivated successfully!");
+      setStatusMessage('Note deactivated successfully');
       setStatusSeverity('success');
     } catch (err) {
-      setError(err.message || "Failed to delete note");
+      setError(err.message || "Failed to deactivate note");
+      throw err;
+    }
+  };
+
+  const handleReactivateNote = async (noteId) => {
+    try {
+      await reactivateNote(noteId);
+      setSuccessMessage("Note reactivated successfully!");
+      setStatusMessage('Note reactivated successfully');
+      setStatusSeverity('success');
+    } catch (err) {
+      setError(err.message || "Failed to reactivate note");
+      throw err;
     }
   };
 
@@ -297,7 +317,8 @@ const IndustryContainer = () => {
         onClose={() => setNotesPopupOpen(false)}
         onSave={handleSaveNote}
         onEdit={handleEditNote}
-        onDelete={handleDeleteNote}
+        onDeactivate={handleDeactivateNote}
+        onReactivate={handleReactivateNote}
         entityType="Industry"
         entityId={selectedIndustry?.IndustryID}
         entityName={selectedIndustry?.IndustryName}

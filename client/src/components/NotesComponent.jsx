@@ -17,22 +17,21 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   Chip,
-  Snackbar,
+  Tooltip,
 } from '@mui/material';
 import {
   Close,
   Save,
   Note,
-  Delete,
   Edit,
   Refresh,
-  Add,
-  Cancel
+  Cancel,
+  BlockOutlined,
+  RestoreFromTrash,
 } from '@mui/icons-material';
 import {
   createNote,
   updateNote,
-  deleteNote,
   getNotesByEntity,
   deactivateNote,
   reactivateNote
@@ -42,7 +41,6 @@ const NotesPopup = ({
   open,
   onClose,
   onSave,
-  onDelete,
   onEdit,
   entityType = 'entity',
   entityId,
@@ -50,9 +48,8 @@ const NotesPopup = ({
   mode = 'create',
   initialNote = null,
   showExistingNotes = true,
-  maxLength = 1000,
+  maxLength = 255,
   required = false,
-  allowDeactivate = false,
   onNotesChange,
 }) => {
   const [noteContent, setNoteContent] = useState('');
@@ -64,6 +61,7 @@ const NotesPopup = ({
   const [notesError, setNotesError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [showInactive, setShowInactive] = useState(true);
 
   // Initialize form data when dialog opens or initialNote changes
   useEffect(() => {
@@ -92,7 +90,7 @@ const NotesPopup = ({
     setSuccessMessage('');
   };
 
-  // Fetch existing notes
+  // Fetch existing notes (including inactive)
   const fetchExistingNotes = async () => {
     if (!entityId || !entityType) return;
 
@@ -100,7 +98,7 @@ const NotesPopup = ({
       setFetchingNotes(true);
       setNotesError('');
 
-      const notes = await getNotesByEntity(entityType, entityId);
+      const notes = await getNotesByEntity(entityType, entityId, showInactive);
       setExistingNotes(Array.isArray(notes) ? notes : []);
 
       if (onNotesChange) {
@@ -151,20 +149,17 @@ const NotesPopup = ({
         Content: noteContent.trim(),
         EntityType: entityType,
         EntityID: entityId,
-        EntityName: entityName,
-        CreatedAt: new Date().toISOString(),
       };
 
       let result;
 
       if (editingNoteId) {
         // Update existing note
-        noteData.NoteID = editingNoteId;
         result = await updateNote(editingNoteId, noteData);
         setSuccessMessage('Note updated successfully');
 
         if (onEdit) {
-          await onEdit(noteData);
+          await onEdit(result);
         }
       } else {
         // Create new note
@@ -172,7 +167,7 @@ const NotesPopup = ({
         setSuccessMessage('Note created successfully');
 
         if (onSave) {
-          await onSave(noteData);
+          await onSave(result);
         }
       }
 
@@ -193,6 +188,7 @@ const NotesPopup = ({
   };
 
   const handleEditNote = (note) => {
+    if (!note.Active) return; // Can't edit inactive notes
     setNoteContent(note.Content || '');
     setEditingNoteId(note.NoteID);
     setIsEditing(true);
@@ -206,36 +202,8 @@ const NotesPopup = ({
     resetErrors();
   };
 
-  const handleDeleteNote = async (noteId) => {
-    if (!window.confirm('Are you sure you want to delete this note?')) {
-      return;
-    }
-
-    setLoading(true);
-    resetErrors();
-
-    try {
-      await deleteNote(noteId);
-      setSuccessMessage('Note deleted successfully');
-
-      if (onDelete) {
-        await onDelete(noteId);
-      }
-
-      await fetchExistingNotes();
-
-    } catch (err) {
-      console.error('Failed to delete note:', err);
-      setNotesError(err.message || 'Failed to delete note');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDeactivateNote = async (noteId) => {
-    if (!allowDeactivate) return;
-
-    if (!window.confirm('Are you sure you want to deactivate this note?')) {
+    if (!window.confirm('Are you sure you want to deactivate this note? It can be reactivated later.')) {
       return;
     }
 
@@ -256,7 +224,9 @@ const NotesPopup = ({
   };
 
   const handleReactivateNote = async (noteId) => {
-    if (!allowDeactivate) return;
+    if (!window.confirm('Are you sure you want to reactivate this note?')) {
+      return;
+    }
 
     setLoading(true);
     resetErrors();
@@ -306,6 +276,10 @@ const NotesPopup = ({
   const characterCount = noteContent.length;
   const isNearLimit = characterCount > maxLength * 0.8;
 
+  // Separate active and inactive notes
+  const activeNotes = existingNotes.filter(note => note.Active === 1 || note.Active === true);
+  const inactiveNotes = existingNotes.filter(note => note.Active === 0 || note.Active === false);
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       {/* Dialog Title */}
@@ -352,9 +326,25 @@ const NotesPopup = ({
             fullWidth
             variant="outlined"
             error={!!validationError}
-            helperText={`${noteContent.length}/${maxLength} characters`}
+            helperText={
+              <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: isNearLimit ? '#d32f2f' : 'inherit' }}>
+                  {characterCount}/{maxLength} characters
+                </span>
+              </Box>
+            }
             disabled={loading}
           />
+          {isEditing && (
+            <Button
+              onClick={handleCancelEdit}
+              startIcon={<Cancel />}
+              sx={{ mt: 1 }}
+              size="small"
+            >
+              Cancel Edit
+            </Button>
+          )}
         </Box>
 
         {/* Existing Notes Section */}
@@ -362,7 +352,7 @@ const NotesPopup = ({
           <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-                Existing Notes ({existingNotes.length})
+                Active Notes ({activeNotes.length})
               </Typography>
               <IconButton size="small" onClick={handleRefreshNotes} disabled={fetchingNotes || loading}>
                 <Refresh />
@@ -373,52 +363,112 @@ const NotesPopup = ({
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
                 <CircularProgress size={24} />
               </Box>
-            ) : existingNotes.length > 0 ? (
-              <List sx={{ maxHeight: 300, overflow: 'auto' }}>
-                {existingNotes.map((note, idx) => (
-                  <ListItem
-                    key={note.NoteID || idx}
-                    sx={{
-                      backgroundColor: '#f9fafb',
-                      borderRadius: 1,
-                      mb: 1,
-                      border: '1px solid #e5e7eb',
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <ListItemText
-                      primary={<Typography variant="body2" sx={{ lineHeight: 1.5 }}>{note.Content}</Typography>}
-                      secondary={
-                        <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                          Created: {formatDate(note.CreatedAt)}
-                          {note.CreatedBy && ` by ${note.CreatedBy}`}
-                        </Typography>
-                      }
-                    />
-                    <ListItemSecondaryAction>
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <IconButton size="small" onClick={() => handleEditNote(note)} disabled={loading}>
-                          <Edit fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteNote(note.NoteID)}
-                          disabled={loading}
-                          sx={{ color: '#dc2626' }}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                ))}
-              </List>
             ) : (
-              <Box sx={{ textAlign: 'center', py: 3 }}>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                  No notes found for this {entityType}.
-                </Typography>
-              </Box>
+              <>
+                {/* Active Notes */}
+                {activeNotes.length > 0 ? (
+                  <List sx={{ maxHeight: 200, overflow: 'auto', mb: 2 }}>
+                    {activeNotes.map((note, idx) => (
+                      <ListItem
+                        key={note.NoteID || idx}
+                        sx={{
+                          backgroundColor: '#f9fafb',
+                          borderRadius: 1,
+                          mb: 1,
+                          border: '1px solid #e5e7eb',
+                          alignItems: 'flex-start',
+                        }}
+                      >
+                        <ListItemText
+                          primary={<Typography variant="body2" sx={{ lineHeight: 1.5 }}>{note.Content}</Typography>}
+                          secondary={
+                            <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                              Created: {formatDate(note.CreatedAt)}
+                              {note.CreatedBy && ` by User ${note.CreatedBy}`}
+                            </Typography>
+                          }
+                        />
+                        <ListItemSecondaryAction>
+                          <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            <Tooltip title="Edit">
+                              <IconButton size="small" onClick={() => handleEditNote(note)} disabled={loading}>
+                                <Edit fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Deactivate">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDeactivateNote(note.NoteID)}
+                                disabled={loading}
+                                sx={{ color: '#dc2626' }}
+                              >
+                                <BlockOutlined fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 2, mb: 2 }}>
+                    <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      No active notes found for this {entityType}.
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Inactive Notes */}
+                {inactiveNotes.length > 0 && (
+                  <>
+                    <Divider sx={{ my: 2 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 500, mb: 1, color: '#6b7280' }}>
+                      Deactivated Notes ({inactiveNotes.length})
+                    </Typography>
+                    <List sx={{ maxHeight: 150, overflow: 'auto' }}>
+                      {inactiveNotes.map((note, idx) => (
+                        <ListItem
+                          key={note.NoteID || idx}
+                          sx={{
+                            backgroundColor: '#f3f4f6',
+                            borderRadius: 1,
+                            mb: 1,
+                            border: '1px solid #d1d5db',
+                            alignItems: 'flex-start',
+                            opacity: 0.6,
+                          }}
+                        >
+                          <ListItemText
+                            primary={
+                              <Typography variant="body2" sx={{ lineHeight: 1.5, textDecoration: 'line-through', color: '#6b7280' }}>
+                                {note.Content}
+                              </Typography>
+                            }
+                            secondary={
+                              <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                                Created: {formatDate(note.CreatedAt)}
+                                {note.CreatedBy && ` by User ${note.CreatedBy}`}
+                              </Typography>
+                            }
+                          />
+                          <ListItemSecondaryAction>
+                            <Tooltip title="Reactivate">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleReactivateNote(note.NoteID)}
+                                disabled={loading}
+                                sx={{ color: '#16a34a' }}
+                              >
+                                <RestoreFromTrash fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </>
+                )}
+              </>
             )}
           </Box>
         )}
@@ -429,7 +479,7 @@ const NotesPopup = ({
       {/* Dialog Actions */}
       <DialogActions sx={{ p: 2, gap: 1 }}>
         <Button onClick={handleClose} variant="outlined" disabled={loading}>
-          Cancel
+          Close
         </Button>
         <Button
           onClick={handleSave}
@@ -443,7 +493,6 @@ const NotesPopup = ({
       </DialogActions>
     </Dialog>
   );
-
 };
 
 export default NotesPopup;

@@ -14,7 +14,8 @@ import {
 import { 
   createNote, 
   updateNote, 
-  deleteNote, 
+  deactivateNote,
+  reactivateNote,
 } from "../../services/noteService";
 import { 
   uploadAttachment, 
@@ -350,48 +351,64 @@ const ContactsContainer = () => {
   };
 
   // ---------------- NOTES HANDLERS ----------------
-  const handleAddNote = (contact) => {
-    if (!contact.ContactID) return;
-    setSelectedContact(contact);
-    setNotesPopupOpen(true);
-  };
+const handleAddNote = (contact) => {
+  if (!contact.ContactID) return;
+  setSelectedContact(contact);
+  setNotesPopupOpen(true);
+};
 
-  const handleSaveNote = async (noteData) => {
-    try {
-      const notePayload = {
-        EntityID: selectedContact.ContactID,
-        EntityType: "Contact",
-        Content: noteData.Content,
-      };
-      await createNote(notePayload);
-      setSuccessMessage("Note added successfully!");
-      setNotesPopupOpen(false);
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to save note");
-    }
-  };
+const handleSaveNote = async (noteData) => {
+  try {
+    const notePayload = {
+      EntityID: selectedContact.ContactID,
+      EntityType: "Contact",
+      Content: noteData.Content || noteData,
+    };
+    await createNote(notePayload);
+    setSuccessMessage("Note added successfully!");
+    setRefreshFlag((f) => !f);
+  } catch (err) {
+    setError(err.message || "Failed to save note");
+    throw err;
+  }
+};
 
-  const handleDeleteNote = async (noteId) => {
-    try {
-      await deleteNote(noteId);
-      setSuccessMessage("Note deleted successfully!");
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to delete note");
-    }
-  };
+const handleEditNote = async (noteData) => {
+  try {
+    await updateNote(noteData.NoteID, {
+      EntityID: selectedContact.ContactID,
+      EntityType: "Contact",
+      Content: noteData.Content,
+    });
+    setSuccessMessage("Note updated successfully!");
+    setRefreshFlag((f) => !f);
+  } catch (err) {
+    setError(err.message || "Failed to update note");
+    throw err;
+  }
+};
 
-  const handleEditNote = async (noteData) => {
-    try {
-      await updateNote(noteData.NoteID, noteData);
-      setSuccessMessage("Note updated successfully!");
-      setNotesPopupOpen(false);
-      setRefreshFlag((f) => !f);
-    } catch (err) {
-      setError(err.message || "Failed to update note");
-    }
-  };
+const handleDeactivateNote = async (noteId) => {
+  try {
+    await deactivateNote(noteId);
+    setSuccessMessage("Note deactivated successfully!");
+    setRefreshFlag((f) => !f);
+  } catch (err) {
+    setError(err.message || "Failed to deactivate note");
+    throw err;
+  }
+};
+
+const handleReactivateNote = async (noteId) => {
+  try {
+    await reactivateNote(noteId);
+    setSuccessMessage("Note reactivated successfully!");
+    setRefreshFlag((f) => !f);
+  } catch (err) {
+    setError(err.message || "Failed to reactivate note");
+    throw err;
+  }
+};
 
   // ---------------- ATTACHMENTS HANDLERS ----------------
   const handleAddAttachment = (contact) => {
@@ -467,7 +484,8 @@ const ContactsContainer = () => {
         onClose={() => setNotesPopupOpen(false)}
         onSave={handleSaveNote}
         onEdit={handleEditNote}
-        onDelete={handleDeleteNote}
+        onDeactivate={handleDeactivateNote}
+        onReactivate={handleReactivateNote}
         entityType="Contact"
         entityId={selectedContact?.ContactID}
         entityName={selectedContact?.PersonFullName}

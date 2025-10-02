@@ -11,7 +11,8 @@ import { claimAccount, assignUser,removeAssignedUser} from "../../services/assig
 import {
   createNote,
   updateNote,
-  deleteNote,
+  deactivateNote,
+  reactivateNote,
 } from "../../services/noteService";
 import {
   uploadAttachment,
@@ -169,7 +170,7 @@ const AccountsContainer = () => {
   };
 
   // ---------------- NOTES ----------------
-  const handleAddNote = (account) => {
+   const handleAddNote = (account) => {
     setSelectedAccount(account);
     setNotesPopupOpen(true);
   };
@@ -179,39 +180,58 @@ const AccountsContainer = () => {
       await createNote({
         EntityID: selectedAccount.AccountID,
         EntityType: "Account",
-        Content: noteData.Content,
+        Content: noteData.Content || noteData,
       });
       setStatusMessage("Note added successfully!");
       setStatusSeverity("success");
-      setNotesPopupOpen(false);
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       setStatusMessage(err.message || "Failed to save note");
       setStatusSeverity("error");
+      throw err;
     }
   };
 
   const handleEditNote = async (noteData) => {
     try {
-      await updateNote(noteData.NoteID, noteData);
+      await updateNote(noteData.NoteID, {
+        EntityID: selectedAccount.AccountID,
+        EntityType: "Account",
+        Content: noteData.Content,
+      });
       setStatusMessage("Note updated successfully!");
       setStatusSeverity("success");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       setStatusMessage(err.message || "Failed to update note");
       setStatusSeverity("error");
+      throw err;
     }
   };
 
-  const handleDeleteNote = async (noteId) => {
+  const handleDeactivateNote = async (noteId) => {
     try {
-      await deleteNote(noteId);
-      setStatusMessage("Note deleted successfully!");
+      await deactivateNote(noteId);
+      setStatusMessage("Note deactivated successfully!");
       setStatusSeverity("success");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
-      setStatusMessage(err.message || "Failed to delete note");
+      setStatusMessage(err.message || "Failed to deactivate note");
       setStatusSeverity("error");
+      throw err;
+    }
+  };
+
+  const handleReactivateNote = async (noteId) => {
+    try {
+      await reactivateNote(noteId);
+      setStatusMessage("Note reactivated successfully!");
+      setStatusSeverity("success");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setStatusMessage(err.message || "Failed to reactivate note");
+      setStatusSeverity("error");
+      throw err;
     }
   };
 
@@ -463,7 +483,8 @@ const AccountsContainer = () => {
       confirmBulkAssign={confirmBulkAssign}
       handleSaveNote={handleSaveNote}
       handleEditNote={handleEditNote}
-      handleDeleteNote={handleDeleteNote}
+      handleDeactivateNote={handleDeactivateNote}
+      handleReactivateNote={handleReactivateNote}
       handleUploadAttachment={handleUploadAttachment}
       handleDeleteAttachment={handleDeleteAttachment}
       handleDownloadAttachment={handleDownloadAttachment}
