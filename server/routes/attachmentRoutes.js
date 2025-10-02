@@ -33,7 +33,7 @@ router.patch("/:attachmentId/deactivate", attachmentController.deactivateAttachm
 // Reactivate attachment - PATCH /attachments/:attachmentId/reactivate
 router.patch("/:attachmentId/reactivate", attachmentController.reactivateAttachment);
 
-// Get attachments by Account ID - GET /attachments/account/:accountId
-router.get("/account/:accountId", attachmentController.getAttachmentsByAccountID);
+// Get all attachments - GET /attachments/all
+router.get("/all", attachmentController.getAllAttachments);
 
 module.exports = router;

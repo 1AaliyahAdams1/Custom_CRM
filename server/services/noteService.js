@@ -98,6 +98,18 @@ async function getNotesByAccountID(accountId) {
   return await noteRepo.getNotesByAccountID(accountId);
 }
 
+// =======================
+// Get all notes
+// =======================
+async function getAllNotes() {
+  try {
+    return await noteRepo.getAllNotes();
+  } catch (error) {
+    console.error("Error in getAllNotes service:", error);
+      throw error;
+  }
+}
+
 module.exports = {
   getNotes,
   createNote,
@@ -105,5 +117,6 @@ module.exports = {
   deactivateNote,
   reactivateNote,
   deleteNote,
-  getNotesByAccountID
+  getNotesByAccountID,
+  getAllNotes
 };

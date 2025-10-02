@@ -3,170 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Box, Alert, Typography } from "@mui/material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { fetchActivityById, deactivateActivity, deleteActivity } from "../../services/activityService";
-
-// mock data will replace actual API calls for related entities
-const MOCK_DATA = {
-  accounts: [
-    {
-      AccountID: 1,
-      AccountName: 'TechCorp Solutions',
-      CityName: 'San Francisco',
-      StateProvince_Name: 'California',
-      CountryName: 'United States',
-      street_address: '123 Tech Street, Suite 500',
-      postal_code: '94102',
-      PrimaryPhone: '+1-555-0201',
-      IndustryName: 'Technology',
-      fax: '+1-555-0202',
-      email: 'contact@techcorp.com',
-      Website: 'https://techcorp.com',
-      number_of_employees: 250,
-      number_of_venues: 5,
-      number_of_releases: 12,
-      number_of_events_anually: 24,
-      annual_revenue: 5000000,
-      ParentAccountName: 'TechCorp Holdings',
-      CreatedAt: '2024-01-10T08:00:00Z',
-      UpdatedAt: '2024-03-01T10:30:00Z',
-      ownerStatus: 'owned',
-      Active: true
-    },
-    {
-      AccountID: 2,
-      AccountName: 'Global Enterprises Inc',
-      CityName: 'New York',
-      StateProvince_Name: 'New York',
-      CountryName: 'United States',
-      street_address: '456 Business Ave, Floor 20',
-      postal_code: '10001',
-      PrimaryPhone: '+1-555-0301',
-      IndustryName: 'Financial Services',
-      fax: '+1-555-0302',
-      email: 'info@globalent.com',
-      Website: 'https://globalenterprises.com',
-      number_of_employees: 1000,
-      number_of_venues: 15,
-      number_of_releases: 8,
-      number_of_events_anually: 50,
-      annual_revenue: 15000000,
-      ParentAccountName: null,
-      CreatedAt: '2024-02-01T09:15:00Z',
-      UpdatedAt: '2024-03-05T14:20:00Z',
-      ownerStatus: 'unowned',
-      Active: true
-    }
-  ],
-  contacts: [
-    {
-      ContactID: 1,
-      PersonFullName: 'John Smith',
-      WorkEmail: 'john.smith@techcorp.com',
-      WorkPhone: '+1-555-0101',
-      JobTitleName: 'Sales Manager',
-      Still_employed: true,
-      CreatedAt: '2024-01-15T10:30:00Z',
-      Active: true
-    },
-    {
-      ContactID: 2,
-      PersonFullName: 'Sarah Johnson',
-      WorkEmail: 'sarah.johnson@globalent.com',
-      WorkPhone: '+1-555-0102',
-      JobTitleName: 'Marketing Director',
-      Still_employed: true,
-      CreatedAt: '2024-02-01T14:20:00Z',
-      Active: true
-    },
-    {
-      ContactID: 3,
-      PersonFullName: 'Mike Wilson',
-      WorkEmail: 'mike.wilson@techcorp.com',
-      WorkPhone: '+1-555-0103',
-      JobTitleName: 'IT Manager',
-      Still_employed: true,
-      CreatedAt: '2023-11-20T09:15:00Z',
-      Active: true
-    }
-  ],
-  deals: [
-    {
-      DealID: 1,
-      DealName: 'Q1 Software License Renewal',
-      StageName: 'Negotiation',
-      Value: 50000,
-      Symbol: '$',
-      Prefix: true,
-      LocalName: 'USD',
-      CloseDate: '2024-03-31T00:00:00Z',
-      Progression: 75,
-      CreatedAt: '2024-01-10T08:00:00Z',
-      Active: true
-    },
-    {
-      DealID: 2,
-      DealName: 'Enterprise Support Package',
-      StageName: 'Proposal',
-      Value: 25000,
-      Symbol: '$',
-      Prefix: true,
-      LocalName: 'USD',
-      CloseDate: '2024-04-15T00:00:00Z',
-      Progression: 60,
-      CreatedAt: '2024-02-05T11:30:00Z',
-      Active: true
-    }
-  ],
-  notes: [
-    {
-      NoteID: 1,
-      Title: 'Activity Follow-up',
-      Content: 'Follow up completed successfully. Customer confirmed their interest and requested additional information.',
-      CreatedBy: 'Sales Rep',
-      CreatedAt: '2024-03-08T16:30:00Z',
-      UpdatedAt: '2024-03-08T16:30:00Z'
-    },
-    {
-      NoteID: 2,
-      Title: 'Meeting Summary',
-      Content: 'Productive meeting with key stakeholders. Identified next steps and timeline for implementation.',
-      CreatedBy: 'Account Manager',
-      CreatedAt: '2024-02-25T11:45:00Z',
-      UpdatedAt: '2024-02-25T11:45:00Z'
-    }
-  ],
-  attachments: [
-    {
-      AttachmentID: 1,
-      FileName: 'Meeting_Agenda.pdf',
-      FileType: 'PDF',
-      FileSize: '1.1 MB',
-      UploadedBy: 'Sales Rep',
-      UploadedAt: '2024-03-05T14:20:00Z'
-    },
-    {
-      AttachmentID: 2,
-      FileName: 'Call_Summary.docx',
-      FileType: 'DOCX',
-      FileSize: '756 KB',
-      UploadedBy: 'Account Manager',
-      UploadedAt: '2024-02-28T09:10:00Z'
-    },
-    {
-      AttachmentID: 3,
-      FileName: 'Follow_up_Tasks.xlsx',
-      FileType: 'XLSX',
-      FileSize: '892 KB',
-      UploadedBy: 'Project Manager',
-      UploadedAt: '2024-02-20T15:35:00Z'
-    }
-  ]
-};
+import { getAllAccounts } from "../../services/accountService";
+import { getAllContacts } from "../../services/contactService";
+import { getAllDeals } from "../../services/dealService";
+import { getAllNotes } from "../../services/noteService";
+import { getAllAttachments } from "../../services/attachmentService";
 
 export default function ActivitiesDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   
- 
   const idRef = useRef(id);
   const navigateRef = useRef(navigate);
 
@@ -175,7 +21,6 @@ export default function ActivitiesDetailsPage() {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
- 
   useEffect(() => {
     idRef.current = id;
     navigateRef.current = navigate;
@@ -190,7 +35,6 @@ export default function ActivitiesDetailsPage() {
       // Handle data migration from old boolean Completed to new Status field
       let activityData = data?.data || data;
       if (activityData && !activityData.Status && typeof activityData.Completed === 'boolean') {
-        // Migrate old boolean completed field to new status
         activityData.Status = activityData.Completed ? 'complete' : 'incomplete';
       }
       
@@ -212,7 +56,6 @@ export default function ActivitiesDetailsPage() {
     refreshActivity();
   }, [id, refreshActivity]);
 
- 
   const handleBack = useCallback(() => {
     navigateRef.current("/activities");
   }, []);
@@ -237,21 +80,120 @@ export default function ActivitiesDetailsPage() {
     { key: 'UpdatedAt', label: 'Updated At', type: 'datetime' },
   ], []);
 
- 
-  const dataServiceRefs = useRef({});
-  
-  const createStableDataService = useCallback((dataKey, delay = 500) => {
-    const cacheKey = `${dataKey}_${delay}`;
-    if (!dataServiceRefs.current[cacheKey]) {
-      dataServiceRefs.current[cacheKey] = async () => {
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return { data: MOCK_DATA[dataKey] };
-      };
-    }
-    return dataServiceRefs.current[cacheKey];
+  // Service to get the account that this activity belongs to
+  const createAccountDataService = useCallback(() => {
+    return async () => {
+      try {
+        const response = await getAllAccounts();
+        const allData = response?.data || response;
+        const activityAccountId = activity?.AccountID;
+        
+        if (!activityAccountId) return { data: [] };
+        
+        // Filter to get the ONE account that matches the activity's AccountID
+        const filteredData = allData.filter(item => 
+          item.AccountID === activityAccountId
+        );
+        
+        return { data: filteredData };
+      } catch (error) {
+        console.error('Error fetching and filtering accounts:', error);
+        throw error;
+      }
+    };
+  }, [activity?.AccountID]);
+
+  // Service for contacts - filter by the activity's AccountID
+  const createContactDataService = useCallback(() => {
+    return async () => {
+      try {
+        const response = await getAllContacts();
+        const allData = response?.data || response;
+        const activityAccountId = activity?.AccountID;
+        
+        if (!activityAccountId) return { data: [] };
+        
+        const filteredData = allData.filter(item => 
+          item.AccountID === activityAccountId
+        );
+        
+        return { data: filteredData };
+      } catch (error) {
+        console.error('Error fetching and filtering contacts:', error);
+        throw error;
+      }
+    };
+  }, [activity?.AccountID]);
+
+  // Service for deals - filter by the activity's AccountID or DealID
+  const createDealDataService = useCallback(() => {
+    return async () => {
+      try {
+        const response = await getAllDeals();
+        const allData = response?.data || response;
+        const activityAccountId = activity?.AccountID;
+        const activityDealId = activity?.DealID;
+        
+        if (!activityAccountId && !activityDealId) return { data: [] };
+        
+        // Filter deals by AccountID or if there's a specific DealID, include that
+        const filteredData = allData.filter(item => {
+          if (activityDealId && item.DealID === activityDealId) return true;
+          if (activityAccountId && item.AccountID === activityAccountId) return true;
+          return false;
+        });
+        
+        return { data: filteredData };
+      } catch (error) {
+        console.error('Error fetching and filtering deals:', error);
+        throw error;
+      }
+    };
+  }, [activity?.AccountID, activity?.DealID]);
+
+  // Real API data services with client-side filtering
+  const createFilteredDataService = useCallback((serviceFunction, filterField) => {
+    return async () => {
+      try {
+        const response = await serviceFunction();
+        const allData = response?.data || response;
+        const activityId = parseInt(idRef.current, 10);
+        
+        const filteredData = allData.filter(item => 
+          item[filterField] === activityId
+        );
+        
+        return { data: filteredData };
+      } catch (error) {
+        console.error('Error fetching and filtering data:', error);
+        throw error;
+      }
+    };
   }, []);
 
- 
+  const createAttachmentDataService = useCallback(() => {
+    return async () => {
+      try {
+        const response = await getAllAttachments();
+        const allData = response?.data || response;
+        const activityId = parseInt(idRef.current, 10);
+        
+        // Filter attachments where EntityID = activityId AND EntityTypeID = Activity type
+        // Assuming EntityTypeID for "Activity" is 4 (adjust based on your system)
+        const ACTIVITY_ENTITY_TYPE_ID = 4; 
+        
+        const filteredData = allData.filter(item => 
+          item.EntityID === activityId && item.EntityTypeID === ACTIVITY_ENTITY_TYPE_ID
+        );
+        
+        return { data: filteredData };
+      } catch (error) {
+        console.error('Error fetching and filtering attachments:', error);
+        throw error;
+      }
+    };
+  }, []);
+
   const processDealData = useCallback((data) => {
     return data.map(deal => ({
       ...deal,
@@ -261,8 +203,10 @@ export default function ActivitiesDetailsPage() {
     }));
   }, []);
 
-  // Define related tabs
+  // Define related tabs with real API calls
   const relatedTabs = useMemo(() => {
+    if (!activity) return [];
+    
     const tabs = [
       {
         key: 'accounts',
@@ -277,32 +221,16 @@ export default function ActivitiesDetailsPage() {
               type: 'clickable', 
               defaultVisible: true,
             },
-            { field: 'CityName', headerName: 'City', defaultVisible: true },
-            { field: 'StateProvince_Name', headerName: 'State Province', defaultVisible: false },
-            { field: 'CountryName', headerName: 'Country', defaultVisible: true },
-            { field: 'street_address', headerName: 'Street', type: 'truncated', maxWidth: 200, defaultVisible: false },
-            { field: 'postal_code', headerName: 'Postal Code', defaultVisible: false },
-            { field: 'PrimaryPhone', headerName: 'Phone', defaultVisible: true },
-            { field: 'IndustryName', headerName: 'Industry', defaultVisible: false },
-            { field: 'fax', headerName: 'Fax', defaultVisible: false },
-            { field: 'email', headerName: 'Email', defaultVisible: false },
+            { field: 'AccountType', headerName: 'Account Type', type: 'text', defaultVisible: true },
+            { field: 'Industry', headerName: 'Industry', type: 'text', defaultVisible: true },
+            { field: 'Phone', headerName: 'Phone', type: 'phone', defaultVisible: true },
+            { field: 'Email', headerName: 'Email', type: 'email', defaultVisible: true },
             { field: 'Website', headerName: 'Website', type: 'link', defaultVisible: false },
-            { field: 'number_of_employees', headerName: '# Employees', defaultVisible: false },
-            { field: 'number_of_venues', headerName: '# Venues', defaultVisible: false },
-            { field: 'number_of_releases', headerName: '# Releases', defaultVisible: false },
-            { field: 'number_of_events_anually', headerName: '# Events Annually', defaultVisible: false },
-            { field: 'annual_revenue', headerName: 'Annual Revenue', defaultVisible: false },
-            { field: 'ParentAccountName', headerName: 'Parent Account', defaultVisible: false },
+            { field: 'BillingAddress', headerName: 'Billing Address', type: 'truncated', maxWidth: 200, defaultVisible: false },
+            { field: 'AnnualRevenue', headerName: 'Annual Revenue', type: 'currency', defaultVisible: false },
+            { field: 'NumberOfEmployees', headerName: '# Employees', type: 'number', defaultVisible: false },
             { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
             { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
-            {
-              field: 'ownerStatus',
-              headerName: 'Ownership',
-              type: 'chip',
-              chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
-              chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' },
-              defaultVisible: true,
-            },
             {
               field: 'Active',
               headerName: 'Active',
@@ -313,7 +241,7 @@ export default function ActivitiesDetailsPage() {
             }
           ]
         },
-        dataService: createStableDataService('accounts', 500)
+        dataService: createAccountDataService()
       },
       {
         key: 'contacts',
@@ -338,7 +266,7 @@ export default function ActivitiesDetailsPage() {
             }
           ]
         },
-        dataService: createStableDataService('contacts', 600)
+        dataService: createContactDataService()
       },
       {
         key: 'deals',
@@ -364,7 +292,7 @@ export default function ActivitiesDetailsPage() {
             }
           ]
         },
-        dataService: createStableDataService('deals', 700),
+        dataService: createDealDataService(),
         processData: processDealData
       },
       {
@@ -374,14 +302,13 @@ export default function ActivitiesDetailsPage() {
         tableConfig: {
           idField: 'NoteID',
           columns: [
-            { field: 'Title', headerName: 'Title', type: 'text', defaultVisible: true },
             { field: 'Content', headerName: 'Content', type: 'truncated', maxWidth: 400, defaultVisible: true },
-            { field: 'CreatedBy', headerName: 'Created By', type: 'text', defaultVisible: true },
-            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
-            { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
+            { field: 'EntityID', headerName: 'Entity ID', type: 'text', defaultVisible: true },
+            { field: 'EntityTypeID', headerName: 'Entity Type', type: 'text', defaultVisible: true },
+            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true }
           ]
         },
-        dataService: createStableDataService('notes', 400)
+        dataService: createFilteredDataService(getAllNotes, 'EntityID')
       },
       {
         key: 'attachments',
@@ -393,17 +320,17 @@ export default function ActivitiesDetailsPage() {
             { field: 'FileName', headerName: 'File Name', type: 'text', defaultVisible: true },
             { field: 'FileType', headerName: 'Type', type: 'text', defaultVisible: true },
             { field: 'FileSize', headerName: 'Size', type: 'text', defaultVisible: true },
-            { field: 'UploadedBy', headerName: 'Uploaded By', type: 'text', defaultVisible: true },
+            { field: 'UploadedByFirstName', headerName: 'Uploaded By', type: 'text', defaultVisible: true },
             { field: 'UploadedAt', headerName: 'Uploaded', type: 'dateTime', defaultVisible: true },
           ]
         },
-        dataService: createStableDataService('attachments', 300)
+        dataService: createAttachmentDataService()
       }
     ];
     return tabs;
-  }, [createStableDataService, processDealData]);
+  }, [activity, createAccountDataService, createContactDataService, createDealDataService, createFilteredDataService, createAttachmentDataService, processDealData]);
 
-  //  action handlers
+  // Action handlers
   const relatedDataActions = useMemo(() => {
     const actions = {
       account: {
@@ -523,7 +450,7 @@ export default function ActivitiesDetailsPage() {
     return chips;
   }, [activity?.Status, activity?.Completed, activity?.ActivityType, activity?.Priority]);
 
-  //  event handlers
+  // Event handlers
   const handleSave = useCallback(async (formData) => {
     try {
       console.log('Saving activity:', formData);
@@ -537,7 +464,6 @@ export default function ActivitiesDetailsPage() {
   const handleDelete = useCallback(async (formData) => {
     if (!window.confirm("Are you sure you want to delete this activity?")) return;
     try {
-      // Try deleteActivity first, fallback to deactivateActivity
       const deleteFunc = deleteActivity || deactivateActivity;
       await deleteFunc(formData.ActivityID || idRef.current);
       setSuccessMessage('Activity deleted successfully!');

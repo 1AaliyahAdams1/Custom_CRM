@@ -92,3 +92,14 @@ export const getNotesByAccountID = async (accountId) => {
     throw error;
   }
 };
+
+export const getAllNotes = async () => {
+  try {
+    const response = await api.get(`${RESOURCE}/all`);
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error fetching all notes:", error?.response || error);
+    throw error;
+  } 
+};
