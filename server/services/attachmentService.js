@@ -250,13 +250,11 @@ function classifyFileType(fileUrl) {
   return 'other';
 }
 
-// Get Attachments by AccountID
-async function getAttachmentsByAccountID(accountId) {
-  if (!accountId) {
-    throw new Error("AccountID is required");
-  }
-  return await attachmentRepo.getAttachmentsByAccountID(accountId);
+// Get all attachments
+async function getAllAttachments() {
+  return await attachmentRepo.getAllAttachments();
 }
+
 
 
 module.exports = {
@@ -267,5 +265,5 @@ module.exports = {
   deleteAttachment,
   deactivateAttachment,
   reactivateAttachment,
-  getAttachmentsByAccountID
+  getAllAttachments
 };

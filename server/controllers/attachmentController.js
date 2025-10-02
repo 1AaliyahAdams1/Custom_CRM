@@ -318,21 +318,13 @@ async function reactivateAttachment(req, res) {
   }
 }
 
-// =======================
-// Get attachments by Account ID Controller
-// =======================
-async function getAttachmentsByAccountID(req, res) {
+async function getAllAttachments(req, res) {
   try {
-    const accountId = parseInt(req.params.accountId, 10);
-    if (isNaN(accountId)) {
-      return res.status(400).json({ error: "Invalid account ID" });
-    }
-
-    const attachments = await attachmentService.getAttachmentsByAccountID(accountId);
+    const attachments = await attachmentService.getAllAttachments();
     res.json(attachments);
   } catch (err) {
-    console.error("Error fetching attachments by account ID:", err);
-    res.status(500).json({ error: "Failed to get attachments for account" });
+    console.error("Error getting all attachments:", err);
+    res.status(500).json({ error: "Failed to get attachments" });
   }
 }
 
@@ -346,5 +338,5 @@ module.exports = {
   deleteAttachment,
   deactivateAttachment,
   reactivateAttachment,
-  getAttachmentsByAccountID
+  getAllAttachments
 };

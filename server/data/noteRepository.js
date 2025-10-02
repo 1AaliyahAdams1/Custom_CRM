@@ -134,54 +134,32 @@ async function deleteNote(noteId, userId) {
     throw error;
   }
 }
-
 // =======================
-// Get notes by Account ID
+// Get all notes
 // =======================
-async function getNotesByAccountID(accountId) {
+async function getAllNotes() {
   try {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
-      .input("AccountID", sql.Int, accountId)
       .query(`
         SELECT
             n.[NoteID],
-            n.[NoteTitle],
-            n.[NoteContent],
-            n.[AccountID],
-            a.[AccountName],              
-            n.[NoteTypeID],
-            nt.[TypeName],            
-            n.[Priority],
-            n.[IsPrivate],
-            n.[CreatedBy],
-            u1.[FirstName] AS CreatedByFirstName,
-            u1.[LastName] AS CreatedByLastName,
-            n.[AssignedTo],
-            u2.[FirstName] AS AssignedToFirstName,
-            u2.[LastName] AS AssignedToLastName,
-            n.[CreatedAt],
-            n.[UpdatedAt],
-            n.[Active]
+            n.[EntityID],
+            n.[EntityTypeID],
+            n.[Content],
+            n.[CreatedAt]
         FROM [8589_CRM].[dbo].[Note] n
-        JOIN [8589_CRM].[dbo].[Account] a 
-            ON n.AccountID = a.AccountID AND a.Active = 1
-        LEFT JOIN [8589_CRM].[dbo].[NoteType] nt 
-            ON n.NoteTypeID = nt.NoteTypeID
-        LEFT JOIN [8589_CRM].[dbo].[User] u1 
-            ON n.CreatedBy = u1.UserID
-        LEFT JOIN [8589_CRM].[dbo].[User] u2 
-            ON n.AssignedTo = u2.UserID
-        WHERE n.AccountID = @AccountID
-          AND n.Active = 1
-        ORDER BY n.CreatedAt DESC;
+        ORDER BY n.[CreatedAt] DESC;
       `);
 
     return result.recordset;
   } catch (error) {
-    console.error("Note Repo Error [getNotesByAccountID]:", error);
+    console.error("Note Repo Error [getAllNotes]:", error.message);
     throw error;
-  }}
+  }
+}
+
+
 
 module.exports = {
   getNotes,
@@ -190,5 +168,5 @@ module.exports = {
   deactivateNote,
   reactivateNote,
   deleteNote,
-  getNotesByAccountID
+  getAllNotes
 };

@@ -6,6 +6,8 @@ import { fetchAccountById } from "../../services/accountService";
 import { getAllContacts } from "../../services/contactService";
 import { getAllDeals } from "../../services/dealService";
 import { getAllActivities } from "../../services/activityService";
+import { getAllNotes } from "../../services/noteService";
+import { getAllAttachments } from "../../services/attachmentService";
 
 export default function AccountDetailsPage() {
   const { id } = useParams();
@@ -90,6 +92,29 @@ export default function AccountDetailsPage() {
     };
   }, []);
 
+  const createAttachmentDataService = useCallback(() => {
+  return async () => {
+    try {
+      const response = await getAllAttachments();
+      const allData = response?.data || response;
+      const accountId = parseInt(idRef.current, 10);
+      
+      // Filter attachments where EntityID = accountId AND EntityTypeID = Account type
+      //  need to know the EntityTypeID for "Account" - let's assume it's 1
+      const ACCOUNT_ENTITY_TYPE_ID = 1; 
+      
+      const filteredData = allData.filter(item => 
+        item.EntityID === accountId && item.EntityTypeID === ACCOUNT_ENTITY_TYPE_ID
+      );
+      
+      return { data: filteredData };
+    } catch (error) {
+      console.error('Error fetching and filtering attachments:', error);
+      throw error;
+    }
+  };
+}, []);
+
   const processDealData = useCallback((data) => {
     return data.map(deal => ({
       ...deal,
@@ -161,20 +186,78 @@ export default function AccountDetailsPage() {
         tableConfig: {
           idField: 'ActivityID',
           columns: [
-            { field: 'TypeName', headerName: 'Activity Type', type: 'text', defaultVisible: true },
-            { field: 'ActivityDescription', headerName: 'Description', type: 'truncated', maxWidth: 300, defaultVisible: true },
-            { field: 'StartDate', headerName: 'Start Date', type: 'date', defaultVisible: true },
-            { field: 'EndDate', headerName: 'End Date', type: 'date', defaultVisible: true },
-            { field: 'Status', headerName: 'Status', type: 'text', defaultVisible: true },
-            { field: 'Priority', headerName: 'Priority', type: 'text', defaultVisible: true },
-            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
+            { field: 'ActivityType', headerName: 'Activity Type', type: 'text', defaultVisible: true },
+            { field: 'PriorityLevelName', headerName: 'Priority', type: 'text', defaultVisible: true },
+            { field: 'DueToStart', headerName: 'Due Start', type: 'date', defaultVisible: true },
+           { field: 'DueToEnd', headerName: 'Due End', type: 'date', defaultVisible: true },
+            { field: 'Completed', headerName: 'Completed', type: 'boolean', defaultVisible: true },
+           { field: 'Active', headerName: 'Active', type: 'boolean', defaultVisible: true },
           ]
         },
-        dataService: createFilteredDataService(getAllActivities, 'AccountID')
+        dataService: async () => {
+    try {
+      // Fetch the current account data
+      const accountData = await fetchAccountById(parseInt(idRef.current, 10));
+      const currentAccount = accountData?.data || accountData;
+      
+      if (!currentAccount?.AccountName) {
+        console.error('No account name found');
+        return { data: [] };
+      }
+      
+      console.log('Filtering activities for account:', currentAccount.AccountName);
+      
+      const response = await getAllActivities();
+      const allData = response?.data || response;
+      
+      const filteredData = allData.filter(item => 
+        item.AccountName === currentAccount.AccountName
+      );
+      
+      console.log('Found activities:', filteredData.length);
+      
+      return { data: filteredData };
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      return { data: [] };
+    }
+  }
+},
+      {
+        key: 'notes',
+        label: 'Notes',
+        entityType: 'note',
+        tableConfig: {
+        idField: 'NoteID',
+        columns: [
+          { field: 'Content', headerName: 'Content', type: 'truncated', maxWidth: 400, defaultVisible: true },
+          { field: 'EntityID', headerName: 'Entity ID', type: 'text', defaultVisible: true },
+          { field: 'EntityTypeID', headerName: 'Entity Type', type: 'text', defaultVisible: true },
+          { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true }
+          ]
+        },
+        dataService: createFilteredDataService(getAllNotes, 'EntityID') 
+      },
+      {
+        key: 'attachments',
+        label: 'Attachments',
+        entityType: 'attachment',
+        tableConfig: {
+          idField: 'AttachmentID',
+          columns: [
+            { field: 'FileName', headerName: 'File Name', type: 'text', defaultVisible: true },
+            { field: 'FileType', headerName: 'Type', type: 'text', defaultVisible: true },
+            { field: 'FileSize', headerName: 'Size', type: 'text', defaultVisible: true },
+            { field: 'UploadedByFirstName', headerName: 'Uploaded By', type: 'text', defaultVisible: true },
+            { field: 'UploadedAt', headerName: 'Uploaded', type: 'dateTime', defaultVisible: true },
+          ]
+        },
+       dataService: createAttachmentDataService()
       }
     ];
     return tabs;
   }, [createFilteredDataService, processDealData]);
+
 
   // action handlers
   const relatedDataActions = useMemo(() => {

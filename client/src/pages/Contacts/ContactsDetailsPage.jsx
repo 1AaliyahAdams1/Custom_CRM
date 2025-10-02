@@ -3,158 +3,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Box, Alert, Typography } from "@mui/material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { getContactDetails, deactivateContact } from "../../services/contactService";
-
-// Mock data will replace
-const MOCK_DATA = {
-  accounts: [
-    {
-      AccountID: 1,
-      AccountName: 'TechCorp Solutions',
-      CityName: 'San Francisco',
-      StateProvince_Name: 'California',
-      CountryName: 'United States',
-      street_address: '123 Tech Street, Suite 500',
-      postal_code: '94102',
-      PrimaryPhone: '+1-555-0201',
-      IndustryName: 'Technology',
-      fax: '+1-555-0202',
-      email: 'contact@techcorp.com',
-      Website: 'https://techcorp.com',
-      number_of_employees: 250,
-      number_of_venues: 5,
-      number_of_releases: 12,
-      number_of_events_anually: 24,
-      annual_revenue: 5000000,
-      ParentAccountName: 'TechCorp Holdings',
-      CreatedAt: '2024-01-10T08:00:00Z',
-      UpdatedAt: '2024-03-01T10:30:00Z',
-      ownerStatus: 'owned',
-      Active: true
-    },
-    {
-      AccountID: 2,
-      AccountName: 'Global Enterprises Inc',
-      CityName: 'New York',
-      StateProvince_Name: 'New York',
-      CountryName: 'United States',
-      street_address: '456 Business Ave, Floor 20',
-      postal_code: '10001',
-      PrimaryPhone: '+1-555-0301',
-      IndustryName: 'Financial Services',
-      fax: '+1-555-0302',
-      email: 'info@globalent.com',
-      Website: 'https://globalenterprises.com',
-      number_of_employees: 1000,
-      number_of_venues: 15,
-      number_of_releases: 8,
-      number_of_events_anually: 50,
-      annual_revenue: 15000000,
-      ParentAccountName: null,
-      CreatedAt: '2024-02-01T09:15:00Z',
-      UpdatedAt: '2024-03-05T14:20:00Z',
-      ownerStatus: 'unowned',
-      Active: true
-    }
-  ],
-  deals: [
-    {
-      DealID: 1,
-      DealName: 'Q1 Software License Renewal',
-      StageName: 'Negotiation',
-      Value: 50000,
-      Symbol: '$',
-      Prefix: true,
-      LocalName: 'USD',
-      CloseDate: '2024-03-31T00:00:00Z',
-      Progression: 75,
-      CreatedAt: '2024-01-10T08:00:00Z',
-      Active: true
-    },
-    {
-      DealID: 2,
-      DealName: 'Enterprise Support Package',
-      StageName: 'Proposal',
-      Value: 25000,
-      Symbol: '$',
-      Prefix: true,
-      LocalName: 'USD',
-      CloseDate: '2024-04-15T00:00:00Z',
-      Progression: 60,
-      CreatedAt: '2024-02-05T11:30:00Z',
-      Active: true
-    }
-  ],
-  activities: [
-    {
-      ActivityID: 1,
-      ActivityType: 'Phone Call',
-      Description: 'Follow up on software renewal discussion and pricing concerns',
-      DueToStart: '2024-03-15T14:00:00Z',
-      DueToEnd: '2024-03-15T15:00:00Z',
-      Completed: false,
-      CreatedAt: '2024-03-10T09:00:00Z'
-    },
-    {
-      ActivityID: 2,
-      ActivityType: 'Email',
-      Description: 'Send proposal for enterprise support package with detailed feature breakdown',
-      DueToStart: '2024-03-12T10:00:00Z',
-      DueToEnd: '2024-03-12T11:00:00Z',
-      Completed: true,
-      CreatedAt: '2024-03-08T13:20:00Z'
-    },
-    {
-      ActivityID: 3,
-      ActivityType: 'Meeting',
-      Description: 'Quarterly business review with stakeholders to discuss usage and future needs',
-      DueToStart: '2024-03-20T13:00:00Z',
-      DueToEnd: '2024-03-20T14:30:00Z',
-      Completed: false,
-      CreatedAt: '2024-03-01T08:15:00Z'
-    }
-  ],
-  notes: [
-    {
-      NoteID: 1,
-      Title: 'Follow-up Discussion',
-      Content: 'Contact expressed interest in upgrading to premium tier. Need to schedule demo of advanced features.',
-      CreatedBy: 'Sales Rep',
-      CreatedAt: '2024-03-08T16:30:00Z',
-      UpdatedAt: '2024-03-08T16:30:00Z'
-    },
-    {
-      NoteID: 2,
-      Title: 'Technical Requirements',
-      Content: 'Contact mentioned they need integration with their existing CRM system. They use Salesforce Enterprise edition.',
-      CreatedBy: 'Technical Consultant',
-      CreatedAt: '2024-02-25T11:45:00Z',
-      UpdatedAt: '2024-02-25T11:45:00Z'
-    }
-  ],
-  attachments: [
-    {
-      AttachmentID: 1,
-      FileName: 'Contact_Resume_2024.pdf',
-      FileType: 'PDF',
-      FileSize: '1.2 MB',
-      UploadedBy: 'HR Manager',
-      UploadedAt: '2024-03-05T14:20:00Z'
-    },
-    {
-      AttachmentID: 2,
-      FileName: 'Meeting_Notes.docx',
-      FileType: 'DOCX',
-      FileSize: '856 KB',
-      UploadedBy: 'Sales Rep',
-      UploadedAt: '2024-02-28T09:10:00Z'
-    }
-  ]
-};
+import { getAllAccounts } from "../../services/accountService";
+import { getAllDeals } from "../../services/dealService";
+import { getAllActivities } from "../../services/activityService";
+import { getAllNotes } from "../../services/noteService";
+import { getAllAttachments } from "../../services/attachmentService";
 
 export default function ContactDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
   
   const idRef = useRef(id);
   const navigateRef = useRef(navigate);
@@ -163,7 +20,6 @@ export default function ContactDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
-
 
   useEffect(() => {
     idRef.current = id;
@@ -193,7 +49,6 @@ export default function ContactDetailsPage() {
     refreshContact();
   }, [id, refreshContact]);
 
-  
   const handleBack = useCallback(() => {
     navigateRef.current("/contacts");
   }, []);
@@ -216,20 +71,60 @@ export default function ContactDetailsPage() {
     { key: 'UpdatedAt', label: 'Updated At', type: 'datetime' },
   ], []);
 
- 
-  const dataServiceRefs = useRef({});
-  
-  const createStableDataService = useCallback((dataKey, delay = 500) => {
-    const cacheKey = `${dataKey}_${delay}`;
-    if (!dataServiceRefs.current[cacheKey]) {
-      dataServiceRefs.current[cacheKey] = async () => {
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return { data: MOCK_DATA[dataKey] };
-      };
-    }
-    return dataServiceRefs.current[cacheKey];
-  }, []);
+  // Real API data services with client-side filtering
+  const createFilteredDataService = useCallback((serviceFunction, filterField, useAccountId = false) => {
+    return async () => {
+      try {
+        const response = await serviceFunction();
+        const allData = response?.data || response;
+        
+        // For account-based filtering use the contact's AccountID
+        if (useAccountId) {
+          const accountId = contact?.AccountID;
+          if (!accountId) return { data: [] };
+          
+          const filteredData = allData.filter(item => 
+            item[filterField] === accountId
+          );
+          return { data: filteredData };
+        }
+        
+        // For contact-based filtering
+        const contactId = parseInt(idRef.current, 10);
+        const filteredData = allData.filter(item => 
+          item[filterField] === contactId
+        );
+        
+        return { data: filteredData };
+      } catch (error) {
+        console.error('Error fetching and filtering data:', error);
+        throw error;
+      }
+    };
+  }, [contact?.AccountID]);
 
+  const createAttachmentDataService = useCallback(() => {
+    return async () => {
+      try {
+        const response = await getAllAttachments();
+        const allData = response?.data || response;
+        const contactId = parseInt(idRef.current, 10);
+        
+        // Filter attachments where EntityID = contactId AND EntityTypeID = Contact type
+        // Assuming EntityTypeID for "Contact" is 2 (adjust based on your system)
+        const CONTACT_ENTITY_TYPE_ID = 2; 
+        
+        const filteredData = allData.filter(item => 
+          item.EntityID === contactId && item.EntityTypeID === CONTACT_ENTITY_TYPE_ID
+        );
+        
+        return { data: filteredData };
+      } catch (error) {
+        console.error('Error fetching and filtering attachments:', error);
+        throw error;
+      }
+    };
+  }, []);
 
   const processDealData = useCallback((data) => {
     return data.map(deal => ({
@@ -240,7 +135,7 @@ export default function ContactDetailsPage() {
     }));
   }, []);
 
-  // Define related tabs 
+  // Define related tabs with real API calls
   const relatedTabs = useMemo(() => {
     const tabs = [
       {
@@ -256,32 +151,16 @@ export default function ContactDetailsPage() {
               type: 'clickable', 
               defaultVisible: true,
             },
-            { field: 'CityName', headerName: 'City', defaultVisible: true },
-            { field: 'StateProvince_Name', headerName: 'State Province', defaultVisible: false },
-            { field: 'CountryName', headerName: 'Country', defaultVisible: true },
-            { field: 'street_address', headerName: 'Street', type: 'truncated', maxWidth: 200, defaultVisible: false },
-            { field: 'postal_code', headerName: 'Postal Code', defaultVisible: false },
-            { field: 'PrimaryPhone', headerName: 'Phone', defaultVisible: true },
-            { field: 'IndustryName', headerName: 'Industry', defaultVisible: false },
-            { field: 'fax', headerName: 'Fax', defaultVisible: false },
-            { field: 'email', headerName: 'Email', defaultVisible: false },
+            { field: 'AccountType', headerName: 'Account Type', type: 'text', defaultVisible: true },
+            { field: 'Industry', headerName: 'Industry', type: 'text', defaultVisible: true },
+            { field: 'Phone', headerName: 'Phone', type: 'phone', defaultVisible: true },
+            { field: 'Email', headerName: 'Email', type: 'email', defaultVisible: true },
             { field: 'Website', headerName: 'Website', type: 'link', defaultVisible: false },
-            { field: 'number_of_employees', headerName: '# Employees', defaultVisible: false },
-            { field: 'number_of_venues', headerName: '# Venues', defaultVisible: false },
-            { field: 'number_of_releases', headerName: '# Releases', defaultVisible: false },
-            { field: 'number_of_events_anually', headerName: '# Events Annually', defaultVisible: false },
-            { field: 'annual_revenue', headerName: 'Annual Revenue', defaultVisible: false },
-            { field: 'ParentAccountName', headerName: 'Parent Account', defaultVisible: false },
+            { field: 'BillingAddress', headerName: 'Billing Address', type: 'truncated', maxWidth: 200, defaultVisible: false },
+            { field: 'AnnualRevenue', headerName: 'Annual Revenue', type: 'currency', defaultVisible: false },
+            { field: 'NumberOfEmployees', headerName: '# Employees', type: 'number', defaultVisible: false },
             { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
             { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
-            {
-              field: 'ownerStatus',
-              headerName: 'Ownership',
-              type: 'chip',
-              chipLabels: { owned: 'Owned', unowned: 'Unowned', 'n/a': 'N/A' },
-              chipColors: { owned: '#079141ff', unowned: '#999999', 'n/a': '#999999' },
-              defaultVisible: true,
-            },
             {
               field: 'Active',
               headerName: 'Active',
@@ -292,7 +171,7 @@ export default function ContactDetailsPage() {
             }
           ]
         },
-        dataService: createStableDataService('accounts', 500)
+        dataService: createFilteredDataService(getAllAccounts, 'AccountID')
       },
       {
         key: 'deals',
@@ -318,26 +197,50 @@ export default function ContactDetailsPage() {
             }
           ]
         },
-        dataService: createStableDataService('deals', 700),
+        dataService: createFilteredDataService(getAllDeals, 'AccountID', true),
         processData: processDealData
       },
       {
-        key: 'activities',
-        label: 'Activities',
-        entityType: 'activity',
-        tableConfig: {
-          idField: 'ActivityID',
-          columns: [
-            { field: 'ActivityType', headerName: 'Activity Type', type: 'text', defaultVisible: true },
-            { field: 'Description', headerName: 'Description', type: 'truncated', maxWidth: 300, defaultVisible: true },
-            { field: 'DueToStart', headerName: 'Due To Start', type: 'date', defaultVisible: true },
-            { field: 'DueToEnd', headerName: 'Due To End', type: 'date', defaultVisible: true },
-            { field: 'Completed', headerName: 'Completed', type: 'boolean', defaultVisible: true },
-            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
-          ]
-        },
-        dataService: createStableDataService('activities', 600)
-      },
+  key: 'activities',
+  label: 'Activities',
+  entityType: 'activity',
+  tableConfig: {
+    idField: 'ActivityID',
+    columns: [
+      { field: 'ActivityType', headerName: 'Activity Type', type: 'text', defaultVisible: true },
+      { field: 'AccountName', headerName: 'Account', type: 'text', defaultVisible: true },
+      { field: 'PriorityLevelName', headerName: 'Priority', type: 'text', defaultVisible: true },
+      { field: 'DueToStart', headerName: 'Due Start', type: 'date', defaultVisible: true },
+      { field: 'DueToEnd', headerName: 'Due End', type: 'date', defaultVisible: true },
+      { field: 'Completed', headerName: 'Completed', type: 'boolean', defaultVisible: true },
+    ]
+  },
+  dataService: async () => {
+    try {
+      // For contacts, filter activities by the contact's AccountID
+      if (!contact?.AccountID) return { data: [] };
+      
+      const response = await getAllActivities();
+      const allData = response?.data || response;
+      
+      // Filter by AccountName since activities don't have AccountID
+      const accountResponse = await getAllAccounts();
+      const accounts = accountResponse?.data || accountResponse;
+      const contactAccount = accounts.find(acc => acc.AccountID === contact.AccountID);
+      
+      if (!contactAccount) return { data: [] };
+      
+      const filteredData = allData.filter(item => 
+        item.AccountName === contactAccount.AccountName
+      );
+      
+      return { data: filteredData };
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      return { data: [] };
+    }
+  }
+},
       {
         key: 'notes',
         label: 'Notes',
@@ -345,14 +248,13 @@ export default function ContactDetailsPage() {
         tableConfig: {
           idField: 'NoteID',
           columns: [
-            { field: 'Title', headerName: 'Title', type: 'text', defaultVisible: true },
             { field: 'Content', headerName: 'Content', type: 'truncated', maxWidth: 400, defaultVisible: true },
-            { field: 'CreatedBy', headerName: 'Created By', type: 'text', defaultVisible: true },
-            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
-            { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
+            { field: 'EntityID', headerName: 'Entity ID', type: 'text', defaultVisible: true },
+            { field: 'EntityTypeID', headerName: 'Entity Type', type: 'text', defaultVisible: true },
+            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true }
           ]
         },
-        dataService: createStableDataService('notes', 400)
+        dataService: createFilteredDataService(getAllNotes, 'EntityID')
       },
       {
         key: 'attachments',
@@ -364,17 +266,17 @@ export default function ContactDetailsPage() {
             { field: 'FileName', headerName: 'File Name', type: 'text', defaultVisible: true },
             { field: 'FileType', headerName: 'Type', type: 'text', defaultVisible: true },
             { field: 'FileSize', headerName: 'Size', type: 'text', defaultVisible: true },
-            { field: 'UploadedBy', headerName: 'Uploaded By', type: 'text', defaultVisible: true },
+            { field: 'UploadedByFirstName', headerName: 'Uploaded By', type: 'text', defaultVisible: true },
             { field: 'UploadedAt', headerName: 'Uploaded', type: 'dateTime', defaultVisible: true },
           ]
         },
-        dataService: createStableDataService('attachments', 300)
+        dataService: createAttachmentDataService()
       }
     ];
     return tabs;
-  }, [createStableDataService, processDealData]);
+  }, [createFilteredDataService, createAttachmentDataService, processDealData]);
 
-  //  action handlers
+  // Action handlers
   const relatedDataActions = useMemo(() => {
     const actions = {
       account: {
@@ -466,7 +368,7 @@ export default function ContactDetailsPage() {
     return chips;
   }, [contact?.Active, contact?.Still_employed, contact?.JobTitleName]);
 
-  // Stable event handlers
+  // Event handlers
   const handleSave = useCallback(async (formData) => {
     try {
       console.log('Saving contact:', formData);

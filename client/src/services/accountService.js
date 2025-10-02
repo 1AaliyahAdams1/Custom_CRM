@@ -4,7 +4,8 @@ const RESOURCE = "/accounts";
 
 export const getAllAccounts = async () => {
   try {
-    return await api.get(RESOURCE);
+    const response = await api.get(RESOURCE);
+    return response.data;
   } catch (error) {
     console.error("Error fetching all accounts:", error);
     throw error;
@@ -17,7 +18,8 @@ export const fetchAccountById = async (id) => {
   }
 
   try {
-    return await api.get(`${RESOURCE}/${encodeURIComponent(id)}`);
+    const response = await api.get(`${RESOURCE}/${encodeURIComponent(id)}`);
+    return response.data;
   } catch (error) {
     console.error(`Error fetching account ${id}:`, error?.response || error);
     throw error;
