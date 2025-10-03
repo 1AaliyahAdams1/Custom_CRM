@@ -15,6 +15,9 @@ router.get(
   attachmentController.getAttachments
 );
 
+// Get all attachments - GET /attachments/all
+router.get("/all", attachmentController.getAllAttachments);
+
 // Download attachment - GET /attachments/:attachmentId/download
 router.get("/:attachmentId/download", attachmentController.downloadAttachment);
 
@@ -33,7 +36,6 @@ router.patch("/:attachmentId/deactivate", attachmentController.deactivateAttachm
 // Reactivate attachment - PATCH /attachments/:attachmentId/reactivate
 router.patch("/:attachmentId/reactivate", attachmentController.reactivateAttachment);
 
-// Get all attachments - GET /attachments/all
-router.get("/all", attachmentController.getAllAttachments);
+
 
 module.exports = router;
