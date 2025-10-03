@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -42,42 +43,11 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
-// Table configuration for deals
-const dealsTableConfig = {
-  idField: 'DealID',
-  columns: [
-    { field: 'DealName', headerName: 'Deal Name', type: 'tooltip' },
-    { field: "AccountName", headerName: "Account", width: 150 },
-    { field: "StageName", headerName: "Stage", width: 150 },
-    { field: 'SymbolValue', headerName: 'Amount' },
-    { field: 'LocalName', headerName: 'Currency symbol' },
-    { field: 'CloseDate', headerName: 'Close Date', type: 'date' },
-    { field: 'Progression', headerName: 'Probability (%)', type: 'percentage' },
-    {
-      field: 'CreatedAt',
-      headerName: 'Created',
-      type: 'dateTime',
-    },
-    {
-      field: 'UpdatedAt',
-      headerName: 'Updated',
-      type: 'date',
-    },
-    {
-      field: 'Active',
-      headerName: 'Active',
-      type: 'chip',
-      chipLabels: { true: 'Active', false: 'Inactive' },
-      chipColors: { true: '#079141ff', false: '#999999' },
-      defaultVisible: true,
-    }
-  ]
-};
-
 const DealsPage = ({
   deals = [],
   loading = false,
   error = null,
+  setError,
   successMessage = "",
   setSuccessMessage,
   searchTerm,
@@ -95,9 +65,53 @@ const DealsPage = ({
   totalCount = 0,
   currentFilter = 'all',
 }) => {
+  const navigate = useNavigate();
   const [selected, setSelected] = useState([]);
   const [currentTab, setCurrentTab] = useState(0);
   const [dealFilter, setDealFilter] = useState(currentFilter);
+
+  // Handle account name click
+  const handleViewAccount = (deal) => {
+    if (!deal?.AccountID) {
+      if (setError) {
+        setError("Cannot view account - missing ID");
+      }
+      return;
+    }
+    navigate(`/accounts/${deal.AccountID}`);
+  };
+
+  // Table configuration for deals
+  const dealsTableConfig = {
+    idField: 'DealID',
+    columns: [
+      { field: 'DealName', headerName: 'Deal Name', type: 'tooltip' },
+      { field: "AccountName", headerName: "Account", type: "clickable", defaultVisible: true, onClick: handleViewAccount },
+      { field: "StageName", headerName: "Stage", width: 150 },
+      { field: 'SymbolValue', headerName: 'Amount' },
+      { field: 'LocalName', headerName: 'Currency symbol' },
+      { field: 'CloseDate', headerName: 'Close Date', type: 'date' },
+      { field: 'Progression', headerName: 'Probability (%)', type: 'percentage' },
+      {
+        field: 'CreatedAt',
+        headerName: 'Created',
+        type: 'dateTime',
+      },
+      {
+        field: 'UpdatedAt',
+        headerName: 'Updated',
+        type: 'date',
+      },
+      {
+        field: 'Active',
+        headerName: 'Active',
+        type: 'chip',
+        chipLabels: { true: 'Active', false: 'Inactive' },
+        chipColors: { true: '#079141ff', false: '#999999' },
+        defaultVisible: true,
+      }
+    ]
+  };
 
   // Define available tabs
   const userTabs = [
@@ -277,6 +291,7 @@ const DealsPage = ({
                 selected={selected}
                 onSelectClick={handleSelectClick}
                 onSelectAllClick={handleSelectAllClick}
+                onViewAccount={handleViewAccount}
                 showSelection
                 onView={onView}
                 onEdit={onEdit}

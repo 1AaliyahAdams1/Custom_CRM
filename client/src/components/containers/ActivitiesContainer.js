@@ -290,6 +290,7 @@ const ActivitiesContainer = () => {
         activities={finalFilteredActivities}
         loading={loading}
         error={error}
+        setError={setError}
         successMessage={successMessage}
         setSuccessMessage={setSuccessMessage}
         selected={selected}

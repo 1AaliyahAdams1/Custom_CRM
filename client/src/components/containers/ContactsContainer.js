@@ -304,6 +304,14 @@ const ContactsContainer = () => {
   };
 
   // ---------------- CONTACT HANDLERS ----------------
+  const handleViewAccount = (contact) => {
+  if (!contact?.AccountID) {
+    setError("Cannot view account - missing ID");
+    return;
+  }
+
+  navigate(`/accounts/${contact.AccountID}`);
+};
   const handleDeactivate = (id) => {
     if (!canEditContacts) {
       setError("You don't have permission to delete contacts");
@@ -450,6 +458,7 @@ const ContactsContainer = () => {
         onDeactivate={handleDeactivate}
         onEdit={handleEdit}
         onView={handleView}
+        onViewAccount={handleViewAccount}
         onCreate={handleCreate}
         onAddNote={handleAddNote}
         onAddAttachment={handleAddAttachment}
