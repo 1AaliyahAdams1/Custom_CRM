@@ -230,18 +230,6 @@ const CreateSequencesPage = () => {
                 border: '1px solid #e9ecef' 
               }}
             >
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#495057' }}>
-                Next Steps
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#6c757d', lineHeight: 1.6 }}>
-                After creating the sequence, you'll be able to:
-              </Typography>
-              <ul style={{ color: '#6c757d', marginTop: '8px' }}>
-                <li>Add sequence items (activities) with specific timing and priorities</li>
-                <li>Define the workflow steps and their order</li>
-                <li>Set activity types, descriptions, and priority levels</li>
-                <li>Assign the sequence to customer accounts</li>
-              </ul>
             </Paper>
           </Paper>
         </Box>

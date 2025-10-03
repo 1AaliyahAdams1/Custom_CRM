@@ -17,6 +17,7 @@ import { Add, Info } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import TableView from "../../components/tableFormat/TableView";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
+import NotesPopup from "../../components/NotesComponent";
 import theme from "../../components/Theme";
 import { formatters } from "../../utils/formatters";
 import StatusMessage from "../../components/tableFormat/StatusMessage";
@@ -49,6 +50,11 @@ const AccountsPage = ({
   statusMessage,
   setStatusMessage,
   statusSeverity = "success",
+  notesPopupOpen,
+  setNotesPopupOpen,
+  selectedAccount,
+  handleSaveNote,
+  handleEditNote,  
 }) => {
   // Local filter state
   const [accountFilter, setAccountFilter] = useState("all");
@@ -223,7 +229,7 @@ const AccountsPage = ({
                 actionMenu: {
                   view: "View detailed information",
                   edit: "Edit record information",
-                  delete: "Delete or deactivate",
+                  delete: "Deactivate",
                   addNote: "Add internal notes",
                   addAttachment: "Attach files",
                   claimAccount: "Claim ownership",
@@ -233,6 +239,23 @@ const AccountsPage = ({
             />
           )}
         </Paper>
+
+        {/* Notes Popup */}
+        {notesPopupOpen && (
+          <NotesPopup
+            open={notesPopupOpen}
+            onClose={() => setNotesPopupOpen(false)}
+            onSave={handleSaveNote}
+            onEdit={handleEditNote}
+            entityType="Account"
+            entityId={selectedAccount?.AccountID}
+            entityName={selectedAccount?.AccountName}
+            showExistingNotes={true}
+            maxLength={255}
+            required={false}
+          />
+        )}
+
       </Box>
     </ThemeProvider>
   );

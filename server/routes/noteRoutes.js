@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const noteController = require("../controllers/noteController");
 
+router.get("/all", noteController.getAllNotes);
+
 // Get notes for entity (query params: entityId, entityTypeName)
 router.get("/", noteController.getNotes);
 
@@ -16,14 +18,5 @@ router.patch("/:id/deactivate", noteController.deactivateNote);
 
 // Reactivate note
 router.patch("/:id/reactivate", noteController.reactivateNote);
-
-// Delete note (hard delete)
-router.delete("/:id", noteController.deleteNote);
-
-// Get notes by AccountID
-router.get("/account/:accountId", noteController.getNotesByAccountID);
-
-// Get all notes
-router.get("/all", noteController.getAllNotes);
 
 module.exports = router;

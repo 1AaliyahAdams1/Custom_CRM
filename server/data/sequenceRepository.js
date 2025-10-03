@@ -366,6 +366,148 @@ async function createSequenceItem(itemData, changedBy) {
 }
 
 //======================================
+// Create sequence with items (transaction)
+//======================================
+async function createSequenceWithItems(sequenceData, items, changedBy) {
+  const transaction = new sql.Transaction();
+  
+  try {
+    await transaction.begin();
+    
+    // Create the sequence
+    const sequenceRequest = new sql.Request(transaction);
+    const sequenceResult = await sequenceRequest
+      .input("SequenceName", sql.NVarChar(255), sequenceData.SequenceName)
+      .input("SequenceDescription", sql.NVarChar(sql.MAX), sequenceData.SequenceDescription || null)
+      .input("Active", sql.Bit, sequenceData.Active !== undefined ? sequenceData.Active : true)
+      .query(`
+        INSERT INTO Sequence (SequenceName, SequenceDescription, CreatedAt, UpdatedAt, Active)
+        OUTPUT INSERTED.SequenceID
+        VALUES (@SequenceName, @SequenceDescription, GETDATE(), GETDATE(), @Active)
+      `);
+
+    const newSequenceID = sequenceResult.recordset[0].SequenceID;
+
+    // Insert all sequence items
+    if (items && items.length > 0) {
+      for (const item of items) {
+        const itemRequest = new sql.Request(transaction);
+        await itemRequest
+          .input("SequenceID", sql.Int, newSequenceID)
+          .input("TypeID", sql.Int, item.TypeID)
+          .input("SequenceItemDescription", sql.NVarChar(sql.MAX), item.SequenceItemDescription)
+          .input("DaysFromStart", sql.Int, item.DaysFromStart)
+          .input("PriorityLevelID", sql.Int, item.PriorityLevelID)
+          .input("Active", sql.Bit, item.Active !== undefined ? item.Active : true)
+          .query(`
+            INSERT INTO SequenceItem (SequenceID, TypeID, SequenceItemDescription, DaysFromStart, PriorityLevelID, CreatedAt, UpdatedAt, Active)
+            VALUES (@SequenceID, @TypeID, @SequenceItemDescription, @DaysFromStart, @PriorityLevelID, GETDATE(), GETDATE(), @Active)
+          `);
+      }
+    }
+
+    await transaction.commit();
+    return { SequenceID: newSequenceID };
+  } catch (err) {
+    await transaction.rollback();
+    console.error("Database error in createSequenceWithItems:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Assign sequence to account
+//======================================
+async function assignSequenceToAccount(accountId, sequenceId, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    
+    // Verify both account and sequence exist and are active
+    const verifyResult = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .input("SequenceID", sql.Int, sequenceId)
+      .query(`
+        SELECT 
+          (SELECT COUNT(*) FROM Account WHERE AccountID = @AccountID AND Active = 1) AS AccountExists,
+          (SELECT COUNT(*) FROM Sequence WHERE SequenceID = @SequenceID AND Active = 1) AS SequenceExists
+      `);
+
+    const { AccountExists, SequenceExists } = verifyResult.recordset[0];
+    
+    if (!AccountExists) {
+      throw new Error("Account not found or inactive");
+    }
+    if (!SequenceExists) {
+      throw new Error("Sequence not found or inactive");
+    }
+
+    // Update the account with the sequence
+    await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .input("SequenceID", sql.Int, sequenceId)
+      .query(`
+        UPDATE Account 
+        SET SequenceID = @SequenceID, UpdatedAt = GETDATE()
+        WHERE AccountID = @AccountID
+      `);
+
+    return { message: "Sequence assigned to account", AccountID: accountId, SequenceID: sequenceId };
+  } catch (err) {
+    console.error("Database error in assignSequenceToAccount:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Unassign sequence from account
+//======================================
+async function unassignSequenceFromAccount(accountId, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    
+    await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        UPDATE Account 
+        SET SequenceID = NULL, UpdatedAt = GETDATE()
+        WHERE AccountID = @AccountID
+      `);
+
+    return { message: "Sequence unassigned from account", AccountID: accountId };
+  } catch (err) {
+    console.error("Database error in unassignSequenceFromAccount:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Get accounts by sequence
+//======================================
+async function getAccountsBySequence(sequenceId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("SequenceID", sql.Int, sequenceId)
+      .query(`
+        SELECT 
+          a.AccountID,
+          a.AccountName,
+          a.SequenceID,
+          a.CreatedAt,
+          a.Active
+        FROM Account a
+        WHERE a.SequenceID = @SequenceID
+        ORDER BY a.AccountName
+      `);
+
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getAccountsBySequence:", err);
+    throw err;
+  }
+}
+
+//======================================
 // Update sequence item
 //======================================
 async function updateSequenceItem(id, itemData, changedBy) {
@@ -446,9 +588,9 @@ async function deleteSequenceItem(id, changedBy) {
 // ACTIVITY/WORK FUNCTIONS
 //======================================
 
-//======================================
-// Get all activities with filtering
-//======================================
+//=======================
+// Get all activities
+//=======================
 const getActivities = async (userId, options = {}) => {
   try {
     const pool = await sql.connect(dbConfig);
@@ -460,7 +602,7 @@ const getActivities = async (userId, options = {}) => {
       "au.Active = 1"
     ];
     
-    // Add filters
+    // filters
     if (options.completed !== undefined) {
       request.input("Completed", sql.Bit, options.completed);
       whereConditions.push("a.Completed = @Completed");
@@ -1102,6 +1244,10 @@ module.exports = {
   createSequenceItem,
   updateSequenceItem,
   deleteSequenceItem,
+  createSequenceWithItems,
+  assignSequenceToAccount,
+  unassignSequenceFromAccount,
+  getAccountsBySequence,
   
   // Activity/Work functions
   getActivities,
