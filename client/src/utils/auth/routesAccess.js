@@ -7,6 +7,7 @@ export const ROUTE_ACCESS = {
   // Core
   dashboard: ALL,
   roles: HR,
+  email: ALL,
 
    // Accounts
   sequences: ALL,

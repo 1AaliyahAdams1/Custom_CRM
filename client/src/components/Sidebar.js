@@ -49,6 +49,15 @@ const navigation = [
   //   accessKey: "dashboard",
   //   section: "Main",
   // },
+
+  {
+  name: "Email",
+  href: "/test-email",
+  icon: WorkIcon, // choose an appropriate icon
+  accessKey: "Email", // or a specific route key if you want separate control
+  section: "CRM Management",
+},
+
  
   {
     name: "Accounts",

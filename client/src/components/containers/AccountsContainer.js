@@ -176,37 +176,15 @@ const AccountsContainer = () => {
   };
 
   const handleSaveNote = async (noteData) => {
-    try {
-      await createNote({
-        EntityID: selectedAccount.AccountID,
-        EntityType: "Account",
-        Content: noteData.Content || noteData,
-      });
-      setStatusMessage("Note added successfully!");
-      setStatusSeverity("success");
-      setRefreshFlag((flag) => !flag);
-    } catch (err) {
-      setStatusMessage(err.message || "Failed to save note");
-      setStatusSeverity("error");
-      throw err;
-    }
+    setStatusMessage("Note added successfully!");
+    setStatusSeverity("success");
+    setRefreshFlag((flag) => !flag);
   };
 
   const handleEditNote = async (noteData) => {
-    try {
-      await updateNote(noteData.NoteID, {
-        EntityID: selectedAccount.AccountID,
-        EntityType: "Account",
-        Content: noteData.Content,
-      });
-      setStatusMessage("Note updated successfully!");
-      setStatusSeverity("success");
-      setRefreshFlag((flag) => !flag);
-    } catch (err) {
-      setStatusMessage(err.message || "Failed to update note");
-      setStatusSeverity("error");
-      throw err;
-    }
+    setStatusMessage("Note updated successfully!");
+    setStatusSeverity("success");
+    setRefreshFlag((flag) => !flag);
   };
 
   const handleDeactivateNote = async (noteId) => {
