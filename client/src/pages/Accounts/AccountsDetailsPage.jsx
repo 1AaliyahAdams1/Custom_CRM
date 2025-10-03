@@ -8,6 +8,8 @@ import { getAllDeals } from "../../services/dealService";
 import { getAllActivities } from "../../services/activityService";
 import { getAllNotes } from "../../services/noteService";
 import { getAllAttachments } from "../../services/attachmentService";
+import { getAllNotes } from "../../services/noteService";
+import { getAllAttachments } from "../../services/attachmentService";
 
 export default function AccountDetailsPage() {
   const { id } = useParams();
@@ -87,6 +89,33 @@ export default function AccountDetailsPage() {
         return { data: filteredData };
       } catch (error) {
         console.error('Error fetching and filtering data:', error);
+        throw error;
+      }
+    };
+  }, []);
+
+  const createAttachmentDataService = useCallback(() => {
+  return async () => {
+    try {
+      const response = await getAllAttachments();
+      const allData = response?.data || response;
+      const accountId = parseInt(idRef.current, 10);
+      
+      // Filter attachments where EntityID = accountId AND EntityTypeID = Account type
+      //  need to know the EntityTypeID for "Account" - let's assume it's 1
+      const ACCOUNT_ENTITY_TYPE_ID = 1; 
+      
+      const filteredData = allData.filter(item => 
+        item.EntityID === accountId && item.EntityTypeID === ACCOUNT_ENTITY_TYPE_ID
+      );
+      
+      return { data: filteredData };
+    } catch (error) {
+      console.error('Error fetching and filtering attachments:', error);
+      throw error;
+    }
+  };
+}, []);
         throw error;
       }
     };
@@ -231,7 +260,6 @@ export default function AccountDetailsPage() {
         idField: 'NoteID',
         columns: [
           { field: 'Content', headerName: 'Content', type: 'truncated', maxWidth: 400, defaultVisible: true },
-          { field: 'CreatedBy', headerName: 'Created By', type: 'text', defaultVisible: true },
           { field: 'EntityID', headerName: 'Entity ID', type: 'text', defaultVisible: true },
           { field: 'EntityTypeID', headerName: 'Entity Type', type: 'text', defaultVisible: true },
           { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true }
@@ -254,10 +282,28 @@ export default function AccountDetailsPage() {
           ]
         },
        dataService: createAttachmentDataService()
+        dataService: createFilteredDataService(getAllNotes, 'EntityID') 
+      },
+      {
+        key: 'attachments',
+        label: 'Attachments',
+        entityType: 'attachment',
+        tableConfig: {
+          idField: 'AttachmentID',
+          columns: [
+            { field: 'FileName', headerName: 'File Name', type: 'text', defaultVisible: true },
+            { field: 'FileType', headerName: 'Type', type: 'text', defaultVisible: true },
+            { field: 'FileSize', headerName: 'Size', type: 'text', defaultVisible: true },
+            { field: 'UploadedByFirstName', headerName: 'Uploaded By', type: 'text', defaultVisible: true },
+            { field: 'UploadedAt', headerName: 'Uploaded', type: 'dateTime', defaultVisible: true },
+          ]
+        },
+       dataService: createAttachmentDataService()
       }
     ];
     return tabs;
   }, [createFilteredDataService, processDealData]);
+
 
 
   // action handlers

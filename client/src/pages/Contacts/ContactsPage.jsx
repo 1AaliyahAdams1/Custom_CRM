@@ -1,4 +1,6 @@
+
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -25,6 +27,7 @@ const ContactsPage = ({
   error,
   successMessage,
   setSuccessMessage,
+  setError,
   selected = [],
   onSelectClick,
   onSelectAllClick,
@@ -37,8 +40,20 @@ const ContactsPage = ({
   onFilterChange,
   userRoles = [],
 }) => {
+  const navigate = useNavigate();
+
+  const handleViewAccount = (contact) => {
+    if (!contact?.AccountID) {
+      if (setError) {
+        setError("Cannot view account - missing ID");
+      }
+      return;
+    }
+    navigate(`/accounts/${contact.AccountID}`);
+  };
+
   const columns = [
-    { field: 'AccountName', headerName: 'Account', type: 'tooltip', defaultVisible: true },
+    { field: "AccountName", headerName: "Name", type: "clickable", defaultVisible: true, onClick: handleViewAccount },
     { field: 'PersonFullName', headerName: 'Person', type: 'tooltip', defaultVisible: true },
     { field: 'WorkEmail', headerName: 'Email', defaultVisible: true },
     { field: 'WorkPhone', headerName: 'Phone', defaultVisible: true },
@@ -175,6 +190,7 @@ const ContactsPage = ({
               selected={selected}
               onSelectClick={onSelectClick}
               onSelectAllClick={onSelectAllClick}
+              onViewAccount={handleViewAccount} 
               showSelection={true}
               onView={onView}
               onEdit={onEdit}
