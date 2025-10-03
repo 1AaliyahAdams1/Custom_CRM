@@ -5,7 +5,8 @@ import * as productService from "../../services/productService";
 import { 
   createNote, 
   updateNote, 
-  deleteNote 
+  deactivateNote,
+  reactivateNote,
 } from "../../services/noteService";
 import { 
   uploadAttachment, 
@@ -181,34 +182,51 @@ const ProductsContainer = () => {
       const notePayload = {
         EntityID: selectedProduct.ProductID,
         EntityType: "Product",
-        Content: noteData.Content,
+        Content: noteData.Content || noteData,
       };
       await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
-      setNotesPopupOpen(false);
       setRefreshFlag(flag => !flag);
     } catch (err) { 
       setError(err.message || "Failed to save note"); 
-    }
-  };
-
-  const handleDeleteNote = async (noteId) => {
-    try {
-      await deleteNote(noteId);
-      setSuccessMessage("Note deleted successfully!");
-      setRefreshFlag(flag => !flag);
-    } catch (err) { 
-      setError(err.message || "Failed to delete note"); 
+      throw err;
     }
   };
 
   const handleEditNote = async (noteData) => {
     try {
-      await updateNote(noteData.NoteID, noteData);
+      await updateNote(noteData.NoteID, {
+        EntityID: selectedProduct.ProductID,
+        EntityType: "Product",
+        Content: noteData.Content,
+      });
       setSuccessMessage("Note updated successfully!");
       setRefreshFlag(flag => !flag);
     } catch (err) { 
       setError(err.message || "Failed to update note"); 
+      throw err;
+    }
+  };
+
+  const handleDeactivateNote = async (noteId) => {
+    try {
+      await deactivateNote(noteId);
+      setSuccessMessage("Note deactivated successfully!");
+      setRefreshFlag(flag => !flag);
+    } catch (err) { 
+      setError(err.message || "Failed to deactivate note"); 
+      throw err;
+    }
+  };
+
+  const handleReactivateNote = async (noteId) => {
+    try {
+      await reactivateNote(noteId);
+      setSuccessMessage("Note reactivated successfully!");
+      setRefreshFlag(flag => !flag);
+    } catch (err) { 
+      setError(err.message || "Failed to reactivate note"); 
+      throw err;
     }
   };
 
@@ -286,7 +304,8 @@ const ProductsContainer = () => {
         onClose={() => setNotesPopupOpen(false)}
         onSave={handleSaveNote}
         onEdit={handleEditNote}
-        onDelete={handleDeleteNote}
+        onDeactivate={handleDeactivateNote}
+        onReactivate={handleReactivateNote}
         entityType="Product"
         entityId={selectedProduct?.ProductID}
         entityName={selectedProduct?.ProductName}

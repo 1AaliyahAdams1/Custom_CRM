@@ -57,7 +57,7 @@ async function createNote(entityId, entityTypeName, content, userId) {
     request.input("Content", sql.VarChar(255), content);
     request.input("CreatedBy", sql.Int, userId);
 
-    await request.execute("createNote"); // no recordset expected
+    await request.execute("createNote");
     return { message: `Note added to ${entityTypeName} successfully` };
   } catch (error) {
     console.error("Database error in createNote:", error);
@@ -119,27 +119,13 @@ async function reactivateNote(noteId, userId) {
   }
 }
 
-// =======================
-// Delete note
-// =======================
-async function deleteNote(noteId, userId) {
-  try {
-    const pool = await poolPromise;
-    const request = pool.request();
-    request.input("NoteID", sql.Int, noteId);
-    await request.execute("deleteNote");
-    return { message: "Note deleted successfully" };
-  } catch (error) {
-    console.error("Database error in deleteNote:", error);
-    throw error;
-  }
-}
+
 // =======================
 // Get all notes
 // =======================
 async function getAllNotes() {
   try {
-    const pool = await sql.connect(dbConfig);
+    const pool = await poolPromise;
     const result = await pool.request()
       .query(`
         SELECT
@@ -147,7 +133,9 @@ async function getAllNotes() {
             n.[EntityID],
             n.[EntityTypeID],
             n.[Content],
-            n.[CreatedAt]
+            n.[CreatedAt],
+            n.[CreatedBy],
+            n.[Active]
         FROM [8589_CRM].[dbo].[Note] n
         ORDER BY n.[CreatedAt] DESC;
       `);
@@ -159,14 +147,11 @@ async function getAllNotes() {
   }
 }
 
-
-
 module.exports = {
   getNotes,
   createNote,
   updateNote,
   deactivateNote,
   reactivateNote,
-  deleteNote,
   getAllNotes
 };

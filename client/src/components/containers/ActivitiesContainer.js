@@ -14,7 +14,12 @@ import {
   fetchActiveAccountsByUser,
   fetchActiveUnassignedAccounts,
 } from "../../services/accountService";
-import { createNote, updateNote, deleteNote } from "../../services/noteService";
+import { 
+  createNote, 
+  updateNote, 
+  deactivateNote, 
+  reactivateNote 
+} from "../../services/noteService";
 import { uploadAttachment, deleteAttachment, downloadAttachment } from "../../services/attachmentService";
 import { activityTypeService, priorityLevelService } from "../../services/dropdownServices";
 import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
@@ -208,17 +213,58 @@ const ActivitiesContainer = () => {
 
   // ---------------- NOTES & ATTACHMENTS ----------------
   const handleAddNote = (activity) => { setSelectedActivity(activity); setNotesPopupOpen(true); };
+
   const handleSaveNote = async (noteData) => {
     try {
-      await createNote({ EntityID: selectedActivity.ActivityID, EntityType: "Activity", Content: noteData.Content });
+      await createNote({ 
+        EntityID: selectedActivity.ActivityID, 
+        EntityType: "Activity", 
+        Content: noteData.Content || noteData,
+      });
       setSuccessMessage("Note added successfully!");
-      setNotesPopupOpen(false);
       setRefreshFlag(f => !f);
-    } catch (err) { setError(err.message || "Failed to save note"); }
+    } catch (err) { 
+      setError(err.message || "Failed to save note"); 
+      throw err;
+    }
   };
 
-  const handleEditNote = async (noteData) => { try { await updateNote(noteData.NoteID, noteData); setSuccessMessage("Note updated!"); setRefreshFlag(f => !f); } catch { setError("Failed to update note"); } };
-  const handleDeleteNote = async (noteId) => { try { await deleteNote(noteId); setSuccessMessage("Note deleted!"); setRefreshFlag(f => !f); } catch { setError("Failed to delete note"); } };
+  const handleEditNote = async (noteData) => { 
+    try { 
+      await updateNote(noteData.NoteID, {
+        EntityID: selectedActivity.ActivityID,
+        EntityType: "Activity",
+        Content: noteData.Content,
+      }); 
+      setSuccessMessage("Note updated!"); 
+      setRefreshFlag(f => !f); 
+    } catch (err) { 
+      setError("Failed to update note"); 
+      throw err;
+    }  
+  };
+
+  const handleDeactivateNote = async (noteId) => { 
+    try { 
+      await deactivateNote(noteId); 
+      setSuccessMessage("Note deactivated!"); 
+      setRefreshFlag(f => !f); 
+    } catch (err) { 
+      setError("Failed to deactivate note"); 
+      throw err;
+    } 
+  };
+
+  const handleReactivateNote = async (noteId) => { 
+    try { 
+      await reactivateNote(noteId); 
+      setSuccessMessage("Note reactivated!"); 
+      setRefreshFlag(f => !f); 
+    } catch (err) { 
+      setError("Failed to reactivate note"); 
+      throw err;
+    } 
+  };
 
   const handleAddAttachment = (activity) => { setSelectedActivity(activity); setAttachmentsPopupOpen(true); };
   const handleUploadAttachment = async (files) => { 
@@ -325,7 +371,8 @@ const ActivitiesContainer = () => {
         onClose={() => setNotesPopupOpen(false)}
         onSave={handleSaveNote}
         onEdit={handleEditNote}
-        onDelete={handleDeleteNote}
+        onDeactivate={handleDeactivateNote}
+        onReactivate={handleReactivateNote}
         entityType="Activity"
         entityId={selectedActivity?.ActivityID}
         entityName={selectedActivity?.ActivityType}

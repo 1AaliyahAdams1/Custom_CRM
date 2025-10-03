@@ -14,8 +14,8 @@ import {
 import { 
   createNote, 
   updateNote, 
-  deleteNote, 
-  getNotesByEntity 
+  deactivateNote,
+  reactivateNote,
 } from "../../services/noteService";
 import { 
   uploadAttachment, 
@@ -318,34 +318,51 @@ const DealsContainer = () => {
       const notePayload = {
         EntityID: selectedDeal.DealID,
         EntityType: "Deal",
-        Content: noteData.Content,
+        Content: noteData.Content || noteData,
       };
       await createNote(notePayload);
       setSuccessMessage("Note added successfully!");
-      setNotesPopupOpen(false);
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       setError(err.message || "Failed to save note");
+      throw err;
     }
   };
 
   const handleEditNote = async (noteData) => {
     try {
-      await updateNote(noteData.NoteID, noteData);
+      await updateNote(noteData.NoteID, {
+        EntityID: selectedDeal.DealID,
+        EntityType: "Deal",
+        Content: noteData.Content,
+      });
       setSuccessMessage("Note updated successfully!");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       setError(err.message || "Failed to update note");
+      throw err;
     }
   };
 
-  const handleDeleteNote = async (noteId) => {
+  const handleDeactivateNote = async (noteId) => {
     try {
-      await deleteNote(noteId);
-      setSuccessMessage("Note deleted successfully!");
+      await deactivateNote(noteId);
+      setSuccessMessage("Note deactivated successfully!");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
-      setError(err.message || "Failed to delete note");
+      setError(err.message || "Failed to deactivate note");
+      throw err;
+    }
+  };
+
+  const handleReactivateNote = async (noteId) => {
+    try {
+      await reactivateNote(noteId);
+      setSuccessMessage("Note reactivated successfully!");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setError(err.message || "Failed to reactivate note");
+      throw err;
     }
   };
 
@@ -429,7 +446,8 @@ const DealsContainer = () => {
         onClose={() => setNotesPopupOpen(false)}
         onSave={handleSaveNote}
         onEdit={handleEditNote}
-        onDelete={handleDeleteNote}
+        onDeactivate={handleDeactivateNote}
+        onReactivate={handleReactivateNote}
         entityType="Deal"
         entityId={selectedDeal?.DealID}
         entityName={selectedDeal?.DealName}

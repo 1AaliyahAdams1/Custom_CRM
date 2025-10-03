@@ -1,7 +1,7 @@
 const workService = require("../services/workService");
 
 //======================================
-// Get activities with filtering (main work page)
+// Get activities (main work page)
 //======================================
 const getActivities = async (req, res) => {
   try {
