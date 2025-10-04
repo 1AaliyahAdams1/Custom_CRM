@@ -55,10 +55,12 @@ import {
   CheckCircleOutline,
   RadioButtonUnchecked,
   Schedule,
+  Note,
 } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import { formatDistanceToNow, format } from "date-fns";
 import theme from "../components/Theme";
+import NotesPopup from "../components/NotesComponent";
 
 const WorkPage = ({
   viewMode = 'activities',
@@ -67,6 +69,12 @@ const WorkPage = ({
   loading = false,
   error,
   successMessage,
+  onAddNote,
+  // notesPopupOpen,
+  // setNotesPopupOpen,
+  selectedAccount,
+  handleSaveNote,
+  handleEditNote,  
   statusMessage,
   statusSeverity = 'info',
   currentSort = 'dueDate',
@@ -100,6 +108,8 @@ const WorkPage = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completeNotes, setCompleteNotes] = useState("");
+  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
+  
 
   const [editFormData, setEditFormData] = useState({
     dueToStart: "",
@@ -256,6 +266,8 @@ const WorkPage = ({
       console.error("Delete error:", err);
     }
   };
+
+  
 
   const CustomTabPanel = ({ children, value, index, ...other }) => (
     <div
@@ -875,6 +887,15 @@ const WorkPage = ({
                               >
                                 Send Email
                               </Button>
+                               <Button
+                                variant="outlined"
+                                color="primary"
+                                startIcon={<Note />}
+                                onClick={() => setNotesPopupOpen(true)}
+                              >
+                                Add Note
+                              </Button>
+
 
                               <Button
                                 variant="outlined"
@@ -999,8 +1020,24 @@ const WorkPage = ({
           </DialogActions>
         </Dialog>
 
-        {/* Status Snackbar */}
-        <Snackbar
+      {/* Notes Popup */}
+{notesPopupOpen && currentActivity && (
+  <NotesPopup
+    open={notesPopupOpen}
+    onClose={() => setNotesPopupOpen(false)}
+    onSave={handleSaveNote}
+    onEdit={handleEditNote}
+    entityType="Activity"
+    entityId={currentActivity.ActivityID}
+    entityName={`${currentActivity.AccountName} - ${currentActivity.ActivityTypeName}`}
+    showExistingNotes={true}
+    maxLength={255}
+    required={false}
+  />
+)} 
+
+{/* Status Snackbar */}
+<Snackbar
           open={!!statusMessage}
           autoHideDuration={4000}
           onClose={() => showStatus('')}

@@ -9,10 +9,19 @@ import {
   deleteActivity,
   getActivityMetadata
 } from "../../services/workService";
+import {
+  createNote,
+  updateNote,
+  deactivateNote,
+  reactivateNote,
+} from "../../services/noteService";
 import EmailDialog from "../../components/EmailDialog";
 
 const WorkPageContainer = () => {
   const navigate = useNavigate();
+
+  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
+   const [selectedAccount, setSelectedAccount] = useState(null);
 
   // ---------------- USER DATA ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -364,6 +373,50 @@ const WorkPageContainer = () => {
     }
   };
 
+  // ---------------- NOTES ----------------
+     const handleAddNote = (account) => {
+      setSelectedAccount(account);
+      setNotesPopupOpen(true);
+    };
+  
+    const handleSaveNote = async (noteData) => {
+      setStatusMessage("Note added successfully!");
+      setStatusSeverity("success");
+      setRefreshFlag((flag) => !flag);
+    };
+  
+    const handleEditNote = async (noteData) => {
+      setStatusMessage("Note updated successfully!");
+      setStatusSeverity("success");
+      setRefreshFlag((flag) => !flag);
+    };
+  
+    const handleDeactivateNote = async (noteId) => {
+      try {
+        await deactivateNote(noteId);
+        setStatusMessage("Note deactivated successfully!");
+        setStatusSeverity("success");
+        setRefreshFlag((flag) => !flag);
+      } catch (err) {
+        setStatusMessage(err.message || "Failed to deactivate note");
+        setStatusSeverity("error");
+        throw err;
+      }
+    };
+  
+    const handleReactivateNote = async (noteId) => {
+      try {
+        await reactivateNote(noteId);
+        setStatusMessage("Note reactivated successfully!");
+        setStatusSeverity("success");
+        setRefreshFlag((flag) => !flag);
+      } catch (err) {
+        setStatusMessage(err.message || "Failed to reactivate note");
+        setStatusSeverity("error");
+        throw err;
+      }
+    };
+
   // ---------------- DRAG AND DROP ----------------
   const handleDragStart = (event, activity) => {
     event.dataTransfer.setData("application/json", JSON.stringify(activity));
@@ -450,6 +503,15 @@ return (
       onCompleteActivity={handleCompleteActivity}
       onUpdateActivity={handleUpdateActivity}
       onDeleteActivity={handleDeleteActivity}
+
+      //notes
+      onAddNote={handleAddNote}
+      notesPopupOpen={notesPopupOpen}
+      setNotesPopupOpen={setNotesPopupOpen}
+       handleSaveNote={handleSaveNote}
+      handleEditNote={handleEditNote}
+      handleDeactivateNote={handleDeactivateNote}
+      handleReactivateNote={handleReactivateNote}
       
       // Drag and drop
       onDragStart={handleDragStart}

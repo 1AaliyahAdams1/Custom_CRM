@@ -41,7 +41,7 @@ export default function useLogin() {
       window.dispatchEvent(new Event("storage"));
 
       // Redirect to accounts page
-      window.location.href = "/dashboard";
+      window.location.href = "/accounts";
 
       return true;
     } catch (err) {
