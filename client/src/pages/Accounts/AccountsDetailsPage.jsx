@@ -260,6 +260,7 @@ export default function AccountDetailsPage() {
         idField: 'NoteID',
         columns: [
           { field: 'Content', headerName: 'Content', type: 'truncated', maxWidth: 400, defaultVisible: true },
+          { field: 'CreatedBy', headerName: 'Created By', type: 'text', defaultVisible: true },
           { field: 'EntityID', headerName: 'Entity ID', type: 'text', defaultVisible: true },
           { field: 'EntityTypeID', headerName: 'Entity Type', type: 'text', defaultVisible: true },
           { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true }

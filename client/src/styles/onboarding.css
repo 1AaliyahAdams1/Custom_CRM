@@ -1,0 +1,53 @@
+/* Custom Intro.js styling to match your theme */
+.introjs-tooltip {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e5e5 !important;
+  color: #050505 !important;
+  min-width: 300px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.introjs-tooltip-header {
+  background-color: #fafafa !important;
+  border-bottom: 1px solid #e5e5e5 !important;
+  padding: 12px !important;
+}
+
+.introjs-tooltip-title {
+  color: #2196F3 !important;
+  font-weight: 600 !important;
+}
+
+.introjs-tooltiptext {
+  padding: 16px !important;
+  color: #050505 !important;
+}
+
+.introjs-button {
+  background-color: #050505 !important;
+  border: none !important;
+  color: white !important;
+  text-shadow: none !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+}
+
+.introjs-button:hover {
+  background-color: #333333 !important;
+}
+
+.introjs-skipbutton {
+  color: #666666 !important;
+}
+
+.introjs-arrow {
+  border-right-color: #ffffff !important;
+}
+
+.introjs-progressbar {
+  background-color: #2196F3 !important;
+}
+
+.introjs-progress {
+  background-color: #e5e5e5 !important;
+}

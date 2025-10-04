@@ -110,9 +110,96 @@ const parseFilterOptions = (filterString) => {
 };
 
 //======================================
+// Get account sequence view with activities
+//======================================
+const getAccountSequenceView = async (accountId, userId) => {
+  const rawData = await sequenceRepo.getAccountSequenceWithActivities(accountId, userId);
+  
+  if (!rawData || rawData.length === 0) {
+    return null;
+  }
+
+  const firstRow = rawData[0];
+  
+  // Calculate progress
+  const totalSteps = rawData.length;
+  const completedSteps = rawData.filter(row => row.Status === 'completed').length;
+  const progressPercentage = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+
+  // Transform into structured response
+  const sequenceView = {
+    account: {
+      AccountID: firstRow.AccountID,
+      AccountName: firstRow.AccountName,
+      AccountCreatedAt: firstRow.AccountCreatedAt
+    },
+    sequence: {
+      SequenceID: firstRow.SequenceID,
+      SequenceName: firstRow.SequenceName,
+      SequenceDescription: firstRow.SequenceDescription
+    },
+    progress: {
+      totalSteps,
+      completedSteps,
+      progressPercentage
+    },
+    steps: rawData.map((row, index) => ({
+      stepNumber: index + 1,
+      SequenceItemID: row.SequenceItemID,
+      SequenceItemDescription: row.SequenceItemDescription,
+      DaysFromStart: row.DaysFromStart,
+      ActivityTypeID: row.ActivityTypeID, // Changed from TypeID
+      ActivityTypeName: row.ActivityTypeName,
+      ActivityTypeDescription: row.ActivityTypeDescription,
+      PriorityLevelID: row.PriorityLevelID,
+      PriorityLevelName: row.PriorityLevelName,
+      PriorityLevelValue: row.PriorityLevelValue,
+      ActivityID: row.ActivityID,
+      DueToStart: row.DueToStart,
+      DueToEnd: row.DueToEnd,
+      Completed: row.Completed,
+      Status: row.Status,
+      estimatedDueDate: row.DueToStart || calculateEstimatedDueDate(firstRow.AccountCreatedAt, row.DaysFromStart)
+    }))
+  };
+
+  return sequenceView;
+};
+
+//======================================
+// Helper: Calculate estimated due date from account start
+//======================================
+const calculateEstimatedDueDate = (accountCreatedAt, daysFromStart) => {
+  if (!accountCreatedAt || daysFromStart === null || daysFromStart === undefined) {
+    return null;
+  }
+  
+  const startDate = new Date(accountCreatedAt);
+  const estimatedDate = new Date(startDate);
+  estimatedDate.setDate(estimatedDate.getDate() + daysFromStart);
+  
+  return estimatedDate;
+};
+
+//======================================
 // Get activities with smart filtering (main work page)
 //======================================
 const getSmartWorkPageData = async (userId, options = {}) => {
+  // If accountId is provided, return sequence view instead
+  if (options.accountId) {
+    const sequenceView = await getAccountSequenceView(options.accountId, userId);
+    
+    if (!sequenceView) {
+      throw new Error("Account not found, has no sequence assigned, or user does not have access");
+    }
+    
+    return {
+      mode: 'sequence',
+      data: sequenceView
+    };
+  }
+  
+  // Otherwise, return regular activity list
   const filterOptions = parseFilterOptions(options.filter);
   const sortBy = options.sort || 'dueDate';
   
@@ -122,11 +209,14 @@ const getSmartWorkPageData = async (userId, options = {}) => {
   });
   
   return {
-    activities,
-    totalActivities: activities.length,
-    appliedFilters: {
-      filter: options.filter || 'all',
-      sort: sortBy
+    mode: 'activities',
+    data: {
+      activities,
+      totalActivities: activities.length,
+      appliedFilters: {
+        filter: options.filter || 'all',
+        sort: sortBy
+      }
     }
   };
 };
@@ -144,4 +234,5 @@ module.exports = {
   getSmartWorkPageData,
   getActivityForWorkspace,
   parseFilterOptions,
+  getAccountSequenceView,
 };

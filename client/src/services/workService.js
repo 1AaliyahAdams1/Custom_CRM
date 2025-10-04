@@ -2,24 +2,22 @@ import api from "../utils/api";
 
 const RESOURCE = "/work";
 
-// =======================
-// SMART WORK PAGE SERVICES
-// =======================
-
 /**
- * Get smart work page data with sorting and filtering
+ * Get smart work page data with sorting, filtering, and optional account sequence view
  * @param {number} userId - User ID
  * @param {string} sortCriteria - Sort criteria (dueDate, priority, account, type, sequence, status)
  * @param {string} filter - Filter type (all, overdue, urgent, high-priority, today, pending, completed)
- * @returns {Promise<Object>} Work page data with activities
+ * @param {number|null} accountId - Optional account ID for sequence view
+ * @returns {Promise<Object>} Work page data (activities or sequence view)
  */
-export const getWorkPageData = async (userId, sortCriteria = "dueDate", filter = "all") => {
+export const getWorkPageData = async (userId, sortCriteria = "dueDate", filter = "all", accountId = null) => {
   if (!userId) throw new Error("User ID is required");
 
   try {
     const params = new URLSearchParams();
     if (sortCriteria && sortCriteria !== "dueDate") params.append("sort", sortCriteria);
     if (filter && filter !== "all") params.append("filter", filter);
+    if (accountId) params.append("accountId", accountId);
 
     const queryString = params.toString();
     const url = `${RESOURCE}/user/${userId}/activities${queryString ? `?${queryString}` : ""}`;
@@ -27,14 +25,21 @@ export const getWorkPageData = async (userId, sortCriteria = "dueDate", filter =
     const response = await api.get(url);
 
     if (response.data) {
+      // Backend now returns either:
+      // { mode: 'activities', data: { activities: [...], totalActivities: N, ... } }
+      // OR
+      // { mode: 'sequence', data: { account: {...}, sequence: {...}, progress: {...}, steps: [...] } }
       return response.data;
     }
 
-    // fallback
+    // Fallback for default mode
     return {
-      activities: [],
-      totalActivities: 0,
-      appliedFilters: { filter: "all", sort: "dueDate" },
+      mode: 'activities',
+      data: {
+        activities: [],
+        totalActivities: 0,
+        appliedFilters: { filter: "all", sort: "dueDate" },
+      }
     };
   } catch (error) {
     console.error("Error fetching work page data:", error);

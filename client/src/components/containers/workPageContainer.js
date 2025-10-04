@@ -9,21 +9,33 @@ import {
   deleteActivity,
   getActivityMetadata
 } from "../../services/workService";
+import {
+  createNote,
+  updateNote,
+  deactivateNote,
+  reactivateNote,
+} from "../../services/noteService";
+import EmailDialog from "../../components/EmailDialog";
 
 const WorkPageContainer = () => {
   const navigate = useNavigate();
+
+  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
+   const [selectedAccount, setSelectedAccount] = useState(null);
 
   // ---------------- USER DATA ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const userId = storedUser.UserID || storedUser.id || null;
 
-  // Debug user data
-  console.log('=== CONTAINER INIT DEBUG ===');
-  console.log('storedUser:', storedUser);
-  console.log('userId:', userId);
-  console.log('userId exists:', !!userId);
-
   // ---------------- STATE ----------------
+  // View mode state
+  const [viewMode, setViewMode] = useState('activities'); // 'activities' or 'sequence'
+  const [sequenceViewData, setSequenceViewData] = useState(null);
+  
+  const [showEmailForm, setShowEmailForm] = useState({}); 
+// key: activityId, value: true/false
+
+  // Activities state
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -33,6 +45,7 @@ const WorkPageContainer = () => {
   // Filter and sort state
   const [currentSort, setCurrentSort] = useState('dueDate');
   const [currentFilter, setCurrentFilter] = useState('all');
+  const [selectedAccountId, setSelectedAccountId] = useState(null);
 
   // Tab management state
   const [openTabs, setOpenTabs] = useState([]);
@@ -50,83 +63,61 @@ const WorkPageContainer = () => {
   const [statusMessage, setStatusMessage] = useState("");
   const [statusSeverity, setStatusSeverity] = useState("success");
 
-  // ---------------- FETCH ACTIVITIES ----------------
-  const fetchActivities = useCallback(async () => {
+  // ---------------- FETCH DATA ----------------
+  const fetchWorkPageData = useCallback(async () => {
     if (!userId) {
-      console.log('No userId, setting error message');
       setError("User ID not found. Please log in again.");
       return;
     }
 
-    console.log('=== FETCH ACTIVITIES DEBUG START ===');
-    console.log('1. UserId:', userId);
-    console.log('2. CurrentSort:', currentSort);
-    console.log('3. CurrentFilter:', currentFilter);
+    console.log('=== FETCH WORK PAGE DATA ===');
+    console.log('UserId:', userId);
+    console.log('Sort:', currentSort);
+    console.log('Filter:', currentFilter);
+    console.log('AccountId:', selectedAccountId);
 
     setLoading(true);
     setError(null);
     
     try {
-      console.log('4. About to call getWorkPageData...');
-      const workPageData = await getWorkPageData(userId, currentSort, currentFilter);
+      const response = await getWorkPageData(userId, currentSort, currentFilter, selectedAccountId);
       
-      console.log('5. Raw response received:');
-      console.log('   - Type:', typeof workPageData);
-      console.log('   - Is null?', workPageData === null);
-      console.log('   - Is undefined?', workPageData === undefined);
-      console.log('   - Keys:', workPageData ? Object.keys(workPageData) : 'No keys (null/undefined)');
-      console.log('   - Full object:', JSON.stringify(workPageData, null, 2));
+      console.log('Response received:', response);
+      console.log('Response mode:', response?.mode);
       
-      console.log('6. Checking activities property:');
-      console.log('   - workPageData.activities exists?', 'activities' in (workPageData || {}));
-      console.log('   - workPageData.activities type:', typeof workPageData?.activities);
-      console.log('   - workPageData.activities is array?', Array.isArray(workPageData?.activities));
-      console.log('   - workPageData.activities length:', workPageData?.activities?.length);
-      
-      // Extract activities array from the data structure
-      let activitiesArray = [];
-      
-      if (workPageData && Array.isArray(workPageData.activities)) {
-        activitiesArray = workPageData.activities;
-        console.log('7. SUCCESS: Extracted activities array with length:', activitiesArray.length);
-        if (activitiesArray.length > 0) {
-          console.log('8. Sample activity:', JSON.stringify(activitiesArray[0], null, 2));
-        }
+      if (response && response.mode === 'sequence') {
+        // Sequence view mode
+        console.log('Switching to sequence view mode');
+        setViewMode('sequence');
+        setSequenceViewData(response.data);
+        setActivities([]); // Clear activities list
+      } else if (response && response.mode === 'activities') {
+        // Activities list mode
+        console.log('Using activities list mode');
+        setViewMode('activities');
+        setSequenceViewData(null);
+        
+        const activitiesArray = Array.isArray(response.data?.activities) 
+          ? response.data.activities 
+          : [];
+        
+        console.log('Activities array length:', activitiesArray.length);
+        setActivities(activitiesArray);
       } else {
-        console.log('7. ERROR: Invalid data structure');
-        console.log('   - workPageData exists?', !!workPageData);
-        console.log('   - workPageData.activities exists?', !!(workPageData?.activities));
-        console.log('   - workPageData.activities is array?', Array.isArray(workPageData?.activities));
-        console.error('Expected: { activities: [...] }');
-        console.error('Received:', workPageData);
-      }
-      
-      console.log('9. About to set state with:', activitiesArray.length, 'activities');
-      
-      // Set the activities state with the extracted array
-      setActivities(activitiesArray);
-      
-      console.log('10. State set complete');
-      
-      if (activitiesArray.length === 0) {
-        console.warn('11. WARNING: No activities in final array - check filter/sort settings');
+        console.error('Unexpected response format:', response);
+        setViewMode('activities');
+        setActivities([]);
       }
       
     } catch (err) {
-      console.error('=== FETCH ERROR ===');
-      console.error('Error object:', err);
-      console.error('Error message:', err.message);
-      console.error('Error stack:', err.stack);
-      if (err.response) {
-        console.error('Error response status:', err.response.status);
-        console.error('Error response data:', err.response.data);
-      }
-      setError(err.message || "Failed to load activities. Please try again.");
+      console.error('Fetch error:', err);
+      setError(err.message || "Failed to load data. Please try again.");
+      setViewMode('activities');
+      setActivities([]);
     } finally {
       setLoading(false);
-      console.log('=== FETCH ACTIVITIES DEBUG END ===');
     }
-  }, [userId, currentSort, currentFilter]);
+  }, [userId, currentSort, currentFilter, selectedAccountId]);
 
   // ---------------- FETCH METADATA ----------------
   const fetchMetadata = useCallback(async () => {
@@ -142,70 +133,49 @@ const WorkPageContainer = () => {
 
   // ---------------- EFFECTS ----------------
   useEffect(() => {
-    console.log('=== MAIN USEEFFECT DEBUG ===');
-    console.log('useEffect triggered with userId:', userId);
-    console.log('fetchActivities function exists:', typeof fetchActivities);
-    
     if (userId) {
-      console.log('About to call fetchActivities...');
-      fetchActivities();
-    } else {
-      console.log('Skipping fetchActivities - no userId');
+      fetchWorkPageData();
     }
-  }, [fetchActivities]);
+  }, [fetchWorkPageData]);
 
   useEffect(() => {
     fetchMetadata();
   }, [fetchMetadata]);
 
-  // Direct API test - runs once on mount
-  useEffect(() => {
-    console.log('=== DIRECT API TEST ===');
-    console.log('Testing direct API call with userId:', userId);
-    
-    if (userId) {
-      getWorkPageData(userId, 'dueDate', 'all')
-        .then(data => {
-          console.log('Direct API call SUCCESS:', data);
-          console.log('Direct API activities length:', data?.activities?.length);
-          // Don't set state here, just log for debugging
-        })
-        .catch(err => {
-          console.error('Direct API call FAILED:', err);
-        });
-    } else {
-      console.log('No userId - cannot test API');
-    }
-  }, []); // Empty dependency array so it only runs once
-
   // ---------------- FILTER & SORT HANDLERS ----------------
   const handleSortChange = useCallback((sortBy) => {
-    console.log('=== SORT CHANGE DEBUG ===');
-    console.log('Changing sort from:', currentSort, 'to:', sortBy);
+    console.log('Sort changed to:', sortBy);
     setCurrentSort(sortBy);
-  }, [currentSort]);
+  }, []);
 
   const handleFilterChange = useCallback((filterType) => {
-    console.log('=== FILTER CHANGE DEBUG ===');
-    console.log('Changing filter from:', currentFilter, 'to:', filterType);
+    console.log('Filter changed to:', filterType);
     setCurrentFilter(filterType);
-  }, [currentFilter]);
+  }, []);
+
+  const handleAccountFilterChange = useCallback((accountId) => {
+    console.log('Account filter changed to:', accountId);
+    setSelectedAccountId(accountId);
+    
+    // Close all tabs when switching views
+    setOpenTabs([]);
+    setActiveTab(null);
+    setTabActivities({});
+    setTabLoading({});
+  }, []);
 
   // ---------------- TAB MANAGEMENT ----------------
   const handleActivityClick = async (activity) => {
     try {
       console.log('Opening activity in tab:', activity.ActivityID);
       
-      // Check if tab is already open
       const existingTabIndex = openTabs.findIndex(tab => tab.activityId === activity.ActivityID);
       
       if (existingTabIndex !== -1) {
-        // Tab already exists, just activate it
         setActiveTab(existingTabIndex);
         return;
       }
 
-      // Create new tab immediately for better UX
       const newTab = {
         activityId: activity.ActivityID,
         title: activity.AccountName || 'Activity',
@@ -219,10 +189,8 @@ const WorkPageContainer = () => {
       setOpenTabs(newTabs);
       setActiveTab(newTabIndex);
       
-      // Set loading state for this tab
       setTabLoading(prev => ({ ...prev, [activity.ActivityID]: true }));
 
-      // Fetch detailed activity data for workspace
       const response = await getActivityForWorkspace(activity.ActivityID, userId);
       
       if (response.success && response.data) {
@@ -237,7 +205,6 @@ const WorkPageContainer = () => {
       console.error("Error opening activity tab:", err);
       setError(err.message || "Failed to open activity");
       
-      // Remove the tab if we failed to load the activity
       const tabIndex = openTabs.findIndex(tab => tab.activityId === activity.ActivityID);
       if (tabIndex !== -1) {
         handleTabClose(tabIndex);
@@ -247,11 +214,25 @@ const WorkPageContainer = () => {
     }
   };
 
+  const handleSequenceStepClick = async (step) => {
+    // If the step has an ActivityID, open it like a regular activity
+    if (step.ActivityID) {
+      await handleActivityClick({
+        ActivityID: step.ActivityID,
+        AccountName: sequenceViewData?.account?.AccountName,
+        ActivityTypeName: step.ActivityTypeName,
+        Status: step.Status
+      });
+    } else {
+      // Step not started yet - show info message
+      showStatus(`This step hasn't been started yet. Due: ${new Date(step.estimatedDueDate).toLocaleDateString()}`, 'info');
+    }
+  };
+
   const handleTabClose = (tabIndex) => {
     const tabToClose = openTabs[tabIndex];
     const newTabs = openTabs.filter((_, index) => index !== tabIndex);
     
-    // Remove activity data from cache
     if (tabToClose) {
       setTabActivities(prev => {
         const updated = { ...prev };
@@ -268,9 +249,7 @@ const WorkPageContainer = () => {
 
     setOpenTabs(newTabs);
     
-    // Adjust active tab
     if (activeTab === tabIndex) {
-      // If closing active tab, switch to previous tab or first available
       if (newTabs.length > 0) {
         const newActiveIndex = tabIndex > 0 ? tabIndex - 1 : 0;
         setActiveTab(newActiveIndex);
@@ -278,7 +257,6 @@ const WorkPageContainer = () => {
         setActiveTab(null);
       }
     } else if (activeTab > tabIndex) {
-      // If closing a tab before active tab, decrease active tab index
       setActiveTab(activeTab - 1);
     }
   };
@@ -299,23 +277,18 @@ const WorkPageContainer = () => {
         setStatusMessage("Activity completed successfully!");
         setStatusSeverity("success");
         
-        // Close the completed activity tab
         const tabIndex = openTabs.findIndex(tab => tab.activityId === activityId);
         if (tabIndex !== -1) {
           handleTabClose(tabIndex);
         }
 
-        // If there's a next activity, open it automatically
         if (response.data.nextActivity) {
           setTimeout(() => {
             handleActivityClick(response.data.nextActivity);
           }, 500);
         }
 
-        // Refresh activities list
-        fetchActivities();
-        
-        console.log('Activity completed successfully');
+        fetchWorkPageData();
       } else {
         throw new Error(response.message || "Failed to complete activity");
       }
@@ -327,7 +300,7 @@ const WorkPageContainer = () => {
       setStatusSeverity("error");
     }
   };
-
+  
   const handleUpdateActivity = async (activityId, updateData) => {
     try {
       console.log('Updating activity:', activityId, updateData);
@@ -339,14 +312,12 @@ const WorkPageContainer = () => {
         setStatusMessage("Activity updated successfully!");
         setStatusSeverity("success");
         
-        // Update the cached activity data
         setTabActivities(prev => ({
           ...prev,
           [activityId]: response.data.activity || response.data
         }));
         
-        // Refresh activities list
-        fetchActivities();
+        fetchWorkPageData();
       } else {
         throw new Error(response.message || "Failed to update activity");
       }
@@ -357,6 +328,14 @@ const WorkPageContainer = () => {
       setStatusMessage(errorMessage);
       setStatusSeverity("error");
     }
+  };
+
+  const handleSendEmailClick = (activityId) => {
+    setShowEmailForm(prev => ({ ...prev, [activityId]: true }));
+  };
+
+  const handleCloseEmailDialog = (activityId) => {
+    setShowEmailForm(prev => ({ ...prev, [activityId]: false }));
   };
 
   const handleDeleteActivity = async (activityId) => {
@@ -370,21 +349,18 @@ const WorkPageContainer = () => {
         setStatusMessage("Activity deleted successfully!");
         setStatusSeverity("success");
         
-        // Close the deleted activity tab
         const tabIndex = openTabs.findIndex(tab => tab.activityId === activityId);
         if (tabIndex !== -1) {
           handleTabClose(tabIndex);
         }
 
-        // If there's a suggested next activity, open it
         if (response.data.nextActivity) {
           setTimeout(() => {
             handleActivityClick(response.data.nextActivity);
           }, 500);
         }
 
-        // Refresh activities list
-        fetchActivities();
+        fetchWorkPageData();
       } else {
         throw new Error(response.message || "Failed to delete activity");
       }
@@ -396,6 +372,50 @@ const WorkPageContainer = () => {
       setStatusSeverity("error");
     }
   };
+
+  // ---------------- NOTES ----------------
+     const handleAddNote = (account) => {
+      setSelectedAccount(account);
+      setNotesPopupOpen(true);
+    };
+  
+    const handleSaveNote = async (noteData) => {
+      setStatusMessage("Note added successfully!");
+      setStatusSeverity("success");
+      setRefreshFlag((flag) => !flag);
+    };
+  
+    const handleEditNote = async (noteData) => {
+      setStatusMessage("Note updated successfully!");
+      setStatusSeverity("success");
+      setRefreshFlag((flag) => !flag);
+    };
+  
+    const handleDeactivateNote = async (noteId) => {
+      try {
+        await deactivateNote(noteId);
+        setStatusMessage("Note deactivated successfully!");
+        setStatusSeverity("success");
+        setRefreshFlag((flag) => !flag);
+      } catch (err) {
+        setStatusMessage(err.message || "Failed to deactivate note");
+        setStatusSeverity("error");
+        throw err;
+      }
+    };
+  
+    const handleReactivateNote = async (noteId) => {
+      try {
+        await reactivateNote(noteId);
+        setStatusMessage("Note reactivated successfully!");
+        setStatusSeverity("success");
+        setRefreshFlag((flag) => !flag);
+      } catch (err) {
+        setStatusMessage(err.message || "Failed to reactivate note");
+        setStatusSeverity("error");
+        throw err;
+      }
+    };
 
   // ---------------- DRAG AND DROP ----------------
   const handleDragStart = (event, activity) => {
@@ -443,8 +463,13 @@ const WorkPageContainer = () => {
     return tabLoading[currentTab.activityId] || false;
   };
 
-  return (
+return (
+  <>
     <WorkPage
+      // View mode
+      viewMode={viewMode}
+      sequenceViewData={sequenceViewData}
+      
       // Activity data
       activities={activities}
       loading={loading}
@@ -456,8 +481,10 @@ const WorkPageContainer = () => {
       // Filter and sort
       currentSort={currentSort}
       currentFilter={currentFilter}
+      selectedAccountId={selectedAccountId}
       onSortChange={handleSortChange}
       onFilterChange={handleFilterChange}
+      onAccountFilterChange={handleAccountFilterChange}
       
       // Tab management
       openTabs={openTabs}
@@ -467,11 +494,24 @@ const WorkPageContainer = () => {
       onTabChange={handleTabChange}
       onTabClose={handleTabClose}
       
+      onSendEmailClick={handleSendEmailClick}
+      showEmailForm={showEmailForm}
+      
       // Activity actions
       onActivityClick={handleActivityClick}
+      onSequenceStepClick={handleSequenceStepClick}
       onCompleteActivity={handleCompleteActivity}
       onUpdateActivity={handleUpdateActivity}
       onDeleteActivity={handleDeleteActivity}
+
+      //notes
+      onAddNote={handleAddNote}
+      notesPopupOpen={notesPopupOpen}
+      setNotesPopupOpen={setNotesPopupOpen}
+       handleSaveNote={handleSaveNote}
+      handleEditNote={handleEditNote}
+      handleDeactivateNote={handleDeactivateNote}
+      handleReactivateNote={handleReactivateNote}
       
       // Drag and drop
       onDragStart={handleDragStart}
@@ -485,7 +525,20 @@ const WorkPageContainer = () => {
       onClearMessages={clearMessages}
       showStatus={showStatus}
     />
-  );
+    
+    {/* Email Dialog for each activity that has email form open */}
+{Object.keys(showEmailForm).map((activityId) => 
+  showEmailForm[activityId] && (
+    <EmailDialog
+      key={`email-${activityId}`}
+      open={true}
+      onClose={() => handleCloseEmailDialog(Number(activityId))}
+      activity={tabActivities[activityId]}
+    />
+  )
+)}
+  </>
+);
 };
 
 export default WorkPageContainer;

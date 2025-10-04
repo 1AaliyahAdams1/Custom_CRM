@@ -275,10 +275,13 @@ export function AppSidebar() {
     const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + "/");
     const IconComponent = item.icon;
 
+    const tourId = item.name.toLowerCase().replace(/\s+/g, '-');
+
     const content = (
       <ListItemButton
         component={Link}
         to={item.href}
+        data-tour={tourId}
         sx={{
           borderRadius: 2,
           mx: 1.5,
@@ -350,7 +353,7 @@ export function AppSidebar() {
       {/* Sidebar Header */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: isCollapsed ? "center" : "space-between", p: 2, minHeight: 48 }}>
         {!isCollapsed && <Typography sx={{ fontWeight: 600, color: "#ffffff" }}>Navigation Panel</Typography>}
-        <IconButton onClick={toggleSidebar} size="small" sx={{ backgroundColor: alpha("#2196F3", 0.15), color: "#2196F3", "&:hover": { backgroundColor: alpha("#2196F3", 0.25) } }}>
+        <IconButton onClick={toggleSidebar} size="small" data-tour="collapse-toggle" sx={{ backgroundColor: alpha("#2196F3", 0.15), color: "#2196F3", "&:hover": { backgroundColor: alpha("#2196F3", 0.25) } }}>
           {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
         </IconButton>
       </Box>
