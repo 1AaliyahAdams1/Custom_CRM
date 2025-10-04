@@ -59,9 +59,10 @@ To pull changes from GitHub into your branch:
 
 =====================================================================================================
 
+
 Install dependencies in the terminal:
 
-COMMANDS for Root folder [Custom_CRM]
+PACKAGES for Root folder [Custom_CRM]
 > npm install react@18.2.0 react-dom@18.2.0
 
 > npm install
@@ -77,7 +78,7 @@ COMMANDS for Root folder [Custom_CRM]
 > npm install node-cron
 
 
-COMMANDS for Client folder [client]
+PACKAGES for Client folder [client]
 > C:\Desktop\Custom_CRM\client [CHANGE THIS COMMAND TO MATCH YOUR FILE DIRECTORY]
 
 > npm install react@18.2.0 react-dom@18.2.0
@@ -94,23 +95,13 @@ COMMANDS for Client folder [client]
 
 > npm install @syncfusion/ej2-react-grids
 
-[For DataGrid]
-
 > npm install @syncfusion/ej2-react-dropdowns
-
-[For DropDownList, ComboBox]
 
 > npm install @syncfusion/ej2-react-schedule
 
-[For Scheduler]
-
 > npm install @syncfusion/ej2-react-buttons
 
-[For Buttons]
-
->npm install @syncfusion/ej2-react-inputs
-
-[For TextBox, NumericTextBox, etc.]
+> npm install @syncfusion/ej2-react-inputs
 
 > npm install @syncfusion/ej2-react-notifications
 
@@ -119,15 +110,23 @@ COMMANDS for Client folder [client]
 > npm install xlsx
 
 > npm install multer
+
+> npm install @emailjs/browser
+
+> npm install intro.js
+
 =====================================================================================================
+
 COMMAND to run program:
 MAKE SURE YOU ARE ON THE ROOT FOLDER [Custom_CRM] WHEN YOU RUN THIS COMMAND
 > npm run dev
 
 =====================================================================================================
+
 WHEN YOU PROGRAM IS RUNNING EVEN WHEN YOU CLOSED THE TERMINAL:
 This command finds if the port is being used
 > netstat -ano | findstr :3000
 
 Run the below command to close whatever is using the port
+
 >taskkill /PID 19508 /F
