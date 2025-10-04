@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AccountsPage from "../../pages/Accounts/AccountsPage";
+
+// Services
 import {
   getAllAccounts,
   fetchActiveAccountsByUser,
   fetchActiveUnassignedAccounts,
   deactivateAccount,
 } from "../../services/accountService";
-import { claimAccount, assignUser,removeAssignedUser} from "../../services/assignService";
+import {
+  claimAccount,
+  assignUser,
+  removeAssignedUser,
+} from "../../services/assignService";
 import {
   createNote,
   updateNote,
@@ -19,11 +25,15 @@ import {
   deleteAttachment,
   downloadAttachment,
 } from "../../services/attachmentService";
+
+// Components
 import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import BulkAssignDialog from "../../components/dialogs/BulkAssignDialog";
 import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
+
+// Utils
 import { ROUTE_ACCESS } from "../../utils/auth/routesAccess";
 
 const AccountsContainer = () => {
@@ -75,7 +85,7 @@ const AccountsContainer = () => {
 
       if (canViewAll) {
         if (isCLevel) {
-         accountsData = await getAllAccounts();  // did this work?
+          accountsData = await getAllAccounts();
           accountsData.forEach((acc) => (acc.ownerStatus = "n/a"));
         } else {
           const assignedRes = await fetchActiveAccountsByUser(userId);
@@ -116,7 +126,6 @@ const AccountsContainer = () => {
         return accounts.filter(
           (acc) => acc.ownerStatus === "unowned" || acc.ownerStatus === "n/a"
         );
-      case "team":
       case "all":
       default:
         return accounts;
@@ -290,19 +299,16 @@ const AccountsContainer = () => {
     } catch (err) {
       setStatusMessage(err.message || "Failed to assign user");
       setStatusSeverity("error");
-      throw err;
     }
   };
 
   const handleUnclaimAccount = async (account) => {
-    if (!hasAccess("accountUnclaim")) return; // check permission
-
+    if (!hasAccess("accountUnclaim")) return;
     try {
-      await removeAssignedUser(account.AccountID); // call your API
+      await removeAssignedUser(account.AccountID);
       setStatusMessage(`Account unclaimed: ${account.AccountName}`);
       setStatusSeverity("success");
 
-      // Update the local account state
       const updateAccounts = (accounts) =>
         accounts.map((a) =>
           a.AccountID === account.AccountID ? { ...a, ownerStatus: "unowned" } : a
