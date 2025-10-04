@@ -56,7 +56,7 @@ const OutlookEmailForm = () => {
           fontSize: 18
         }}
       >
-        New Message
+        New Email
       </Box>
 
       {/* Form Body */}

@@ -84,6 +84,8 @@ const WorkPage = ({
   onActivityClick = () => {},
   onSequenceStepClick = () => {},
   onCompleteActivity = async () => {},
+  onSendEmailClick = () => {}, 
+  showEmailForm = {},
   onUpdateActivity = async () => {},
   onDeleteActivity = async () => {},
   onDragStart = () => {},
@@ -98,7 +100,6 @@ const WorkPage = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completeNotes, setCompleteNotes] = useState("");
-  const [showEmailForm, setShowEmailForm] = useState({});
 
   const [editFormData, setEditFormData] = useState({
     dueToStart: "",
@@ -223,13 +224,6 @@ const WorkPage = ({
       console.error("Edit submission error:", err);
     }
   };
-
-  const handleSendEmailClick = (activityId) => {
-  setShowEmailForm((prev) => ({
-    ...prev,
-    [activityId]: !prev[activityId] // toggle visibility
-  }));
-};
 
   const handleCompleteClick = () => {
     setCompleteDialogOpen(true);
@@ -877,7 +871,7 @@ const WorkPage = ({
                               <Button
                                 variant="outlined"
                                 color="primary"
-                                onClick={() => handleSendEmailClick(currentActivity.ActivityID)}
+                                onClick={() => onSendEmailClick(currentActivity.ActivityID)} // Use the prop, not local function
                               >
                                 Send Email
                               </Button>

@@ -9,6 +9,7 @@ import {
   deleteActivity,
   getActivityMetadata
 } from "../../services/workService";
+import EmailDialog from "../../components/EmailDialog";
 
 const WorkPageContainer = () => {
   const navigate = useNavigate();
@@ -290,7 +291,7 @@ const WorkPageContainer = () => {
       setStatusSeverity("error");
     }
   };
-
+  
   const handleUpdateActivity = async (activityId, updateData) => {
     try {
       console.log('Updating activity:', activityId, updateData);
@@ -321,9 +322,12 @@ const WorkPageContainer = () => {
   };
 
   const handleSendEmailClick = (activityId) => {
-  setShowEmailForm(prev => ({ ...prev, [activityId]: true }));
-};
+    setShowEmailForm(prev => ({ ...prev, [activityId]: true }));
+  };
 
+  const handleCloseEmailDialog = (activityId) => {
+    setShowEmailForm(prev => ({ ...prev, [activityId]: false }));
+  };
 
   const handleDeleteActivity = async (activityId) => {
     try {
@@ -406,7 +410,8 @@ const WorkPageContainer = () => {
     return tabLoading[currentTab.activityId] || false;
   };
 
-  return (
+return (
+  <>
     <WorkPage
       // View mode
       viewMode={viewMode}
@@ -438,6 +443,7 @@ const WorkPageContainer = () => {
       
       onSendEmailClick={handleSendEmailClick}
       showEmailForm={showEmailForm}
+      
       // Activity actions
       onActivityClick={handleActivityClick}
       onSequenceStepClick={handleSequenceStepClick}
@@ -457,7 +463,20 @@ const WorkPageContainer = () => {
       onClearMessages={clearMessages}
       showStatus={showStatus}
     />
-  );
+    
+    {/* Email Dialog for each activity that has email form open */}
+{Object.keys(showEmailForm).map((activityId) => 
+  showEmailForm[activityId] && (
+    <EmailDialog
+      key={`email-${activityId}`}
+      open={true}
+      onClose={() => handleCloseEmailDialog(Number(activityId))}
+      activity={tabActivities[activityId]}
+    />
+  )
+)}
+  </>
+);
 };
 
 export default WorkPageContainer;

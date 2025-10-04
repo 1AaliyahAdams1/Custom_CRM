@@ -15,9 +15,6 @@ const Contacts = lazy(() => import("./components/containers/ContactsContainer"))
 const Deals = lazy(() => import("./components/containers/DealsContainer"));
 const Activities = lazy(() => import("./components/containers/ActivitiesContainer"));
 
-const TestEmailPage = lazy(() => import("./components/EmailMessage"));
-
-
 const ProductsContainer = lazy(() => import("./components/containers/ProductsContainer"));
 const Reports = lazy(() => import("./pages/ReportsPage"));
 const SmartWorkPage = lazy(() => import("./components/containers/workPageContainer"));
@@ -95,16 +92,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />*/}
-      <Route
-        path="/test-email"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.TestEmailPage}>
-            <TestEmailPage />
-          </PrivateRoute>
-        }
-      />
-
-
+    
       {/* --- Accounts Routes --- */}
       <Route
         path="/accounts"
