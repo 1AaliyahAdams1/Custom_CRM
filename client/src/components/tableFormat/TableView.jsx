@@ -55,6 +55,10 @@ const TableView = ({
   formatters = {},
   tooltips = {},
 }) => {
+
+  console.log("TableView onReactivate:", onReactivate); // ADD THIS LINE
+  console.log("TableView onReactivate exists:", !!onReactivate); // ADD THIS LINE
+
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuRow, setMenuRow] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");

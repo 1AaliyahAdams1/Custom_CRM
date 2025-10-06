@@ -253,25 +253,10 @@ export default function AccountDetailsPage() {
             { field: 'UploadedAt', headerName: 'Uploaded', type: 'dateTime', defaultVisible: true },
           ]
         },
-       dataService: createAttachmentDataService()
+       dataService: createAttachmentDataService(),
         dataService: createFilteredDataService(getAllNotes, 'EntityID') 
       },
-      {
-        key: 'attachments',
-        label: 'Attachments',
-        entityType: 'attachment',
-        tableConfig: {
-          idField: 'AttachmentID',
-          columns: [
-            { field: 'FileName', headerName: 'File Name', type: 'text', defaultVisible: true },
-            { field: 'FileType', headerName: 'Type', type: 'text', defaultVisible: true },
-            { field: 'FileSize', headerName: 'Size', type: 'text', defaultVisible: true },
-            { field: 'UploadedByFirstName', headerName: 'Uploaded By', type: 'text', defaultVisible: true },
-            { field: 'UploadedAt', headerName: 'Uploaded', type: 'dateTime', defaultVisible: true },
-          ]
-        },
-        dataService: createAttachmentDataService()
-      }
+      
     ];
     return tabs;
   }, [createFilteredDataService, createAttachmentDataService, processDealData]);

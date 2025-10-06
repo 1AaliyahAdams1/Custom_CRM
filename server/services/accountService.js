@@ -24,7 +24,7 @@ async function updateAccount(id, data) {
   return await accountRepo.updateAccount(id, data, userId);
 }
 
-async function deactivateAccount(id) {
+async function deactivateAccount(id, userId) {  // Added userId parameter
   const account = await accountRepo.getAccountDetails(id);
   if (!account) {
     throw new Error("Account not found");
@@ -40,9 +40,11 @@ async function deactivateAccount(id) {
 }
 
 
-async function reactivateAccount(id) {
+async function reactivateAccount(id, userId) {  
   return await accountRepo.reactivateAccount(id, userId);
 }
+
+
 
 async function deleteAccount(id) {
   return await accountRepo.deleteAccount(id, userId);
