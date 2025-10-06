@@ -3,19 +3,28 @@ const workService = require("../services/workService");
 //======================================
 // Get activities (main work page)
 //======================================
+//======================================
+// Get activities (main work page)
+//======================================
 const getActivities = async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     const sortBy = req.query.sort || 'dueDate';
     const filter = req.query.filter || 'all';
+    const accountId = req.query.accountId ? parseInt(req.query.accountId, 10) : null;
 
     if (!userId || isNaN(userId)) {
       return res.status(400).json({ error: "Valid User ID is required" });
     }
 
+    if (accountId && isNaN(accountId)) {
+      return res.status(400).json({ error: "Valid Account ID is required" });
+    }
+
     const data = await workService.getSmartWorkPageData(userId, {
       sort: sortBy,
-      filter: filter
+      filter: filter,
+      accountId: accountId
     });
     
     res.status(200).json(data);

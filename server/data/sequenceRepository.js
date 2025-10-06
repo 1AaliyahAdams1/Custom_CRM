@@ -775,6 +775,68 @@ const getActivitiesByUser = async (userId) => {
 };
 
 //======================================
+// Get account sequence with mapped activities
+//======================================
+async function getAccountSequenceWithActivities(accountId, userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT 
+          acc.AccountID,
+          acc.AccountName,
+          acc.CreatedAt AS AccountCreatedAt,
+          seq.SequenceID,
+          seq.SequenceName,
+          seq.SequenceDescription,
+          si.SequenceItemID,
+          si.SequenceItemDescription,
+          si.DaysFromStart,
+          si.ActivityTypeID,
+          at.TypeName AS ActivityTypeName,
+          at.Description AS ActivityTypeDescription,
+          a.ActivityID,
+          a.DueToStart,
+          a.DueToEnd,
+          a.Completed,
+          a.PriorityLevelID,
+          pl.PriorityLevelName,
+          pl.PriorityLevelValue,
+          a.Active AS ActivityActive,
+          CASE 
+            WHEN a.Completed = 1 THEN 'completed'
+            WHEN a.ActivityID IS NULL THEN 'not_started'
+            WHEN a.DueToStart < GETDATE() THEN 'overdue'
+            WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) THEN 'urgent'
+            ELSE 'pending'
+          END AS Status
+        FROM Account acc
+        INNER JOIN AssignedUser au ON acc.AccountID = au.AccountID
+        INNER JOIN Sequence seq ON acc.SequenceID = seq.SequenceID
+        INNER JOIN SequenceItem si ON seq.SequenceID = si.SequenceID AND si.Active = 1
+        INNER JOIN ActivityType at ON si.ActivityTypeID = at.TypeID AND at.Active = 1
+        LEFT JOIN Activity a ON si.SequenceItemID = a.SequenceItemID 
+          AND a.AccountID = acc.AccountID 
+          AND a.Active = 1
+        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
+        WHERE acc.AccountID = @AccountID
+          AND au.UserID = @UserID
+          AND au.Active = 1
+          AND acc.Active = 1
+          AND seq.Active = 1
+        ORDER BY si.DaysFromStart ASC
+      `);
+
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getAccountSequenceWithActivities:", err);
+    throw err;
+  }
+}
+
+//======================================
 // Get activity by ID with context 
 //======================================
 const getActivityByID = async (activityId, userId) => {
@@ -1261,4 +1323,5 @@ module.exports = {
   getUserSequences,
   getNextActivity,
   getActivityMetadata,
+  getAccountSequenceWithActivities,
 };
