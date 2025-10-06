@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -68,6 +69,7 @@ const ActivitiesPage = ({
   activities = [],
   loading = false,
   error,
+  setError,
   successMessage,
   setSuccessMessage,
   selected = [],
@@ -85,44 +87,46 @@ const ActivitiesPage = ({
   currentFilter = 'all',
   userRole = [],
   
-  // Add this new prop for viewing accounts
-  onViewAccount,
-  
   // Bulk action handlers
   onBulkMarkComplete,
   onBulkMarkIncomplete,
   onBulkUpdateDueDates,
-  // Removed duplicate dueDatesDialogOpen prop
   onCloseDueDatesDialog,
   onConfirmDueDatesUpdate,
   // Activity Types props (pass through to ActivityTypePage)
   activityTypesProps = {},
 }) => {
+  const navigate = useNavigate();
   const [currentTab, setCurrentTab] = useState(0);
   
-
   // Local state for filter
   const [activityFilter, setActivityFilter] = useState(currentFilter);
 
   // Local state for bulk due dates dialog
   const [dueDatesDialogOpen, setDueDatesDialogOpen] = useState(false);
 
+  // Handle account name click - navigates to account detail page
+  const handleViewAccount = (activity) => {
+    if (!activity?.AccountID) {
+      if (setError) {
+        setError("Cannot view account - missing ID");
+      }
+      return;
+    }
+    navigate(`/accounts/${activity.AccountID}`);
+  };
+
   // Table configuration for activities with clickable AccountName
   const activitiesTableConfig = {
     idField: "ActivityID",
     columns: [
-      { field: "ActivityType", headerName: "Activity Type", type: "tooltip" },
+      { field: "ActivityType", headerName: "Activity Type", type: "tooltip", defaultVisible: true },
       { 
         field: "AccountName", 
         headerName: "Account Name", 
         type: "clickable",
-        onClick: (row) => {
-          // Call the account view handler with the account information
-          if (onViewAccount) {
-            // Pass the AccountID - adjust field name based on your data structure
-            onViewAccount(row.AccountID || row.Account_ID);
-          }
-        }
+        defaultVisible: true,
+        onClick: handleViewAccount
       },
       { 
         field: "Description", 
@@ -363,6 +367,7 @@ const ActivitiesPage = ({
               selected={selected}
               onSelectClick={onSelectClick}
               onSelectAllClick={onSelectAllClick}
+              onViewAccount={handleViewAccount}
               showSelection={true}
               onView={onView}
               onEdit={onEdit}
