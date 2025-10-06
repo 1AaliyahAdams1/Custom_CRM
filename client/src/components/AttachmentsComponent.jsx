@@ -47,7 +47,7 @@ const AttachmentsPopup = ({
   entityType = 'account',
   entityId,
   entityName,
-  userName, // Add userName prop to track who is uploading
+  userName,
   maxFileSize = 10,
   maxFiles = 5,
   acceptedFileTypes = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.gif', '.mp4', '.mov', '.mp3', '.txt', '.zip'],
@@ -60,7 +60,6 @@ const AttachmentsPopup = ({
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
-  // Load attachments when dialog opens
   useEffect(() => {
     if (open && entityId && entityType) {
       loadAttachments();
@@ -142,7 +141,6 @@ const AttachmentsPopup = ({
     setError('');
     
     try {
-      // Upload files sequentially with progress tracking
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
         setUploadProgress(prev => ({ ...prev, [i]: 0 }));
@@ -151,16 +149,16 @@ const AttachmentsPopup = ({
           file,
           entityId,
           entityTypeName: entityType,
-          userName: userName || 'Unknown User' // Pass userName to service
+          userName: userName || 'Unknown User'
         });
         
         setUploadProgress(prev => ({ ...prev, [i]: 100 }));
       }
       
-      // Reset form and reload attachments
       setSelectedFiles([]);
       setUploadProgress({});
       await loadAttachments();
+      setError('');
       
     } catch (err) {
       console.error('Upload failed:', err);
@@ -208,31 +206,23 @@ const AttachmentsPopup = ({
   const getFileIcon = (fileUrl) => {
     if (!fileUrl) return <InsertDriveFile />;
     
-    // Extract filename from FileUrl since FileName isn't stored
     const fileName = fileUrl.split('/').pop() || '';
     const ext = fileName.split('.').pop()?.toLowerCase() || '';
     
     const iconMap = {
-      // Documents
       pdf: <PictureAsPdf />,
       doc: <Description />,
       docx: <Description />,
       xls: <Description />,
       xlsx: <Description />,
       txt: <Description />,
-      
-      // Images
       jpg: <Image />,
       jpeg: <Image />,
       png: <Image />,
       gif: <Image />,
-      
-      // Videos
       mp4: <VideoLibrary />,
       mov: <VideoLibrary />,
       avi: <VideoLibrary />,
-      
-      // Audio
       mp3: <AudioFile />,
       wav: <AudioFile />,
     };
@@ -260,7 +250,6 @@ const AttachmentsPopup = ({
     }
   };
 
-  // Extract filename from FileUrl for display
   const getDisplayFileName = (attachment) => {
     const fileUrl = attachment.FileUrl || attachment.fileUrl;
     if (!fileUrl) return 'Unknown File';
@@ -322,7 +311,6 @@ const AttachmentsPopup = ({
           </Alert>
         )}
 
-        {/* File Upload Section */}
         <Paper
           variant="outlined"
           sx={{
@@ -360,7 +348,6 @@ const AttachmentsPopup = ({
           />
         </Paper>
 
-        {/* Selected Files Preview */}
         {selectedFiles.length > 0 && (
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -411,7 +398,6 @@ const AttachmentsPopup = ({
           </Box>
         )}
 
-        {/* Existing Attachments */}
         <Box sx={{ mt: 2 }}>
           <Typography variant="subtitle1" sx={{ mb: 1 }}>
             Existing Attachments ({attachments.length})

@@ -18,6 +18,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TableView from "../../components/tableFormat/TableView";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent"; // Add this import
 import theme from "../../components/Theme";
 import { formatters } from "../../utils/formatters";
 import StatusMessage from "../../components/tableFormat/StatusMessage";
@@ -54,7 +55,11 @@ const AccountsPage = ({
   setNotesPopupOpen,
   selectedAccount,
   handleSaveNote,
-  handleEditNote,  
+  handleEditNote,
+  // Add these new props for attachments
+  attachmentsPopupOpen,
+  setAttachmentsPopupOpen,
+  userName, // Current user's name
 }) => {
   // Local filter state
   const [accountFilter, setAccountFilter] = useState("all");
@@ -253,6 +258,24 @@ const AccountsPage = ({
             showExistingNotes={true}
             maxLength={255}
             required={false}
+          />
+        )}
+
+        {/* Attachments Popup - Add this */}
+        {attachmentsPopupOpen && selectedAccount && (
+          <AttachmentsPopup
+            open={attachmentsPopupOpen}
+            onClose={() => setAttachmentsPopupOpen(false)}
+            entityType="account"
+            entityId={selectedAccount?.AccountID}
+            entityName={selectedAccount?.AccountName}
+            userName={userName}
+            maxFileSize={10}
+            maxFiles={5}
+            onAttachmentsChange={(attachments) => {
+              // Optional: Handle attachment changes if needed
+              console.log('Attachments updated:', attachments);
+            }}
           />
         )}
 

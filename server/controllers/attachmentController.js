@@ -120,7 +120,7 @@ async function getAttachments(req, res) {
       entityTypeName
     );
     
-    // Return the data array directly for frontend compatibility
+    // ✅ Return the data array directly, not the wrapper
     res.json(result.data || []);
   } catch (error) {
     console.error("Error in getAttachments controller:", error);
@@ -130,6 +130,7 @@ async function getAttachments(req, res) {
     });
   }
 }
+
 
 // =======================
 // Get Attachment by ID
