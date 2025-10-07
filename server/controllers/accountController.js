@@ -47,9 +47,14 @@ async function updateAccount(req, res) {
 // Deactivate account
 async function deactivateAccount(req, res) {
   try {
-    const result = await accountService.deactivateAccount(req.params.id);
+    // Get userId from authenticated user
+    const userId = req.user?.id || req.user?.userId || 1; // Use 1 as fallback for now
+    console.log("Reactivate - User ID:", userId);  // ADD THIS
+    console.log("Reactivate - Account ID:", req.params.id);  // ADD THIS
+    const result = await accountService.deactivateAccount(req.params.id, userId);
     res.status(200).json(result);
   } catch (error) {
+    console.error("Reactivate error:", error.message); 
     res.status(400).json({ message: error.message });
   }
 }
@@ -57,7 +62,10 @@ async function deactivateAccount(req, res) {
 // Reactivate account
 async function reactivateAccount(req, res) {
   try {
-    const result = await accountService.reactivateAccount(req.params.id);
+    // Get userId
+    const userId = req.user?.id || req.user?.userId || 1; // Use 1 as fallback for now
+    
+    const result = await accountService.reactivateAccount(req.params.id, userId);
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
