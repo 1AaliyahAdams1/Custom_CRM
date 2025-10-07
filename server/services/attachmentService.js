@@ -110,40 +110,95 @@ async function getAttachmentsForEntity(entityId, entityTypeName) {
   }
 }
 
-// Get Attachment by ID
-async function getAttachmentById(attachmentId) {
+// // Get Attachment by ID
+// async function getAttachmentById(attachmentId) {
+//   try {
+//     const rawData = await attachmentRepo.getAttachmentById(parseInt(attachmentId));
+    
+//     if (!rawData) {
+//       throw new Error('Attachment not found');
+//     }
+    
+//     // Transform single attachment with both field formats
+//     const transformedData = {
+//       AttachmentID: rawData.AttachmentID,
+//       attachmentId: rawData.AttachmentID,
+//       EntityID: rawData.EntityID,
+//       entityId: rawData.EntityID,
+//       EntityTypeID: rawData.EntityTypeID,
+//       entityTypeId: rawData.EntityTypeID,
+//       FileUrl: rawData.FileUrl,
+//       fileUrl: rawData.FileUrl,
+//       fileExtension: getFileExtension(rawData.FileUrl),
+//       UploadedAt: rawData.UploadedAt,
+//       uploadedAt: rawData.UploadedAt,
+//       formattedUploadDate: formatDate(rawData.UploadedAt),
+//       Active: rawData.Active,
+//       active: rawData.Active,
+//       CreatedBy: rawData.CreatedBy,
+//       createdBy: rawData.CreatedBy,
+//       fileType: classifyFileType(rawData.FileUrl),
+//       downloadUrl: `/attachments/${rawData.AttachmentID}/download`
+//     };
+    
+//     return transformedData;
+//   } catch (error) {
+//     console.error("Error in getAttachmentById service:", error);
+//     throw error;
+//   }
+// }
+async function getAttachmentsForEntity(entityId, entityTypeName) {
   try {
-    const rawData = await attachmentRepo.getAttachmentById(parseInt(attachmentId));
+    const rawData = await attachmentRepo.getAttachments(
+      parseInt(entityId),
+      entityTypeName
+    );
     
-    if (!rawData) {
-      throw new Error('Attachment not found');
-    }
+    // Transform the data with proper file name extraction
+    const transformedData = rawData.map(attachment => {
+      const fileUrl = attachment.FileUrl || '';
+      const fileName = fileUrl.split('/').pop() || 'Unknown File';
+      const fileExtension = getFileExtension(fileUrl);
+      
+      return {
+        AttachmentID: attachment.AttachmentID,
+        attachmentId: attachment.AttachmentID,
+        EntityID: attachment.EntityID,
+        entityId: attachment.EntityID,
+        EntityTypeID: attachment.EntityTypeID,
+        entityTypeId: attachment.EntityTypeID,
+        FileUrl: attachment.FileUrl,
+        fileUrl: attachment.FileUrl,
+        FileName: fileName, // ✅ Add this field
+        fileName: fileName, // ✅ Add this field
+        fileExtension: fileExtension,
+        UploadedAt: attachment.UploadedAt,
+        uploadedAt: attachment.UploadedAt,
+        formattedUploadDate: formatDate(attachment.UploadedAt),
+        Active: attachment.Active,
+        active: attachment.Active,
+        CreatedBy: attachment.CreatedBy || 'Unknown',
+        createdBy: attachment.CreatedBy || 'Unknown',
+        fileType: classifyFileType(attachment.FileUrl),
+        downloadUrl: `/attachments/${attachment.AttachmentID}/download`
+      };
+    });
     
-    // Transform single attachment with both field formats
-    const transformedData = {
-      AttachmentID: rawData.AttachmentID,
-      attachmentId: rawData.AttachmentID,
-      EntityID: rawData.EntityID,
-      entityId: rawData.EntityID,
-      EntityTypeID: rawData.EntityTypeID,
-      entityTypeId: rawData.EntityTypeID,
-      FileUrl: rawData.FileUrl,
-      fileUrl: rawData.FileUrl,
-      fileExtension: getFileExtension(rawData.FileUrl),
-      UploadedAt: rawData.UploadedAt,
-      uploadedAt: rawData.UploadedAt,
-      formattedUploadDate: formatDate(rawData.UploadedAt),
-      Active: rawData.Active,
-      active: rawData.Active,
-      CreatedBy: rawData.CreatedBy,
-      createdBy: rawData.CreatedBy,
-      fileType: classifyFileType(rawData.FileUrl),
-      downloadUrl: `/attachments/${rawData.AttachmentID}/download`
+    return {
+      data: transformedData,
+      summary: {
+        totalAttachments: transformedData.length,
+        activeAttachments: transformedData.filter(att => att.active !== 0).length,
+        fileTypes: [...new Set(transformedData.map(att => att.fileType))],
+        lastUpload: transformedData.length > 0 ? transformedData[0].formattedUploadDate : null
+      },
+      filters: {
+        entityId: parseInt(entityId),
+        entityTypeName
+      }
     };
-    
-    return transformedData;
   } catch (error) {
-    console.error("Error in getAttachmentById service:", error);
+    console.error("Error in getAttachmentsForEntity service:", error);
     throw error;
   }
 }
@@ -260,7 +315,7 @@ async function getAllAttachments() {
 module.exports = {
   uploadAttachment,
   getAttachmentsForEntity,
-  getAttachmentById,
+  // getAttachmentById,
   updateAttachment,
   deleteAttachment,
   deactivateAttachment,

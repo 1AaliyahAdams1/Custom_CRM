@@ -161,7 +161,7 @@ async function deleteAttachment(attachmentId) {
 // =======================
 async function getAllAttachments() {
   try {
-    const pool = await sql.connect(dbConfig);
+    const pool = await poolPromise; // ✅ Use poolPromise like other functions
     const result = await pool.request()
       .query(`
         SELECT
@@ -169,12 +169,14 @@ async function getAllAttachments() {
             att.[EntityID],
             att.[EntityTypeID],
             et.[TypeName] AS EntityTypeName,
-            att.[FileName],
             att.[FileUrl],
-            att.[UploadedAt]
+            att.[UploadedAt],
+            att.[CreatedBy],
+            att.[Active]
         FROM [8589_CRM].[dbo].[Attachment] att
         LEFT JOIN [8589_CRM].[dbo].[EntityType] et 
             ON att.EntityTypeID = et.EntityTypeID
+        WHERE att.[Active] = 1 OR att.[Active] IS NULL
         ORDER BY att.UploadedAt DESC;
       `);
 

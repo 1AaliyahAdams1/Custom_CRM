@@ -232,39 +232,44 @@ async function reactivateAccount(id, changedBy) {
       throw new Error("Account is already active");
     }
 
-    // First update the account status in the main table
+    // Update the account status
     await pool.request()
       .input('AccountID', sql.Int, id)
       .query('UPDATE Account SET Active = 1, UpdatedAt = GETDATE() WHERE AccountID = @AccountID');
 
-    // Use the ReactivateAccount stored procedure to log the action
-    await pool.request()
-      .input("AccountID", sql.Int, id)
-      .input("AccountName", sql.NVarChar, existing.AccountName)
-      .input("CityID", sql.Int, existing.CityID)
-      .input("street_address1", sql.NVarChar, existing.street_address1)
-      .input("street_address2", sql.NVarChar, existing.street_address2)
-      .input("street_address3", sql.NVarChar, existing.street_address3)
-      .input("postal_code", sql.NVarChar, existing.postal_code)
-      .input("PrimaryPhone", sql.NVarChar, existing.PrimaryPhone)
-      .input("IndustryID", sql.Int, existing.IndustryID)
-      .input("Website", sql.NVarChar, existing.Website)
-      .input("fax", sql.NVarChar, existing.fax)
-      .input("email", sql.VarChar, existing.email)
-      .input("number_of_employees", sql.Int, existing.number_of_employees)
-      .input("annual_revenue", sql.Decimal, existing.annual_revenue)
-      .input("number_of_venues", sql.SmallInt, existing.number_of_venues)
-      .input("number_of_releases", sql.SmallInt, existing.number_of_releases)
-      .input("number_of_events_anually", sql.SmallInt, existing.number_of_events_anually)
-      .input("ParentAccount", sql.Int, existing.ParentAccount)
-      .input("Active", sql.Bit, true)
-      .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
-      .input("UpdatedAt", sql.SmallDateTime, new Date())
-      .input("ChangedBy", sql.Int, changedBy)
-      .input("StateProvinceID", sql.Int, StateProvinceID)
-      .input("CountryID", sql.Int, CountryID)
-      .input("ActionTypeID", sql.Int, 8)
-      .execute('ReactivateAccount');
+    // Try to log the action, but don't fail if it errors
+    try {
+      await pool.request()
+        .input("AccountID", sql.Int, id)
+        .input("AccountName", sql.NVarChar, existing.AccountName)
+        .input("CityID", sql.Int, existing.CityID)
+        .input("street_address1", sql.NVarChar, existing.street_address1)
+        .input("street_address2", sql.NVarChar, existing.street_address2)
+        .input("street_address3", sql.NVarChar, existing.street_address3)
+        .input("postal_code", sql.NVarChar, existing.postal_code)
+        .input("PrimaryPhone", sql.NVarChar, existing.PrimaryPhone)
+        .input("IndustryID", sql.Int, existing.IndustryID)
+        .input("Website", sql.NVarChar, existing.Website)
+        .input("fax", sql.NVarChar, existing.fax)
+        .input("email", sql.VarChar, existing.email)
+        .input("number_of_employees", sql.Int, existing.number_of_employees)
+        .input("annual_revenue", sql.Decimal, existing.annual_revenue)
+        .input("number_of_venues", sql.SmallInt, existing.number_of_venues)
+        .input("number_of_releases", sql.SmallInt, existing.number_of_releases)
+        .input("number_of_events_anually", sql.SmallInt, existing.number_of_events_anually)
+        .input("ParentAccount", sql.Int, existing.ParentAccount)
+        .input("Active", sql.Bit, true)
+        .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
+        .input("UpdatedAt", sql.SmallDateTime, new Date())
+        .input("ChangedBy", sql.Int, changedBy)
+        .input("StateProvinceID", sql.Int, existing.StateProvinceID) 
+        .input("CountryID", sql.Int, existing.CountryID)   
+        .input("ActionTypeID", sql.Int, 8)
+        .execute('ReactivateAccount');
+    } catch (procError) {
+      console.error("Stored procedure error (non-critical):", procError);
+      // Continue anyway - the main update succeeded
+    }
 
     return { message: "Account reactivated", AccountID: id };
   } catch (err) {

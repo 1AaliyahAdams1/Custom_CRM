@@ -62,7 +62,8 @@ export const deactivateAccount = async (id) => {
 export const reactivateAccount = async (id) => {
   if (!id) throw new Error("Account ID is required");
   try {
-    return await api.patch(`${RESOURCE}/${id}/reactivate`);
+    const response = await api.patch(`${RESOURCE}/${id}/reactivate`);
+    return response.data;
   } catch (error) {
     console.error("Reactivate account error:", error);
     throw error;

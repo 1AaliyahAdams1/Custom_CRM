@@ -18,6 +18,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TableView from "../../components/tableFormat/TableView";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import NotesPopup from "../../components/NotesComponent";
+import AttachmentsPopup from "../../components/AttachmentsComponent";
 import theme from "../../components/Theme";
 import { formatters } from "../../utils/formatters";
 import StatusMessage from "../../components/tableFormat/StatusMessage";
@@ -31,6 +32,7 @@ const AccountsPage = ({
   onSelectClick,
   onSelectAllClick,
   onDeactivate,
+  onReactivate, // ADD THIS LINE
   onEdit,
   onView,
   onCreate,
@@ -54,7 +56,10 @@ const AccountsPage = ({
   setNotesPopupOpen,
   selectedAccount,
   handleSaveNote,
-  handleEditNote,  
+  handleEditNote,
+  attachmentsPopupOpen,
+  setAttachmentsPopupOpen,
+  userName,
 }) => {
   // Local filter state
   const [accountFilter, setAccountFilter] = useState("all");
@@ -215,6 +220,7 @@ const AccountsPage = ({
               onView={onView}
               onEdit={onEdit}
               onDelete={onDeactivate}
+              onReactivate={onReactivate} // ADD THIS LINE
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
               onClaimAccount={onClaimAccount}
@@ -253,6 +259,23 @@ const AccountsPage = ({
             showExistingNotes={true}
             maxLength={255}
             required={false}
+          />
+        )}
+
+        {/* Attachments Popup */}
+        {attachmentsPopupOpen && selectedAccount && (
+          <AttachmentsPopup
+            open={attachmentsPopupOpen}
+            onClose={() => setAttachmentsPopupOpen(false)}
+            entityType="account"
+            entityId={selectedAccount?.AccountID}
+            entityName={selectedAccount?.AccountName}
+            userName={userName}
+            maxFileSize={10}
+            maxFiles={5}
+            onAttachmentsChange={(attachments) => {
+              console.log('Attachments updated:', attachments);
+            }}
           />
         )}
 
