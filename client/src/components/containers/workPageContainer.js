@@ -26,6 +26,7 @@ const WorkPageContainer = () => {
 
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
+  const [selectedAccount, setSelectedAccount] = useState(null);
 
   // ---------------- USER DATA ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -549,8 +550,52 @@ const WorkPageContainer = () => {
       throw err;
     }
   };
+  const handleAddNote = (account) => {
+    setSelectedAccount(account);
+    setNotesPopupOpen(true);
+  };
+
+  const handleSaveNote = async (noteData) => {
+    setStatusMessage("Note added successfully!");
+    setStatusSeverity("success");
+    setRefreshFlag((flag) => !flag);
+  };
+
+  const handleEditNote = async (noteData) => {
+    setStatusMessage("Note updated successfully!");
+    setStatusSeverity("success");
+    setRefreshFlag((flag) => !flag);
+  };
+
+  const handleDeactivateNote = async (noteId) => {
+    try {
+      await deactivateNote(noteId);
+      setStatusMessage("Note deactivated successfully!");
+      setStatusSeverity("success");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setStatusMessage(err.message || "Failed to deactivate note");
+      setStatusSeverity("error");
+      throw err;
+    }
+  };
+
+  const handleReactivateNote = async (noteId) => {
+    try {
+      await reactivateNote(noteId);
+      setStatusMessage("Note reactivated successfully!");
+      setStatusSeverity("success");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      setStatusMessage(err.message || "Failed to reactivate note");
+      setStatusSeverity("error");
+      throw err;
+    }
+  };
 
   // ---------------- DRAG AND DROP ----------------
+  
+  // Drag and drop for OPENING activities in workspace
   const handleDragStart = (event, activity) => {
     event.dataTransfer.setData("application/json", JSON.stringify(activity));
     event.dataTransfer.effectAllowed = "copy";
