@@ -1,6 +1,12 @@
 const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
+// Helper to convert values to numbers or null
+function toNullableNumber(value) {
+  const num = Number(value);
+  return isNaN(num) ? null : num;
+}
+
 //======================================
 // Get all accounts
 //======================================
@@ -25,7 +31,7 @@ async function createAccount(accountData, changedBy) {
     const pool = await sql.connect(dbConfig);
     const {
       AccountName,
-      CityID = null,
+      CityID,
       street_address1 = null,
       street_address2 = null,
       street_address3 = null,
@@ -42,14 +48,37 @@ async function createAccount(accountData, changedBy) {
       number_of_events_anually = null,
       ParentAccount = null,
       Active = true,
-      StateProvinceID = null,
-      CountryID = null
+      StateProvinceID,
+      CountryID,
+      sequenceID = 1,
     } = accountData;
 
-    // Call your CreateAccount stored procedure
+    // Validate foreign keys
+    async function validateFK(table, column, value) {
+      if (!value) return null;
+      const result = await pool.request()
+        .input("val", sql.Int, value)
+        .query(`SELECT 1 FROM ${table} WHERE ${column} = @val`);
+      return result.recordset.length > 0 ? value : null;
+    }
+
+    
+
+    const validCityID = await validateFK("City", "CityID", CityID);
+    const validStateProvinceID = await validateFK("StateProvince", "StateProvinceID", StateProvinceID);
+    const validCountryID = await validateFK("Country", "CountryID", CountryID);
+    const annualRevenueValue = annual_revenue != null ? Number(annual_revenue) : null;
+
+    if (annualRevenueValue !== null && isNaN(annualRevenueValue)) {
+      throw new Error("Invalid annual_revenue: not a number");
+    }
+
     const result = await pool.request()
+  
+
+    // Call your CreateAccount stored procedure
       .input("AccountName", sql.NVarChar(255), AccountName)
-      .input("CityID", sql.Int, CityID)
+      .input("CityID", sql.Int, validCityID)
       .input("street_address1", sql.NVarChar(255), street_address1)
       .input("street_address2", sql.NVarChar(255), street_address2)
       .input("street_address3", sql.NVarChar(255), street_address3)
@@ -60,21 +89,22 @@ async function createAccount(accountData, changedBy) {
       .input("fax", sql.NVarChar(63), fax)
       .input("email", sql.VarChar(255), email)
       .input("number_of_employees", sql.Int, number_of_employees)
-      .input("annual_revenue", sql.Decimal(18, 0), annual_revenue)
+      .input("annual_revenue", sql.Decimal(18, 0), annualRevenueValue)
       .input("number_of_venues", sql.SmallInt, number_of_venues)
       .input("number_of_releases", sql.SmallInt, number_of_releases)
       .input("number_of_events_anually", sql.SmallInt, number_of_events_anually)
       .input("ParentAccount", sql.Int, ParentAccount)
       .input("Active", sql.Bit, Active)
       .input("ChangedBy", sql.Int, changedBy)
-      .input("StateProvinceID", sql.Int, StateProvinceID)
-      .input("CountryID", sql.Int, CountryID)
-      .input("ActionTypeID", sql.Int, 1) // 1 = Create action type id
+      .input("StateProvinceID", sql.Int, validStateProvinceID)
+      .input("CountryID", sql.Int, validCountryID)
+      .input("ActionTypeID", sql.Int, 1) // Create action
+      .input("sequenceID", sql.Int, sequenceID)
       .execute("CreateAccount");
 
-    // Your SP should return AccountID via SELECT or OUTPUT param
-    // Assuming first recordset has the AccountID
+    // Get the AccountID safely
     const newAccountID = result.recordset?.[0]?.AccountID;
+    if (!newAccountID) throw new Error("Failed to create account");
 
     return { AccountID: newAccountID };
   } catch (err) {
