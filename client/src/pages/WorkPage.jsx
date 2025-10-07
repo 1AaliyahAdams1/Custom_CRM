@@ -56,6 +56,7 @@ import {
   RadioButtonUnchecked,
   Schedule,
   Note,
+  Email,
 } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import { formatDistanceToNow, format } from "date-fns";
@@ -70,8 +71,6 @@ const WorkPage = ({
   error,
   successMessage,
   onAddNote,
-  // notesPopupOpen,
-  // setNotesPopupOpen,
   selectedAccount,
   handleSaveNote,
   handleEditNote,  
@@ -96,9 +95,10 @@ const WorkPage = ({
   showEmailForm = {},
   onUpdateActivity = async () => {},
   onDeleteActivity = async () => {},
-  onDragStart = () => {},
-  onDrop = () => {},
-  onDragOver = (e) => e.preventDefault(),
+  onDragStart = () => {}, // For opening in workspace
+  onDrop = () => {}, // For opening in workspace
+  onDragOver = (e) => e.preventDefault(), // For opening in workspace
+  onReorderActivities = () => {}, // For reordering in list
   activityMetadata = { priorityLevels: [], activityTypes: [] },
   onClearMessages = () => {},
   showStatus = () => {},
@@ -110,6 +110,9 @@ const WorkPage = ({
   const [completeNotes, setCompleteNotes] = useState("");
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   
+  // NEW: Drag and drop reordering state
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const [editFormData, setEditFormData] = useState({
     dueToStart: "",
@@ -196,6 +199,11 @@ const WorkPage = ({
     }
   };
 
+  // NEW: Check if activity is an email activity (TypeID = 3)
+  const isEmailActivity = (activity) => {
+    return activity && (activity.TypeID === 3 || activity.ActivityTypeID === 3);
+  };
+
   // Dialog handlers
   const handleEditClick = () => {
     if (currentActivity) {
@@ -267,7 +275,45 @@ const WorkPage = ({
     }
   };
 
-  
+  // NEW: Drag and drop handlers for activities list (reordering + workspace drop)
+  const handleListDragStart = (e, index, activity) => {
+    setDraggedIndex(index);
+    // Store activity data for workspace drop
+    e.dataTransfer.setData("application/json", JSON.stringify(activity));
+    // Allow both move (reorder) and copy (to workspace)
+    e.dataTransfer.effectAllowed = "copyMove";
+  };
+
+  const handleListDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverIndex(index);
+  };
+
+  const handleListDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleListDrop = (e, dropIndex) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // Call the parent handler to reorder activities
+    onReorderActivities(draggedIndex, dropIndex);
+    
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleListDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
   const CustomTabPanel = ({ children, value, index, ...other }) => (
     <div
@@ -451,7 +497,7 @@ const WorkPage = ({
   };
 
   // ============================================================
-  // ACTIVITIES LIST VIEW COMPONENT
+  // ACTIVITIES LIST VIEW COMPONENT (WITH SCROLLBAR AND REORDERING)
   // ============================================================
   const ActivitiesListView = () => (
     <List sx={{ p: 0 }}>
@@ -502,17 +548,24 @@ const WorkPage = ({
           <React.Fragment key={activity.ActivityID || index}>
             <ListItem
               draggable
-              onDragStart={(e) => onDragStart(e, activity)}
+              onDragStart={(e) => handleListDragStart(e, index, activity)}
+              onDragOver={(e) => handleListDragOver(e, index)}
+              onDragLeave={handleListDragLeave}
+              onDrop={(e) => handleListDrop(e, index)}
+              onDragEnd={handleListDragEnd}
               onClick={() => onActivityClick(activity)}
               sx={{
-                cursor: 'pointer',
+                cursor: 'move',
                 '&:hover': { backgroundColor: '#f5f5f5' },
                 borderLeft: `4px solid ${getStatusColor(activity.Status)}`,
                 py: 2,
-                px: 2
+                px: 2,
+                backgroundColor: dragOverIndex === index ? '#e3f2fd' : 'transparent',
+                borderTop: dragOverIndex === index ? '2px solid #2196f3' : 'none',
+                transition: 'all 0.2s ease'
               }}
             >
-              <DragIndicator sx={{ mr: 1, color: '#ccc', cursor: 'grab' }} />
+              <DragIndicator sx={{ mr: 1, color: '#999', cursor: 'grab' }} />
               <ListItemText
                 primary={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -593,13 +646,14 @@ const WorkPage = ({
         {/* Main Content */}
         <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           
-          {/* Left Panel - Activities List or Sequence View */}
+          {/* Left Panel - Activities List or Sequence View (WITH SCROLLBAR) */}
           <Paper sx={{ 
             width: viewMode === 'sequence' ? '100%' : 400,
             display: 'flex', 
             flexDirection: 'column',
             borderRadius: 0,
-            borderRight: viewMode === 'activities' ? '1px solid #e0e0e0' : 'none'
+            borderRight: viewMode === 'activities' ? '1px solid #e0e0e0' : 'none',
+            overflow: 'hidden' // IMPORTANT: Prevents overflow
           }}>
             {viewMode === 'activities' ? (
               <>
@@ -609,13 +663,14 @@ const WorkPage = ({
                   borderBottom: '1px solid #e0e0e0',
                   flexDirection: 'column',
                   alignItems: 'stretch',
-                  py: 2
+                  py: 2,
+                  flexShrink: 0 // Prevents toolbar from shrinking
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                     <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, flex: 1 }}>
                       My Activities
                     </Typography>
-                    <Tooltip title="Manage your work activities with smart workflow" arrow>
+                    <Tooltip title="Drag activities to reorder or drop into workspace" arrow>
                       <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
                     </Tooltip>
                   </Box>
@@ -661,14 +716,47 @@ const WorkPage = ({
                   </Typography>
                 </Toolbar>
 
-                {/* Activities List */}
-                <Box sx={{ flex: 1, overflow: 'auto' }}>
+                {/* Activities List (SCROLLABLE) */}
+                <Box sx={{ 
+                  flex: 1, 
+                  overflow: 'auto', // ENABLES SCROLLING
+                  '&::-webkit-scrollbar': {
+                    width: '8px',
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    backgroundColor: '#f1f1f1',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: '#888',
+                    borderRadius: '4px',
+                    '&:hover': {
+                      backgroundColor: '#555',
+                    },
+                  },
+                }}>
                   <ActivitiesListView />
                 </Box>
               </>
             ) : (
-              /* Sequence View */
-              <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+              /* Sequence View (SCROLLABLE) */
+              <Box sx={{ 
+                flex: 1, 
+                overflow: 'auto', 
+                p: 3,
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: '#f1f1f1',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: '#888',
+                  borderRadius: '4px',
+                  '&:hover': {
+                    backgroundColor: '#555',
+                  },
+                },
+              }}>
                 <SequenceView />
               </Box>
             )}
@@ -871,7 +959,7 @@ const WorkPage = ({
                               </Grid>
                             </CardContent>
 
-                            <CardActions sx={{ p: 3, pt: 0, gap: 1 }}>
+                            <CardActions sx={{ p: 3, pt: 0, gap: 1, flexWrap: 'wrap' }}>
                               <Button
                                 variant="contained"
                                 startIcon={<CheckCircle />}
@@ -880,14 +968,20 @@ const WorkPage = ({
                               >
                                 {currentActivity.Completed ? 'Completed' : 'Mark Complete'}
                               </Button>
+                              
+                              {/* CONDITIONAL EMAIL BUTTON - Only show for TypeID = 3 */}
+                              {isEmailActivity(currentActivity) && (
+                                <Button
+                                  variant="outlined"
+                                  color="primary"
+                                  startIcon={<Email />}
+                                  onClick={() => onSendEmailClick(currentActivity.ActivityID)}
+                                >
+                                  Send Email
+                                </Button>
+                              )}
+                              
                               <Button
-                                variant="outlined"
-                                color="primary"
-                                onClick={() => onSendEmailClick(currentActivity.ActivityID)} // Use the prop, not local function
-                              >
-                                Send Email
-                              </Button>
-                               <Button
                                 variant="outlined"
                                 color="primary"
                                 startIcon={<Note />}
@@ -895,7 +989,6 @@ const WorkPage = ({
                               >
                                 Add Note
                               </Button>
-
 
                               <Button
                                 variant="outlined"
@@ -1020,33 +1113,33 @@ const WorkPage = ({
           </DialogActions>
         </Dialog>
 
-      {/* Notes Popup */}
-{notesPopupOpen && currentActivity && (
-  <NotesPopup
-    open={notesPopupOpen}
-    onClose={() => setNotesPopupOpen(false)}
-    onSave={handleSaveNote}
-    onEdit={handleEditNote}
-    entityType="Activity"
-    entityId={currentActivity.ActivityID}
-    entityName={`${currentActivity.AccountName} - ${currentActivity.ActivityTypeName}`}
-    showExistingNotes={true}
-    maxLength={255}
-    required={false}
-  />
-)} 
+        {/* Notes Popup */}
+        {notesPopupOpen && currentActivity && (
+          <NotesPopup
+            open={notesPopupOpen}
+            onClose={() => setNotesPopupOpen(false)}
+            onSave={handleSaveNote}
+            onEdit={handleEditNote}
+            entityType="Activity"
+            entityId={currentActivity.ActivityID}
+            entityName={`${currentActivity.AccountName} - ${currentActivity.ActivityTypeName}`}
+            showExistingNotes={true}
+            maxLength={255}
+            required={false}
+          />
+        )} 
 
-{/* Status Snackbar */}
-<Snackbar
+        {/* Status Snackbar */}
+        <Snackbar
           open={!!statusMessage}
           autoHideDuration={4000}
           onClose={() => showStatus('')}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
           sx={{
-              '& .MuiSnackbarContent-root': {
-                fontSize: '1.1rem',
-                minWidth: '400px',
-              }
+            '& .MuiSnackbarContent-root': {
+              fontSize: '1.1rem',
+              minWidth: '400px',
+            }
           }}
         >
           <Alert 
@@ -1054,10 +1147,10 @@ const WorkPage = ({
             severity={statusSeverity} 
             sx={{ 
               width: '100%',
-              fontSize: '1.1rem', // Increased font size
+              fontSize: '1.1rem',
               '& .MuiAlert-message': {
-                fontSize: '1.1rem', // Ensure message text is larger
-                fontWeight: 500, // Make text slightly bolder
+                fontSize: '1.1rem',
+                fontWeight: 500,
               }
             }}
           >
@@ -1065,32 +1158,21 @@ const WorkPage = ({
           </Alert>
         </Snackbar>
 
-        {/* Success Message
-        {successMessage && (
-          <Alert 
-            severity="success" 
-            sx={{ position: 'fixed', top: 16, right: 16, zIndex: 1300 }}
-            onClose={onClearMessages}
-          >
-            {successMessage}
-          </Alert>
-        )}*/}
-
-        {/* Error Alert - Also centered for consistency */}
+        {/* Error Alert */}
         {error && (
           <Alert 
             severity="error" 
             sx={{ 
               position: 'fixed', 
               top: 16, 
-              left: '50%', // Position at center
-              transform: 'translateX(-50%)', // Center horizontally
+              left: '50%',
+              transform: 'translateX(-50%)',
               zIndex: 1300,
-              fontSize: '1.1rem', // Increased font size
-              minWidth: '400px', // Minimum width
+              fontSize: '1.1rem',
+              minWidth: '400px',
               '& .MuiAlert-message': {
-                fontSize: '1.1rem', // Ensure message text is larger
-                fontWeight: 500, // Make text slightly bolder
+                fontSize: '1.1rem',
+                fontWeight: 500,
               }
             }}
             onClose={onClearMessages}

@@ -8,10 +8,12 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import TourIcon from '@mui/icons-material/Tour';
 import TriggerEFMSyncButton from './TriggerEFMSyncButton';
 import { startTour } from "../hooks/useOnboarding";
-
+import { useSettings } from "../context/SettingsContext";
 
 const Header = () => {
   const navigate = useNavigate();
+  const { currentTheme } = useSettings();
+  
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
     return savedUser ? JSON.parse(savedUser) : null;
@@ -40,16 +42,31 @@ const Header = () => {
   }, []);
 
   return (
-    <AppBar position="sticky" sx={{ backgroundColor: "#000", height: "82px" }}>
-      <Toolbar sx={{ display: "flex", justifyContent: "flex-end", color: "#fff", height: "200px" }}>
-
+    <AppBar 
+      position="sticky" 
+      sx={{ 
+        backgroundColor: currentTheme.background.paper,
+        borderBottom: `1px solid ${currentTheme.divider}`,
+        height: "82px",
+        transition: 'all 0.3s ease'
+      }}
+    >
+      <Toolbar 
+        sx={{ 
+          display: "flex", 
+          justifyContent: "flex-end", 
+          color: currentTheme.text.primary, 
+          height: "100%",
+          transition: 'all 0.3s ease'
+        }}
+      >
         <Box display="flex" alignItems="center" gap={1}>
           <TriggerEFMSyncButton />
 
           {user ? (
             <>
-              <AccountCircleIcon sx={{ color: "#fff" }} />
-              <Typography sx={{ color: "#fff" }}>
+              <AccountCircleIcon sx={{ color: currentTheme.text.primary }} />
+              <Typography sx={{ color: currentTheme.text.primary }}>
                 {user.Username}
               </Typography>
 
@@ -62,6 +79,7 @@ const Header = () => {
                   padding: '4px 8px',
                   borderRadius: 1,
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  color: currentTheme.text.primary,
                   "&:hover": {
                     backgroundColor: "rgba(33, 150, 243, 0.15)",
                     color: '#2196F3',
@@ -77,11 +95,10 @@ const Header = () => {
                     fontWeight: 500,
                   }}
                 >
-                  Tour
+                  User Guide
                 </Typography>
               </Box>
 
-              {/* Settings Section - clickable */}
               <Box
                 display="flex"
                 alignItems="center"
@@ -91,8 +108,9 @@ const Header = () => {
                   padding: '4px 8px',
                   borderRadius: 1,
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  color: currentTheme.text.primary,
                   "&:hover": {
-                    backgroundColor: "rgba(33, 150, 243, 0.15)", // Blue hover like navbar
+                    backgroundColor: "rgba(33, 150, 243, 0.15)",
                     color: '#2196F3',
                   }
                 }}
@@ -110,7 +128,6 @@ const Header = () => {
                 </Typography>
               </Box>
 
-              {/* Logout Section - clickable */}
               <Box
                 display="flex"
                 alignItems="center"
@@ -120,8 +137,9 @@ const Header = () => {
                   padding: '4px 8px',
                   borderRadius: 1,
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  color: currentTheme.text.primary,
                   "&:hover": {
-                    backgroundColor: "rgba(33, 150, 243, 0.15)", // Blue hover like navbar
+                    backgroundColor: "rgba(33, 150, 243, 0.15)",
                     color: '#2196F3',
                   }
                 }}
@@ -140,7 +158,7 @@ const Header = () => {
               </Box>
             </>
           ) : (
-            <Typography sx={{ color: "#fff" }}>Not logged in</Typography>
+            <Typography sx={{ color: currentTheme.text.primary }}>Not logged in</Typography>
           )}
         </Box>
       </Toolbar>
