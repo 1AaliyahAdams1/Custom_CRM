@@ -3,9 +3,6 @@ const workService = require("../services/workService");
 //======================================
 // Get activities (main work page)
 //======================================
-//======================================
-// Get activities (main work page)
-//======================================
 const getActivities = async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
@@ -27,6 +24,24 @@ const getActivities = async (req, res) => {
       accountId: accountId
     });
     
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get user accounts with sequences
+//======================================
+const getUserAccounts = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: "Valid User ID is required" });
+    }
+
+    const data = await workService.getUserAccountsWithSequences(userId);
     res.status(200).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -258,6 +273,83 @@ const getActivityMetadata = async (req, res) => {
   }
 };
 
+//======================================
+// Update sequence item status
+//======================================
+const updateSequenceItemStatus = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    const sequenceItemId = parseInt(req.params.sequenceItemId, 10);
+    const accountId = parseInt(req.params.accountId, 10);
+    const { completed } = req.body;
+
+    if (!userId || !sequenceItemId || !accountId || isNaN(userId) || isNaN(sequenceItemId) || isNaN(accountId)) {
+      return res.status(400).json({ error: "Valid User ID, Sequence Item ID, and Account ID are required" });
+    }
+
+    if (typeof completed !== 'boolean') {
+      return res.status(400).json({ error: "Completed status must be a boolean" });
+    }
+
+    const sequenceRepo = require("../data/sequenceRepository");
+    const result = await sequenceRepo.updateSequenceItemStatus(sequenceItemId, accountId, userId, completed);
+    
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get sequence progress
+//======================================
+const getSequenceProgress = async (req, res) => {
+  try {
+    const accountId = parseInt(req.params.accountId, 10);
+    const sequenceId = parseInt(req.params.sequenceId, 10);
+
+    if (!accountId || !sequenceId || isNaN(accountId) || isNaN(sequenceId)) {
+      return res.status(400).json({ error: "Valid Account ID and Sequence ID are required" });
+    }
+
+    const sequenceRepo = require("../data/sequenceRepository");
+    const result = await sequenceRepo.getSequenceProgress(accountId, sequenceId);
+    
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get or create activity from sequence item
+//======================================
+const getOrCreateActivityFromSequenceItem = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    const sequenceItemId = parseInt(req.params.sequenceItemId, 10);
+    const accountId = parseInt(req.params.accountId, 10);
+
+    if (!userId || !sequenceItemId || !accountId || 
+        isNaN(userId) || isNaN(sequenceItemId) || isNaN(accountId)) {
+      return res.status(400).json({ 
+        error: "Valid User ID, Sequence Item ID, and Account ID are required" 
+      });
+    }
+
+    const result = await workService.getOrCreateActivityFromSequenceItem(
+      sequenceItemId,
+      accountId,
+      userId
+    );
+    
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
 module.exports = {
   getActivities,
   getActivitiesByUser,
@@ -271,4 +363,8 @@ module.exports = {
   getActivitiesByStatus,
   getDayView,
   getActivityMetadata,
+  getUserAccounts,
+  updateSequenceItemStatus,
+  getSequenceProgress,  
+  getOrCreateActivityFromSequenceItem,
 };
