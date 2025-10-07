@@ -1024,80 +1024,51 @@ const handleListDragEnd = () => {
             required={false}
           />
         )} 
-        {/* Notes Popup */}
-        {notesPopupOpen && currentActivity && (
-          <NotesPopup
-            open={notesPopupOpen}
-            onClose={() => setNotesPopupOpen(false)}
-            onSave={handleSaveNote}
-            onEdit={handleEditNote}
-            entityType="Activity"
-            entityId={currentActivity.ActivityID}
-            entityName={`${currentActivity.AccountName} - ${currentActivity.ActivityTypeName}`}
-            showExistingNotes={true}
-            maxLength={255}
-            required={false}
-          />
-        )} 
+       
+{/* Status Snackbar */}
+<Snackbar
+  open={!!statusMessage}
+  autoHideDuration={4000}
+  onClose={() => showStatus('')}
+  anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+  sx={{
+    '& .MuiSnackbarContent-root': {
+      fontSize: '1.1rem',
+      minWidth: '400px',
+    },
+  }} // <-- fixed missing closing brace
+>
+  <Alert 
+    onClose={() => showStatus('')} 
+    severity={statusSeverity} 
+    sx={{ 
+      width: '100%',
+      fontSize: '1.1rem',
+      '& .MuiAlert-message': {
+        fontSize: '1.1rem',
+        fontWeight: 500,
+      },
+    }}
+  >
+    {statusMessage}
+  </Alert>
+</Snackbar>
 
-        {/* Status Snackbar */}
-        <Snackbar
-        {/* Status Snackbar */}
-        <Snackbar
-          open={!!statusMessage}
-          autoHideDuration={4000}
-          onClose={() => showStatus('')}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-          sx={{
-            '& .MuiSnackbarContent-root': {
-              fontSize: '1.1rem',
-              minWidth: '400px',
-            }
-            '& .MuiSnackbarContent-root': {
-              fontSize: '1.1rem',
-              minWidth: '400px',
-            }
-          }}
-        >
-          <Alert 
-            onClose={() => showStatus('')} 
-            severity={statusSeverity} 
-            sx={{ 
-              width: '100%',
-              fontSize: '1.1rem',
-              fontSize: '1.1rem',
-              '& .MuiAlert-message': {
-                fontSize: '1.1rem',
-                fontWeight: 500,
-                fontSize: '1.1rem',
-                fontWeight: 500,
-              }
-            }}
-          >
-            {statusMessage}
-          </Alert>
-        </Snackbar>
 
         {/* Error Alert */}
-        {/* Error Alert */}
+    
         {error && (
           <Alert 
             severity="error" 
             sx={{ 
               position: 'fixed', 
               top: 16, 
-              left: '50%',
               transform: 'translateX(-50%)',
               left: '50%',
-              transform: 'translateX(-50%)',
               zIndex: 1300,
               fontSize: '1.1rem',
               minWidth: '400px',
-              fontSize: '1.1rem',
-              minWidth: '400px',
               '& .MuiAlert-message': {
-                fontSize: '1.1rem',
-                fontWeight: 500,
                 fontSize: '1.1rem',
                 fontWeight: 500,
               }
