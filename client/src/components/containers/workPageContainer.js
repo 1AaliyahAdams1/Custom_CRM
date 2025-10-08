@@ -215,7 +215,7 @@ const WorkPageContainer = () => {
 
   const handleAccountChange = useCallback((accountId) => {
     console.log('Account changed to:', accountId);
-    
+    setSelectedAccountId(accountId);
     // Close all tabs when switching accounts/views
     setOpenTabs([]);
     setActiveTab(null);
