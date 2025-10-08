@@ -324,7 +324,6 @@ async function createSequenceItem(itemData, changedBy) {
     const {
       SequenceID,
       ActivityTypeID,
-      ActivityTypeID,
       SequenceItemDescription,
       DaysFromStart,
       Active = true
@@ -518,9 +517,7 @@ async function updateSequenceItem(id, itemData, changedBy) {
 
     const {
       ActivityTypeID = existing.ActivityTypeID,
-      ActivityTypeID = existing.ActivityTypeID,
       SequenceItemDescription = existing.SequenceItemDescription,
-      DaysFromStart = existing.DaysFromStart
       DaysFromStart = existing.DaysFromStart
     } = itemData;
 
@@ -625,7 +622,6 @@ const getActivities = async (userId, options = {}) => {
       whereConditions.push("a.AccountID = @AccountId");
     }
     
-    let orderBy = "a.DueToStart ASC, ISNULL(pl.PriorityLevelValue, 0) DESC";
     let orderBy = "a.DueToStart ASC, ISNULL(pl.PriorityLevelValue, 0) DESC";
     
     if (options.sortBy) {

@@ -6,17 +6,12 @@ import {
   getUserAccounts,
   getSequenceProgress,
   updateSequenceItemStatus,
-  getUserAccounts,
-  getSequenceProgress,
-  updateSequenceItemStatus,
   getActivityForWorkspace,
   completeActivity,
   updateActivity,
+  getActivityMetadata,
+  getOrCreateActivityFromSequenceItem,
   deleteActivity,
-  getActivityMetadata,
-  getOrCreateActivityFromSequenceItem
-  getActivityMetadata,
-  getOrCreateActivityFromSequenceItem
 } from "../../services/workService";
 import {
   createNote,
@@ -52,11 +47,6 @@ const WorkPageContainer = () => {
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [sequenceProgress, setSequenceProgress] = useState(null);
 
-  // Account and sequence state
-  const [userAccounts, setUserAccounts] = useState([]);
-  const [selectedAccountId, setSelectedAccountId] = useState(null);
-  const [sequenceProgress, setSequenceProgress] = useState(null);
-
   // Filter and sort state
   const [currentSort, setCurrentSort] = useState('dueDate');
   const [currentFilter, setCurrentFilter] = useState('all');
@@ -77,26 +67,6 @@ const WorkPageContainer = () => {
   const [statusMessage, setStatusMessage] = useState("");
   const [statusSeverity, setStatusSeverity] = useState("success");
 
-  // ---------------- FETCH USER ACCOUNTS ----------------
-  const fetchUserAccounts = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      const response = await getUserAccounts(userId);
-      
-      if (response.success && response.data) {
-        setUserAccounts(response.data);
-        console.log('User accounts loaded:', response.data.length);
-      } else {
-        setUserAccounts([]);
-      }
-    } catch (err) {
-      console.error('Error fetching user accounts:', err);
-      setUserAccounts([]);
-    }
-  }, [userId]);
-
-  // ---------------- FETCH WORK PAGE DATA ----------------
   // ---------------- FETCH USER ACCOUNTS ----------------
   const fetchUserAccounts = useCallback(async () => {
     if (!userId) return;
@@ -224,12 +194,6 @@ const WorkPageContainer = () => {
 
   useEffect(() => {
     if (userId) {
-      fetchUserAccounts();
-    }
-  }, [fetchUserAccounts]);
-
-  useEffect(() => {
-    if (userId) {
       fetchWorkPageData();
     }
   }, [fetchWorkPageData]);
@@ -251,21 +215,15 @@ const WorkPageContainer = () => {
 
   const handleAccountChange = useCallback((accountId) => {
     console.log('Account changed to:', accountId);
-  const handleAccountChange = useCallback((accountId) => {
-    console.log('Account changed to:', accountId);
-    setSelectedAccountId(accountId);
     
-    // Close all tabs when switching accounts/views
     // Close all tabs when switching accounts/views
     setOpenTabs([]);
     setActiveTab(null);
     setTabActivities({});
     setTabLoading({});
     setSequenceProgress(null);
-    setSequenceProgress(null);
   }, []);
 
-  // ---------------- REORDER ACTIVITIES ----------------
   // ---------------- REORDER ACTIVITIES ----------------
   const handleReorderActivities = useCallback((fromIndex, toIndex) => {
     console.log('Reordering activities from', fromIndex, 'to', toIndex);
@@ -423,7 +381,6 @@ const WorkPageContainer = () => {
       
       if (response.success && response.data) {
         setSuccessMessage(`Activity completed successfully!`);
-        setStatusMessage("Activity completed successfully!");
         setStatusSeverity("success");
         
         const tabIndex = openTabs.findIndex(tab => tab.activityId === activityId);
@@ -458,7 +415,6 @@ const WorkPageContainer = () => {
       
       if (response.success && response.data) {
         setSuccessMessage("Activity updated successfully!");
-        setStatusMessage("Activity updated successfully!");
         setStatusSeverity("success");
         
         setTabActivities(prev => ({
@@ -495,7 +451,6 @@ const WorkPageContainer = () => {
       
       if (response.success && response.data) {
         setSuccessMessage("Activity deleted successfully!");
-        setStatusMessage("Activity deleted successfully!");
         setStatusSeverity("success");
         
         const tabIndex = openTabs.findIndex(tab => tab.activityId === activityId);
@@ -575,27 +530,6 @@ const WorkPageContainer = () => {
     event.dataTransfer.effectAllowed = "copy";
   };
 
- const handleDrop = async (event) => {
-  event.preventDefault();
-  try {
-    const droppedData = JSON.parse(event.dataTransfer.getData("application/json"));
-    console.log('Dropped data:', droppedData);
-    
-    // Check if it's a sequence item without an activity
-    if (droppedData.SequenceItemID && !droppedData.ActivityID) {
-      // This is a sequence item that needs activity creation
-      await handleSequenceItemClick(droppedData);
-    } else if (droppedData.ActivityID) {
-      // This is an existing activity
-      await handleActivityClick(droppedData);
-    } else {
-      console.warn('Unknown drop data format');
-    }
-  } catch (err) {
-    console.error("Error handling drop:", err);
-    showStatus('Failed to open item', 'error');
-  }
-};
  const handleDrop = async (event) => {
   event.preventDefault();
   try {
@@ -703,8 +637,6 @@ const WorkPageContainer = () => {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onReorderActivities={handleReorderActivities}
-        onReorderActivities={handleReorderActivities}
-        
         // Metadata for editing forms
         activityMetadata={activityMetadata}
         
@@ -727,5 +659,6 @@ const WorkPageContainer = () => {
     </>
   );
 };
+
 
 export default WorkPageContainer;
