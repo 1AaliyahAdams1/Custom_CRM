@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Alert, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { fetchActivityById, deactivateActivity, deleteActivity } from "../../services/activityService";
 import { getAllAccounts } from "../../services/accountService";
@@ -10,6 +11,7 @@ import { getAllNotes } from "../../services/noteService";
 import { getAllAttachments } from "../../services/attachmentService";
 
 export default function ActivitiesDetailsPage() {
+  const theme = useTheme();
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -490,7 +492,12 @@ export default function ActivitiesDetailsPage() {
   if (!activity) return <Alert severity="warning">Activity not found.</Alert>;
 
   return (
-    <Box sx={{ width: "100%", p: 2, backgroundColor: "#fafafa", minHeight: "100vh" }}>
+    <Box sx={{ 
+      width: "100%", 
+      p: 2, 
+      backgroundColor: theme.palette.background.default, 
+      minHeight: "100vh" 
+    }}>
       {successMessage && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
           {successMessage}

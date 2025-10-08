@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Box, Alert, Typography } from "@mui/material";
+import { Box, Alert, Typography, CircularProgress } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { fetchAccountById } from "../../services/accountService";
 import { getAllContacts } from "../../services/contactService";
@@ -9,11 +10,10 @@ import { getAllActivities } from "../../services/activityService";
 import { getAllNotes } from "../../services/noteService";
 import { getAllAttachments } from "../../services/attachmentService";
 
-
-
 export default function AccountDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
   
   const idRef = useRef(id);
   const navigateRef = useRef(navigate);
@@ -68,7 +68,6 @@ export default function AccountDetailsPage() {
     { key: 'AnnualRevenue', label: 'Annual Revenue', type: 'currency' },
     { key: 'NumberOfEmployees', label: 'Number of Employees', type: 'number' },
     { key: 'Description', label: 'Description', type: 'textarea' },
-    { key: 'Active', label: 'Active', type: 'boolean' },
     { key: 'CreatedAt', label: 'Created At', type: 'datetime' },
     { key: 'UpdatedAt', label: 'Updated At', type: 'datetime' },
   ], []);
@@ -102,7 +101,6 @@ export default function AccountDetailsPage() {
         const accountId = parseInt(idRef.current, 10);
         
         // Filter attachments where EntityID = accountId AND EntityTypeID = Account type
-        // Need to know the EntityTypeID for "Account" - assuming it's 1
         const ACCOUNT_ENTITY_TYPE_ID = 1; 
         
         const filteredData = allData.filter(item => 
@@ -198,7 +196,6 @@ export default function AccountDetailsPage() {
         },
         dataService: async () => {
           try {
-            // Fetch the current account data
             const accountData = await fetchAccountById(parseInt(idRef.current, 10));
             const currentAccount = accountData?.data || accountData;
             
@@ -256,9 +253,9 @@ export default function AccountDetailsPage() {
         },
         dataService: createAttachmentDataService(), 
       },
-      ];
+    ];
     return tabs;
-    }, [createFilteredDataService, createAttachmentDataService, processDealData]);
+  }, [createFilteredDataService, createAttachmentDataService, processDealData]);
 
   // action handlers
   const relatedDataActions = useMemo(() => {
@@ -377,12 +374,59 @@ export default function AccountDetailsPage() {
     console.log('Add attachment to account:', item);
   }, []);
 
-  if (loading) return <Typography>Loading account details...</Typography>;
-  if (error) return <Alert severity="error">{error}</Alert>;
-  if (!account) return <Alert severity="warning">Account not found.</Alert>;
+  if (loading) {
+    return (
+      <Box sx={{ 
+        width: "100%", 
+        p: 2, 
+        backgroundColor: theme.palette.background.default, 
+        minHeight: "100vh",
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <CircularProgress />
+        <Typography variant="body2" sx={{ mt: 2, color: theme.palette.text.secondary }}>
+          Loading account details...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ 
+        width: "100%", 
+        p: 2, 
+        backgroundColor: theme.palette.background.default, 
+        minHeight: "100vh" 
+      }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
+
+  if (!account) {
+    return (
+      <Box sx={{ 
+        width: "100%", 
+        p: 2, 
+        backgroundColor: theme.palette.background.default, 
+        minHeight: "100vh" 
+      }}>
+        <Alert severity="warning">Account not found.</Alert>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ width: "100%", p: 2, backgroundColor: "#fafafa", minHeight: "100vh" }}>
+    <Box sx={{ 
+      width: "100%", 
+      p: 2, 
+      backgroundColor: theme.palette.background.default, 
+      minHeight: "100vh" 
+    }}>
       {successMessage && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
           {successMessage}
