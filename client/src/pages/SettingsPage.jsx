@@ -24,113 +24,42 @@ import {
     Chip,
     Select,
     MenuItem,
-    FormControl,
-    InputLabel
+    FormControl
 } from "@mui/material";
 import {
     Person,
     Settings as SettingsIcon,
-    Notifications,
     Security,
     Edit,
     Save,
     Visibility,
-    NotificationsActive,
     Shield,
     Key,
-    Phone,
-    Email,
-    Business,
     CloudSync,
     Restore,
-    CheckCircle
+    CheckCircle,
+    ViewCompact,
+    Help,
+    ViewList
 } from "@mui/icons-material";
-import theme from "../components/Theme";
+import { useSettings } from "../context/SettingsContext";
 
 const Settings = () => {
+    const {
+        settings,
+        updateSettings,
+        saveAllSettings,
+        resetSettings,
+        lastSaved,
+        currentTheme,
+        getSpacing,
+        defaultSettings
+    } = useSettings();
+
     const [activeTab, setActiveTab] = useState(0);
     const [saveStatus, setSaveStatus] = useState({ open: false, message: '', severity: 'success' });
-    const [lastSaved, setLastSaved] = useState(null);
-    
-    // Storage key for settings
-    const STORAGE_KEY = 'crm_user_settings';
-    
-    // Default settings
-    const defaultSettings = {
-        profile: {
-            name: "",
-            email: "",
-            phone: "",
-            department: "",
-            bio: ""
-        },
-        notifications: {
-            email: true,
-            push: true,
-            sms: false,
-            marketing: false
-        },
-        security: {
-            twoFactor: true,
-            loginAlerts: true,
-            sessionTimeout: 30
-        },
-        general: {
-            theme: "light",
-            language: "English",
-            autoSave: true,
-            timezone: "UTC-5"
-        }
-    };
-
-    // Load settings from memory storage on component mount
-    const loadSettings = () => {
-        try {
-            const stored = window.settingsStorage || {};
-            return {
-                profile: { ...defaultSettings.profile, ...stored.profile },
-                notifications: { ...defaultSettings.notifications, ...stored.notifications },
-                security: { ...defaultSettings.security, ...stored.security },
-                general: { ...defaultSettings.general, ...stored.general }
-            };
-        } catch (error) {
-            console.error('Error loading settings:', error);
-            return defaultSettings;
-        }
-    };
-
-    // Save settings to memory storage
-    const saveSettings = (newSettings) => {
-        try {
-            // Create global storage if it doesn't exist
-            if (!window.settingsStorage) {
-                window.settingsStorage = {};
-            }
-            
-            // Save to memory
-            window.settingsStorage = {
-                ...newSettings,
-                lastSaved: new Date().toISOString()
-            };
-            
-            setLastSaved(new Date());
-            return true;
-        } catch (error) {
-            console.error('Error saving settings:', error);
-            return false;
-        }
-    };
-
-    // Initialize settings from storage
-    const [settings, setSettings] = useState(() => {
-        const loaded = loadSettings();
-        if (window.settingsStorage?.lastSaved) {
-            setLastSaved(new Date(window.settingsStorage.lastSaved));
-        }
-        return loaded;
-    });
-
     const [hasChanges, setHasChanges] = useState(false);
+    const [isAutoSaving, setIsAutoSaving] = useState(false);
 
     // Check for changes
     useEffect(() => {
@@ -138,7 +67,6 @@ const Settings = () => {
         const currentSettingsString = JSON.stringify(settings);
         const storedSettingsString = JSON.stringify({
             profile: { ...defaultSettings.profile, ...stored.profile },
-            notifications: { ...defaultSettings.notifications, ...stored.notifications },
             security: { ...defaultSettings.security, ...stored.security },
             general: { ...defaultSettings.general, ...stored.general }
         });
@@ -149,7 +77,6 @@ const Settings = () => {
     const tabs = [
         { id: "profile", label: "Profile", icon: Person },
         { id: "general", label: "General", icon: SettingsIcon },
-        { id: "notifications", label: "Notifications", icon: Notifications },
         { id: "security", label: "Security", icon: Security },
     ];
 
@@ -157,15 +84,8 @@ const Settings = () => {
         setActiveTab(newValue);
     };
 
-    const updateSettings = (section, updates) => {
-        setSettings(prev => ({
-            ...prev,
-            [section]: { ...prev[section], ...updates }
-        }));
-    };
-
     const handleSaveSettings = () => {
-        const success = saveSettings(settings);
+        const success = saveAllSettings();
         
         if (success) {
             setSaveStatus({
@@ -184,14 +104,7 @@ const Settings = () => {
     };
 
     const handleResetSettings = () => {
-        setSettings(defaultSettings);
-        
-        // Clear storage
-        if (window.settingsStorage) {
-            delete window.settingsStorage;
-        }
-        
-        setLastSaved(null);
+        resetSettings();
         
         setSaveStatus({
             open: true,
@@ -200,40 +113,38 @@ const Settings = () => {
         });
     };
 
-
-
     const ProfileSettings = () => {
         const initials = settings.profile.name.split(" ").map(n => n[0]).join("").toUpperCase();
 
         return (
             <Box>
-                <Typography variant="h5" fontWeight="600" gutterBottom sx={{ color: theme.palette.text.primary }}>
+                <Typography variant="h5" fontWeight="600" gutterBottom sx={{ color: currentTheme.text.primary }}>
                     Profile Information
                 </Typography>
-                <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
+                <Typography variant="body2" sx={{ color: currentTheme.text.secondary, mb: getSpacing(3) }}>
                     Update your personal information and preferences
                 </Typography>
 
-                <Card sx={{ mb: 3, bgcolor: theme.palette.background.paper }}>
-                    <CardContent sx={{ p: 3 }}>
-                        <Box display="flex" alignItems="center" mb={3}>
+                <Card sx={{ mb: getSpacing(3), bgcolor: currentTheme.background.paper }}>
+                    <CardContent sx={{ p: getSpacing(3) }}>
+                        <Box display="flex" alignItems="center" mb={getSpacing(3)}>
                             <Avatar
                                 sx={{
-                                    width: 80,
-                                    height: 80,
-                                    mr: 3,
-                                    bgcolor: theme.palette.primary.main,
-                                    fontSize: "1.5rem"
+                                    width: settings.general.compactView ? 60 : 80,
+                                    height: settings.general.compactView ? 60 : 80,
+                                    mr: getSpacing(3),
+                                    bgcolor: currentTheme.primary.main,
+                                    fontSize: settings.general.compactView ? "1.2rem" : "1.5rem"
                                 }}
                             >
                                 {initials}
                             </Avatar>
                             <Box>
-                                <Typography variant="h6" fontWeight="600" sx={{ color: theme.palette.text.primary }}>
-                                    {settings.profile.name}
+                                <Typography variant="h6" fontWeight="600" sx={{ color: currentTheme.text.primary }}>
+                                    {settings.profile.name || "User Name"}
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                                    {settings.profile.department} • {settings.profile.email}
+                                <Typography variant="body2" sx={{ color: currentTheme.text.secondary }}>
+                                    {settings.profile.department} {settings.profile.department && settings.profile.email ? "•" : ""} {settings.profile.email}
                                 </Typography>
                                 <Button
                                     size="small"
@@ -245,27 +156,30 @@ const Settings = () => {
                             </Box>
                         </Box>
 
-                        <Grid container spacing={3}>
+                        <Grid container spacing={getSpacing(3)}>
                             <Grid item xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Full Name"
                                     value={settings.profile.name}
                                     onChange={(e) => updateSettings('profile', { name: e.target.value })}
-                                    sx={{ mb: 2 }}
+                                    sx={{ mb: getSpacing(2) }}
+                                    size={settings.general.compactView ? "small" : "medium"}
                                 />
                                 <TextField
                                     fullWidth
                                     label="Email"
                                     value={settings.profile.email}
                                     onChange={(e) => updateSettings('profile', { email: e.target.value })}
-                                    sx={{ mb: 2 }}
+                                    sx={{ mb: getSpacing(2) }}
+                                    size={settings.general.compactView ? "small" : "medium"}
                                 />
                                 <TextField
                                     fullWidth
                                     label="Phone"
                                     value={settings.profile.phone}
                                     onChange={(e) => updateSettings('profile', { phone: e.target.value })}
+                                    size={settings.general.compactView ? "small" : "medium"}
                                 />
                             </Grid>
                             <Grid item xs={12} md={6}>
@@ -274,15 +188,17 @@ const Settings = () => {
                                     label="Department"
                                     value={settings.profile.department}
                                     onChange={(e) => updateSettings('profile', { department: e.target.value })}
-                                    sx={{ mb: 2 }}
+                                    sx={{ mb: getSpacing(2) }}
+                                    size={settings.general.compactView ? "small" : "medium"}
                                 />
                                 <TextField
                                     fullWidth
                                     label="Bio"
                                     multiline
-                                    rows={4}
+                                    rows={settings.general.compactView ? 3 : 4}
                                     value={settings.profile.bio}
                                     onChange={(e) => updateSettings('profile', { bio: e.target.value })}
+                                    size={settings.general.compactView ? "small" : "medium"}
                                 />
                             </Grid>
                         </Grid>
@@ -294,23 +210,25 @@ const Settings = () => {
 
     const GeneralSettings = () => (
         <Box>
-            <Typography variant="h5" fontWeight="600" gutterBottom sx={{ color: theme.palette.text.primary }}>
+            <Typography variant="h5" fontWeight="600" gutterBottom sx={{ color: currentTheme.text.primary }}>
                 General Settings
             </Typography>
-            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
+            <Typography variant="body2" sx={{ color: currentTheme.text.secondary, mb: getSpacing(3) }}>
                 Manage general application settings and preferences
             </Typography>
 
-            <Card sx={{ bgcolor: theme.palette.background.paper }}>
-                <CardContent sx={{ p: 3 }}>
+            <Card sx={{ bgcolor: currentTheme.background.paper }}>
+                <CardContent sx={{ p: getSpacing(3) }}>
                     <List>
-                        <ListItem>
+                        <ListItem sx={{ py: getSpacing(2) }}>
                             <ListItemIcon>
-                                <Visibility sx={{ color: theme.palette.text.secondary }} />
+                                <Visibility sx={{ color: currentTheme.text.secondary }} />
                             </ListItemIcon>
                             <ListItemText
                                 primary="Theme"
-                                secondary="Choose your preferred theme"
+                                secondary="Choose between light and dark mode"
+                                primaryTypographyProps={{ color: currentTheme.text.primary }}
+                                secondaryTypographyProps={{ color: currentTheme.text.secondary }}
                             />
                             <ListItemSecondaryAction>
                                 <Button 
@@ -320,40 +238,21 @@ const Settings = () => {
                                         theme: settings.general.theme === 'light' ? 'dark' : 'light' 
                                     })}
                                 >
-                                    {settings.general.theme}
+                                    {settings.general.theme === 'light' ? '☀️ Light' : '🌙 Dark'}
                                 </Button>
                             </ListItemSecondaryAction>
                         </ListItem>
-                        <Divider />
-                        <ListItem>
+                        <Divider sx={{ borderColor: currentTheme.divider }} />
+                        
+                        <ListItem sx={{ py: getSpacing(2) }}>
                             <ListItemIcon>
-                                <Business sx={{ color: theme.palette.text.secondary }} />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Language"
-                                secondary="Select your preferred language"
-                            />
-                            <ListItemSecondaryAction>
-                                <FormControl size="small" sx={{ minWidth: 100 }}>
-                                    <Select
-                                        value={settings.general.language}
-                                        onChange={(e) => updateSettings('general', { language: e.target.value })}
-                                    >
-                                        <MenuItem value="English">English</MenuItem>
-                                        <MenuItem value="Spanish">Spanish</MenuItem>
-                                        <MenuItem value="French">French</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </ListItemSecondaryAction>
-                        </ListItem>
-                        <Divider />
-                        <ListItem>
-                            <ListItemIcon>
-                                <SettingsIcon sx={{ color: theme.palette.text.secondary }} />
+                                <CloudSync sx={{ color: currentTheme.text.secondary }} />
                             </ListItemIcon>
                             <ListItemText
                                 primary="Auto-save"
-                                secondary="Automatically save changes"
+                                secondary="Automatically save changes after 2 seconds"
+                                primaryTypographyProps={{ color: currentTheme.text.primary }}
+                                secondaryTypographyProps={{ color: currentTheme.text.secondary }}
                             />
                             <ListItemSecondaryAction>
                                 <Switch 
@@ -362,84 +261,73 @@ const Settings = () => {
                                 />
                             </ListItemSecondaryAction>
                         </ListItem>
-                    </List>
-                </CardContent>
-            </Card>
-        </Box>
-    );
-
-    const NotificationSettings = () => (
-        <Box>
-            <Typography variant="h5" fontWeight="600" gutterBottom sx={{ color: theme.palette.text.primary }}>
-                Notification Preferences
-            </Typography>
-            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
-                Control how and when you receive notifications
-            </Typography>
-
-            <Card sx={{ bgcolor: theme.palette.background.paper }}>
-                <CardContent sx={{ p: 3 }}>
-                    <List>
-                        <ListItem>
+                        <Divider sx={{ borderColor: currentTheme.divider }} />
+                        
+                        <ListItem sx={{ py: getSpacing(2) }}>
                             <ListItemIcon>
-                                <Email sx={{ color: theme.palette.text.secondary }} />
+                                <Help sx={{ color: currentTheme.text.secondary }} />
                             </ListItemIcon>
                             <ListItemText
-                                primary="Email Notifications"
-                                secondary="Receive notifications via email"
+                                primary="Show Tooltips"
+                                secondary="Display helpful hints throughout the app"
+                                primaryTypographyProps={{ color: currentTheme.text.primary }}
+                                secondaryTypographyProps={{ color: currentTheme.text.secondary }}
                             />
                             <ListItemSecondaryAction>
-                                <Switch
-                                    checked={settings.notifications.email}
-                                    onChange={(e) => updateSettings('notifications', { email: e.target.checked })}
+                                <Switch 
+                                    checked={settings.general.showTooltips}
+                                    onChange={(e) => updateSettings('general', { showTooltips: e.target.checked })}
                                 />
                             </ListItemSecondaryAction>
                         </ListItem>
-                        <Divider />
-                        <ListItem>
+                        <Divider sx={{ borderColor: currentTheme.divider }} />
+                        
+                        <ListItem sx={{ py: getSpacing(2) }}>
                             <ListItemIcon>
-                                <NotificationsActive sx={{ color: theme.palette.text.secondary }} />
+                                <ViewList sx={{ color: currentTheme.text.secondary }} />
                             </ListItemIcon>
                             <ListItemText
-                                primary="Push Notifications"
-                                secondary="Receive push notifications"
+                                primary="Items Per Page"
+                                secondary="Default number of items to display per page"
+                                primaryTypographyProps={{ color: currentTheme.text.primary }}
+                                secondaryTypographyProps={{ color: currentTheme.text.secondary }}
                             />
                             <ListItemSecondaryAction>
-                                <Switch
-                                    checked={settings.notifications.push}
-                                    onChange={(e) => updateSettings('notifications', { push: e.target.checked })}
-                                />
+                                <FormControl size="small" sx={{ minWidth: 100 }}>
+                                    <Select
+                                        value={settings.general.itemsPerPage}
+                                        onChange={(e) => updateSettings('general', { itemsPerPage: e.target.value })}
+                                        sx={{
+                                            color: currentTheme.text.primary,
+                                            '.MuiOutlinedInput-notchedOutline': {
+                                                borderColor: currentTheme.divider
+                                            }
+                                        }}
+                                    >
+                                        <MenuItem value={10}>10</MenuItem>
+                                        <MenuItem value={25}>25</MenuItem>
+                                        <MenuItem value={50}>50</MenuItem>
+                                        <MenuItem value={100}>100</MenuItem>
+                                    </Select>
+                                </FormControl>
                             </ListItemSecondaryAction>
                         </ListItem>
-                        <Divider />
-                        <ListItem>
+                        <Divider sx={{ borderColor: currentTheme.divider }} />
+                        
+                        <ListItem sx={{ py: getSpacing(2) }}>
                             <ListItemIcon>
-                                <Phone sx={{ color: theme.palette.text.secondary }} />
+                                <ViewCompact sx={{ color: currentTheme.text.secondary }} />
                             </ListItemIcon>
                             <ListItemText
-                                primary="SMS Notifications"
-                                secondary="Receive notifications via SMS"
+                                primary="Compact View"
+                                secondary="Reduce spacing for a denser layout"
+                                primaryTypographyProps={{ color: currentTheme.text.primary }}
+                                secondaryTypographyProps={{ color: currentTheme.text.secondary }}
                             />
                             <ListItemSecondaryAction>
-                                <Switch
-                                    checked={settings.notifications.sms}
-                                    onChange={(e) => updateSettings('notifications', { sms: e.target.checked })}
-                                />
-                            </ListItemSecondaryAction>
-                        </ListItem>
-                        <Divider />
-                        <ListItem>
-                            <ListItemIcon>
-                                <Business sx={{ color: theme.palette.text.secondary }} />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Marketing Communications"
-                                secondary="Receive marketing and promotional emails"
-                            />
-                            <ListItemSecondaryAction>
-                                <Switch
-                                    checked={settings.notifications.marketing}
-                                    onChange={(e) => updateSettings('notifications', { marketing: e.target.checked })}
+                                <Switch 
+                                    checked={settings.general.compactView}
+                                    onChange={(e) => updateSettings('general', { compactView: e.target.checked })}
                                 />
                             </ListItemSecondaryAction>
                         </ListItem>
@@ -451,23 +339,25 @@ const Settings = () => {
 
     const SecuritySettings = () => (
         <Box>
-            <Typography variant="h5" fontWeight="600" gutterBottom sx={{ color: theme.palette.text.primary }}>
+            <Typography variant="h5" fontWeight="600" gutterBottom sx={{ color: currentTheme.text.primary }}>
                 Security & Privacy
             </Typography>
-            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
+            <Typography variant="body2" sx={{ color: currentTheme.text.secondary, mb: getSpacing(3) }}>
                 Manage your security preferences and authentication methods
             </Typography>
 
-            <Card sx={{ bgcolor: theme.palette.background.paper }}>
-                <CardContent sx={{ p: 3 }}>
+            <Card sx={{ bgcolor: currentTheme.background.paper }}>
+                <CardContent sx={{ p: getSpacing(3) }}>
                     <List>
-                        <ListItem>
+                        <ListItem sx={{ py: getSpacing(2) }}>
                             <ListItemIcon>
-                                <Shield sx={{ color: theme.palette.text.secondary }} />
+                                <Shield sx={{ color: currentTheme.text.secondary }} />
                             </ListItemIcon>
                             <ListItemText
                                 primary="Two-Factor Authentication"
                                 secondary="Add an extra layer of security"
+                                primaryTypographyProps={{ color: currentTheme.text.primary }}
+                                secondaryTypographyProps={{ color: currentTheme.text.secondary }}
                             />
                             <ListItemSecondaryAction>
                                 <Switch
@@ -476,14 +366,17 @@ const Settings = () => {
                                 />
                             </ListItemSecondaryAction>
                         </ListItem>
-                        <Divider />
-                        <ListItem>
+                        <Divider sx={{ borderColor: currentTheme.divider }} />
+                        
+                        <ListItem sx={{ py: getSpacing(2) }}>
                             <ListItemIcon>
-                                <Security sx={{ color: theme.palette.text.secondary }} />
+                                <Security sx={{ color: currentTheme.text.secondary }} />
                             </ListItemIcon>
                             <ListItemText
                                 primary="Login Alerts"
                                 secondary="Get notified of new login attempts"
+                                primaryTypographyProps={{ color: currentTheme.text.primary }}
+                                secondaryTypographyProps={{ color: currentTheme.text.secondary }}
                             />
                             <ListItemSecondaryAction>
                                 <Switch
@@ -492,14 +385,17 @@ const Settings = () => {
                                 />
                             </ListItemSecondaryAction>
                         </ListItem>
-                        <Divider />
-                        <ListItem>
+                        <Divider sx={{ borderColor: currentTheme.divider }} />
+                        
+                        <ListItem sx={{ py: getSpacing(2) }}>
                             <ListItemIcon>
-                                <Key sx={{ color: theme.palette.text.secondary }} />
+                                <Key sx={{ color: currentTheme.text.secondary }} />
                             </ListItemIcon>
                             <ListItemText
                                 primary="Change Password"
                                 secondary="Update your account password"
+                                primaryTypographyProps={{ color: currentTheme.text.primary }}
+                                secondaryTypographyProps={{ color: currentTheme.text.secondary }}
                             />
                             <ListItemSecondaryAction>
                                 <Button variant="outlined" size="small">
@@ -520,8 +416,6 @@ const Settings = () => {
             case 1:
                 return <GeneralSettings />;
             case 2:
-                return <NotificationSettings />;
-            case 3:
                 return <SecuritySettings />;
             default:
                 return <ProfileSettings />;
@@ -532,22 +426,22 @@ const Settings = () => {
         <Box
             sx={{
                 minHeight: "100vh",
-                backgroundColor: theme.palette.background.default,
-                p: 3
+                backgroundColor: currentTheme.background.default,
+                p: getSpacing(3),
+                transition: 'all 0.3s ease'
             }}
         >
             <Container maxWidth="xl">
-                <Box sx={{ mb: 4 }}>
-                    <Box display="flex" flexDirection={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }} gap={2} mb={4}>
+                <Box sx={{ mb: getSpacing(4) }}>
+                    <Box display="flex" flexDirection={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }} gap={2} mb={getSpacing(4)}>
                         <Box>
-                            <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ color: theme.palette.text.primary }}>
+                            <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ color: currentTheme.text.primary }}>
                                 Settings
                             </Typography>
-                            <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                            <Typography variant="body1" sx={{ color: currentTheme.text.secondary }}>
                                 Manage your CRM preferences and configuration
                             </Typography>
                             
-                            {/* Storage Status */}
                             <Box display="flex" alignItems="center" gap={1} mt={1}>
                                 {lastSaved ? (
                                     <>
@@ -557,7 +451,7 @@ const Settings = () => {
                                             size="small" 
                                             color="success"
                                         />
-                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                                        <Typography variant="caption" sx={{ color: currentTheme.text.secondary }}>
                                             (Browser session storage)
                                         </Typography>
                                     </>
@@ -571,7 +465,6 @@ const Settings = () => {
                             </Box>
                         </Box>
                         
-                        {/* Control Buttons */}
                         <Box display="flex" gap={2} flexWrap="wrap">
                             <Button
                                 variant="outlined"
@@ -584,11 +477,11 @@ const Settings = () => {
                             <Button
                                 variant="contained"
                                 onClick={handleSaveSettings}
-                                disabled={!hasChanges}
+                                disabled={!hasChanges || settings.general.autoSave}
                                 startIcon={<CloudSync />}
                                 sx={{
-                                    background: theme.palette.primary.main,
-                                    "&:hover": { background: theme.palette.primary.dark }
+                                    background: currentTheme.primary.main,
+                                    "&:hover": { background: currentTheme.primary.dark }
                                 }}
                             >
                                 Save All
@@ -596,27 +489,37 @@ const Settings = () => {
                         </Box>
                     </Box>
 
-                    {hasChanges && (
-                        <Alert severity="warning" sx={{ mb: 3 }}>
+                    {hasChanges && !settings.general.autoSave && (
+                        <Alert severity="warning" sx={{ mb: getSpacing(3) }}>
                             <strong>Unsaved Changes:</strong> Your changes will be lost when you close the browser. 
                             Click "Save All" to persist them in browser memory storage.
                         </Alert>
                     )}
 
-                    <Paper sx={{ bgcolor: theme.palette.background.paper, boxShadow: "0 4px 12px -2px rgba(0,0,0,0.08)" }}>
-                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    {hasChanges && settings.general.autoSave && (
+                        <Alert severity="info" sx={{ mb: getSpacing(3) }}>
+                            <strong>{isAutoSaving ? 'Auto-saving...' : 'Auto-save enabled:'}</strong> Your changes will be automatically saved in 2 seconds.
+                        </Alert>
+                    )}
+
+                    <Paper sx={{ bgcolor: currentTheme.background.paper, boxShadow: "0 4px 12px -2px rgba(0,0,0,0.08)" }}>
+                        <Box sx={{ borderBottom: 1, borderColor: currentTheme.divider }}>
                             <Tabs
                                 value={activeTab}
                                 onChange={handleTabChange}
                                 variant="scrollable"
                                 scrollButtons="auto"
                                 sx={{
-                                    px: 3,
+                                    px: getSpacing(3),
                                     "& .MuiTab-root": {
-                                        minHeight: 64,
+                                        minHeight: settings.general.compactView ? 56 : 64,
                                         textTransform: "none",
                                         fontSize: "1rem",
                                         fontWeight: 500,
+                                        color: currentTheme.text.secondary,
+                                    },
+                                    "& .Mui-selected": {
+                                        color: currentTheme.primary.main
                                     }
                                 }}
                             >
@@ -630,11 +533,7 @@ const Settings = () => {
                                             label={tab.label}
                                             sx={{
                                                 flexDirection: "row",
-                                                gap: 1,
-                                                color: theme.palette.text.secondary,
-                                                "&.Mui-selected": {
-                                                    color: theme.palette.primary.main
-                                                }
+                                                gap: 1
                                             }}
                                         />
                                     );
@@ -642,14 +541,13 @@ const Settings = () => {
                             </Tabs>
                         </Box>
                         
-                        <Box sx={{ p: 3 }}>
+                        <Box sx={{ p: getSpacing(3) }}>
                             {renderTabContent()}
                         </Box>
                     </Paper>
                 </Box>
             </Container>
 
-            {/* Status Snackbar */}
             <Snackbar
                 open={saveStatus.open}
                 autoHideDuration={4000}

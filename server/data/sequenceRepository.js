@@ -2,10 +2,6 @@ const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
 //======================================
-// SEQUENCE CRUD OPERATIONS
-//======================================
-
-//======================================
 // Get all sequences
 //======================================
 async function getAllSequences() {
@@ -75,20 +71,16 @@ async function getSequenceWithItems(id) {
           seq.UpdatedAt AS SequenceUpdatedAt,
           seq.Active AS SequenceActive,
           si.SequenceItemID,
-          si.TypeID,
+          si.ActivityTypeID,
           at.TypeName AS ActivityTypeName,
           si.SequenceItemDescription,
           si.DaysFromStart,
           si.CreatedAt AS ItemCreatedAt,
           si.UpdatedAt AS ItemUpdatedAt,
-          si.Active AS ItemActive,
-          si.PriorityLevelID,
-          pl.PriorityLevelName,
-          pl.PriorityLevelValue
+          si.Active AS ItemActive
         FROM Sequence seq
         LEFT JOIN SequenceItem si ON seq.SequenceID = si.SequenceID
-        LEFT JOIN ActivityType at ON si.TypeID = at.TypeID AND at.Active = 1
-        LEFT JOIN PriorityLevel pl ON si.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
+        LEFT JOIN ActivityType at ON si.ActivityTypeID = at.TypeID AND at.Active = 1
         WHERE seq.SequenceID = @SequenceID
         ORDER BY si.DaysFromStart
       `);
@@ -123,9 +115,6 @@ async function createSequence(sequenceData, changedBy) {
       `);
 
     const newSequenceID = result.recordset[0].SequenceID;
-
-    // Log the action in SequenceHistory if you have that table
-    // Otherwise, you can add logging here similar to accounts
 
     return { SequenceID: newSequenceID };
   } catch (err) {
@@ -290,10 +279,6 @@ async function deleteSequence(id, changedBy) {
 }
 
 //======================================
-// SEQUENCE ITEM CRUD OPERATIONS
-//======================================
-
-//======================================
 // Get sequence item details
 //======================================
 async function getSequenceItemDetails(id) {
@@ -305,19 +290,15 @@ async function getSequenceItemDetails(id) {
         SELECT 
           si.SequenceItemID,
           si.SequenceID,
-          si.TypeID,
+          si.ActivityTypeID,
           at.TypeName AS ActivityTypeName,
           si.SequenceItemDescription,
           si.DaysFromStart,
           si.CreatedAt,
           si.UpdatedAt,
-          si.Active,
-          si.PriorityLevelID,
-          pl.PriorityLevelName,
-          pl.PriorityLevelValue
+          si.Active
         FROM SequenceItem si
-        LEFT JOIN ActivityType at ON si.TypeID = at.TypeID AND at.Active = 1
-        LEFT JOIN PriorityLevel pl ON si.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
+        LEFT JOIN ActivityType at ON si.ActivityTypeID = at.TypeID AND at.Active = 1
         WHERE si.SequenceItemID = @SequenceItemID
       `);
 
@@ -336,24 +317,22 @@ async function createSequenceItem(itemData, changedBy) {
     const pool = await sql.connect(dbConfig);
     const {
       SequenceID,
-      TypeID,
+      ActivityTypeID,
       SequenceItemDescription,
       DaysFromStart,
-      PriorityLevelID,
       Active = true
     } = itemData;
 
     const result = await pool.request()
       .input("SequenceID", sql.Int, SequenceID)
-      .input("TypeID", sql.Int, TypeID)
+      .input("ActivityTypeID", sql.Int, ActivityTypeID)
       .input("SequenceItemDescription", sql.NVarChar(sql.MAX), SequenceItemDescription)
       .input("DaysFromStart", sql.Int, DaysFromStart)
-      .input("PriorityLevelID", sql.Int, PriorityLevelID)
       .input("Active", sql.Bit, Active)
       .query(`
-        INSERT INTO SequenceItem (SequenceID, TypeID, SequenceItemDescription, CreatedAt, UpdatedAt, Active, PriorityLevelID, DaysFromStart)
+        INSERT INTO SequenceItem (SequenceID, ActivityTypeID, SequenceItemDescription, DaysFromStart, CreatedAt, UpdatedAt, Active)
         OUTPUT INSERTED.SequenceItemID
-        VALUES (@SequenceID, @TypeID, @SequenceItemDescription, GETDATE(), GETDATE(), @Active, @PriorityLevelID, @DaysFromStart)
+        VALUES (@SequenceID, @ActivityTypeID, @SequenceItemDescription, @DaysFromStart, GETDATE(), GETDATE(), @Active)
       `);
 
     const newItemID = result.recordset[0].SequenceItemID;
@@ -394,14 +373,13 @@ async function createSequenceWithItems(sequenceData, items, changedBy) {
         const itemRequest = new sql.Request(transaction);
         await itemRequest
           .input("SequenceID", sql.Int, newSequenceID)
-          .input("TypeID", sql.Int, item.TypeID)
+          .input("ActivityTypeID", sql.Int, item.ActivityTypeID)
           .input("SequenceItemDescription", sql.NVarChar(sql.MAX), item.SequenceItemDescription)
           .input("DaysFromStart", sql.Int, item.DaysFromStart)
-          .input("PriorityLevelID", sql.Int, item.PriorityLevelID)
           .input("Active", sql.Bit, item.Active !== undefined ? item.Active : true)
           .query(`
-            INSERT INTO SequenceItem (SequenceID, TypeID, SequenceItemDescription, DaysFromStart, PriorityLevelID, CreatedAt, UpdatedAt, Active)
-            VALUES (@SequenceID, @TypeID, @SequenceItemDescription, @DaysFromStart, @PriorityLevelID, GETDATE(), GETDATE(), @Active)
+            INSERT INTO SequenceItem (SequenceID, ActivityTypeID, SequenceItemDescription, DaysFromStart, CreatedAt, UpdatedAt, Active)
+            VALUES (@SequenceID, @ActivityTypeID, @SequenceItemDescription, @DaysFromStart, GETDATE(), GETDATE(), @Active)
           `);
       }
     }
@@ -526,25 +504,22 @@ async function updateSequenceItem(id, itemData, changedBy) {
     const existing = existingResult.recordset[0];
 
     const {
-      TypeID = existing.TypeID,
+      ActivityTypeID = existing.ActivityTypeID,
       SequenceItemDescription = existing.SequenceItemDescription,
-      DaysFromStart = existing.DaysFromStart,
-      PriorityLevelID = existing.PriorityLevelID
+      DaysFromStart = existing.DaysFromStart
     } = itemData;
 
     await pool.request()
       .input("SequenceItemID", sql.Int, id)
-      .input("TypeID", sql.Int, TypeID)
+      .input("ActivityTypeID", sql.Int, ActivityTypeID)
       .input("SequenceItemDescription", sql.NVarChar(sql.MAX), SequenceItemDescription)
       .input("DaysFromStart", sql.Int, DaysFromStart)
-      .input("PriorityLevelID", sql.Int, PriorityLevelID)
       .query(`
         UPDATE SequenceItem
         SET 
-          TypeID = @TypeID,
+          ActivityTypeID = @ActivityTypeID,
           SequenceItemDescription = @SequenceItemDescription,
           DaysFromStart = @DaysFromStart,
-          PriorityLevelID = @PriorityLevelID,
           UpdatedAt = GETDATE()
         WHERE SequenceItemID = @SequenceItemID
       `);
@@ -633,12 +608,12 @@ const getActivities = async (userId, options = {}) => {
       whereConditions.push("a.AccountID = @AccountId");
     }
     
-    let orderBy = "a.DueToStart ASC, pl.PriorityLevelValue DESC";
+    let orderBy = "a.DueToStart ASC, ISNULL(pl.PriorityLevelValue, 0) DESC";
     
     if (options.sortBy) {
       switch (options.sortBy) {
         case 'priority':
-          orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END, pl.PriorityLevelValue DESC, a.DueToStart ASC";
+          orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END, ISNULL(pl.PriorityLevelValue, 0) DESC, a.DueToStart ASC";
           break;
         case 'account':
           orderBy = "acc.AccountName ASC, a.DueToStart ASC";
@@ -653,7 +628,7 @@ const getActivities = async (userId, options = {}) => {
           orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) AND a.Completed = 0 THEN 1 ELSE 2 END, a.DueToStart ASC";
           break;
         default: 
-          orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END, a.DueToStart ASC, pl.PriorityLevelValue DESC";
+          orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END, a.DueToStart ASC, ISNULL(pl.PriorityLevelValue, 0) DESC";
       }
     }
     
@@ -694,14 +669,14 @@ const getActivities = async (userId, options = {}) => {
             ELSE 0
           END AS IsUrgent,
           CASE 
-            WHEN pl.PriorityLevelValue >= 3 THEN 1
+            WHEN ISNULL(pl.PriorityLevelValue, 0) >= 3 THEN 1
             ELSE 0
           END AS IsHighPriority
       FROM Activity a 
       INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
       INNER JOIN Account acc ON a.AccountID = acc.AccountID 
-      INNER JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-      INNER JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
+      LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
+      LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
       LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
       LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
       WHERE ${whereConditions.join(' AND ')}
@@ -754,8 +729,8 @@ const getActivitiesByUser = async (userId) => {
         FROM Activity a 
         INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
         INNER JOIN Account acc ON a.AccountID = acc.AccountID 
-        INNER JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-        INNER JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
+        LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
+        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
         LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
         LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
         WHERE au.UserID = @UserID 
@@ -764,7 +739,7 @@ const getActivitiesByUser = async (userId) => {
         ORDER BY 
           CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END,
           a.DueToStart ASC, 
-          pl.PriorityLevelValue DESC
+          ISNULL(pl.PriorityLevelValue, 0) DESC
       `);
 
     return result.recordset;
@@ -890,14 +865,14 @@ const getActivityByID = async (activityId, userId) => {
               ELSE 0
             END AS IsUrgent,
             CASE 
-              WHEN pl.PriorityLevelValue >= 8 THEN 1
+              WHEN ISNULL(pl.PriorityLevelValue, 0) >= 8 THEN 1
               ELSE 0
             END AS IsHighPriority
         FROM Activity a 
         INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
         INNER JOIN Account acc ON a.AccountID = acc.AccountID 
-        INNER JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-        INNER JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
+        LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
+        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
         LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
         LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
         LEFT JOIN SequenceItem prev_si ON seq.SequenceID = prev_si.SequenceID 
@@ -948,7 +923,7 @@ const updateActivity = async (activityId, userId, activityData) => {
 
     if (activityData.Completed !== undefined) {
       updateFields.push("Completed = @Completed");
-      request.input("Completed", sql.SmallDateTime, activityData.Completed);
+      request.input("Completed", sql.Bit, activityData.Completed);
     }
 
     await request.query(`
@@ -1022,8 +997,8 @@ const completeActivityAndGetNext = async (activityId, userId) => {
         FROM Activity a 
         INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
         INNER JOIN Account acc ON a.AccountID = acc.AccountID 
-        INNER JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-        INNER JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
+        LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
+        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
         LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
         LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
         WHERE au.UserID = @UserID 
@@ -1034,7 +1009,7 @@ const completeActivityAndGetNext = async (activityId, userId) => {
         ORDER BY 
           CASE WHEN a.DueToStart < GETDATE() THEN 0 ELSE 1 END,
           a.DueToStart ASC, 
-          pl.PriorityLevelValue DESC
+          ISNULL(pl.PriorityLevelValue, 0) DESC
       `);
 
     return {
@@ -1090,11 +1065,11 @@ const getWorkDashboardSummary = async (userId) => {
           SUM(CASE WHEN a.Completed = 1 THEN 1 ELSE 0 END) AS CompletedActivities,
           SUM(CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 1 ELSE 0 END) AS OverdueActivities,
           SUM(CASE WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) AND a.DueToStart >= GETDATE() AND a.Completed = 0 THEN 1 ELSE 0 END) AS UrgentActivities,
-          SUM(CASE WHEN pl.PriorityLevelValue >= 3 AND a.Completed = 0 THEN 1 ELSE 0 END) AS HighPriorityActivities,
+          SUM(CASE WHEN ISNULL(pl.PriorityLevelValue, 0) >= 3 AND a.Completed = 0 THEN 1 ELSE 0 END) AS HighPriorityActivities,
           SUM(CASE WHEN CAST(a.DueToStart AS DATE) = CAST(GETDATE() AS DATE) AND a.Completed = 0 THEN 1 ELSE 0 END) AS TodayActivities
         FROM Activity a 
         INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
-        INNER JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
+        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
         WHERE au.UserID = @UserID 
           AND a.Active = 1 
           AND au.Active = 1
@@ -1128,15 +1103,11 @@ const getSequencesAndItemsByUser = async (userId) => {
             at.TypeID,
             at.TypeName AS ActivityTypeName,
             at.Description AS ActivityTypeDescription,
-            pl.PriorityLevelID,
-            pl.PriorityLevelName,
-            pl.PriorityLevelValue,
             acc.AccountID,
             acc.AccountName
         FROM Sequence seq
         INNER JOIN SequenceItem si ON seq.SequenceID = si.SequenceID AND si.Active = 1
-        INNER JOIN ActivityType at ON si.TypeID = at.TypeID AND at.Active = 1
-        INNER JOIN PriorityLevel pl ON si.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
+        INNER JOIN ActivityType at ON si.ActivityTypeID = at.TypeID AND at.Active = 1
         INNER JOIN Account acc ON seq.SequenceID = acc.SequenceID AND acc.Active = 1
         INNER JOIN AssignedUser au ON acc.AccountID = au.AccountID AND au.Active = 1
         WHERE au.UserID = @UserID
@@ -1228,8 +1199,8 @@ const getNextActivity = async (userId, currentActivityId = null) => {
       FROM Activity a 
       INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
       INNER JOIN Account acc ON a.AccountID = acc.AccountID 
-      INNER JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-      INNER JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
+      LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
+      LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
       LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
       LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
       WHERE au.UserID = @UserID 
@@ -1240,7 +1211,7 @@ const getNextActivity = async (userId, currentActivityId = null) => {
       ORDER BY 
         CASE WHEN a.DueToStart < GETDATE() THEN 0 ELSE 1 END,
         a.DueToStart ASC, 
-        pl.PriorityLevelValue DESC
+        ISNULL(pl.PriorityLevelValue, 0) DESC
     `);
 
     return result.recordset[0] || null;
@@ -1288,6 +1259,497 @@ const getActivityMetadata = async () => {
 };
 
 //======================================
+// Get user's smart work page data (Accounts → Sequences → Items)
+//======================================
+async function getUserSmartWorkPageData(userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT 
+          -- Account info
+          acc.AccountID,
+          acc.AccountName,
+          acc.CreatedAt AS AccountCreatedAt,
+          
+          -- Sequence info
+          seq.SequenceID,
+          seq.SequenceName,
+          seq.SequenceDescription,
+          
+          -- Sequence Item info
+          si.SequenceItemID,
+          si.SequenceItemDescription,
+          si.DaysFromStart,
+          si.Active AS SequenceItemActive,
+          
+          -- Activity Type info
+          at.TypeID,
+          at.TypeName AS ActivityTypeName,
+          at.Description AS ActivityTypeDescription,
+          
+          -- Activity info (if exists)
+          a.ActivityID,
+          a.DueToStart,
+          a.DueToEnd,
+          a.Completed,
+          a.PriorityLevelID,
+          a.Active AS ActivityActive,
+          
+          -- Priority info (if activity exists)
+          pl.PriorityLevelName,
+          pl.PriorityLevelValue,
+          
+          -- Status calculation
+          CASE 
+            WHEN a.ActivityID IS NULL THEN 'not_started'
+            WHEN a.Completed = 1 THEN 'completed'
+            WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 'overdue'
+            WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) AND a.Completed = 0 THEN 'urgent'
+            WHEN a.Completed = 0 THEN 'pending'
+            ELSE 'unknown'
+          END AS Status
+          
+        FROM AssignedUser au
+        INNER JOIN Account acc ON au.AccountID = acc.AccountID
+        INNER JOIN Sequence seq ON acc.SequenceID = seq.SequenceID
+        INNER JOIN SequenceItem si ON seq.SequenceID = si.SequenceID
+        INNER JOIN ActivityType at ON si.ActivityTypeID = at.TypeID
+        LEFT JOIN Activity a ON si.SequenceItemID = a.SequenceItemID 
+          AND a.AccountID = acc.AccountID 
+          AND a.Active = 1
+        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
+        
+        WHERE au.UserID = @UserID
+          AND au.Active = 1
+          AND acc.Active = 1
+          AND seq.Active = 1
+          AND si.Active = 1
+          AND at.Active = 1
+        
+        ORDER BY 
+          acc.AccountName,
+          seq.SequenceName,
+          si.DaysFromStart
+      `);
+
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getUserSmartWorkPageData:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Update sequence item status (complete/uncomplete)
+//======================================
+async function updateSequenceItemStatus(sequenceItemId, accountId, userId, completed) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    
+    // Verify user has access to this account
+    const accessCheck = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT COUNT(*) AS HasAccess
+        FROM AssignedUser
+        WHERE UserID = @UserID AND AccountID = @AccountID AND Active = 1
+      `);
+
+    if (accessCheck.recordset[0].HasAccess === 0) {
+      throw new Error("User does not have access to this account");
+    }
+
+    // Get or create activity for this sequence item
+    const activityCheck = await pool.request()
+      .input("SequenceItemID", sql.Int, sequenceItemId)
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT ActivityID, Completed
+        FROM Activity
+        WHERE SequenceItemID = @SequenceItemID 
+          AND AccountID = @AccountID
+          AND Active = 1
+      `);
+
+    let activityId;
+
+    if (activityCheck.recordset.length === 0) {
+      // Create new activity
+      const sequenceItemInfo = await pool.request()
+        .input("SequenceItemID", sql.Int, sequenceItemId)
+        .input("AccountID", sql.Int, accountId)
+        .query(`
+          SELECT 
+            si.ActivityTypeID,
+            si.DaysFromStart,
+            acc.CreatedAt AS AccountCreatedAt
+          FROM SequenceItem si
+          INNER JOIN Sequence seq ON si.SequenceID = seq.SequenceID
+          INNER JOIN Account acc ON seq.SequenceID = acc.SequenceID
+          WHERE si.SequenceItemID = @SequenceItemID
+            AND acc.AccountID = @AccountID
+        `);
+
+      if (sequenceItemInfo.recordset.length === 0) {
+        throw new Error("Sequence item not found or not associated with account");
+      }
+
+      const info = sequenceItemInfo.recordset[0];
+      const accountCreated = new Date(info.AccountCreatedAt);
+      const dueDate = new Date(accountCreated);
+      dueDate.setDate(dueDate.getDate() + (info.DaysFromStart || 0));
+
+      const createResult = await pool.request()
+        .input("AccountID", sql.Int, accountId)
+        .input("TypeID", sql.Int, info.ActivityTypeID)
+        .input("DueToStart", sql.SmallDateTime, dueDate)
+        .input("SequenceItemID", sql.Int, sequenceItemId)
+        .input("Completed", sql.Bit, completed ? 1 : 0)
+        .query(`
+          INSERT INTO Activity (
+            AccountID, TypeID, DueToStart, 
+            SequenceItemID, Completed, Active
+          )
+          OUTPUT INSERTED.ActivityID
+          VALUES (
+            @AccountID, @TypeID, @DueToStart,
+            @SequenceItemID, @Completed, 1
+          )
+        `);
+
+      activityId = createResult.recordset[0].ActivityID;
+    } else {
+      // Update existing activity
+      activityId = activityCheck.recordset[0].ActivityID;
+      
+      await pool.request()
+        .input("ActivityID", sql.Int, activityId)
+        .input("Completed", sql.Bit, completed ? 1 : 0)
+        .query(`
+          UPDATE Activity
+          SET Completed = @Completed
+          WHERE ActivityID = @ActivityID
+        `);
+    }
+
+    return { success: true, activityId };
+  } catch (err) {
+    console.error("Database error in updateSequenceItemStatus:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Get sequence progress for an account
+//======================================
+async function getSequenceProgress(accountId, sequenceId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .input("SequenceID", sql.Int, sequenceId)
+      .query(`
+        SELECT 
+          COUNT(*) AS TotalItems,
+          SUM(CASE 
+            WHEN a.Completed = 1 THEN 1 
+            ELSE 0 
+          END) AS CompletedItems
+        FROM SequenceItem si
+        LEFT JOIN Activity a ON si.SequenceItemID = a.SequenceItemID 
+          AND a.AccountID = @AccountID
+          AND a.Active = 1
+        WHERE si.SequenceID = @SequenceID
+          AND si.Active = 1
+      `);
+
+    const data = result.recordset[0];
+    const progress = data.TotalItems > 0 
+      ? Math.round((data.CompletedItems / data.TotalItems) * 100)
+      : 0;
+
+    return {
+      totalItems: data.TotalItems,
+      completedItems: data.CompletedItems,
+      progress
+    };
+  } catch (err) {
+    console.error("Database error in getSequenceProgress:", err);
+    throw err;
+  }
+}
+
+// Add this new function to sequenceRepository.js
+
+//======================================
+// Get smart sequence view with visibility logic
+//======================================
+async function getSmartSequenceView(accountId, userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    
+    // First verify user has access
+    const accessCheck = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT COUNT(*) AS HasAccess
+        FROM AssignedUser
+        WHERE UserID = @UserID AND AccountID = @AccountID AND Active = 1
+      `);
+
+    if (accessCheck.recordset[0].HasAccess === 0) {
+      throw new Error("User does not have access to this account");
+    }
+
+    // Get account and sequence info
+    const accountInfo = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT 
+          acc.AccountID,
+          acc.AccountName,
+          acc.CreatedAt AS AccountCreatedAt,
+          seq.SequenceID,
+          seq.SequenceName,
+          seq.SequenceDescription
+        FROM Account acc
+        INNER JOIN Sequence seq ON acc.SequenceID = seq.SequenceID
+        WHERE acc.AccountID = @AccountID
+          AND acc.Active = 1
+          AND seq.Active = 1
+      `);
+
+    if (accountInfo.recordset.length === 0) {
+      throw new Error("Account not found or has no active sequence");
+    }
+
+    const account = accountInfo.recordset[0];
+
+    // Get all sequence items with their activities
+    const itemsResult = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .input("SequenceID", sql.Int, account.SequenceID)
+      .query(`
+        SELECT 
+          si.SequenceItemID,
+          si.SequenceItemDescription,
+          si.DaysFromStart,
+          si.ActivityTypeID,
+          at.TypeName AS ActivityTypeName,
+          at.Description AS ActivityTypeDescription,
+          a.ActivityID,
+          a.DueToStart,
+          a.DueToEnd,
+          a.Completed,
+          a.PriorityLevelID,
+          a.Active AS ActivityActive,
+          pl.PriorityLevelName,
+          pl.PriorityLevelValue,
+          CASE 
+            WHEN a.ActivityID IS NULL THEN 'not_started'
+            WHEN a.Completed = 1 THEN 'completed'
+            WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 'overdue'
+            WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) AND a.Completed = 0 THEN 'urgent'
+            WHEN a.Completed = 0 THEN 'pending'
+            ELSE 'unknown'
+          END AS Status
+        FROM SequenceItem si
+        INNER JOIN ActivityType at ON si.ActivityTypeID = at.TypeID
+        LEFT JOIN Activity a ON si.SequenceItemID = a.SequenceItemID 
+          AND a.AccountID = @AccountID 
+          AND a.Active = 1
+        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
+        WHERE si.SequenceID = @SequenceID
+          AND si.Active = 1
+          AND at.Active = 1
+        ORDER BY si.DaysFromStart ASC
+      `);
+
+    const allItems = itemsResult.recordset;
+    
+    // Calculate which items should be visible
+    const accountCreated = new Date(account.AccountCreatedAt);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const visibleItems = [];
+    let firstIncompleteFound = false;
+    let totalCompleted = 0;
+
+    for (const item of allItems) {
+      const isCompleted = item.Status === 'completed';
+      
+      if (isCompleted) {
+        totalCompleted++;
+        visibleItems.push(item);
+        continue;
+      }
+
+      // First incomplete item is always visible
+      if (!firstIncompleteFound) {
+        firstIncompleteFound = true;
+        visibleItems.push(item);
+        continue;
+      }
+
+      // Check if this item is due or overdue
+      const itemDueDate = new Date(accountCreated);
+      itemDueDate.setDate(itemDueDate.getDate() + item.DaysFromStart);
+      itemDueDate.setHours(0, 0, 0, 0);
+
+      if (itemDueDate <= today) {
+        visibleItems.push(item);
+      }
+    }
+
+    // Calculate progress
+    const totalItems = allItems.length;
+    const progress = totalItems > 0 ? Math.round((totalCompleted / totalItems) * 100) : 0;
+
+    return {
+      account: {
+        AccountID: account.AccountID,
+        AccountName: account.AccountName,
+        AccountCreatedAt: account.AccountCreatedAt
+      },
+      sequence: {
+        SequenceID: account.SequenceID,
+        SequenceName: account.SequenceName,
+        SequenceDescription: account.SequenceDescription
+      },
+      progress: {
+        totalItems,
+        completedItems: totalCompleted,
+        progress
+      },
+      items: visibleItems.map(item => ({
+        SequenceItemID: item.SequenceItemID,
+        SequenceItemDescription: item.SequenceItemDescription,
+        DaysFromStart: item.DaysFromStart,
+        ActivityTypeID: item.ActivityTypeID,
+        ActivityTypeName: item.ActivityTypeName,
+        ActivityTypeDescription: item.ActivityTypeDescription,
+        ActivityID: item.ActivityID,
+        DueToStart: item.DueToStart,
+        DueToEnd: item.DueToEnd,
+        Completed: item.Completed,
+        PriorityLevelID: item.PriorityLevelID,
+        PriorityLevelName: item.PriorityLevelName,
+        PriorityLevelValue: item.PriorityLevelValue,
+        Status: item.Status,
+        AccountID: account.AccountID,
+        AccountName: account.AccountName,
+        estimatedDueDate: calculateDueDate(account.AccountCreatedAt, item.DaysFromStart)
+      }))
+    };
+  } catch (err) {
+    console.error("Database error in getSmartSequenceView:", err);
+    throw err;
+  }
+}
+
+function calculateDueDate(accountCreatedAt, daysFromStart) {
+  const startDate = new Date(accountCreatedAt);
+  const dueDate = new Date(startDate);
+  dueDate.setDate(dueDate.getDate() + daysFromStart);
+  return dueDate;
+}
+
+//======================================
+// Create activity from sequence item
+//======================================
+async function createActivityFromSequenceItem(sequenceItemId, accountId, userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    
+    // Verify user has access
+    const accessCheck = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT COUNT(*) AS HasAccess
+        FROM AssignedUser
+        WHERE UserID = @UserID AND AccountID = @AccountID AND Active = 1
+      `);
+
+    if (accessCheck.recordset[0].HasAccess === 0) {
+      throw new Error("User does not have access to this account");
+    }
+
+    // Check if activity already exists
+    const existingActivity = await pool.request()
+      .input("SequenceItemID", sql.Int, sequenceItemId)
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT ActivityID
+        FROM Activity
+        WHERE SequenceItemID = @SequenceItemID 
+          AND AccountID = @AccountID
+          AND Active = 1
+      `);
+
+    if (existingActivity.recordset.length > 0) {
+      return { ActivityID: existingActivity.recordset[0].ActivityID, created: false };
+    }
+
+    // Get sequence item info
+    const itemInfo = await pool.request()
+      .input("SequenceItemID", sql.Int, sequenceItemId)
+      .input("AccountID", sql.Int, accountId)
+      .query(`
+        SELECT 
+          si.ActivityTypeID,
+          si.DaysFromStart,
+          acc.CreatedAt AS AccountCreatedAt
+        FROM SequenceItem si
+        INNER JOIN Sequence seq ON si.SequenceID = seq.SequenceID
+        INNER JOIN Account acc ON seq.SequenceID = acc.SequenceID
+        WHERE si.SequenceItemID = @SequenceItemID
+          AND acc.AccountID = @AccountID
+          AND si.Active = 1
+          AND seq.Active = 1
+          AND acc.Active = 1
+      `);
+
+    if (itemInfo.recordset.length === 0) {
+      throw new Error("Sequence item not found or not associated with account");
+    }
+
+    const info = itemInfo.recordset[0];
+    const accountCreated = new Date(info.AccountCreatedAt);
+    const dueDate = new Date(accountCreated);
+    dueDate.setDate(dueDate.getDate() + info.DaysFromStart);
+
+    // Create the activity
+    const createResult = await pool.request()
+      .input("AccountID", sql.Int, accountId)
+      .input("TypeID", sql.Int, info.ActivityTypeID)
+      .input("DueToStart", sql.SmallDateTime, dueDate)
+      .input("SequenceItemID", sql.Int, sequenceItemId)
+      .query(`
+        INSERT INTO Activity (
+          AccountID, TypeID, DueToStart, 
+          SequenceItemID, Completed, Active
+        )
+        OUTPUT INSERTED.ActivityID
+        VALUES (
+          @AccountID, @TypeID, @DueToStart,
+          @SequenceItemID, 0, 1
+        )
+      `);
+
+    return { ActivityID: createResult.recordset[0].ActivityID, created: true };
+  } catch (err) {
+    console.error("Database error in createActivityFromSequenceItem:", err);
+    throw err;
+  }
+}
+
+//======================================
 // Exports
 //======================================
 module.exports = {
@@ -1324,4 +1786,9 @@ module.exports = {
   getNextActivity,
   getActivityMetadata,
   getAccountSequenceWithActivities,
+  getUserSmartWorkPageData,
+  updateSequenceItemStatus,
+  getSequenceProgress,
+  getSmartSequenceView,
+  createActivityFromSequenceItem,
 };

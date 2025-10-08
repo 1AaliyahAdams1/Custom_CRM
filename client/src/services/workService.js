@@ -25,14 +25,9 @@ export const getWorkPageData = async (userId, sortCriteria = "dueDate", filter =
     const response = await api.get(url);
 
     if (response.data) {
-      // Backend now returns either:
-      // { mode: 'activities', data: { activities: [...], totalActivities: N, ... } }
-      // OR
-      // { mode: 'sequence', data: { account: {...}, sequence: {...}, progress: {...}, steps: [...] } }
       return response.data;
     }
 
-    // Fallback for default mode
     return {
       mode: 'activities',
       data: {
@@ -43,6 +38,25 @@ export const getWorkPageData = async (userId, sortCriteria = "dueDate", filter =
     };
   } catch (error) {
     console.error("Error fetching work page data:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get user accounts with sequences
+ * @param {number} userId - User ID
+ * @returns {Promise<Object>} User accounts with sequences
+ */
+export const getUserAccounts = async (userId) => {
+  if (!userId) throw new Error("User ID is required");
+
+  try {
+    const url = `${RESOURCE}/user/${userId}/accounts`;
+    const response = await api.get(url);
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error fetching user accounts:", error);
     throw error;
   }
 };
@@ -235,6 +249,75 @@ export const getUserSequences = async (userId) => {
     return { success: true, data: response.data };
   } catch (error) {
     console.error("Error fetching user sequences:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get or create activity from sequence item click
+ * @param {number} userId - User ID
+ * @param {number} sequenceItemId - Sequence Item ID
+ * @param {number} accountId - Account ID
+ * @returns {Promise<Object>} Activity data (created or existing)
+ */
+export const getOrCreateActivityFromSequenceItem = async (userId, sequenceItemId, accountId) => {
+  if (!userId) throw new Error("User ID is required");
+  if (!sequenceItemId) throw new Error("Sequence Item ID is required");
+  if (!accountId) throw new Error("Account ID is required");
+
+  try {
+    const url = `${RESOURCE}/user/${userId}/sequence-item/${sequenceItemId}/account/${accountId}/activity`;
+    const response = await api.get(url);
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error getting or creating activity from sequence item:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update sequence item status (complete/uncomplete)
+ * @param {number} userId - User ID
+ * @param {number} sequenceItemId - Sequence Item ID
+ * @param {number} accountId - Account ID
+ * @param {boolean} completed - Completion status
+ * @returns {Promise<Object>} Update result
+ */
+export const updateSequenceItemStatus = async (userId, sequenceItemId, accountId, completed) => {
+  if (!userId) throw new Error("User ID is required");
+  if (!sequenceItemId) throw new Error("Sequence Item ID is required");
+  if (!accountId) throw new Error("Account ID is required");
+
+  try {
+    const url = `${RESOURCE}/user/${userId}/sequence-item/${sequenceItemId}/account/${accountId}/status`;
+    const payload = { completed };
+    const response = await api.put(url, payload);
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error updating sequence item status:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get sequence progress for an account
+ * @param {number} accountId - Account ID
+ * @param {number} sequenceId - Sequence ID
+ * @returns {Promise<Object>} Progress data
+ */
+export const getSequenceProgress = async (accountId, sequenceId) => {
+  if (!accountId) throw new Error("Account ID is required");
+  if (!sequenceId) throw new Error("Sequence ID is required");
+
+  try {
+    const url = `${RESOURCE}/account/${accountId}/sequence/${sequenceId}/progress`;
+    const response = await api.get(url);
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error fetching sequence progress:", error);
     throw error;
   }
 };

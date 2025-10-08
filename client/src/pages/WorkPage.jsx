@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -32,10 +32,8 @@ import {
   Toolbar,
   AppBar,
   LinearProgress,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import {
   Close,
@@ -56,6 +54,8 @@ import {
   RadioButtonUnchecked,
   Schedule,
   Note,
+  Email,
+  Lock,
 } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import { formatDistanceToNow, format } from "date-fns";
@@ -63,34 +63,37 @@ import theme from "../components/Theme";
 import NotesPopup from "../components/NotesComponent";
 
 const WorkPage = ({
-  viewMode = 'activities',
-  sequenceViewData = null,
   activities = [],
   loading = false,
   error,
   successMessage,
-  onAddNote,
-  // notesPopupOpen,
-  // setNotesPopupOpen,
-  selectedAccount,
-  handleSaveNote,
-  handleEditNote,  
   statusMessage,
   statusSeverity = 'info',
+  
+  // Account and sequence
+  userAccounts = [],
+  selectedAccountId = null,
+  sequenceProgress = null,
+  onAccountChange = () => {},
+  onToggleSequenceItem = () => {},
+  onSequenceItemClick = () => {},
+  
+  // Filters
   currentSort = 'dueDate',
   currentFilter = 'all',
-  selectedAccountId = null,
   onSortChange = () => {},
   onFilterChange = () => {},
-  onAccountFilterChange = () => {},
+  
+  // Tabs
   openTabs = [],
   activeTab = 0,
   currentActivity,
   currentTabLoading = false,
   onTabChange = () => {},
   onTabClose = () => {},
+  
+  // Actions
   onActivityClick = () => {},
-  onSequenceStepClick = () => {},
   onCompleteActivity = async () => {},
   onSendEmailClick = () => {}, 
   showEmailForm = {},
@@ -99,23 +102,37 @@ const WorkPage = ({
   onDragStart = () => {},
   onDrop = () => {},
   onDragOver = (e) => e.preventDefault(),
+  onReorderActivities = () => {},
+  
+  // Metadata
   activityMetadata = { priorityLevels: [], activityTypes: [] },
+  
+  // Utility
   onClearMessages = () => {},
   showStatus = () => {},
+  
+  // Notes
+  onAddNote = () => {},
+  handleSaveNote = () => {},
+  handleEditNote = () => {},
 }) => {
-  // Local state for dialogs and forms
+  // Local state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completeNotes, setCompleteNotes] = useState("");
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const [editFormData, setEditFormData] = useState({
     dueToStart: "",
     dueToEnd: "",
     priorityLevelId: ""
   });
+
+  const isSequenceMode = selectedAccountId !== null;
 
   // Sort and filter options
   const sortOptions = [
@@ -182,18 +199,8 @@ const WorkPage = ({
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
-  const getStepIcon = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return <CheckCircleOutline sx={{ color: '#4caf50' }} />;
-      case 'pending':
-      case 'overdue':
-      case 'urgent':
-        return <Schedule sx={{ color: '#ff9800' }} />;
-      case 'not_started':
-      default:
-        return <RadioButtonUnchecked sx={{ color: '#9e9e9e' }} />;
-    }
+  const isEmailActivity = (activity) => {
+    return activity && (activity.TypeID === 3 || activity.ActivityTypeID === 3);
   };
 
   // Dialog handlers
@@ -217,15 +224,15 @@ const WorkPage = ({
       const updateData = {};
       
       if (editFormData.dueToStart) {
-        updateData.dueToStart = new Date(editFormData.dueToStart).toISOString();
+        updateData.DueToStart = new Date(editFormData.dueToStart).toISOString();
       }
       
       if (editFormData.dueToEnd) {
-        updateData.dueToEnd = new Date(editFormData.dueToEnd).toISOString();
+        updateData.DueToEnd = new Date(editFormData.dueToEnd).toISOString();
       }
       
       if (editFormData.priorityLevelId) {
-        updateData.priorityLevelId = parseInt(editFormData.priorityLevelId);
+        updateData.PriorityLevelID = parseInt(editFormData.priorityLevelId);
       }
 
       await onUpdateActivity(currentActivity.ActivityID, updateData);
@@ -267,7 +274,59 @@ const WorkPage = ({
     }
   };
 
+
+// Drag and drop handlers
+const handleListDragStart = (e, index, activity) => {
+  // Allow dragging in both modes now
+  setDraggedIndex(index);
+  e.dataTransfer.setData("application/json", JSON.stringify(activity));
+  e.dataTransfer.effectAllowed = "copyMove";
+};
+
+const handleListDragOver = (e, index) => {
+  // Only allow reordering in non-sequence mode
+  if (isSequenceMode) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy"; // Change to copy for sequence mode
+    return;
+  }
   
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  setDragOverIndex(index);
+};
+
+const handleListDragLeave = () => {
+  setDragOverIndex(null);
+};
+
+const handleListDrop = (e, dropIndex) => {
+  e.preventDefault();
+  
+  // In sequence mode, don't reorder, just ignore the drop in the list
+  if (isSequenceMode) {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    return;
+  }
+  
+  // Regular reordering for activity list mode
+  if (draggedIndex === null || draggedIndex === dropIndex) {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    return;
+  }
+
+  onReorderActivities(draggedIndex, dropIndex);
+  
+  setDraggedIndex(null);
+  setDragOverIndex(null);
+};
+
+const handleListDragEnd = () => {
+  setDraggedIndex(null);
+  setDragOverIndex(null);
+};
 
   const CustomTabPanel = ({ children, value, index, ...other }) => (
     <div
@@ -281,191 +340,20 @@ const WorkPage = ({
     </div>
   );
 
-  // ============================================================
-  // SEQUENCE VIEW COMPONENT
-  // ============================================================
-  const SequenceView = () => {
-    if (!sequenceViewData) return null;
-
-    const { account, sequence, progress, steps } = sequenceViewData;
-
-    return (
-      <Box sx={{ p: 0 }}>
-        {/* Sequence Header */}
-        <Paper sx={{ p: 3, mb: 2, borderRadius: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-                {account.AccountName}
-              </Typography>
-              <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
-                {sequence.SequenceName}
-              </Typography>
-              {sequence.SequenceDescription && (
-                <Typography variant="body2" color="text.secondary">
-                  {sequence.SequenceDescription}
-                </Typography>
-              )}
-            </Box>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => onAccountFilterChange(null)}
-              sx={{ ml: 2 }}
-            >
-              Back to All Activities
-            </Button>
-          </Box>
-
-          {/* Progress Bar */}
-          <Box sx={{ mt: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Sequence Progress
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {progress.completedSteps} of {progress.totalSteps} steps completed
-              </Typography>
-            </Box>
-            <LinearProgress 
-              variant="determinate" 
-              value={progress.progressPercentage} 
-              sx={{ 
-                height: 8, 
-                borderRadius: 4,
-                backgroundColor: '#e0e0e0',
-                '& .MuiLinearProgress-bar': {
-                  backgroundColor: '#4caf50'
-                }
-              }}
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-              {progress.progressPercentage}% complete
-            </Typography>
-          </Box>
-        </Paper>
-
-        {/* Sequence Steps */}
-        <Paper sx={{ p: 3, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-            Sequence Steps
-          </Typography>
-          
-          <Stepper orientation="vertical" nonLinear>
-            {steps.map((step, index) => {
-              const isCompleted = step.Status === 'completed';
-              const isActive = step.Status === 'pending' || step.Status === 'overdue' || step.Status === 'urgent';
-              const isNotStarted = step.Status === 'not_started';
-
-              return (
-                <Step key={step.SequenceItemID} active={isActive} completed={isCompleted}>
-                  <StepLabel
-                    StepIconComponent={() => getStepIcon(step.Status)}
-                    optional={
-                      <Typography variant="caption">
-                        Day {step.DaysFromStart}
-                      </Typography>
-                    }
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                        Step {step.stepNumber}: {step.ActivityTypeName}
-                      </Typography>
-                      <Chip
-                        size="small"
-                        label={step.Status.replace('_', ' ')}
-                        sx={{
-                          backgroundColor: getStatusColor(step.Status),
-                          color: 'white',
-                          fontSize: '0.7rem',
-                          height: 20,
-                          textTransform: 'capitalize'
-                        }}
-                      />
-                    </Box>
-                  </StepLabel>
-                  <StepContent>
-                    <Box sx={{ mb: 2 }}>
-                      {step.SequenceItemDescription && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          {step.SequenceItemDescription}
-                        </Typography>
-                      )}
-                      
-                      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 1 }}>
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            Due Date
-                          </Typography>
-                          <Typography variant="body2">
-                            {step.DueToStart 
-                              ? format(new Date(step.DueToStart), "MMM d, yyyy")
-                              : format(new Date(step.estimatedDueDate), "MMM d, yyyy (estimated)")}
-                          </Typography>
-                        </Box>
-                        
-                        {step.PriorityLevelValue && (
-                          <Box>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              Priority
-                            </Typography>
-                            <Chip
-                              size="small"
-                              label={`P${step.PriorityLevelValue} - ${step.PriorityLevelName}`}
-                              sx={{
-                                backgroundColor: getPriorityColor(step.PriorityLevelValue),
-                                color: 'white',
-                                fontSize: '0.65rem',
-                                height: 18
-                              }}
-                            />
-                          </Box>
-                        )}
-                      </Box>
-
-                      {step.ActivityID && (
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => onSequenceStepClick(step)}
-                          sx={{ mt: 1 }}
-                        >
-                          Open Activity
-                        </Button>
-                      )}
-                      
-                      {!step.ActivityID && isNotStarted && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, fontStyle: 'italic' }}>
-                          This step hasn't been started yet
-                        </Typography>
-                      )}
-                    </Box>
-                  </StepContent>
-                </Step>
-              );
-            })}
-          </Stepper>
-        </Paper>
-      </Box>
-    );
-  };
-
-  // ============================================================
-  // ACTIVITIES LIST VIEW COMPONENT
-  // ============================================================
+  // Activities List View
   const ActivitiesListView = () => (
     <List sx={{ p: 0 }}>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4, flexDirection: 'column', alignItems: 'center' }}>
           <CircularProgress />
           <Typography variant="body2" sx={{ mt: 2, color: '#666666' }}>
-            Loading activities...
+            Loading {isSequenceMode ? 'sequence items' : 'activities'}...
           </Typography>
         </Box>
       ) : error ? (
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="h6" color="error" sx={{ mb: 1 }}>
-            Error Loading Activities
+            Error Loading {isSequenceMode ? 'Sequence' : 'Activities'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {error}
@@ -481,38 +369,75 @@ const WorkPage = ({
             Invalid Data Format
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Activities data is not in the expected format.
+            Data is not in the expected format.
           </Typography>
         </Box>
       ) : activities.length === 0 ? (
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <Assignment sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-            No activities found
+            {isSequenceMode ? 'No sequence items yet' : 'No activities found'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Try adjusting your filter or sort options
+            {isSequenceMode ? 'The first item will appear when it becomes available' : 'Try adjusting your filter or sort options'}
           </Typography>
-          <Button variant="outlined" onClick={() => onFilterChange('all')}>
-            Show All
+          <Button variant="outlined" onClick={() => selectedAccountId ? onAccountChange(null) : onFilterChange('all')}>
+            {selectedAccountId ? 'Show All Accounts' : 'Show All'}
           </Button>
         </Box>
       ) : (
         activities.map((activity, index) => (
-          <React.Fragment key={activity.ActivityID || index}>
+          <React.Fragment key={activity.SequenceItemID || activity.ActivityID || index}>
             <ListItem
-              draggable
-              onDragStart={(e) => onDragStart(e, activity)}
-              onClick={() => onActivityClick(activity)}
-              sx={{
-                cursor: 'pointer',
-                '&:hover': { backgroundColor: '#f5f5f5' },
-                borderLeft: `4px solid ${getStatusColor(activity.Status)}`,
-                py: 2,
-                px: 2
-              }}
-            >
-              <DragIndicator sx={{ mr: 1, color: '#ccc', cursor: 'grab' }} />
+  draggable={true}  // Change from draggable={!isSequenceMode} to always true
+  onDragStart={(e) => handleListDragStart(e, index, activity)}
+  onDragOver={(e) => handleListDragOver(e, index)}
+  onDragLeave={handleListDragLeave}
+  onDrop={(e) => handleListDrop(e, index)}
+  onDragEnd={handleListDragEnd}
+  onClick={() => {
+    if (isSequenceMode && activity.SequenceItemID) {
+      onSequenceItemClick(activity);
+    } else {
+      onActivityClick(activity);
+    }
+  }}
+  sx={{
+    cursor: 'grab',  // Change from conditional cursor to always 'grab'
+    '&:hover': { backgroundColor: '#f5f5f5' },
+    borderLeft: `4px solid ${getStatusColor(activity.Status)}`,
+    py: 2,
+    px: 2,
+    backgroundColor: dragOverIndex === index ? '#e3f2fd' : 'transparent',
+    borderTop: !isSequenceMode && dragOverIndex === index ? '2px solid #2196f3' : 'none',
+    transition: 'all 0.2s ease'
+  }}
+>
+  {isSequenceMode && activity.SequenceItemID && (
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={activity.Completed || activity.Status === 'completed'}
+          onChange={(e) => {
+            e.stopPropagation();
+            onToggleSequenceItem(
+              activity.SequenceItemID,
+              activity.AccountID,
+              activity.Completed || activity.Status === 'completed'
+            );
+          }}
+          icon={<RadioButtonUnchecked />}
+          checkedIcon={<CheckCircleOutline />}
+          onClick={(e) => e.stopPropagation()}
+        />
+      }
+      label=""
+      sx={{ mr: 1 }}
+    />
+  )}
+  {!isSequenceMode && (
+    <DragIndicator sx={{ mr: 1, color: '#999', cursor: 'grab' }} />
+  )}
               <ListItemText
                 primary={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -526,7 +451,8 @@ const WorkPage = ({
                         backgroundColor: getStatusColor(activity.Status),
                         color: 'white',
                         fontSize: '0.7rem',
-                        height: 20
+                        height: 20,
+                        textTransform: 'capitalize'
                       }}
                     />
                   </Box>
@@ -538,20 +464,27 @@ const WorkPage = ({
                     </Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="caption" color="text.secondary">
-                        {formatDueDate(activity.DueToStart)}
+                        {formatDueDate(activity.DueToStart || activity.estimatedDueDate)}
                       </Typography>
-                      <Chip
-                        size="small"
-                        label={`P${activity.PriorityLevelValue || '?'}`}
-                        sx={{
-                          backgroundColor: getPriorityColor(activity.PriorityLevelValue || 0),
-                          color: 'white',
-                          fontSize: '0.6rem',
-                          height: 16
-                        }}
-                      />
+                      {activity.PriorityLevelValue && (
+                        <Chip
+                          size="small"
+                          label={`P${activity.PriorityLevelValue || '?'}`}
+                          sx={{
+                            backgroundColor: getPriorityColor(activity.PriorityLevelValue || 0),
+                            color: 'white',
+                            fontSize: '0.6rem',
+                            height: 16
+                          }}
+                        />
+                      )}
                     </Box>
-                    {activity.SequenceName && (
+                    {isSequenceMode && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                        Day {activity.DaysFromStart || 'N/A'}
+                      </Typography>
+                    )}
+                    {!isSequenceMode && activity.SequenceName && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
                         {activity.SequenceName} - Day {activity.DaysFromStart || 'N/A'}
                       </Typography>
@@ -567,9 +500,6 @@ const WorkPage = ({
     </List>
   );
 
-  // ============================================================
-  // MAIN RENDER
-  // ============================================================
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fafafa' }}>
@@ -580,47 +510,95 @@ const WorkPage = ({
             <Typography variant="h4" sx={{ fontWeight: 700, color: '#050505' }}>
               Work Page
             </Typography>
-            {viewMode === 'sequence' && (
-              <Chip
-                icon={<Timeline />}
-                label="Sequence View"
-                sx={{ ml: 2, backgroundColor: '#2196f3', color: 'white' }}
-              />
-            )}
           </Toolbar>
         </AppBar>
 
         {/* Main Content */}
         <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           
-          {/* Left Panel - Activities List or Sequence View */}
+          {/* Left Panel - Activities List */}
           <Paper sx={{ 
-            width: viewMode === 'sequence' ? '100%' : 400,
+            width: 400,
             display: 'flex', 
             flexDirection: 'column',
             borderRadius: 0,
-            borderRight: viewMode === 'activities' ? '1px solid #e0e0e0' : 'none'
+            borderRight: '1px solid #e0e0e0',
+            overflow: 'hidden'
           }}>
-            {viewMode === 'activities' ? (
-              <>
-                {/* Activities List Header */}
-                <Toolbar sx={{ 
-                  backgroundColor: '#fff', 
-                  borderBottom: '1px solid #e0e0e0',
-                  flexDirection: 'column',
-                  alignItems: 'stretch',
-                  py: 2
-                }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, flex: 1 }}>
-                      My Activities
+            {/* Filter Toolbar */}
+            <Toolbar sx={{ 
+              backgroundColor: '#fff', 
+              borderBottom: '1px solid #e0e0e0',
+              flexDirection: 'column',
+              alignItems: 'stretch',
+              py: 2,
+              flexShrink: 0
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, flex: 1 }}>
+                  {isSequenceMode ? 'Sequence Progress' : 'My Activities'}
+                </Typography>
+                {!isSequenceMode && (
+                  <Tooltip title="Drag activities to reorder or drop into workspace" arrow>
+                    <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
+                  </Tooltip>
+                )}
+              </Box>
+              
+              {/* Account Filter */}
+              <Box sx={{ mb: 2 }}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel>Account</InputLabel>
+                  <Select
+                    value={selectedAccountId || ''}
+                    onChange={(e) => onAccountChange(e.target.value || null)}
+                    label="Account"
+                  >
+                    <MenuItem value="">All Activities</MenuItem>
+                    {userAccounts.map((account) => (
+                      <MenuItem key={account.AccountID} value={account.AccountID}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Business sx={{ fontSize: 16 }} />
+                          {account.AccountName}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+
+              {/* Sequence Progress */}
+              {isSequenceMode && sequenceProgress && (
+                <Box sx={{ mb: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      Progress
                     </Typography>
-                    <Tooltip title="Manage your work activities with smart workflow" arrow>
-                      <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
-                    </Tooltip>
+                    <Typography variant="body2" color="text.secondary">
+                      {sequenceProgress.completedItems} of {sequenceProgress.totalItems}
+                    </Typography>
                   </Box>
-                  
-                  {/* Sort and Filter Controls */}
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={sequenceProgress.progress} 
+                    sx={{ 
+                      height: 8, 
+                      borderRadius: 4,
+                      backgroundColor: '#e0e0e0',
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: '#4caf50'
+                      }
+                    }}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                    {sequenceProgress.progress}% complete
+                  </Typography>
+                </Box>
+              )}
+              
+              {/* Sort and Filter Controls - Only show in All Activities mode */}
+              {!isSequenceMode && (
+                <>
                   <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
                     <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
                       <InputLabel>Sort by</InputLabel>
@@ -655,106 +633,116 @@ const WorkPage = ({
                       </Select>
                     </FormControl>
                   </Box>
-                  
-                  <Typography variant="body2" color="text.secondary">
-                    {Array.isArray(activities) ? activities.length : 0} activities
-                  </Typography>
-                </Toolbar>
+                </>
+              )}
+              
+              <Typography variant="body2" color="text.secondary">
+                {Array.isArray(activities) ? activities.length : 0} {isSequenceMode ? 'visible items' : 'activities'}
+              </Typography>
+            </Toolbar>
 
-                {/* Activities List */}
-                <Box sx={{ flex: 1, overflow: 'auto' }}>
-                  <ActivitiesListView />
-                </Box>
-              </>
-            ) : (
-              /* Sequence View */
-              <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-                <SequenceView />
-              </Box>
-            )}
+            {/* Activities List (Scrollable) */}
+            <Box sx={{ 
+              flex: 1, 
+              overflow: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: '#f1f1f1',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: '#888',
+                borderRadius: '4px',
+                '&:hover': {
+                  backgroundColor: '#555',
+                },
+              },
+            }}>
+              <ActivitiesListView />
+            </Box>
           </Paper>
 
-          {/* Main Content - Tabbed Activity Workspace (only in activities mode) */}
-          {viewMode === 'activities' && (
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              
-              {/* Tab Bar */}
-              {openTabs.length > 0 && (
-                <Paper sx={{ borderRadius: 0, borderBottom: '1px solid #e0e0e0' }}>
-                  <Tabs
-                    value={activeTab}
-                    onChange={(e, newValue) => onTabChange(newValue)}
-                    variant="scrollable"
-                    scrollButtons="auto"
-                    sx={{ minHeight: 48 }}
-                  >
-                    {openTabs.map((tab, index) => (
-                      <Tab
-                        key={`${tab.activityId}-${index}`}
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
-                            <Box sx={{ textAlign: 'left' }}>
-                              <Typography variant="body2" sx={{ fontWeight: 500, display: 'block' }}>
-                                {tab.title}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                {tab.subtitle}
-                              </Typography>
-                            </Box>
-                            <Box
-                              component="span"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onTabClose(index);
-                              }}
-                              sx={{ 
-                                ml: 1, 
-                                p: 0.5,
-                                borderRadius: '50%',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                '&:hover': {
-                                  backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                                }
-                              }}
-                            >
-                              <Close fontSize="small" />
-                            </Box>
+          {/* Right Panel - Tabbed Activity Workspace */}
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            
+            {/* Tab Bar */}
+            {openTabs.length > 0 && (
+              <Paper sx={{ borderRadius: 0, borderBottom: '1px solid #e0e0e0' }}>
+                <Tabs
+                  value={activeTab}
+                  onChange={(e, newValue) => onTabChange(newValue)}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  sx={{ minHeight: 48 }}
+                >
+                  {openTabs.map((tab, index) => (
+                    <Tab
+                      key={`${tab.activityId}-${index}`}
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
+                          <Box sx={{ textAlign: 'left' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 500, display: 'block' }}>
+                              {tab.title}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              {tab.subtitle}
+                            </Typography>
                           </Box>
-                        }
-                        sx={{ minHeight: 48, textTransform: 'none' }}
-                      />
-                    ))}
-                  </Tabs>
-                </Paper>
-              )}
+                          <Box
+                            component="span"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onTabClose(index);
+                            }}
+                            sx={{ 
+                              ml: 1, 
+                              p: 0.5,
+                              borderRadius: '50%',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                              }
+                            }}
+                          >
+                            <Close fontSize="small" />
+                          </Box>
+                        </Box>
+                      }
+                      sx={{ minHeight: 48, textTransform: 'none' }}
+                    />
+                  ))}
+                </Tabs>
+              </Paper>
+            )}
 
-              {/* Tab Content */}
-              <Box 
-                sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
-                onDrop={onDrop}
-                onDragOver={onDragOver}
-              >
-                {openTabs.length === 0 ? (
-                  /* Empty State */
-                  <Box sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    p: 4,
-                    textAlign: 'center'
-                  }}>
-                    <Assignment sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                      No activities open
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      Click on an activity from the left panel or drag and drop it here
-                    </Typography>
+            {/* Tab Content */}
+            <Box 
+              sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+            >
+              {openTabs.length === 0 ? (
+                <Box sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  p: 4,
+                  textAlign: 'center'
+                }}>
+                  <Assignment sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                    No activities open
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    {isSequenceMode ? 'Click on a sequence item to start' : 'Click on an activity from the left panel or drag and drop it here'}
+                  </Typography>
+                  {!isSequenceMode && (
                     <Box sx={{ 
                       border: '2px dashed #ddd', 
                       borderRadius: 2, 
@@ -767,46 +755,46 @@ const WorkPage = ({
                         Drop activities here to open them
                       </Typography>
                     </Box>
-                  </Box>
-                ) : (
-                  /* Active Tab Content */
-                  openTabs.map((tab, index) => (
-                    <CustomTabPanel key={`${tab.activityId}-${index}`} value={activeTab} index={index}>
-                      {currentTabLoading ? (
-                        <Box sx={{ 
-                          display: 'flex', 
-                          justifyContent: 'center', 
-                          alignItems: 'center', 
-                          height: '100%',
-                          flexDirection: 'column',
-                          gap: 2
-                        }}>
-                          <CircularProgress />
-                          <Typography variant="body2" color="text.secondary">
-                            Loading activity details...
-                          </Typography>
-                        </Box>
-                      ) : currentActivity ? (
-                        <Box sx={{ p: 3, height: '100%', overflow: 'auto' }}>
-                          <Card sx={{ width: '100%', height: 'fit-content' }}>
-                            <CardContent>
-                              {/* Activity Header */}
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-                                <Box sx={{ flex: 1 }}>
-                                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-                                    {currentActivity.AccountName}
-                                  </Typography>
-                                  <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
-                                    {currentActivity.ActivityTypeName}
-                                  </Typography>
-                                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                    <Chip
-                                      label={currentActivity.Status}
-                                      sx={{
-                                        backgroundColor: getStatusColor(currentActivity.Status),
-                                        color: 'white'
-                                      }}
-                                    />
+                  )}
+                </Box>
+              ) : (
+                openTabs.map((tab, index) => (
+                  <CustomTabPanel key={`${tab.activityId}-${index}`} value={activeTab} index={index}>
+                    {currentTabLoading ? (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        height: '100%',
+                        flexDirection: 'column',
+                        gap: 2
+                      }}>
+                        <CircularProgress />
+                        <Typography variant="body2" color="text.secondary">
+                          Loading activity details...
+                        </Typography>
+                      </Box>
+                    ) : currentActivity ? (
+                      <Box sx={{ p: 3, height: '100%', overflow: 'auto' }}>
+                        <Card sx={{ width: '100%', height: 'fit-content' }}>
+                          <CardContent>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+                              <Box sx={{ flex: 1 }}>
+                                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                                  {currentActivity.AccountName}
+                                </Typography>
+                                <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
+                                  {currentActivity.ActivityTypeName}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                  <Chip
+                                    label={currentActivity.Status}
+                                    sx={{
+                                      backgroundColor: getStatusColor(currentActivity.Status),
+                                      color: 'white'
+                                    }}
+                                  />
+                                  {currentActivity.PriorityLevelValue && (
                                     <Chip
                                       label={`Priority ${currentActivity.PriorityLevelValue} - ${currentActivity.PriorityLevelName}`}
                                       sx={{
@@ -814,130 +802,131 @@ const WorkPage = ({
                                         color: 'white'
                                       }}
                                     />
-                                    {currentActivity.SequenceName && (
-                                      <Chip
-                                        label={`${currentActivity.SequenceName} (Day ${currentActivity.DaysFromStart})`}
-                                        variant="outlined"
-                                      />
-                                    )}
-                                  </Box>
+                                  )}
+                                  {currentActivity.SequenceName && (
+                                    <Chip
+                                      label={`${currentActivity.SequenceName} (Day ${currentActivity.DaysFromStart})`}
+                                      variant="outlined"
+                                    />
+                                  )}
                                 </Box>
                               </Box>
+                            </Box>
 
-                              {/* Activity Details */}
-                              <Grid container spacing={3}>
-                                <Grid item xs={12} md={6}>
-                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
-                                    Due Date
-                                  </Typography>
-                                  <Typography variant="body1" sx={{ mb: 2 }}>
-                                    {currentActivity.DueToStart ? 
-                                      format(new Date(currentActivity.DueToStart), "MMM d, yyyy 'at' h:mm a") : 
-                                      'No due date set'
-                                    }
-                                  </Typography>
-                                </Grid>
-                                
-                                <Grid item xs={12} md={6}>
-                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
-                                    Time Until Due
-                                  </Typography>
-                                  <Typography variant="body1" sx={{ mb: 2 }}>
-                                    {formatDueDate(currentActivity.DueToStart)}
-                                  </Typography>
-                                </Grid>
-
-                                {currentActivity.DueToEnd && (
-                                  <Grid item xs={12} md={6}>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
-                                      End Date
-                                    </Typography>
-                                    <Typography variant="body1" sx={{ mb: 2 }}>
-                                      {format(new Date(currentActivity.DueToEnd), "MMM d, yyyy 'at' h:mm a")}
-                                    </Typography>
-                                  </Grid>
-                                )}
-
-                                {currentActivity.SequenceItemDescription && (
-                                  <Grid item xs={12}>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
-                                      Sequence Item Description
-                                    </Typography>
-                                    <Typography variant="body1" sx={{ mb: 2 }}>
-                                      {currentActivity.SequenceItemDescription}
-                                    </Typography>
-                                  </Grid>
-                                )}
+                            <Grid container spacing={3}>
+                              <Grid item xs={12} md={6}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
+                                  Due Date
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 2 }}>
+                                  {currentActivity.DueToStart ? 
+                                    format(new Date(currentActivity.DueToStart), "MMM d, yyyy 'at' h:mm a") : 
+                                    'No due date set'
+                                  }
+                                </Typography>
+                              </Grid><Grid item xs={12} md={6}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
+                                  Time Until Due
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 2 }}>
+                                  {formatDueDate(currentActivity.DueToStart)}
+                                </Typography>
                               </Grid>
-                            </CardContent>
 
-                            <CardActions sx={{ p: 3, pt: 0, gap: 1 }}>
-                              <Button
-                                variant="contained"
-                                startIcon={<CheckCircle />}
-                                onClick={handleCompleteClick}
-                                disabled={currentActivity.Completed}
-                              >
-                                {currentActivity.Completed ? 'Completed' : 'Mark Complete'}
-                              </Button>
+                              {currentActivity.DueToEnd && (
+                                <Grid item xs={12} md={6}>
+                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
+                                    End Date
+                                  </Typography>
+                                  <Typography variant="body1" sx={{ mb: 2 }}>
+                                    {format(new Date(currentActivity.DueToEnd), "MMM d, yyyy 'at' h:mm a")}
+                                  </Typography>
+                                </Grid>
+                              )}
+
+                              {currentActivity.SequenceItemDescription && (
+                                <Grid item xs={12}>
+                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
+                                    Sequence Item Description
+                                  </Typography>
+                                  <Typography variant="body1" sx={{ mb: 2 }}>
+                                    {currentActivity.SequenceItemDescription}
+                                  </Typography>
+                                </Grid>
+                              )}
+                            </Grid>
+                          </CardContent>
+
+                          <CardActions sx={{ p: 3, pt: 0, gap: 1, flexWrap: 'wrap' }}>
+                            <Button
+                              variant="contained"
+                              startIcon={<CheckCircle />}
+                              onClick={handleCompleteClick}
+                              disabled={currentActivity.Completed}
+                            >
+                              {currentActivity.Completed ? 'Completed' : 'Mark Complete'}
+                            </Button>
+                            
+                            {isEmailActivity(currentActivity) && (
                               <Button
                                 variant="outlined"
                                 color="primary"
-                                onClick={() => onSendEmailClick(currentActivity.ActivityID)} // Use the prop, not local function
+                                startIcon={<Email />}
+                                onClick={() => onSendEmailClick(currentActivity.ActivityID)}
                               >
                                 Send Email
                               </Button>
-                               <Button
-                                variant="outlined"
-                                color="primary"
-                                startIcon={<Note />}
-                                onClick={() => setNotesPopupOpen(true)}
-                              >
-                                Add Note
-                              </Button>
+                            )}
+                            
+                            <Button
+                              variant="outlined"
+                              color="primary"
+                              startIcon={<Note />}
+                              onClick={() => setNotesPopupOpen(true)}
+                            >
+                              Add Note
+                            </Button>
 
-
-                              <Button
-                                variant="outlined"
-                                startIcon={<Edit />}
-                                onClick={handleEditClick}
-                                disabled={currentActivity.Completed}
-                              >
-                                Edit
-                              </Button>
-                              
-                              <Button
-                                variant="outlined"
-                                color="error"
-                                startIcon={<Delete />}
-                                onClick={handleDeleteClick}
-                              >
-                                Delete
-                              </Button>
-                            </CardActions>
-                          </Card>
-                        </Box>
-                      ) : (
-                        <Box sx={{ 
-                          display: 'flex', 
-                          justifyContent: 'center', 
-                          alignItems: 'center', 
-                          height: '100%',
-                          flexDirection: 'column',
-                          gap: 2
-                        }}>
-                          <Assignment sx={{ fontSize: 48, color: '#ccc' }} />
-                          <Typography variant="body2" color="text.secondary">
-                            Activity not found or failed to load
-                          </Typography>
-                        </Box>
-                      )}
-                    </CustomTabPanel>
-                  ))
-                )}
-              </Box>
+                            <Button
+                              variant="outlined"
+                              startIcon={<Edit />}
+                              onClick={handleEditClick}
+                              disabled={currentActivity.Completed}
+                            >
+                              Edit
+                            </Button>
+                            
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              startIcon={<Delete />}
+                              onClick={handleDeleteClick}
+                            >
+                              Delete
+                            </Button>
+                          </CardActions>
+                        </Card>
+                      </Box>
+                    ) : (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        height: '100%',
+                        flexDirection: 'column',
+                        gap: 2
+                      }}>
+                        <Assignment sx={{ fontSize: 48, color: '#ccc' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          Activity not found or failed to load
+                        </Typography>
+                      </Box>
+                    )}
+                  </CustomTabPanel>
+                ))
+              )}
             </Box>
-          )}
+          </Box>
           
         </Box>
 
@@ -1020,77 +1009,68 @@ const WorkPage = ({
           </DialogActions>
         </Dialog>
 
-      {/* Notes Popup */}
-{notesPopupOpen && currentActivity && (
-  <NotesPopup
-    open={notesPopupOpen}
-    onClose={() => setNotesPopupOpen(false)}
-    onSave={handleSaveNote}
-    onEdit={handleEditNote}
-    entityType="Activity"
-    entityId={currentActivity.ActivityID}
-    entityName={`${currentActivity.AccountName} - ${currentActivity.ActivityTypeName}`}
-    showExistingNotes={true}
-    maxLength={255}
-    required={false}
-  />
-)} 
-
+        {/* Notes Popup */}
+        {notesPopupOpen && currentActivity && (
+          <NotesPopup
+            open={notesPopupOpen}
+            onClose={() => setNotesPopupOpen(false)}
+            onSave={handleSaveNote}
+            onEdit={handleEditNote}
+            entityType="Activity"
+            entityId={currentActivity.ActivityID}
+            entityName={`${currentActivity.AccountName} - ${currentActivity.ActivityTypeName}`}
+            showExistingNotes={true}
+            maxLength={255}
+            required={false}
+          />
+        )} 
+       
 {/* Status Snackbar */}
 <Snackbar
-          open={!!statusMessage}
-          autoHideDuration={4000}
-          onClose={() => showStatus('')}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-          sx={{
-              '& .MuiSnackbarContent-root': {
-                fontSize: '1.1rem',
-                minWidth: '400px',
-              }
-          }}
-        >
-          <Alert 
-            onClose={() => showStatus('')} 
-            severity={statusSeverity} 
-            sx={{ 
-              width: '100%',
-              fontSize: '1.1rem', // Increased font size
-              '& .MuiAlert-message': {
-                fontSize: '1.1rem', // Ensure message text is larger
-                fontWeight: 500, // Make text slightly bolder
-              }
-            }}
-          >
-            {statusMessage}
-          </Alert>
-        </Snackbar>
+  open={!!statusMessage}
+  autoHideDuration={4000}
+  onClose={() => showStatus('')}
+  anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+  sx={{
+    '& .MuiSnackbarContent-root': {
+      fontSize: '1.1rem',
+      minWidth: '400px',
+    },
+  }} // <-- fixed missing closing brace
+>
+  <Alert 
+    onClose={() => showStatus('')} 
+    severity={statusSeverity} 
+    sx={{ 
+      width: '100%',
+      fontSize: '1.1rem',
+      '& .MuiAlert-message': {
+        fontSize: '1.1rem',
+        fontWeight: 500,
+      },
+    }}
+  >
+    {statusMessage}
+  </Alert>
+</Snackbar>
 
-        {/* Success Message
-        {successMessage && (
-          <Alert 
-            severity="success" 
-            sx={{ position: 'fixed', top: 16, right: 16, zIndex: 1300 }}
-            onClose={onClearMessages}
-          >
-            {successMessage}
-          </Alert>
-        )}*/}
 
-        {/* Error Alert - Also centered for consistency */}
+        {/* Error Alert */}
+    
         {error && (
           <Alert 
             severity="error" 
             sx={{ 
               position: 'fixed', 
               top: 16, 
-              left: '50%', // Position at center
-              transform: 'translateX(-50%)', // Center horizontally
+              transform: 'translateX(-50%)',
+              left: '50%',
               zIndex: 1300,
-              fontSize: '1.1rem', // Increased font size
-              minWidth: '400px', // Minimum width
+              fontSize: '1.1rem',
+              minWidth: '400px',
               '& .MuiAlert-message': {
-                fontSize: '1.1rem', // Ensure message text is larger
-                fontWeight: 500, // Make text slightly bolder
+                fontSize: '1.1rem',
+                fontWeight: 500,
               }
             }}
             onClose={onClearMessages}

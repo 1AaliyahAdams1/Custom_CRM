@@ -12,7 +12,6 @@ import {
   IconButton,
   Divider,
   Tooltip,
-  useTheme,
   alpha,
 } from "@mui/material";
 import {
@@ -21,7 +20,6 @@ import {
   Handshake as HandshakeIcon,
   People as PeopleIcon,
   Event as EventIcon,
-  Settings as SettingsIcon,
   ChevronLeft,
   ChevronRight,
   BarChart as BarChartIcon,
@@ -37,163 +35,8 @@ import WorkIcon from '@mui/icons-material/Work';
 import DiscountIcon from '@mui/icons-material/Discount';
 
 import { useAuth } from "../hooks/auth/useAuth";
+import { useSettings } from "../context/SettingsContext";
 import { ROUTE_ACCESS } from "../utils/auth/routesAccess";
-
-
-// Navigation items configuration using centralized route access
-const navigation = [
-  // {
-  //   name: "Dashboard",
-  //   href: "/dashboard",
-  //   icon: DashboardIcon,
-  //   accessKey: "dashboard",
-  //   section: "Main",
-  // },
- 
-  {
-    name: "Accounts",
-    href: "/accounts",
-    icon: BusinessIcon,
-    accessKey: "accounts",
-    section: "CRM Management",
-  },
-  {
-    name: "Contacts",
-    href: "/contacts",
-    icon: PeopleIcon,
-    accessKey: "contacts",
-    section: "CRM Management",
-  },
-  {
-    name: "Deals",
-    href: "/deals",
-    icon: HandshakeIcon,
-    accessKey: "deals",
-    section: "CRM Management",
-  },
-   {
-    name:"Deal Room",
-    href:"/deal-room",
-    icon: BusinessIcon,
-    accessKey: "dealRoom",
-    section: "CRM Management",
-  },
-  {
-    name: "Activities",
-    href: "/activities",
-    icon: EventIcon,
-    accessKey: "activities",
-    section: "CRM Management",
-  },
-  {
-    name: "Products",
-    href: "/products",
-    icon: InventoryIcon,
-    accessKey: "products",
-    section: "CRM Management",
-  },
-  {
-    name: "Companies",
-    href: "/companies",
-    icon: CorporateFareIcon,
-    accessKey: "companies",
-    section: "CRM Management",
-  },
-  {
-    name: "Events",
-    href: "/events",
-    icon: EventIcon,
-    accessKey: "events",
-    section: "CRM Management",
-  },
-  
-  // {
-  //   name: "Owners",
-  //   href: "/owners",
-  //   icon: WorkIcon,
-  //   accessKey: "owners",
-  //   section: "CRM Management",
-  // },
-  // {
-  //   name: "Discount Codes",
-  //   href: "/discount-codes",
-  //   icon: DiscountIcon,
-  //   accessKey: "discountcodes",
-  //   section: "CRM Management",
-  // },
-  // {
-  //   name: "Companies",
-  //   href: "/companies",
-  //   icon: CorporateFareIcon,
-  //   accessKey: "companies",
-  //   section: "CRM Management",
-  // },
-  // {
-  //   name: "Events",
-  //   href: "/events",
-  //   icon: EventIcon,
-  //   accessKey: "events",
-  //   section: "CRM Management",
-  // },
-  
-  // {
-  //   name: "Owners",
-  //   href: "/owners",
-  //   icon: WorkIcon,
-  //   accessKey: "owners",
-  //   section: "CRM Management",
-  // },
-  // {
-  //   name: "Discount Codes",
-  //   href: "/discount-codes",
-  //   icon: DiscountIcon,
-  //   accessKey: "discountcodes",
-  //   section: "CRM Management",
-  // },
-  {
-    name: "Work Page",
-    href: "/smart-work",
-    icon: WorkspacesOutlineIcon,
-    accessKey: "smartWork",
-    section: "CRM Management",
-  },
-  {
-    name: "Reports",
-    href: "/reports",
-    icon: BarChartIcon,
-    accessKey: "reports",
-    section: "Analysis & Reports",
-  },
-  {
-    name: "Geographic Data",
-    href: "/countries",
-    icon: FlagIcon,
-    accessKey: "country",
-    section: "Misc",
-  },
-  {
-    name: "Industry",
-    href: "/industries",
-    icon: BusinessIcon,
-    accessKey: "industry",
-    section: "Misc",
-  },
-  // {
-  //   name: "Role Management",
-  //   href: "/rolemanagement",
-  //   icon: AdminPanelSettingsIcon,
-  //   accessKey: "roles",
-  //   section: "Admin",
-  // },
-  {
-    name: "Priority Levels",
-    href: "/priority-levels",
-    icon: PriorityHighIcon,
-    accessKey: "priority",
-    section: "Misc",
-  },
-];
-
 
 // Sidebar width
 const DRAWER_WIDTH_EXPANDED = 200;
@@ -208,13 +51,12 @@ const NAV_ITEMS = [
   { name: "Accounts", href: "/accounts", icon: BusinessIcon, accessKey: "accounts", section: "CRM Management" },
   { name: "Contacts", href: "/contacts", icon: PeopleIcon, accessKey: "contacts", section: "CRM Management" },
   { name: "Deals", href: "/deals", icon: HandshakeIcon, accessKey: "deals", section: "CRM Management" },
+  { name: "Deal Room", href: "/deal-room", icon: BusinessIcon, accessKey: "dealRoom", section: "CRM Management" },
   { name: "Activities", href: "/activities", icon: EventIcon, accessKey: "activities", section: "CRM Management" },
   { name: "Sequences", href: "/sequences", icon: TimelineIcon, accessKey: "sequences", section: "CRM Management" },
   { name: "Products", href: "/products", icon: InventoryIcon, accessKey: "products", section: "CRM Management" },
-  // { name: "Companies", href: "/companies", icon: CorporateFareIcon, accessKey: "companies", section: "CRM Management" },
-  // { name: "Events", href: "/events", icon: EventIcon, accessKey: "events", section: "CRM Management" },
-  // { name: "Owners", href: "/owners", icon: WorkIcon, accessKey: "owners", section: "CRM Management" },
-  // { name: "Discount Codes", href: "/discount-codes", icon: DiscountIcon, accessKey: "discountcodes", section: "CRM Management" },
+  { name: "Companies", href: "/companies", icon: CorporateFareIcon, accessKey: "companies", section: "CRM Management" },
+  { name: "Events", href: "/events", icon: EventIcon, accessKey: "events", section: "CRM Management" },
 
   // Reports
   { name: "Reports", href: "/reports", icon: BarChartIcon, accessKey: "reports", section: "Analysis & Reports" },
@@ -228,12 +70,11 @@ const NAV_ITEMS = [
   { name: "Role Management", href: "/rolemanagement", icon: AdminPanelSettingsIcon, accessKey: "roles", section: "Admin" },
 ];
 
-
 export function AppSidebar() {
-  const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { currentTheme, getSpacing, settings } = useSettings();
   const roles = user?.roles || [];
 
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -286,14 +127,14 @@ export function AppSidebar() {
           borderRadius: 2,
           mx: 1.5,
           mb: 0.5,
-          minHeight: 44,
+          minHeight: settings.general.compactView ? 36 : 44,
           px: isCollapsed ? 1.5 : 2,
           transition: "all 0.3s",
-          backgroundColor: isActive ? alpha('#2196F3', 0.2) : "transparent",
-          color: isActive ? '#2196F3' : '#ffffff',
+          backgroundColor: isActive ? alpha(currentTheme.primary.main, 0.2) : "transparent",
+          color: isActive ? currentTheme.primary.main : currentTheme.text.primary,
           "&:hover": {
-            backgroundColor: alpha('#2196F3', 0.15),
-            color: '#2196F3',
+            backgroundColor: alpha(currentTheme.primary.main, 0.15),
+            color: currentTheme.primary.main,
             transform: "translateX(2px)",
           },
         }}
@@ -329,36 +170,58 @@ export function AppSidebar() {
         "& .MuiDrawer-paper": {
           width: drawerWidth,
           boxSizing: "border-box",
-          backgroundColor: "#000000",
-          borderRight: `1px solid #333333`,
+          backgroundColor: currentTheme.background.paper,
+          borderRight: `1px solid ${currentTheme.divider}`,
           height: "100vh",
           overflowX: "hidden",
           display: "flex",
           flexDirection: "column",
+          transition: 'all 0.3s ease',
         },
       }}
     >
       {/* Brand */}
       {!isCollapsed && (
-        <Box sx={{ p: 2, pb: 1, borderBottom: `1px solid #333333` }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "#ffffff", textAlign: "center" }}>
+        <Box sx={{ p: 2, pb: 1, borderBottom: `1px solid ${currentTheme.divider}` }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: currentTheme.text.primary, textAlign: "center" }}>
             Entertainment.FM
           </Typography>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#2196F3", textAlign: "center" }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: currentTheme.primary.main, textAlign: "center" }}>
             CRM System
           </Typography>
         </Box>
       )}
 
       {/* Sidebar Header */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: isCollapsed ? "center" : "space-between", p: 2, minHeight: 48 }}>
-        {!isCollapsed && <Typography sx={{ fontWeight: 600, color: "#ffffff" }}>Navigation Panel</Typography>}
-        <IconButton onClick={toggleSidebar} size="small" data-tour="collapse-toggle" sx={{ backgroundColor: alpha("#2196F3", 0.15), color: "#2196F3", "&:hover": { backgroundColor: alpha("#2196F3", 0.25) } }}>
+      <Box 
+        sx={{ 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: isCollapsed ? "center" : "space-between", 
+          p: getSpacing(2), 
+          minHeight: settings.general.compactView ? 40 : 48 
+        }}
+      >
+        {!isCollapsed && (
+          <Typography sx={{ fontWeight: 600, color: currentTheme.text.primary }}>
+            Navigation Panel
+          </Typography>
+        )}
+        <IconButton 
+          onClick={toggleSidebar} 
+          size="small" 
+          data-tour="collapse-toggle" 
+          sx={{ 
+            backgroundColor: alpha(currentTheme.primary.main, 0.15), 
+            color: currentTheme.primary.main, 
+            "&:hover": { backgroundColor: alpha(currentTheme.primary.main, 0.25) } 
+          }}
+        >
           {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
         </IconButton>
       </Box>
 
-      <Divider sx={{ mx: 1, borderColor: "#333333", display: isCollapsed ? "none" : "block" }} />
+      <Divider sx={{ mx: 1, borderColor: currentTheme.divider, display: isCollapsed ? "none" : "block" }} />
 
       {/* Navigation Sections */}
       <Box sx={{ flex: 1, overflowY: "auto" }}>
@@ -368,19 +231,35 @@ export function AppSidebar() {
           const isSectionCollapsed = collapsedSections[section];
 
           return (
-            <Box key={section} sx={{ mb: 2 }}>
+            <Box key={section} sx={{ mb: getSpacing(2) }}>
               {!isCollapsed && (
-                <Box onClick={() => toggleSection(section)} sx={{ display: "flex", justifyContent: "space-between", px: 2, pt: 1, cursor: "pointer" }}>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 600, color: alpha("#ffffff", 0.6), textTransform: "uppercase" }}>
+                <Box 
+                  onClick={() => toggleSection(section)} 
+                  sx={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    px: 2, 
+                    pt: getSpacing(1), 
+                    cursor: "pointer" 
+                  }}
+                >
+                  <Typography 
+                    sx={{ 
+                      fontSize: "0.75rem", 
+                      fontWeight: 600, 
+                      color: alpha(currentTheme.text.secondary, 0.8), 
+                      textTransform: "uppercase" 
+                    }}
+                  >
                     {section}
                   </Typography>
-                  <IconButton size="small" sx={{ color: alpha("#ffffff", 0.6) }}>
+                  <IconButton size="small" sx={{ color: alpha(currentTheme.text.secondary, 0.8) }}>
                     {isSectionCollapsed ? <ChevronRight /> : <ChevronLeft />}
                   </IconButton>
                 </Box>
               )}
               {!isSectionCollapsed && <List sx={{ px: 0 }}>{items.map(renderNavigationItem)}</List>}
-              {!isCollapsed && <Divider sx={{ mx: 1, borderColor: "#333333" }} />}
+              {!isCollapsed && <Divider sx={{ mx: 1, borderColor: currentTheme.divider }} />}
             </Box>
           );
         })}
@@ -388,8 +267,15 @@ export function AppSidebar() {
 
       {/* Footer */}
       {!isCollapsed && (
-        <Box sx={{ p: 2, borderTop: `1px solid #333333` }}>
-          <Typography variant="caption" sx={{ display: "block", textAlign: "center", color: "#cccccc" }}>
+        <Box sx={{ p: getSpacing(2), borderTop: `1px solid ${currentTheme.divider}` }}>
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              display: "block", 
+              textAlign: "center", 
+              color: currentTheme.text.secondary 
+            }}
+          >
             2025 CRM Prototype v2
           </Typography>
         </Box>

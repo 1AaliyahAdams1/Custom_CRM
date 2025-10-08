@@ -9,8 +9,6 @@ import { getAllActivities } from "../../services/activityService";
 import { getAllNotes } from "../../services/noteService";
 import { getAllAttachments } from "../../services/attachmentService";
 
-
-
 export default function AccountDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -116,27 +114,6 @@ export default function AccountDetailsPage() {
       }
     };
   }, []);
-    return async () => {
-      try {
-        const response = await getAllAttachments();
-        const allData = response?.data || response;
-        const accountId = parseInt(idRef.current, 10);
-        
-        // Filter attachments where EntityID = accountId AND EntityTypeID = Account type
-        // Need to know the EntityTypeID for "Account" - assuming it's 1
-        const ACCOUNT_ENTITY_TYPE_ID = 1; 
-        
-        const filteredData = allData.filter(item => 
-          item.EntityID === accountId && item.EntityTypeID === ACCOUNT_ENTITY_TYPE_ID
-        );
-        
-        return { data: filteredData };
-      } catch (error) {
-        console.error('Error fetching and filtering attachments:', error);
-        throw error;
-      }
-    };
-  }, []);
 
   const processDealData = useCallback((data) => {
     return data.map(deal => ({
@@ -213,41 +190,11 @@ export default function AccountDetailsPage() {
             { field: 'PriorityLevelName', headerName: 'Priority', type: 'text', defaultVisible: true },
             { field: 'DueToStart', headerName: 'Due Start', type: 'date', defaultVisible: true },
             { field: 'DueToEnd', headerName: 'Due End', type: 'date', defaultVisible: true },
-            { field: 'DueToEnd', headerName: 'Due End', type: 'date', defaultVisible: true },
             { field: 'Completed', headerName: 'Completed', type: 'boolean', defaultVisible: true },
-            { field: 'Active', headerName: 'Active', type: 'boolean', defaultVisible: true },
             { field: 'Active', headerName: 'Active', type: 'boolean', defaultVisible: true },
           ]
         },
         dataService: async () => {
-          try {
-            // Fetch the current account data
-            const accountData = await fetchAccountById(parseInt(idRef.current, 10));
-            const currentAccount = accountData?.data || accountData;
-            
-            if (!currentAccount?.AccountName) {
-              console.error('No account name found');
-              return { data: [] };
-            }
-            
-            console.log('Filtering activities for account:', currentAccount.AccountName);
-            
-            const response = await getAllActivities();
-            const allData = response?.data || response;
-            
-            const filteredData = allData.filter(item => 
-              item.AccountName === currentAccount.AccountName
-            );
-            
-            console.log('Found activities:', filteredData.length);
-            
-            return { data: filteredData };
-          } catch (error) {
-            console.error('Error fetching activities:', error);
-            return { data: [] };
-          }
-        }
-      },
           try {
             // Fetch the current account data
             const accountData = await fetchAccountById(parseInt(idRef.current, 10));
@@ -287,12 +234,6 @@ export default function AccountDetailsPage() {
             { field: 'EntityID', headerName: 'Entity ID', type: 'text', defaultVisible: true },
             { field: 'EntityTypeID', headerName: 'Entity Type', type: 'text', defaultVisible: true },
             { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true }
-          idField: 'NoteID',
-          columns: [
-            { field: 'Content', headerName: 'Content', type: 'truncated', maxWidth: 400, defaultVisible: true },
-            { field: 'EntityID', headerName: 'Entity ID', type: 'text', defaultVisible: true },
-            { field: 'EntityTypeID', headerName: 'Entity Type', type: 'text', defaultVisible: true },
-            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true }
           ]
         },
         dataService: createFilteredDataService(getAllNotes, 'EntityID') 
@@ -311,16 +252,13 @@ export default function AccountDetailsPage() {
             { field: 'UploadedAt', headerName: 'Uploaded', type: 'dateTime', defaultVisible: true },
           ]
         },
-       dataService: createAttachmentDataService(),
-        dataService: createFilteredDataService(getAllNotes, 'EntityID') 
+        dataService: createAttachmentDataService(), 
       },
-      
     ];
     return tabs;
   }, [createFilteredDataService, createAttachmentDataService, processDealData]);
-  }, [createFilteredDataService, createAttachmentDataService, processDealData]);
 
-  // action handlers
+  // Action handlers
   const relatedDataActions = useMemo(() => {
     const actions = {
       contact: {
@@ -403,9 +341,9 @@ export default function AccountDetailsPage() {
       });
     }
     return chips;
-  }, [account?.Active, account?.AccountType]);
+  }, [account]);
 
-  // event handlers
+  // Event handlers
   const handleSave = useCallback(async (formData) => {
     try {
       console.log('Saving account:', formData);

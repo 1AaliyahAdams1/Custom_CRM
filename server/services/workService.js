@@ -148,7 +148,7 @@ const getAccountSequenceView = async (accountId, userId) => {
       SequenceItemID: row.SequenceItemID,
       SequenceItemDescription: row.SequenceItemDescription,
       DaysFromStart: row.DaysFromStart,
-      ActivityTypeID: row.ActivityTypeID, // Changed from TypeID
+      ActivityTypeID: row.ActivityTypeID,
       ActivityTypeName: row.ActivityTypeName,
       ActivityTypeDescription: row.ActivityTypeDescription,
       PriorityLevelID: row.PriorityLevelID,
@@ -159,6 +159,8 @@ const getAccountSequenceView = async (accountId, userId) => {
       DueToEnd: row.DueToEnd,
       Completed: row.Completed,
       Status: row.Status,
+      AccountID: firstRow.AccountID,
+      AccountName: firstRow.AccountName,
       estimatedDueDate: row.DueToStart || calculateEstimatedDueDate(firstRow.AccountCreatedAt, row.DaysFromStart)
     }))
   };
@@ -182,12 +184,40 @@ const calculateEstimatedDueDate = (accountCreatedAt, daysFromStart) => {
 };
 
 //======================================
-// Get activities with smart filtering (main work page)
+// Get user accounts with sequences
+//======================================
+const getUserAccountsWithSequences = async (userId) => {
+  try {
+    const accounts = await sequenceRepo.getUserSequences(userId);
+    
+    // Group by account and remove duplicates
+    const accountsMap = new Map();
+    
+    accounts.forEach(row => {
+      if (!accountsMap.has(row.AccountID)) {
+        accountsMap.set(row.AccountID, {
+          AccountID: row.AccountID,
+          AccountName: row.AccountName,
+          SequenceID: row.SequenceID,
+          SequenceName: row.SequenceName
+        });
+      }
+    });
+    
+    return Array.from(accountsMap.values());
+  } catch (err) {
+    console.error("Error in getUserAccountsWithSequences:", err);
+    throw err;
+  }
+};
+
+//======================================
+// Get smart work page data with intelligent sequence visibility
 //======================================
 const getSmartWorkPageData = async (userId, options = {}) => {
-  // If accountId is provided, return sequence view instead
+  // If accountId is provided, return smart sequence view
   if (options.accountId) {
-    const sequenceView = await getAccountSequenceView(options.accountId, userId);
+    const sequenceView = await sequenceRepo.getSmartSequenceView(options.accountId, userId);
     
     if (!sequenceView) {
       throw new Error("Account not found, has no sequence assigned, or user does not have access");
@@ -221,6 +251,31 @@ const getSmartWorkPageData = async (userId, options = {}) => {
   };
 };
 
+//======================================
+// Create or get activity from sequence item click
+//======================================
+const getOrCreateActivityFromSequenceItem = async (sequenceItemId, accountId, userId) => {
+  try {
+    const result = await sequenceRepo.createActivityFromSequenceItem(
+      sequenceItemId, 
+      accountId, 
+      userId
+    );
+    
+    // Now fetch the full activity details
+    const activity = await sequenceRepo.getActivityByID(result.ActivityID, userId);
+    
+    return {
+      success: true,
+      activity,
+      created: result.created
+    };
+  } catch (err) {
+    console.error("Error in getOrCreateActivityFromSequenceItem:", err);
+    throw err;
+  }
+};
+
 module.exports = {
   getActivities,
   getActivitiesByUser,
@@ -235,4 +290,6 @@ module.exports = {
   getActivityForWorkspace,
   parseFilterOptions,
   getAccountSequenceView,
+  getUserAccountsWithSequences,
+  getOrCreateActivityFromSequenceItem,
 };
