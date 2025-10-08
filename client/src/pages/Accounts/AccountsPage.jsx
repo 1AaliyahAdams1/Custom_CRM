@@ -18,7 +18,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TableView from "../../components/tableFormat/TableView";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import NotesPopup from "../../components/NotesComponent";
-import AttachmentsPopup from "../../components/AttachmentsComponent"; // Add this import
+import AttachmentsPopup from "../../components/AttachmentsComponent";
 import theme from "../../components/Theme";
 import { formatters } from "../../utils/formatters";
 import StatusMessage from "../../components/tableFormat/StatusMessage";
@@ -32,6 +32,7 @@ const AccountsPage = ({
   onSelectClick,
   onSelectAllClick,
   onDeactivate,
+  onReactivate, // ADD THIS LINE
   onEdit,
   onView,
   onCreate,
@@ -56,10 +57,9 @@ const AccountsPage = ({
   selectedAccount,
   handleSaveNote,
   handleEditNote,
-  // Add these new props for attachments
   attachmentsPopupOpen,
   setAttachmentsPopupOpen,
-  userName, // Current user's name
+  userName,
 }) => {
   // Local filter state
   const [accountFilter, setAccountFilter] = useState("all");
@@ -220,6 +220,7 @@ const AccountsPage = ({
               onView={onView}
               onEdit={onEdit}
               onDelete={onDeactivate}
+              onReactivate={onReactivate} // ADD THIS LINE
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
               onClaimAccount={onClaimAccount}
@@ -261,7 +262,7 @@ const AccountsPage = ({
           />
         )}
 
-        {/* Attachments Popup - Add this */}
+        {/* Attachments Popup */}
         {attachmentsPopupOpen && selectedAccount && (
           <AttachmentsPopup
             open={attachmentsPopupOpen}
@@ -273,7 +274,6 @@ const AccountsPage = ({
             maxFileSize={10}
             maxFiles={5}
             onAttachmentsChange={(attachments) => {
-              // Optional: Handle attachment changes if needed
               console.log('Attachments updated:', attachments);
             }}
           />

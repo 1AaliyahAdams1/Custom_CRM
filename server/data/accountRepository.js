@@ -1,6 +1,12 @@
 const sql = require("mssql");
 const { dbConfig } = require("../dbConfig");
 
+// Helper to convert values to numbers or null
+function toNullableNumber(value) {
+  const num = Number(value);
+  return isNaN(num) ? null : num;
+}
+
 //======================================
 // Get all accounts
 //======================================
@@ -25,7 +31,7 @@ async function createAccount(accountData, changedBy) {
     const pool = await sql.connect(dbConfig);
     const {
       AccountName,
-      CityID = null,
+      CityID,
       street_address1 = null,
       street_address2 = null,
       street_address3 = null,
@@ -42,14 +48,37 @@ async function createAccount(accountData, changedBy) {
       number_of_events_anually = null,
       ParentAccount = null,
       Active = true,
-      StateProvinceID = null,
-      CountryID = null
+      StateProvinceID,
+      CountryID,
+      sequenceID = 1,
     } = accountData;
 
-    // Call your CreateAccount stored procedure
+    // Validate foreign keys
+    async function validateFK(table, column, value) {
+      if (!value) return null;
+      const result = await pool.request()
+        .input("val", sql.Int, value)
+        .query(`SELECT 1 FROM ${table} WHERE ${column} = @val`);
+      return result.recordset.length > 0 ? value : null;
+    }
+
+    
+
+    const validCityID = await validateFK("City", "CityID", CityID);
+    const validStateProvinceID = await validateFK("StateProvince", "StateProvinceID", StateProvinceID);
+    const validCountryID = await validateFK("Country", "CountryID", CountryID);
+    const annualRevenueValue = annual_revenue != null ? Number(annual_revenue) : null;
+
+    if (annualRevenueValue !== null && isNaN(annualRevenueValue)) {
+      throw new Error("Invalid annual_revenue: not a number");
+    }
+
     const result = await pool.request()
+  
+
+    // Call your CreateAccount stored procedure
       .input("AccountName", sql.NVarChar(255), AccountName)
-      .input("CityID", sql.Int, CityID)
+      .input("CityID", sql.Int, validCityID)
       .input("street_address1", sql.NVarChar(255), street_address1)
       .input("street_address2", sql.NVarChar(255), street_address2)
       .input("street_address3", sql.NVarChar(255), street_address3)
@@ -60,21 +89,22 @@ async function createAccount(accountData, changedBy) {
       .input("fax", sql.NVarChar(63), fax)
       .input("email", sql.VarChar(255), email)
       .input("number_of_employees", sql.Int, number_of_employees)
-      .input("annual_revenue", sql.Decimal(18, 0), annual_revenue)
+      .input("annual_revenue", sql.Decimal(18, 0), annualRevenueValue)
       .input("number_of_venues", sql.SmallInt, number_of_venues)
       .input("number_of_releases", sql.SmallInt, number_of_releases)
       .input("number_of_events_anually", sql.SmallInt, number_of_events_anually)
       .input("ParentAccount", sql.Int, ParentAccount)
       .input("Active", sql.Bit, Active)
       .input("ChangedBy", sql.Int, changedBy)
-      .input("StateProvinceID", sql.Int, StateProvinceID)
-      .input("CountryID", sql.Int, CountryID)
-      .input("ActionTypeID", sql.Int, 1) // 1 = Create action type id
+      .input("StateProvinceID", sql.Int, validStateProvinceID)
+      .input("CountryID", sql.Int, validCountryID)
+      .input("ActionTypeID", sql.Int, 1) // Create action
+      .input("sequenceID", sql.Int, sequenceID)
       .execute("CreateAccount");
 
-    // Your SP should return AccountID via SELECT or OUTPUT param
-    // Assuming first recordset has the AccountID
+    // Get the AccountID safely
     const newAccountID = result.recordset?.[0]?.AccountID;
+    if (!newAccountID) throw new Error("Failed to create account");
 
     return { AccountID: newAccountID };
   } catch (err) {
@@ -232,39 +262,44 @@ async function reactivateAccount(id, changedBy) {
       throw new Error("Account is already active");
     }
 
-    // First update the account status in the main table
+    // Update the account status
     await pool.request()
       .input('AccountID', sql.Int, id)
       .query('UPDATE Account SET Active = 1, UpdatedAt = GETDATE() WHERE AccountID = @AccountID');
 
-    // Use the ReactivateAccount stored procedure to log the action
-    await pool.request()
-      .input("AccountID", sql.Int, id)
-      .input("AccountName", sql.NVarChar, existing.AccountName)
-      .input("CityID", sql.Int, existing.CityID)
-      .input("street_address1", sql.NVarChar, existing.street_address1)
-      .input("street_address2", sql.NVarChar, existing.street_address2)
-      .input("street_address3", sql.NVarChar, existing.street_address3)
-      .input("postal_code", sql.NVarChar, existing.postal_code)
-      .input("PrimaryPhone", sql.NVarChar, existing.PrimaryPhone)
-      .input("IndustryID", sql.Int, existing.IndustryID)
-      .input("Website", sql.NVarChar, existing.Website)
-      .input("fax", sql.NVarChar, existing.fax)
-      .input("email", sql.VarChar, existing.email)
-      .input("number_of_employees", sql.Int, existing.number_of_employees)
-      .input("annual_revenue", sql.Decimal, existing.annual_revenue)
-      .input("number_of_venues", sql.SmallInt, existing.number_of_venues)
-      .input("number_of_releases", sql.SmallInt, existing.number_of_releases)
-      .input("number_of_events_anually", sql.SmallInt, existing.number_of_events_anually)
-      .input("ParentAccount", sql.Int, existing.ParentAccount)
-      .input("Active", sql.Bit, true)
-      .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
-      .input("UpdatedAt", sql.SmallDateTime, new Date())
-      .input("ChangedBy", sql.Int, changedBy)
-      .input("StateProvinceID", sql.Int, StateProvinceID)
-      .input("CountryID", sql.Int, CountryID)
-      .input("ActionTypeID", sql.Int, 8)
-      .execute('ReactivateAccount');
+    // Try to log the action, but don't fail if it errors
+    try {
+      await pool.request()
+        .input("AccountID", sql.Int, id)
+        .input("AccountName", sql.NVarChar, existing.AccountName)
+        .input("CityID", sql.Int, existing.CityID)
+        .input("street_address1", sql.NVarChar, existing.street_address1)
+        .input("street_address2", sql.NVarChar, existing.street_address2)
+        .input("street_address3", sql.NVarChar, existing.street_address3)
+        .input("postal_code", sql.NVarChar, existing.postal_code)
+        .input("PrimaryPhone", sql.NVarChar, existing.PrimaryPhone)
+        .input("IndustryID", sql.Int, existing.IndustryID)
+        .input("Website", sql.NVarChar, existing.Website)
+        .input("fax", sql.NVarChar, existing.fax)
+        .input("email", sql.VarChar, existing.email)
+        .input("number_of_employees", sql.Int, existing.number_of_employees)
+        .input("annual_revenue", sql.Decimal, existing.annual_revenue)
+        .input("number_of_venues", sql.SmallInt, existing.number_of_venues)
+        .input("number_of_releases", sql.SmallInt, existing.number_of_releases)
+        .input("number_of_events_anually", sql.SmallInt, existing.number_of_events_anually)
+        .input("ParentAccount", sql.Int, existing.ParentAccount)
+        .input("Active", sql.Bit, true)
+        .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
+        .input("UpdatedAt", sql.SmallDateTime, new Date())
+        .input("ChangedBy", sql.Int, changedBy)
+        .input("StateProvinceID", sql.Int, existing.StateProvinceID) 
+        .input("CountryID", sql.Int, existing.CountryID)   
+        .input("ActionTypeID", sql.Int, 8)
+        .execute('ReactivateAccount');
+    } catch (procError) {
+      console.error("Stored procedure error (non-critical):", procError);
+      // Continue anyway - the main update succeeded
+    }
 
     return { message: "Account reactivated", AccountID: id };
   } catch (err) {

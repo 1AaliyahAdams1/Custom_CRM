@@ -8,6 +8,7 @@ import {
   fetchActiveAccountsByUser,
   fetchActiveUnassignedAccounts,
   deactivateAccount,
+  reactivateAccount, 
 } from "../../services/accountService";
 import {
   claimAccount,
@@ -61,6 +62,9 @@ const AccountsContainer = () => {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [accountToDelete, setAccountToDelete] = useState(null);
+
+  const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
+const [accountToReactivate, setAccountToReactivate] = useState(null);
 
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -139,18 +143,31 @@ const AccountsContainer = () => {
   };
 
   // ---------------- ACCOUNT ACTIONS ----------------
-  const handleDeactivateClick = (account) => {
-    if (!hasAccess("accountsEdit")) return;
-    setAccountToDelete(account);
-    setDeleteDialogOpen(true);
-  };
+  const handleDeactivateClick = (id) => {
+  const account = filteredAccounts.find(acc => acc.AccountID === id);
+  
+  if (!account) {
+    setStatusMessage("Account not found");
+    setStatusSeverity("error");
+    return;
+  }
+  
+  if (!hasAccess("accountsEdit")) return;
+  
+  setAccountToDelete(account);
+  setDeleteDialogOpen(true);
+};
 
   const confirmDeactivate = async () => {
+
+      console.log("accountToDelete:", accountToDelete); // ADD THIS
+  console.log("AccountID:", accountToDelete?.AccountID); // ADD THIS
+
     if (!accountToDelete) return;
     setBulkLoading(true);
     try {
       await deactivateAccount(accountToDelete.AccountID);
-      setStatusMessage("Account deleted successfully");
+      setStatusMessage("Account deactivated successfully");
       setStatusSeverity("success");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
@@ -162,6 +179,42 @@ const AccountsContainer = () => {
       setAccountToDelete(null);
     }
   };
+  const handleReactivateClick = (id) => {
+  const account = filteredAccounts.find(acc => acc.AccountID === id);
+  
+  if (!account) {
+    setStatusMessage("Account not found");
+    setStatusSeverity("error");
+    return;
+  }
+  
+  if (!hasAccess("accountsEdit")) return;
+  
+  setAccountToReactivate(account);
+  setReactivateDialogOpen(true);
+};
+
+const confirmReactivate = async () => {
+  console.log("accountToReactivate:", accountToReactivate);
+  console.log("AccountID:", accountToReactivate?.AccountID);
+
+  if (!accountToReactivate) return;
+  setBulkLoading(true);
+  try {
+    await reactivateAccount(accountToReactivate.AccountID);
+    setStatusMessage("Account reactivated successfully");
+    setStatusSeverity("success");
+    setRefreshFlag((flag) => !flag);
+  } catch (err) {
+    console.error("Reactivate error:", err);
+    setStatusMessage(err.message || "Failed to reactivate account");
+    setStatusSeverity("error");
+  } finally {
+    setBulkLoading(false);
+    setReactivateDialogOpen(false);
+    setAccountToReactivate(null);
+  }
+};
 
   const handleEdit = (account) => {
     if (!hasAccess("accountsEdit")) return;
@@ -177,6 +230,9 @@ const AccountsContainer = () => {
     if (!hasAccess("accountsCreate")) return;
     navigate("/accounts/create");
   };
+
+  
+ 
 
   // ---------------- NOTES ----------------
    const handleAddNote = (account) => {
@@ -417,6 +473,7 @@ const AccountsContainer = () => {
   const handleClearSelection = () => setSelected([]);
 
   return (
+  <>
     <AccountsPage
       accounts={filteredAccounts}
       loading={loading}
@@ -429,6 +486,8 @@ const AccountsContainer = () => {
       onSelectClick={handleSelectClick}
       onSelectAllClick={handleSelectAllClick}
       onDeactivate={handleDeactivateClick}
+      onReactivate={handleReactivateClick}
+      // onUnassignUser={handleUnassignUser}
       onEdit={handleEdit}
       onView={handleView}
       onCreate={handleCreate}
@@ -446,7 +505,6 @@ const AccountsContainer = () => {
       bulkLoading={bulkLoading}
       userRoles={roles}
       hasAccess={hasAccess}
-      // Popups
       notesPopupOpen={notesPopupOpen}
       setNotesPopupOpen={setNotesPopupOpen}
       attachmentsPopupOpen={attachmentsPopupOpen}
@@ -473,7 +531,58 @@ const AccountsContainer = () => {
       handleDeleteAttachment={handleDeleteAttachment}
       handleDownloadAttachment={handleDownloadAttachment}
     />
-  );
+
+    <ConfirmDialog
+      open={deleteDialogOpen}
+      title="Deactivate Account"
+      message={`Are you sure you want to deactivate "${accountToDelete?.AccountName}"?`}
+      onConfirm={confirmDeactivate}
+      onCancel={() => {
+        setDeleteDialogOpen(false);
+        setAccountToDelete(null);
+      }}
+      confirmText="Deactivate"
+      cancelText="Cancel"
+    />
+
+    <ConfirmDialog
+  open={reactivateDialogOpen}
+  title="Reactivate Account"
+  message={`Are you sure you want to reactivate "${accountToReactivate?.AccountName}"?`}
+  onConfirm={confirmReactivate}
+  onCancel={() => {
+    setReactivateDialogOpen(false);
+    setAccountToReactivate(null);
+  }}
+  confirmText="Reactivate"
+  cancelText="Cancel"
+/>
+
+    <ConfirmDialog
+      open={bulkDeleteDialogOpen}
+      title="Deactivate Accounts"
+      message={`Are you sure you want to deactivate ${selected.length} account(s)?`}
+      onConfirm={confirmBulkDeactivate}
+      onCancel={() => setBulkDeleteDialogOpen(false)}
+      confirmText="Deactivate All"
+      cancelText="Cancel"
+    />
+
+    <BulkAssignDialog
+      open={bulkAssignDialogOpen}
+      onClose={() => setBulkAssignDialogOpen(false)}
+      onConfirm={confirmBulkAssign}
+      selectedCount={selected.length}
+    />
+
+    <BulkClaimDialog
+      open={bulkClaimDialogOpen}
+      onClose={() => setBulkClaimDialogOpen(false)}
+      onConfirm={confirmBulkClaim}
+      selectedAccounts={selectedAccountObjects}
+    />
+  </>
+);
 };
 
 export default AccountsContainer;
