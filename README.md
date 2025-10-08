@@ -115,6 +115,8 @@ PACKAGES for Client folder [client]
 
 > npm install intro.js
 
+> npm install recharts@2.8.0
+
 =====================================================================================================
 
 COMMAND to run program:
