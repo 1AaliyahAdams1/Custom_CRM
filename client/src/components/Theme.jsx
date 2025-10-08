@@ -1,110 +1,122 @@
 import { createTheme } from "@mui/material/styles";
 
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#050505',
-      contrastText: '#fafafa',
-    },
-    secondary: {
-      main: '#666666',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#050505',
-      secondary: '#666666',
-    },
-    divider: '#e5e5e5',
-    error: {
-      main: '#ff4444',
-      contrastText: '#ffffff',
-    },
-  },
-  components: {
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          border: '1px solid #e5e5e5',
-          borderRadius: '8px',
-        },
+// Function to create theme based on mode
+export const createAppTheme = (mode = 'light') => {
+  const isLight = mode === 'light';
+  
+  return createTheme({
+    palette: {
+      mode: mode,
+      primary: {
+        main: isLight ? '#050505' : '#fafafa',
+        contrastText: isLight ? '#fafafa' : '#050505',
+        dark: isLight ? '#333333' : '#cccccc',
+      },
+      secondary: {
+        main: isLight ? '#666666' : '#999999',
+        contrastText: '#ffffff',
+      },
+      background: {
+        default: isLight ? '#fafafa' : '#121212',
+        paper: isLight ? '#ffffff' : '#1e1e1e',
+      },
+      text: {
+        primary: isLight ? '#050505' : '#fafafa',
+        secondary: isLight ? '#666666' : '#b0b0b0',
+      },
+      divider: isLight ? '#e5e5e5' : '#333333',
+      error: {
+        main: '#ff4444',
+        contrastText: '#ffffff',
       },
     },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            backgroundColor: '#ffffff',
-            '& fieldset': { borderColor: '#e5e5e5' },
-            '&:hover fieldset': { borderColor: '#cccccc' },
-            '&.Mui-focused fieldset': { borderColor: '#050505' },
-            '&.Mui-error fieldset': { 
-              borderColor: '#ff4444',
-              borderWidth: '2px',
+    components: {
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            border: isLight ? '1px solid #e5e5e5' : '1px solid #333333',
+            borderRadius: '8px',
+          },
+        },
+      },
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: isLight ? '#ffffff' : '#1e1e1e',
+              '& fieldset': { 
+                borderColor: isLight ? '#e5e5e5' : '#333333' 
+              },
+              '&:hover fieldset': { 
+                borderColor: isLight ? '#cccccc' : '#555555' 
+              },
+              '&.Mui-focused fieldset': { 
+                borderColor: isLight ? '#050505' : '#fafafa' 
+              },
+              '&.Mui-error fieldset': { 
+                borderColor: '#ff4444',
+                borderWidth: '2px',
+              },
+            },
+            '& .Mui-error': {
+              '& .MuiSvgIcon-root': {
+                color: '#ff4444',
+              },
+              '& .MuiFormHelperText-root': {
+                color: '#ff4444',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                marginLeft: '0',
+              },
             },
           },
-          '& .Mui-error': {
-            '& .MuiSvgIcon-root': {
-              color: '#ff4444',
-            },
-            '& .MuiFormhelpertext-root': {
-              color: '#ff4444',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              marginLeft: '0',
-            },
-          },
         },
       },
-    },
-    MuiSelect: {
-      styleOverrides: {
-        root: {
-          '&.Mui-error': {
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#ff4444',
-              borderWidth: '2px',
+      MuiSelect: {
+        styleOverrides: {
+          root: {
+            '&.Mui-error': {
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#ff4444',
+                borderWidth: '2px',
+              },
             },
           },
         },
       },
-    },
-    MuiButton: {
-      styleOverrides: {
-        outlined: {
-          borderColor: '#e5e5e5',
-          color: '#050505',
-          '&:hover': {
-            borderColor: '#cccccc',
-            backgroundColor: '#f5f5f5',
+      MuiButton: {
+        styleOverrides: {
+          outlined: {
+            borderColor: isLight ? '#e5e5e5' : '#333333',
+            color: isLight ? '#050505' : '#fafafa',
+            '&:hover': {
+              borderColor: isLight ? '#cccccc' : '#555555',
+              backgroundColor: isLight ? '#f5f5f5' : '#2a2a2a',
+            },
+          },
+          contained: {               
+            backgroundColor: isLight ? '#050505' : '#fafafa',
+            color: isLight ? '#fafafa' : '#050505',
+            '&:hover': {
+              backgroundColor: isLight ? '#333333' : '#cccccc',
+            },
+            '&:disabled': {
+              backgroundColor: isLight ? '#cccccc' : '#444444',
+              color: isLight ? '#666666' : '#888888',
+            },
           },
         },
-        contained: {               
-          backgroundColor: '#050505',
-          color: '#fafafa',
-          '&:hover': {
-            backgroundColor: '#333333',
-          },
-          '&:disabled': {
-            backgroundColor: '#cccccc',
-            color: '#666666',
+      },
+      MuiFormHelperText: {
+        styleOverrides: {
+          root: {
+            marginLeft: '0',
           },
         },
       },
     },
-    MuiFormhelpertext: {
-      styleOverrides: {
-        root: {
-          marginLeft: '0',
-        },
-      },
-    },
-  },
-});
+  });
+};
 
-export default theme;
+export default createAppTheme('light');

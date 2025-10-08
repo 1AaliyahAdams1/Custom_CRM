@@ -45,29 +45,28 @@ const DRAWER_WIDTH_COLLAPSED = 64;
 // Navigation configuration
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: DashboardIcon, accessKey: "dashboard", section: "Main" },
-  { name: "Work Page", href: "/smart-work", icon: WorkspacesOutlineIcon, accessKey: "smartWork", section: "Main"},
+  { name: "Reports", href: "/reports", icon: BarChartIcon, accessKey: "reports", section: "Main" },
+  { name: "Work Page", href: "/smart-work", icon: WorkspacesOutlineIcon, accessKey: "smartWork", section: "Main" },
+
+  // Admin
+  { name: "Role Management", href: "/rolemanagement", icon: AdminPanelSettingsIcon, accessKey: "roles", section: "Admin" },
 
   // CRM
   { name: "Accounts", href: "/accounts", icon: BusinessIcon, accessKey: "accounts", section: "CRM Management" },
   { name: "Contacts", href: "/contacts", icon: PeopleIcon, accessKey: "contacts", section: "CRM Management" },
   { name: "Deals", href: "/deals", icon: HandshakeIcon, accessKey: "deals", section: "CRM Management" },
-  { name: "Deal Room", href: "/deal-room", icon: BusinessIcon, accessKey: "dealRoom", section: "CRM Management" },
   { name: "Activities", href: "/activities", icon: EventIcon, accessKey: "activities", section: "CRM Management" },
   { name: "Sequences", href: "/sequences", icon: TimelineIcon, accessKey: "sequences", section: "CRM Management" },
   { name: "Products", href: "/products", icon: InventoryIcon, accessKey: "products", section: "CRM Management" },
-  { name: "Companies", href: "/companies", icon: CorporateFareIcon, accessKey: "companies", section: "CRM Management" },
-  { name: "Events", href: "/events", icon: EventIcon, accessKey: "events", section: "CRM Management" },
-
-  // Reports
-  { name: "Reports", href: "/reports", icon: BarChartIcon, accessKey: "reports", section: "Analysis & Reports" },
+  //{ name: "Companies", href: "/companies", icon: CorporateFareIcon, accessKey: "companies", section: "CRM Management" },
+  //{ name: "Events", href: "/events", icon: EventIcon, accessKey: "events", section: "CRM Management" },
 
   // Misc
   { name: "Geographic Data", href: "/countries", icon: FlagIcon, accessKey: "country", section: "Misc" },
   { name: "Industry", href: "/industries", icon: BusinessIcon, accessKey: "industry", section: "Misc" },
   { name: "Priority Levels", href: "/priority-levels", icon: PriorityHighIcon, accessKey: "priority", section: "Misc" },
 
-  // Admin
-  { name: "Role Management", href: "/rolemanagement", icon: AdminPanelSettingsIcon, accessKey: "roles", section: "Admin" },
+
 ];
 
 export function AppSidebar() {
@@ -193,13 +192,13 @@ export function AppSidebar() {
       )}
 
       {/* Sidebar Header */}
-      <Box 
-        sx={{ 
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: isCollapsed ? "center" : "space-between", 
-          p: getSpacing(2), 
-          minHeight: settings.general.compactView ? 40 : 48 
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: isCollapsed ? "center" : "space-between",
+          p: getSpacing(2),
+          minHeight: settings.general.compactView ? 40 : 48
         }}
       >
         {!isCollapsed && (
@@ -207,14 +206,14 @@ export function AppSidebar() {
             Navigation Panel
           </Typography>
         )}
-        <IconButton 
-          onClick={toggleSidebar} 
-          size="small" 
-          data-tour="collapse-toggle" 
-          sx={{ 
-            backgroundColor: alpha(currentTheme.primary.main, 0.15), 
-            color: currentTheme.primary.main, 
-            "&:hover": { backgroundColor: alpha(currentTheme.primary.main, 0.25) } 
+        <IconButton
+          onClick={toggleSidebar}
+          size="small"
+          data-tour="collapse-toggle"
+          sx={{
+            backgroundColor: alpha(currentTheme.primary.main, 0.15),
+            color: currentTheme.primary.main,
+            "&:hover": { backgroundColor: alpha(currentTheme.primary.main, 0.25) }
           }}
         >
           {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
@@ -223,8 +222,23 @@ export function AppSidebar() {
 
       <Divider sx={{ mx: 1, borderColor: currentTheme.divider, display: isCollapsed ? "none" : "block" }} />
 
-      {/* Navigation Sections */}
-      <Box sx={{ flex: 1, overflowY: "auto" }}>
+      {/* Scrollable navigation area */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          "&::-webkit-scrollbar": {
+            width: 0,
+            height: 0,
+            display: "none",
+          },
+          position: "relative",
+        }}
+      >
         {sections.map(section => {
           const items = accessibleNavigation.filter(item => item.section === section);
           if (items.length === 0) return null;
@@ -232,23 +246,24 @@ export function AppSidebar() {
 
           return (
             <Box key={section} sx={{ mb: getSpacing(2) }}>
+              {/* Section title & items */}
               {!isCollapsed && (
-                <Box 
-                  onClick={() => toggleSection(section)} 
-                  sx={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    px: 2, 
-                    pt: getSpacing(1), 
-                    cursor: "pointer" 
+                <Box
+                  onClick={() => toggleSection(section)}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    px: 2,
+                    pt: getSpacing(1),
+                    cursor: "pointer",
                   }}
                 >
-                  <Typography 
-                    sx={{ 
-                      fontSize: "0.75rem", 
-                      fontWeight: 600, 
-                      color: alpha(currentTheme.text.secondary, 0.8), 
-                      textTransform: "uppercase" 
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      color: alpha(currentTheme.text.secondary, 0.8),
+                      textTransform: "uppercase",
                     }}
                   >
                     {section}
@@ -263,24 +278,40 @@ export function AppSidebar() {
             </Box>
           );
         })}
+
+        {/* Fade effect at bottom */}
+        <Box
+          sx={{
+            position: "sticky",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 24,
+            background: `linear-gradient(to bottom, transparent, ${alpha(currentTheme.background.paper, 1)})`,
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        />
       </Box>
 
       {/* Footer */}
-      {!isCollapsed && (
-        <Box sx={{ p: getSpacing(2), borderTop: `1px solid ${currentTheme.divider}` }}>
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              display: "block", 
-              textAlign: "center", 
-              color: currentTheme.text.secondary 
-            }}
-          >
-            2025 CRM Prototype v2
-          </Typography>
-        </Box>
-      )}
-    </Drawer>
+      {
+        !isCollapsed && (
+          <Box sx={{ p: getSpacing(2), borderTop: `1px solid ${currentTheme.divider}` }}>
+            <Typography
+              variant="caption"
+              sx={{
+                display: "block",
+                textAlign: "center",
+                color: currentTheme.text.secondary
+              }}
+            >
+              2025 CRM Prototype v2
+            </Typography>
+          </Box>
+        )
+      }
+    </Drawer >
   );
 }
 

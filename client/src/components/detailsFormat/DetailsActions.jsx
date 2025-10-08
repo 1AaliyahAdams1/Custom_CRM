@@ -1,6 +1,6 @@
 // src/components/DetailsActions.jsx
 import React from "react";
-import { Box, Button } from "@mui/material";
+import { Box, Button, IconButton, Tooltip } from "@mui/material";
 import {
   ArrowBack,
   Edit,
@@ -12,6 +12,7 @@ import {
   PersonAdd,
   Business,
 } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 import { ROUTE_ACCESS } from "../../utils/auth/routesAccess";
 import { useAuth } from "../../hooks/auth/useAuth";
 
@@ -28,16 +29,228 @@ export default function DetailsActions({
   onAddAttachment,
   onAssignUser,
   onClaimAccount,
+  compact = false, // Optional prop for even more compact view
 }) {
+  const theme = useTheme();
   const { roles = [] } = useAuth() || {};
+  const isDark = theme.palette.mode === 'dark';
 
   const hasAccess = (accessKey) => {
     if (!accessKey || !ROUTE_ACCESS[accessKey]) return true;
     return ROUTE_ACCESS[accessKey].some((role) => roles.includes(role));
   };
 
+  // Theme-aware color palette
+  const colors = {
+    primary: {
+      main: isDark ? '#3b82f6' : '#2563eb',
+      hover: isDark ? '#2563eb' : '#1d4ed8',
+      bg: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe',
+    },
+    success: {
+      main: isDark ? '#10b981' : '#059669',
+      hover: isDark ? '#059669' : '#047857',
+      bg: isDark ? 'rgba(16, 185, 129, 0.1)' : '#d1fae5',
+    },
+    warning: {
+      main: isDark ? '#f59e0b' : '#f59e0b',
+      hover: isDark ? '#d97706' : '#d97706',
+      bg: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fef3c7',
+    },
+    purple: {
+      main: isDark ? '#a78bfa' : '#7c3aed',
+      hover: isDark ? '#8b5cf6' : '#6d28d9',
+      bg: isDark ? 'rgba(167, 139, 250, 0.1)' : '#f3e8ff',
+    },
+    error: {
+      main: '#ef4444',
+      hover: '#dc2626',
+      bg: isDark ? 'rgba(239, 68, 68, 0.1)' : '#ffebee',
+    },
+    neutral: {
+      main: theme.palette.text.secondary,
+      hover: theme.palette.text.primary,
+      bg: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5',
+      border: theme.palette.divider,
+    }
+  };
+
+  const buttonStyle = {
+    minWidth: compact ? 'auto' : '100px',
+    textTransform: 'none',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    px: compact ? 1.5 : 2,
+    py: 0.75,
+  };
+
+  if (compact) {
+    // Compact icon-only view
+    return (
+      <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+        {!isEditing ? (
+          <>
+            {onBack && (
+              <Tooltip title="Back">
+                <IconButton onClick={onBack} size="small" sx={{ color: colors.neutral.main }}>
+                  <ArrowBack fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {onEdit && !readOnly && hasAccess(`${entityType}Edit`) && (
+              <Tooltip title="Edit">
+                <IconButton 
+                  onClick={onEdit} 
+                  size="small"
+                  sx={{ 
+                    color: theme.palette.primary.main,
+                    '&:hover': { bgcolor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(37, 99, 235, 0.1)' }
+                  }}
+                >
+                  <Edit fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {onAssignUser && !readOnly && entityType === "account" && hasAccess("accountAssign") && (
+              <Tooltip title="Assign User">
+                <IconButton 
+                  onClick={onAssignUser} 
+                  size="small"
+                  sx={{ 
+                    color: colors.purple.main,
+                    '&:hover': { bgcolor: colors.purple.bg }
+                  }}
+                >
+                  <PersonAdd fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {onClaimAccount && entityType === "account" && hasAccess("accountClaim") && (
+              <Tooltip title="Claim Account">
+                <IconButton 
+                  onClick={onClaimAccount} 
+                  size="small"
+                  sx={{ 
+                    color: colors.warning.main,
+                    '&:hover': { bgcolor: colors.warning.bg }
+                  }}
+                >
+                  <Business fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {onAddNote && !readOnly && hasAccess("activitiesCreate") && (
+              <Tooltip title="Add Note">
+                <IconButton 
+                  onClick={onAddNote} 
+                  size="small"
+                  sx={{ 
+                    color: colors.primary.main,
+                    '&:hover': { bgcolor: colors.primary.bg }
+                  }}
+                >
+                  <Note fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {onAddAttachment && !readOnly && hasAccess("activitiesCreate") && (
+              <Tooltip title="Add Attachment">
+                <IconButton 
+                  onClick={onAddAttachment} 
+                  size="small"
+                  sx={{ 
+                    color: colors.success.main,
+                    '&:hover': { bgcolor: colors.success.bg }
+                  }}
+                >
+                  <AttachFile fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {onDelete && !readOnly && hasAccess(`${entityType}Edit`) && (
+              <Tooltip title="Delete">
+                <IconButton 
+                  onClick={onDelete} 
+                  size="small"
+                  sx={{ 
+                    color: colors.error.main,
+                    '&:hover': { bgcolor: colors.error.bg }
+                  }}
+                >
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </>
+        ) : (
+          <>
+            {onCancel && (
+              <Tooltip title="Cancel">
+                <IconButton onClick={onCancel} size="small" sx={{ color: colors.neutral.main }}>
+                  <Close fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {onSave && hasAccess(`${entityType}Edit`) && (
+              <Tooltip title="Save">
+                <IconButton 
+                  onClick={onSave} 
+                  size="small"
+                  sx={{ 
+                    color: colors.success.main,
+                    '&:hover': { bgcolor: colors.success.bg }
+                  }}
+                >
+                  <Save fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {onAddNote && hasAccess("activitiesCreate") && (
+              <Tooltip title="Add Note">
+                <IconButton 
+                  onClick={onAddNote} 
+                  size="small"
+                  sx={{ 
+                    color: colors.primary.main,
+                    '&:hover': { bgcolor: colors.primary.bg }
+                  }}
+                >
+                  <Note fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {onAddAttachment && hasAccess("activitiesCreate") && (
+              <Tooltip title="Add Attachment">
+                <IconButton 
+                  onClick={onAddAttachment} 
+                  size="small"
+                  sx={{ 
+                    color: colors.success.main,
+                    '&:hover': { bgcolor: colors.success.bg }
+                  }}
+                >
+                  <AttachFile fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </>
+        )}
+      </Box>
+    );
+  }
+
+  // Regular button view with better sizing
   return (
-    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
       {!isEditing ? (
         <>
           {/* Back */}
@@ -46,10 +259,15 @@ export default function DetailsActions({
               variant="outlined"
               onClick={onBack}
               startIcon={<ArrowBack />}
+              size="small"
               sx={{
-                borderColor: "#e5e5e5",
-                color: "#666",
-                "&:hover": { borderColor: "#ccc", backgroundColor: "#f5f5f5" },
+                ...buttonStyle,
+                borderColor: colors.neutral.border,
+                color: colors.neutral.main,
+                "&:hover": { 
+                  borderColor: colors.neutral.hover,
+                  backgroundColor: colors.neutral.bg,
+                },
               }}
             >
               Back
@@ -62,9 +280,11 @@ export default function DetailsActions({
               variant="contained"
               onClick={onEdit}
               startIcon={<Edit />}
+              size="small"
               sx={{
-                backgroundColor: "#050505",
-                "&:hover": { backgroundColor: "#333" },
+                ...buttonStyle,
+                backgroundColor: theme.palette.primary.main,
+                "&:hover": { backgroundColor: theme.palette.primary.dark },
               }}
             >
               Edit
@@ -80,16 +300,18 @@ export default function DetailsActions({
                 variant="outlined"
                 onClick={onAssignUser}
                 startIcon={<PersonAdd />}
+                size="small"
                 sx={{
-                  borderColor: "#7c3aed",
-                  color: "#7c3aed",
+                  ...buttonStyle,
+                  borderColor: colors.purple.main,
+                  color: colors.purple.main,
                   "&:hover": {
-                    borderColor: "#6d28d9",
-                    backgroundColor: "#f3e8ff",
+                    borderColor: colors.purple.hover,
+                    backgroundColor: colors.purple.bg,
                   },
                 }}
               >
-                Assign User
+                Assign
               </Button>
             )}
 
@@ -101,16 +323,18 @@ export default function DetailsActions({
                 variant="outlined"
                 onClick={onClaimAccount}
                 startIcon={<Business />}
+                size="small"
                 sx={{
-                  borderColor: "#f59e0b",
-                  color: "#f59e0b",
+                  ...buttonStyle,
+                  borderColor: colors.warning.main,
+                  color: colors.warning.main,
                   "&:hover": {
-                    borderColor: "#d97706",
-                    backgroundColor: "#fef3c7",
+                    borderColor: colors.warning.hover,
+                    backgroundColor: colors.warning.bg,
                   },
                 }}
               >
-                Claim Account
+                Claim
               </Button>
             )}
 
@@ -120,16 +344,18 @@ export default function DetailsActions({
               variant="outlined"
               onClick={onAddNote}
               startIcon={<Note />}
+              size="small"
               sx={{
-                borderColor: "#2563eb",
-                color: "#2563eb",
+                ...buttonStyle,
+                borderColor: colors.primary.main,
+                color: colors.primary.main,
                 "&:hover": {
-                  borderColor: "#1d4ed8",
-                  backgroundColor: "#dbeafe",
+                  borderColor: colors.primary.hover,
+                  backgroundColor: colors.primary.bg,
                 },
               }}
             >
-              Add Note
+              Note
             </Button>
           )}
 
@@ -139,16 +365,18 @@ export default function DetailsActions({
               variant="outlined"
               onClick={onAddAttachment}
               startIcon={<AttachFile />}
+              size="small"
               sx={{
-                borderColor: "#059669",
-                color: "#059669",
+                ...buttonStyle,
+                borderColor: colors.success.main,
+                color: colors.success.main,
                 "&:hover": {
-                  borderColor: "#047857",
-                  backgroundColor: "#d1fae5",
+                  borderColor: colors.success.hover,
+                  backgroundColor: colors.success.bg,
                 },
               }}
             >
-              Add Attachment
+              Attach
             </Button>
           )}
 
@@ -158,10 +386,15 @@ export default function DetailsActions({
               variant="outlined"
               onClick={onDelete}
               startIcon={<Delete />}
+              size="small"
               sx={{
-                borderColor: "#d32f2f",
-                color: "#d32f2f",
-                "&:hover": { backgroundColor: "#ffebee" },
+                ...buttonStyle,
+                borderColor: colors.error.main,
+                color: colors.error.main,
+                "&:hover": { 
+                  borderColor: colors.error.hover,
+                  backgroundColor: colors.error.bg 
+                },
               }}
             >
               Delete
@@ -176,7 +409,16 @@ export default function DetailsActions({
               variant="outlined"
               onClick={onCancel}
               startIcon={<Close />}
-              sx={{ borderColor: "#e5e5e5", color: "#666" }}
+              size="small"
+              sx={{
+                ...buttonStyle,
+                borderColor: colors.neutral.border,
+                color: colors.neutral.main,
+                "&:hover": {
+                  borderColor: colors.neutral.hover,
+                  backgroundColor: colors.neutral.bg,
+                }
+              }}
             >
               Cancel
             </Button>
@@ -188,31 +430,35 @@ export default function DetailsActions({
               variant="contained"
               onClick={onSave}
               startIcon={<Save />}
+              size="small"
               sx={{
-                backgroundColor: "#050505",
-                "&:hover": { backgroundColor: "#333" },
+                ...buttonStyle,
+                backgroundColor: colors.success.main,
+                "&:hover": { backgroundColor: colors.success.hover },
               }}
             >
               Save
             </Button>
           )}
 
-          {/* Note & Attachment */}
+          {/* Note & Attachment in Edit Mode */}
           {onAddNote && hasAccess("activitiesCreate") && (
             <Button
               variant="outlined"
               onClick={onAddNote}
               startIcon={<Note />}
+              size="small"
               sx={{
-                borderColor: "#2563eb",
-                color: "#2563eb",
+                ...buttonStyle,
+                borderColor: colors.primary.main,
+                color: colors.primary.main,
                 "&:hover": {
-                  borderColor: "#1d4ed8",
-                  backgroundColor: "#dbeafe",
+                  borderColor: colors.primary.hover,
+                  backgroundColor: colors.primary.bg,
                 },
               }}
             >
-              Add Note
+              Note
             </Button>
           )}
 
@@ -221,16 +467,18 @@ export default function DetailsActions({
               variant="outlined"
               onClick={onAddAttachment}
               startIcon={<AttachFile />}
+              size="small"
               sx={{
-                borderColor: "#059669",
-                color: "#059669",
+                ...buttonStyle,
+                borderColor: colors.success.main,
+                color: colors.success.main,
                 "&:hover": {
-                  borderColor: "#047857",
-                  backgroundColor: "#d1fae5",
+                  borderColor: colors.success.hover,
+                  backgroundColor: colors.success.bg,
                 },
               }}
             >
-              Add Attachment
+              Attach
             </Button>
           )}
         </>

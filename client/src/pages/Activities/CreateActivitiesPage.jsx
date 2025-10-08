@@ -12,14 +12,14 @@ import {
   FormControlLabel,
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import theme from '../../components/Theme';
+import { useTheme } from '@mui/material/styles';
 import SmartDropdown from '../../components/SmartDropdown';
 import { createActivity } from '../../services/activityService';
 import { getAllAccounts } from '../../services/accountService';
 import { activityTypeService, priorityLevelService } from '../../services/dropdownServices';
 
 const CreateActivitiesPage = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     AccountID: '',
@@ -158,136 +158,141 @@ const CreateActivitiesPage = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-        <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-            <Typography variant="h4" sx={{ fontWeight: 600 }}>
-              Create New Activity
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>
-                Back
-              </Button>
-              <Button variant="outlined" startIcon={<Clear />} onClick={handleCancel} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                sx={{ backgroundColor: '#050505', '&:hover': { backgroundColor: '#333' } }}
-              >
-                {isSubmitting ? 'Saving...' : 'Save Activity'}
-              </Button>
-            </Box>
+    <Box sx={{ 
+      width: '100%', 
+      backgroundColor: theme.palette.background.default, 
+      minHeight: '100vh', 
+      p: 3 
+    }}>
+      <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Typography variant="h4" sx={{ 
+            color: theme.palette.text.primary,
+            fontWeight: 600 
+          }}>
+            Create New Activity
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>
+              Back
+            </Button>
+            <Button variant="outlined" startIcon={<Clear />} onClick={handleCancel} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : 'Save Activity'}
+            </Button>
           </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-
-          {successMessage && (
-            <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
-              {successMessage}
-            </Alert>
-          )}
-
-          <Paper elevation={0} sx={{ p: 3 }}>
-            <form onSubmit={handleSubmit}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3 }}>
-                <SmartDropdown
-                  label="Account"
-                  name="AccountID"
-                  value={formData.AccountID}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  service={accountService}
-                  displayField="AccountName"
-                  valueField="AccountID"
-                  disabled={isSubmitting}
-                  error={isFieldInvalid('AccountID')}
-                  helperText={getFieldError('AccountID')}
-                />
-
-                <SmartDropdown
-                  label="Activity Type"
-                  name="TypeID"
-                  value={formData.TypeID}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  service={activityTypeService}
-                  displayField="TypeName"
-                  valueField="TypeID"
-                  disabled={isSubmitting}
-                  error={isFieldInvalid('TypeID')}
-                  helperText={getFieldError('TypeID')}
-                />
-
-                <SmartDropdown
-                  label="Priority Level"
-                  name="PriorityLevelID"
-                  value={formData.PriorityLevelID}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  service={priorityLevelService}
-                  displayField="PriorityLevelName"
-                  valueField="PriorityLevelID"
-                  disabled={isSubmitting}
-                  error={isFieldInvalid('PriorityLevelID')}
-                  helperText={getFieldError('PriorityLevelID')}
-                />
-
-                <TextField
-                  label="Due To Start"
-                  name="DueToStart"
-                  type="datetime-local"
-                  value={formData.DueToStart}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  error={isFieldInvalid('DueToStart')}
-                  helperText={getFieldError('DueToStart')}
-                />
-
-                <TextField
-                  label="Due To End"
-                  name="DueToEnd"
-                  type="datetime-local"
-                  value={formData.DueToEnd}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  error={isFieldInvalid('DueToEnd')}
-                  helperText={getFieldError('DueToEnd')}
-                />
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={formData.Completed}
-                      onChange={handleInputChange}
-                      name="Completed"
-                      disabled={isSubmitting}
-                    />
-                  }
-                  label="Completed"
-                />
-                {touched.Completed && fieldErrors.Completed && (
-                  <Box sx={{ color: '#ff4444', mt: 0.5 }}>{fieldErrors.Completed[0]}</Box>
-                )}
-              </Box>
-            </form>
-          </Paper>
-
         </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+            {successMessage}
+          </Alert>
+        )}
+
+        <Paper elevation={0} sx={{ p: 3 }}>
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3 }}>
+              <SmartDropdown
+                label="Account"
+                name="AccountID"
+                value={formData.AccountID}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                service={accountService}
+                displayField="AccountName"
+                valueField="AccountID"
+                disabled={isSubmitting}
+                error={isFieldInvalid('AccountID')}
+                helperText={getFieldError('AccountID')}
+              />
+
+              <SmartDropdown
+                label="Activity Type"
+                name="TypeID"
+                value={formData.TypeID}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                service={activityTypeService}
+                displayField="TypeName"
+                valueField="TypeID"
+                disabled={isSubmitting}
+                error={isFieldInvalid('TypeID')}
+                helperText={getFieldError('TypeID')}
+              />
+
+              <SmartDropdown
+                label="Priority Level"
+                name="PriorityLevelID"
+                value={formData.PriorityLevelID}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                service={priorityLevelService}
+                displayField="PriorityLevelName"
+                valueField="PriorityLevelID"
+                disabled={isSubmitting}
+                error={isFieldInvalid('PriorityLevelID')}
+                helperText={getFieldError('PriorityLevelID')}
+              />
+
+              <TextField
+                label="Due To Start"
+                name="DueToStart"
+                type="datetime-local"
+                value={formData.DueToStart}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                error={isFieldInvalid('DueToStart')}
+                helperText={getFieldError('DueToStart')}
+              />
+
+              <TextField
+                label="Due To End"
+                name="DueToEnd"
+                type="datetime-local"
+                value={formData.DueToEnd}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                error={isFieldInvalid('DueToEnd')}
+                helperText={getFieldError('DueToEnd')}
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.Completed}
+                    onChange={handleInputChange}
+                    name="Completed"
+                    disabled={isSubmitting}
+                  />
+                }
+                label="Completed"
+              />
+              {touched.Completed && fieldErrors.Completed && (
+                <Box sx={{ color: '#ff4444', mt: 0.5 }}>{fieldErrors.Completed[0]}</Box>
+              )}
+            </Box>
+          </form>
+        </Paper>
+
       </Box>
-    </ThemeProvider>
+    </Box>
   );
 };
 

@@ -34,8 +34,7 @@ import {
   Email,
   Launch
 } from "@mui/icons-material";
-import { ThemeProvider } from "@mui/material/styles";
-import theme from "../Theme";
+import { useTheme } from "@mui/material/styles";
 import DetailsActions from "./DetailsActions";
 import SmartDropdown from "../../components/SmartDropdown";
 import AssignUserDialog from "../AssignUserDialog";
@@ -47,7 +46,7 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
   title,
   item,
   mainFields = [],
-  relatedTabs = [], // Enhanced to support table configurations
+  relatedTabs = [],
   onBack,
   onSave,
   onDelete,
@@ -60,10 +59,10 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
   customTheme,
   readOnly = false,
   entityType = "entity",
-  // New props for table functionality
   onRefreshRelatedData,
-  relatedDataActions = {}, // Actions for each related tab type
+  relatedDataActions = {},
 }) {
+  const theme = useTheme();
   const [tab, setTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(item || {});
@@ -71,19 +70,16 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
   const [statusMessage, setStatusMessage] = useState("");
   const [statusSeverity, setStatusSeverity] = useState("success");
   
-  // Enhanced tab data management
   const [tabData, setTabData] = useState({});
   const [tabLoading, setTabLoading] = useState({});
   const [tabSelected, setTabSelected] = useState({});
   const [tabErrors, setTabErrors] = useState({});
 
-  // Refs to prevent dependency changes
   const relatedTabsRef = useRef(relatedTabs);
   const itemRef = useRef(item);
   const formDataRef = useRef(formData);
   const tabSelectedRef = useRef(tabSelected);
 
-  // Update refs when values change
   useEffect(() => {
     relatedTabsRef.current = relatedTabs;
     itemRef.current = item;
@@ -95,9 +91,6 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
     if (item) setFormData(item);
   }, [item]);
 
-  const activeTheme = customTheme || theme;
-
-  // Stable handlers using refs
   const handleTabChange = useCallback((_, newValue) => {
     setTab(newValue);
   }, []);
@@ -152,7 +145,6 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
     }
   }, []);
 
-  // Ultra-stable loadTabData function
   const loadTabData = useCallback(async (tabIndex) => {
     const tabConfig = relatedTabsRef.current[tabIndex];
     if (!tabConfig?.dataService) return;
@@ -167,11 +159,9 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
       if (typeof tabConfig.dataService === 'function') {
         data = await tabConfig.dataService(formDataRef.current);
       } else {
-        // Assume it's a service object with a method
         data = await tabConfig.dataService.fetchData(formDataRef.current);
       }
       
-      // Process data if needed (e.g., for deals with SymbolValue)
       let processedData = data?.data || data || [];
       if (tabConfig.processData && typeof tabConfig.processData === 'function') {
         processedData = tabConfig.processData(processedData);
@@ -179,7 +169,6 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
       
       setTabData(prev => ({ ...prev, [tabKey]: processedData }));
       
-      // Initialize selection state
       if (!tabSelectedRef.current[tabKey]) {
         setTabSelected(prev => ({ ...prev, [tabKey]: [] }));
       }
@@ -192,7 +181,6 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
     }
   }, []);
 
-  // Load tab data effect with minimal dependencies
   useEffect(() => {
     const currentTab = relatedTabsRef.current[tab];
     const tabKey = currentTab?.key || tab;
@@ -200,16 +188,14 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
     if (currentTab?.dataService && !tabData[tabKey]) {
       loadTabData(tab);
     }
-  }, [tab, loadTabData]); // Remove tabData from deps to prevent loops
+  }, [tab, loadTabData]);
 
-  // Refresh tab data
   const refreshTabData = useCallback((tabIndex) => {
     const tabKey = relatedTabsRef.current[tabIndex]?.key || tabIndex;
     setTabData(prev => ({ ...prev, [tabKey]: undefined }));
     loadTabData(tabIndex);
   }, [loadTabData]);
 
-  // Selection handlers for table tabs
   const handleTabSelectClick = useCallback((tabKey, id) => {
     setTabSelected(prev => ({
       ...prev,
@@ -236,7 +222,6 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
     }
   }, [tabData]);
 
-  // Memoized action handler creation
   const createTabActionHandler = useCallback((tabKey, actionType) => {
     return (item) => {
       const tabConfig = relatedTabsRef.current.find(tab => (tab.key || relatedTabsRef.current.indexOf(tab)) === tabKey);
@@ -246,7 +231,6 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
         return actions[actionType](item, formDataRef.current);
       }
       
-      // Fallback to default actions if specific ones aren't provided
       switch (actionType) {
         case 'view':
           console.log(`View ${tabKey}:`, item);
@@ -270,7 +254,6 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
     };
   }, [relatedDataActions, onRefreshRelatedData]);
 
-  // Stable format function
   const formatCellValue = useCallback((value, column) => {
     if (value === null || value === undefined || value === '') return '-';
 
@@ -334,11 +317,9 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
     }
   }, []);
 
-  // Memoized tab content renderer
   const renderTabContent = useCallback((tabConfig, tabIndex) => {
     const tabKey = tabConfig.key || tabIndex;
     
-    // If it's a table configuration
     if (tabConfig.tableConfig) {
       const data = tabData[tabKey] || [];
       const isLoading = tabLoading[tabKey];
@@ -396,21 +377,20 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
             }}
           />
           
-          {/* Show count and selection info */}
           <Box sx={{ 
             mt: 2, 
             p: 2, 
-            borderTop: '1px solid #e5e5e5',
-            backgroundColor: '#fafafa',
+            borderTop: `1px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.background.default,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center'
           }}>
-            <Typography variant="body2" sx={{ color: '#666666' }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               Showing {data.length} {tabConfig.label?.toLowerCase()} for {formData.AccountName || formData.name || title}
             </Typography>
             {selected.length > 0 && (
-              <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
+              <Typography variant="body2" sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
                 {selected.length} selected
               </Typography>
             )}
@@ -419,7 +399,6 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
       );
     }
 
-    // Original table rendering for legacy configs
     if (tabConfig.columns && tabConfig.dataService) {
       const data = tabData[tabIndex] || [];
       const isLoading = tabLoading[tabIndex];
@@ -490,11 +469,9 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
       );
     }
 
-    // Custom content rendering
     return tabConfig.content;
-  }, [tabData, tabLoading, tabErrors, tabSelected, refreshTabData, handleTabSelectClick, handleTabSelectAllClick, createTabActionHandler, formatCellValue, formData, title, entityType]);
+  }, [tabData, tabLoading, tabErrors, tabSelected, refreshTabData, handleTabSelectClick, handleTabSelectAllClick, createTabActionHandler, formatCellValue, formData, title, entityType, theme]);
 
-  // Memoized visible fields
   const visibleFields = useMemo(() => {
     return mainFields.filter(
       (field) =>
@@ -505,7 +482,6 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
     );
   }, [mainFields, isEditing, formData]);
 
-  // Stable field renderer
   const renderField = useCallback((field) => {
     const value = formData[field.key] ?? "";
 
@@ -525,7 +501,6 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
       return value || "-";
     }
 
-    // Edit mode
     switch (field.type) {
       case "textarea":
         return (
@@ -625,162 +600,152 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
 
   if (loading) {
     return (
-      <ThemeProvider theme={activeTheme}>
-        <Box sx={{ width: "100%", backgroundColor: "#fafafa", p: 3 }}>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-            <CircularProgress />
-          </Box>
+      <Box sx={{ width: "100%", backgroundColor: theme.palette.background.default, p: 3 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+          <CircularProgress />
         </Box>
-      </ThemeProvider>
+      </Box>
     );
   }
 
   if (error || !item) {
     return (
-      <ThemeProvider theme={activeTheme}>
-        <Box sx={{ width: "100%", backgroundColor: "#fafafa", p: 3 }}>
-          <Alert severity={error ? "error" : "warning"} sx={{ mb: 2 }}>
-            {error || `${entityType} not found`}
-          </Alert>
-          {onBack && (
-            <Button variant="outlined" onClick={onBack} startIcon={<ArrowBack />}>
-              Back
-            </Button>
-          )}
-        </Box>
-      </ThemeProvider>
+      <Box sx={{ width: "100%", backgroundColor: theme.palette.background.default, p: 3 }}>
+        <Alert severity={error ? "error" : "warning"} sx={{ mb: 2 }}>
+          {error || `${entityType} not found`}
+        </Alert>
+        {onBack && (
+          <Button variant="outlined" onClick={onBack} startIcon={<ArrowBack />}>
+            Back
+          </Button>
+        )}
+      </Box>
     );
   }
 
   return (
-    <ThemeProvider theme={activeTheme}>
-      <Box sx={{ width: "100%", backgroundColor: "#fafafa", p: 3 }}>
-        {/* Status Message */}
-        {statusMessage && (
-          <Alert severity={statusSeverity} sx={{ mb: 2 }} onClose={() => setStatusMessage("")}>
-            {statusMessage}
-          </Alert>
-        )}
+    <Box sx={{ width: "100%", backgroundColor: theme.palette.background.default, p: 3 }}>
+      {statusMessage && (
+        <Alert severity={statusSeverity} sx={{ mb: 2 }} onClose={() => setStatusMessage("")}>
+          {statusMessage}
+        </Alert>
+      )}
 
-        {/* Header */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
-            <Box>
-              <Typography variant="h4" sx={{ color: "#050505", fontWeight: 600, mb: 0.5 }}>
-                {title}
-              </Typography>
-              {subtitle && (
-                <Typography variant="body2" sx={{ color: "#666666", mb: 1 }}>
-                  {subtitle}
-                </Typography>
-              )}
-              {headerChips.length > 0 && (
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                  {headerChips.map((chip, index) => (
-                    <Chip
-                      key={index}
-                      label={chip.label}
-                      size="small"
-                      sx={{ backgroundColor: chip.color || "#000000", color: chip.textColor || "#ffffff" }}
-                    />
-                  ))}
-                </Box>
-              )}
-            </Box>
-
-            <DetailsActions
-              isEditing={isEditing}
-              readOnly={readOnly}
-              entityType={entityType}
-              currentRow={formData}
-              onBack={onBack}
-              onEdit={() => setIsEditing(true)}
-              onSave={handleSave}
-              onCancel={handleCancel}
-              onDelete={handleDelete}
-              onAddNote={handleAddNote}
-              onAddAttachment={handleAddAttachment}
-              onAssignUser={() => setAssignDialogOpen(true)}
-              onClaimAccount={handleClaimAccount}
-            />
-          </Box>
-        </Box>
-
-        {/* Main Fields */}
-        {visibleFields.length > 0 && (
-          <Card sx={{ mb: 3 }}>
-            <CardContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Typography variant="h6" sx={{ color: "#050505", fontWeight: 600 }}>
-                Details
-              </Typography>
-              {visibleFields.map((field) => (
-                <Box key={field.key} sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500, color: "#050505" }}>
-                    {field.label}
-                    {field.required && isEditing && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
-                  </Typography>
-                  {renderField(field)}
-                </Box>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Related Tabs */}
-        {relatedTabs.length > 0 && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h5" sx={{ color: "#050505", fontWeight: 600, mb: 2 }}>
-              Related Information
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+          <Box>
+            <Typography variant="h4" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 0.5 }}>
+              {title}
             </Typography>
-            <Paper elevation={0} sx={{ border: "1px solid #e5e5e5", borderRadius: 2, overflow: "hidden" }}>
-              <Tabs
-                value={tab}
-                onChange={handleTabChange}
-                variant="scrollable"
-                scrollButtons="auto"
-                sx={{ backgroundColor: "#ffffff", borderBottom: "1px solid #e5e5e5" }}
-              >
-                {relatedTabs.map((t, i) => {
-                  const tabKey = t.key || i;
-                  const count = tabData[tabKey]?.length || 0;
-                  const label = count > 0 ? `${t.label} (${count})` : t.label;
-                  
-                  return (
-                    <Tab 
-                      key={i} 
-                      label={label}
-                      sx={{
-                        textTransform: 'none',
-                        fontWeight: 500,
-                        '&.Mui-selected': {
-                          color: '#050505',
-                        }
-                      }}
-                    />
-                  );
-                })}
-              </Tabs>
-              <Box>
-                {relatedTabs.map((t, i) => (
-                  <Box key={i} sx={{ display: tab === i ? "block" : "none" }}>
-                    {renderTabContent(t, i)}
-                  </Box>
+            {subtitle && (
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+                {subtitle}
+              </Typography>
+            )}
+            {headerChips.length > 0 && (
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                {headerChips.map((chip, index) => (
+                  <Chip
+                    key={index}
+                    label={chip.label}
+                    size="small"
+                    sx={{ backgroundColor: chip.color || "#000000", color: chip.textColor || "#ffffff" }}
+                  />
                 ))}
               </Box>
-            </Paper>
+            )}
           </Box>
-        )}
 
-        {/* Assign User Dialog */}
-        <AssignUserDialog
-          open={assignDialogOpen}
-          onClose={() => setAssignDialogOpen(false)}
-          menuRow={formData}
-          onAssign={handleAssignUser}
-        />
+          <DetailsActions
+            isEditing={isEditing}
+            readOnly={readOnly}
+            entityType={entityType}
+            currentRow={formData}
+            onBack={onBack}
+            onEdit={() => setIsEditing(true)}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            onDelete={handleDelete}
+            onAddNote={handleAddNote}
+            onAddAttachment={handleAddAttachment}
+            onAssignUser={() => setAssignDialogOpen(true)}
+            onClaimAccount={handleClaimAccount}
+          />
+        </Box>
       </Box>
-    </ThemeProvider>
+
+      {visibleFields.length > 0 && (
+        <Card sx={{ mb: 3, bgcolor: theme.palette.background.paper }}>
+          <CardContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
+              Details
+            </Typography>
+            {visibleFields.map((field) => (
+              <Box key={field.key} sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
+                  {field.label}
+                  {field.required && isEditing && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
+                </Typography>
+                {renderField(field)}
+              </Box>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {relatedTabs.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 2 }}>
+            Related Information
+          </Typography>
+          <Paper elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 2, overflow: "hidden" }}>
+            <Tabs
+              value={tab}
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{ 
+                backgroundColor: theme.palette.background.paper, 
+                borderBottom: `1px solid ${theme.palette.divider}` 
+              }}
+            >
+              {relatedTabs.map((t, i) => {
+                const tabKey = t.key || i;
+                const count = tabData[tabKey]?.length || 0;
+                const label = count > 0 ? `${t.label} (${count})` : t.label;
+                
+                return (
+                  <Tab 
+                    key={i} 
+                    label={label}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 500,
+                      '&.Mui-selected': {
+                        color: theme.palette.text.primary,
+                      }
+                    }}
+                  />
+                );
+              })}
+            </Tabs>
+            <Box>
+              {relatedTabs.map((t, i) => (
+                <Box key={i} sx={{ display: tab === i ? "block" : "none" }}>
+                  {renderTabContent(t, i)}
+                </Box>
+              ))}
+            </Box>
+          </Paper>
+        </Box>
+      )}
+
+      <AssignUserDialog
+        open={assignDialogOpen}
+        onClose={() => setAssignDialogOpen(false)}
+        menuRow={formData}
+        onAssign={handleAssignUser}
+      />
+    </Box>
   );
 });
-
-// export  UniversalDetailView ;
