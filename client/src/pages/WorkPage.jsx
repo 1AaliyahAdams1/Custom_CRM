@@ -86,7 +86,6 @@ const WorkPage = ({
   currentFilter = 'all',
   onSortChange = () => {},
   onFilterChange = () => {},
-  
   // Tabs
   openTabs = [],
   activeTab = 0,
@@ -94,8 +93,7 @@ const WorkPage = ({
   currentTabLoading = false,
   onTabChange = () => {},
   onTabClose = () => {},
-  
-  // Actions
+    // Actions
   onActivityClick = () => {},
   onCompleteActivity = async () => {},
   onSendEmailClick = () => {}, 
@@ -118,7 +116,7 @@ const WorkPage = ({
   onAddNote = () => {},
   handleSaveNote = () => {},
   handleEditNote = () => {},
-}) => {
+
   // Local state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -127,8 +125,7 @@ const WorkPage = ({
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   
   const [draggedIndex, setDraggedIndex] = useState(null);
-  const [dragOverIndex, setDragOverIndex] = useState(null);
-
+  
   //Collapsible filter section state
   const [filterSectionExpanded, setFilterSectionExpanded] = useState(true);
 
@@ -249,7 +246,6 @@ const formatPhoneForTel = (phone) => {
       
       if (editFormData.dueToStart) {
         updateData.DueToStart = new Date(editFormData.dueToStart).toISOString();
-      }
       
       if (editFormData.dueToEnd) {
         updateData.DueToEnd = new Date(editFormData.dueToEnd).toISOString();
@@ -317,9 +313,9 @@ const formatPhoneForTel = (phone) => {
     setDragOverIndex(index);
   };
 
-  const handleListDragLeave = () => {
-    setDragOverIndex(null);
-  };
+const handleListDragLeave = () => {
+  setDragOverIndex(null);
+};
 
   const handleListDrop = (e, dropIndex) => {
     e.preventDefault();
@@ -342,10 +338,10 @@ const formatPhoneForTel = (phone) => {
     setDragOverIndex(null);
   };
 
-  const handleListDragEnd = () => {
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
+const handleListDragEnd = () => {
+  setDraggedIndex(null);
+  setDragOverIndex(null);
+};
 
   const CustomTabPanel = ({ children, value, index, ...other }) => (
     <div
@@ -359,6 +355,7 @@ const formatPhoneForTel = (phone) => {
     </div>
   );
 
+
   // Activities List View
   const ActivitiesListView = () => (
     <List sx={{ p: 0 }}>
@@ -367,12 +364,14 @@ const formatPhoneForTel = (phone) => {
           <CircularProgress />
           <Typography variant="body2" sx={{ mt: 2, color: '#666666' }}>
             Loading {isSequenceMode ? 'sequence items' : 'activities'}...
+            Loading {isSequenceMode ? 'sequence items' : 'activities'}...
           </Typography>
         </Box>
       ) : error ? (
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="h6" color="error" sx={{ mb: 1 }}>
             Error Loading {isSequenceMode ? 'Sequence' : 'Activities'}
+            
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {error}
@@ -389,6 +388,7 @@ const formatPhoneForTel = (phone) => {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Data is not in the expected format.
+            Data is not in the expected format.
           </Typography>
         </Box>
       ) : activities.length === 0 ? (
@@ -396,10 +396,14 @@ const formatPhoneForTel = (phone) => {
           <Assignment sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
             {isSequenceMode ? 'No sequence items yet' : 'No activities found'}
+            {isSequenceMode ? 'No sequence items yet' : 'No activities found'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {isSequenceMode ? 'The first item will appear when it becomes available' : 'Try adjusting your filter or sort options'}
+            {isSequenceMode ? 'The first item will appear when it becomes available' : 'Try adjusting your filter or sort options'}
           </Typography>
+          <Button variant="outlined" onClick={() => selectedAccountId ? onAccountChange(null) : onFilterChange('all')}>
+            {selectedAccountId ? 'Show All Accounts' : 'Show All'}
           <Button variant="outlined" onClick={() => selectedAccountId ? onAccountChange(null) : onFilterChange('all')}>
             {selectedAccountId ? 'Show All Accounts' : 'Show All'}
           </Button>
@@ -525,11 +529,15 @@ const formatPhoneForTel = (phone) => {
         <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           
           {/* Left Panel - Activities List */}
+          {/* Left Panel - Activities List */}
           <Paper sx={{ 
+            width: 400,
             width: 400,
             display: 'flex', 
             flexDirection: 'column',
             borderRadius: 0,
+            borderRight: '1px solid #e0e0e0',
+            overflow: 'hidden'
             borderRight: '1px solid #e0e0e0',
             overflow: 'hidden'
           }}>
@@ -683,8 +691,83 @@ const formatPhoneForTel = (phone) => {
             }}>
               <ActivitiesListView />
             </Box>
+            {/* Activities List (Scrollable) */}
+            <Box sx={{ 
+              flex: 1, 
+              overflow: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: '#f1f1f1',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: '#888',
+                borderRadius: '4px',
+                '&:hover': {
+                  backgroundColor: '#555',
+                },
+              },
+            }}>
+              <ActivitiesListView />
+            </Box>
           </Paper>
 
+          {/* Right Panel - Tabbed Activity Workspace */}
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            
+            {/* Tab Bar */}
+            {openTabs.length > 0 && (
+              <Paper sx={{ borderRadius: 0, borderBottom: '1px solid #e0e0e0' }}>
+                <Tabs
+                  value={activeTab}
+                  onChange={(e, newValue) => onTabChange(newValue)}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  sx={{ minHeight: 48 }}
+                >
+                  {openTabs.map((tab, index) => (
+                    <Tab
+                      key={`${tab.activityId}-${index}`}
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
+                          <Box sx={{ textAlign: 'left' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 500, display: 'block' }}>
+                              {tab.title}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              {tab.subtitle}
+                            </Typography>
+                          </Box>
+                          <Box
+                            component="span"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onTabClose(index);
+                            }}
+                            sx={{ 
+                              ml: 1, 
+                              p: 0.5,
+                              borderRadius: '50%',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                              }
+                            }}
+                          >
+                            <Close fontSize="small" />
+                          </Box>
+                        </Box>
+                      }
+                      sx={{ minHeight: 48, textTransform: 'none' }}
+                    />
+                  ))}
+                </Tabs>
+              </Paper>
+            )}
           {/* Right Panel - Tabbed Activity Workspace */}
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             
@@ -765,6 +848,30 @@ const formatPhoneForTel = (phone) => {
                     {isSequenceMode ? 'Click on a sequence item to start' : 'Click on an activity from the left panel or drag and drop it here'}
                   </Typography>
                   {!isSequenceMode && (
+            {/* Tab Content */}
+            <Box 
+              sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+            >
+              {openTabs.length === 0 ? (
+                <Box sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  p: 4,
+                  textAlign: 'center'
+                }}>
+                  <Assignment sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                    No activities open
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    {isSequenceMode ? 'Click on a sequence item to start' : 'Click on an activity from the left panel or drag and drop it here'}
+                  </Typography>
+                  {!isSequenceMode && (
                     <Box sx={{ 
                       border: '2px dashed #ddd', 
                       borderRadius: 2, 
@@ -777,6 +884,46 @@ const formatPhoneForTel = (phone) => {
                         Drop activities here to open them
                       </Typography>
                     </Box>
+                  )}
+                </Box>
+              ) : (
+                openTabs.map((tab, index) => (
+                  <CustomTabPanel key={`${tab.activityId}-${index}`} value={activeTab} index={index}>
+                    {currentTabLoading ? (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        height: '100%',
+                        flexDirection: 'column',
+                        gap: 2
+                      }}>
+                        <CircularProgress />
+                        <Typography variant="body2" color="text.secondary">
+                          Loading activity details...
+                        </Typography>
+                      </Box>
+                    ) : currentActivity ? (
+                      <Box sx={{ p: 3, height: '100%', overflow: 'auto' }}>
+                        <Card sx={{ width: '100%', height: 'fit-content' }}>
+                          <CardContent>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+                              <Box sx={{ flex: 1 }}>
+                                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                                  {currentActivity.AccountName}
+                                </Typography>
+                                <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
+                                  {currentActivity.ActivityTypeName}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                  <Chip
+                                    label={currentActivity.Status}
+                                    sx={{
+                                      backgroundColor: getStatusColor(currentActivity.Status),
+                                      color: 'white'
+                                    }}
+                                  />
+                                  {currentActivity.PriorityLevelValue && (
                   )}
                 </Box>
               ) : (
@@ -834,6 +981,16 @@ const formatPhoneForTel = (phone) => {
                                 </Box>
                               </Box>
                             </Box>
+                                  )}
+                                  {currentActivity.SequenceName && (
+                                    <Chip
+                                      label={`${currentActivity.SequenceName} (Day ${currentActivity.DaysFromStart})`}
+                                      variant="outlined"
+                                    />
+                                  )}
+                                </Box>
+                              </Box>
+                            </Box>
 
                             <Grid container spacing={3}>
                               <Grid item xs={12} md={6}>
@@ -867,7 +1024,29 @@ const formatPhoneForTel = (phone) => {
                                   </Typography>
                                 </Grid>
                               )}
+                              {currentActivity.DueToEnd && (
+                                <Grid item xs={12} md={6}>
+                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
+                                    End Date
+                                  </Typography>
+                                  <Typography variant="body1" sx={{ mb: 2 }}>
+                                    {format(new Date(currentActivity.DueToEnd), "MMM d, yyyy 'at' h:mm a")}
+                                  </Typography>
+                                </Grid>
+                              )}
 
+                              {currentActivity.SequenceItemDescription && (
+                                <Grid item xs={12}>
+                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
+                                    Sequence Item Description
+                                  </Typography>
+                                  <Typography variant="body1" sx={{ mb: 2 }}>
+                                    {currentActivity.SequenceItemDescription}
+                                  </Typography>
+                                </Grid>
+                              )}
+                            </Grid>
+                          </CardContent>
                               {currentActivity.SequenceItemDescription && (
                                 <Grid item xs={12}>
                                   <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
@@ -924,6 +1103,46 @@ const formatPhoneForTel = (phone) => {
                               Add Note
                             </Button>
 
+                            <Button
+                              variant="outlined"
+                              startIcon={<Edit />}
+                              onClick={handleEditClick}
+                              disabled={currentActivity.Completed}
+                            >
+                              Edit
+                            </Button>
+                            
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              startIcon={<Delete />}
+                              onClick={handleDeleteClick}
+                            >
+                              Delete
+                            </Button>
+                          </CardActions>
+                        </Card>
+                      </Box>
+                    ) : (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        height: '100%',
+                        flexDirection: 'column',
+                        gap: 2
+                      }}>
+                        <Assignment sx={{ fontSize: 48, color: '#ccc' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          Activity not found or failed to load
+                        </Typography>
+                      </Box>
+                    )}
+                  </CustomTabPanel>
+                ))
+              )}
+            </Box>
+          </Box>
                             <Button
                               variant="outlined"
                               startIcon={<Edit />}
@@ -1092,6 +1311,7 @@ const formatPhoneForTel = (phone) => {
         </Snackbar>
 
         {/* Error Alert */}
+    
         {error && (
           <Alert 
             severity="error" 
@@ -1099,6 +1319,7 @@ const formatPhoneForTel = (phone) => {
               position: 'fixed', 
               top: 16, 
               transform: 'translateX(-50%)',
+              left: '50%',
               left: '50%',
               zIndex: 1300,
               fontSize: '1.1rem',

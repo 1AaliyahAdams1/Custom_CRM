@@ -6,10 +6,15 @@ import {
   getUserAccounts,
   getSequenceProgress,
   updateSequenceItemStatus,
+  getUserAccounts,
+  getSequenceProgress,
+  updateSequenceItemStatus,
   getActivityForWorkspace,
   completeActivity,
   updateActivity,
   deleteActivity,
+  getActivityMetadata,
+  getOrCreateActivityFromSequenceItem
   getActivityMetadata,
   getOrCreateActivityFromSequenceItem
 } from "../../services/workService";
@@ -27,6 +32,7 @@ const WorkPageContainer = () => {
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   
+  
   // ---------------- USER DATA ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const userId = storedUser.UserID || storedUser.id || null;
@@ -40,6 +46,11 @@ const WorkPageContainer = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [refreshFlag, setRefreshFlag] = useState(false);
+
+  // Account and sequence state
+  const [userAccounts, setUserAccounts] = useState([]);
+  const [selectedAccountId, setSelectedAccountId] = useState(null);
+  const [sequenceProgress, setSequenceProgress] = useState(null);
 
   // Account and sequence state
   const [userAccounts, setUserAccounts] = useState([]);
@@ -66,6 +77,26 @@ const WorkPageContainer = () => {
   const [statusMessage, setStatusMessage] = useState("");
   const [statusSeverity, setStatusSeverity] = useState("success");
 
+  // ---------------- FETCH USER ACCOUNTS ----------------
+  const fetchUserAccounts = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await getUserAccounts(userId);
+      
+      if (response.success && response.data) {
+        setUserAccounts(response.data);
+        console.log('User accounts loaded:', response.data.length);
+      } else {
+        setUserAccounts([]);
+      }
+    } catch (err) {
+      console.error('Error fetching user accounts:', err);
+      setUserAccounts([]);
+    }
+  }, [userId]);
+
+  // ---------------- FETCH WORK PAGE DATA ----------------
   // ---------------- FETCH USER ACCOUNTS ----------------
   const fetchUserAccounts = useCallback(async () => {
     if (!userId) return;
@@ -152,9 +183,12 @@ const WorkPageContainer = () => {
         setActivities(activitiesArray);
         setSequenceProgress(null);
         
+        setSequenceProgress(null);
+        
       } else {
         console.error('Unexpected response format:', response);
         setActivities([]);
+        setSequenceProgress(null);
         setSequenceProgress(null);
       }
       
@@ -162,6 +196,7 @@ const WorkPageContainer = () => {
       console.error('Fetch error:', err);
       setError(err.message || "Failed to load data. Please try again.");
       setActivities([]);
+      setSequenceProgress(null);
       setSequenceProgress(null);
     } finally {
       setLoading(false);
@@ -181,6 +216,12 @@ const WorkPageContainer = () => {
   }, []);
 
   // ---------------- EFFECTS ----------------
+  useEffect(() => {
+    if (userId) {
+      fetchUserAccounts();
+    }
+  }, [fetchUserAccounts]);
+
   useEffect(() => {
     if (userId) {
       fetchUserAccounts();
@@ -210,16 +251,21 @@ const WorkPageContainer = () => {
 
   const handleAccountChange = useCallback((accountId) => {
     console.log('Account changed to:', accountId);
+  const handleAccountChange = useCallback((accountId) => {
+    console.log('Account changed to:', accountId);
     setSelectedAccountId(accountId);
     
+    // Close all tabs when switching accounts/views
     // Close all tabs when switching accounts/views
     setOpenTabs([]);
     setActiveTab(null);
     setTabActivities({});
     setTabLoading({});
     setSequenceProgress(null);
+    setSequenceProgress(null);
   }, []);
 
+  // ---------------- REORDER ACTIVITIES ----------------
   // ---------------- REORDER ACTIVITIES ----------------
   const handleReorderActivities = useCallback((fromIndex, toIndex) => {
     console.log('Reordering activities from', fromIndex, 'to', toIndex);
@@ -520,6 +566,7 @@ const WorkPageContainer = () => {
     }
   };
  
+ 
   // ---------------- DRAG AND DROP ----------------
   
   // Drag and drop for OPENING activities in workspace
@@ -528,6 +575,27 @@ const WorkPageContainer = () => {
     event.dataTransfer.effectAllowed = "copy";
   };
 
+ const handleDrop = async (event) => {
+  event.preventDefault();
+  try {
+    const droppedData = JSON.parse(event.dataTransfer.getData("application/json"));
+    console.log('Dropped data:', droppedData);
+    
+    // Check if it's a sequence item without an activity
+    if (droppedData.SequenceItemID && !droppedData.ActivityID) {
+      // This is a sequence item that needs activity creation
+      await handleSequenceItemClick(droppedData);
+    } else if (droppedData.ActivityID) {
+      // This is an existing activity
+      await handleActivityClick(droppedData);
+    } else {
+      console.warn('Unknown drop data format');
+    }
+  } catch (err) {
+    console.error("Error handling drop:", err);
+    showStatus('Failed to open item', 'error');
+  }
+};
  const handleDrop = async (event) => {
   event.preventDefault();
   try {
@@ -634,6 +702,7 @@ const WorkPageContainer = () => {
         onDragStart={handleDragStart}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onReorderActivities={handleReorderActivities}
         onReorderActivities={handleReorderActivities}
         
         // Metadata for editing forms
