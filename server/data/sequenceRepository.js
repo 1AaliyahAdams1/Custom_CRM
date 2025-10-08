@@ -825,6 +825,7 @@ const getActivityByID = async (activityId, userId) => {
             a.ActivityID, 
             a.AccountID, 
             acc.AccountName, 
+            acc.PrimaryPhone as AccountPhone,
             a.TypeID, 
             at.TypeName AS ActivityTypeName, 
             at.Description AS ActivityTypeDescription, 
@@ -1512,6 +1513,7 @@ async function getSmartSequenceView(accountId, userId) {
         SELECT 
           acc.AccountID,
           acc.AccountName,
+          acc.PrimaryPhone as AccountPhone, 
           acc.CreatedAt AS AccountCreatedAt,
           seq.SequenceID,
           seq.SequenceName,

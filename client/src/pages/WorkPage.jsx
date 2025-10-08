@@ -34,6 +34,7 @@ import {
   LinearProgress,
   Checkbox,
   FormControlLabel,
+  Collapse,
 } from "@mui/material";
 import {
   Close,
@@ -55,7 +56,10 @@ import {
   Schedule,
   Note,
   Email,
+  Phone,
   Lock,
+  ExpandMore,
+  ExpandLess,
 } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 import { formatDistanceToNow, format } from "date-fns";
@@ -75,7 +79,6 @@ const WorkPage = ({
   selectedAccountId = null,
   sequenceProgress = null,
   onAccountChange = () => {},
-  onToggleSequenceItem = () => {},
   onSequenceItemClick = () => {},
   
   // Filters
@@ -126,6 +129,9 @@ const WorkPage = ({
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
+  //Collapsible filter section state
+  const [filterSectionExpanded, setFilterSectionExpanded] = useState(true);
+
   const [editFormData, setEditFormData] = useState({
     dueToStart: "",
     dueToEnd: "",
@@ -133,6 +139,10 @@ const WorkPage = ({
   });
 
   const isSequenceMode = selectedAccountId !== null;
+
+  // Get the current account and sequence name
+  const currentAccount = userAccounts.find(acc => acc.AccountID === selectedAccountId);
+  const currentSequenceName = currentAccount?.SequenceName || '';
 
   // Sort and filter options
   const sortOptions = [
@@ -184,6 +194,20 @@ const WorkPage = ({
         return '#4caf50';
     }
   };
+
+  const isCallActivity = (activity) => {
+  return activity && (activity.TypeID === 1 || activity.ActivityTypeID === 1);
+};
+
+const hasValidPhone = (activity) => {
+  return activity && activity.AccountPhone && activity.AccountPhone.trim() !== '';
+};
+
+const formatPhoneForTel = (phone) => {
+  if (!phone) return '';
+  // Remove any spaces, dashes, or parentheses
+  return phone.replace(/[\s\-\(\)]/g, '');
+};
 
   const formatDueDate = (dueDate) => {
     if (!dueDate) return 'No due date';
@@ -274,59 +298,54 @@ const WorkPage = ({
     }
   };
 
+  // Drag and drop handlers
+  const handleListDragStart = (e, index, activity) => {
+    setDraggedIndex(index);
+    e.dataTransfer.setData("application/json", JSON.stringify(activity));
+    e.dataTransfer.effectAllowed = "copyMove";
+  };
 
-// Drag and drop handlers
-const handleListDragStart = (e, index, activity) => {
-  // Allow dragging in both modes now
-  setDraggedIndex(index);
-  e.dataTransfer.setData("application/json", JSON.stringify(activity));
-  e.dataTransfer.effectAllowed = "copyMove";
-};
-
-const handleListDragOver = (e, index) => {
-  // Only allow reordering in non-sequence mode
-  if (isSequenceMode) {
+  const handleListDragOver = (e, index) => {
+    if (isSequenceMode) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      return;
+    }
+    
     e.preventDefault();
-    e.dataTransfer.dropEffect = "copy"; // Change to copy for sequence mode
-    return;
-  }
-  
-  e.preventDefault();
-  e.dataTransfer.dropEffect = "move";
-  setDragOverIndex(index);
-};
+    e.dataTransfer.dropEffect = "move";
+    setDragOverIndex(index);
+  };
 
-const handleListDragLeave = () => {
-  setDragOverIndex(null);
-};
+  const handleListDragLeave = () => {
+    setDragOverIndex(null);
+  };
 
-const handleListDrop = (e, dropIndex) => {
-  e.preventDefault();
-  
-  // In sequence mode, don't reorder, just ignore the drop in the list
-  if (isSequenceMode) {
+  const handleListDrop = (e, dropIndex) => {
+    e.preventDefault();
+    
+    if (isSequenceMode) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    onReorderActivities(draggedIndex, dropIndex);
+    
     setDraggedIndex(null);
     setDragOverIndex(null);
-    return;
-  }
-  
-  // Regular reordering for activity list mode
-  if (draggedIndex === null || draggedIndex === dropIndex) {
+  };
+
+  const handleListDragEnd = () => {
     setDraggedIndex(null);
     setDragOverIndex(null);
-    return;
-  }
-
-  onReorderActivities(draggedIndex, dropIndex);
-  
-  setDraggedIndex(null);
-  setDragOverIndex(null);
-};
-
-const handleListDragEnd = () => {
-  setDraggedIndex(null);
-  setDragOverIndex(null);
-};
+  };
 
   const CustomTabPanel = ({ children, value, index, ...other }) => (
     <div
@@ -388,8 +407,8 @@ const handleListDragEnd = () => {
       ) : (
         activities.map((activity, index) => (
           <React.Fragment key={activity.SequenceItemID || activity.ActivityID || index}>
-            <ListItem
-  draggable={true}  // Change from draggable={!isSequenceMode} to always true
+<ListItem
+  draggable={true}
   onDragStart={(e) => handleListDragStart(e, index, activity)}
   onDragOver={(e) => handleListDragOver(e, index)}
   onDragLeave={handleListDragLeave}
@@ -403,7 +422,7 @@ const handleListDragEnd = () => {
     }
   }}
   sx={{
-    cursor: 'grab',  // Change from conditional cursor to always 'grab'
+    cursor: 'grab', 
     '&:hover': { backgroundColor: '#f5f5f5' },
     borderLeft: `4px solid ${getStatusColor(activity.Status)}`,
     py: 2,
@@ -413,86 +432,75 @@ const handleListDragEnd = () => {
     transition: 'all 0.2s ease'
   }}
 >
-  {isSequenceMode && activity.SequenceItemID && (
-    <FormControlLabel
-      control={
-        <Checkbox
-          checked={activity.Completed || activity.Status === 'completed'}
-          onChange={(e) => {
-            e.stopPropagation();
-            onToggleSequenceItem(
-              activity.SequenceItemID,
-              activity.AccountID,
-              activity.Completed || activity.Status === 'completed'
-            );
-          }}
-          icon={<RadioButtonUnchecked />}
-          checkedIcon={<CheckCircleOutline />}
-          onClick={(e) => e.stopPropagation()}
-        />
-      }
-      label=""
-      sx={{ mr: 1 }}
-    />
-  )}
+  {/*Checkbox for sequence items - activities can only be completed by opening them */}
   {!isSequenceMode && (
     <DragIndicator sx={{ mr: 1, color: '#999', cursor: 'grab' }} />
   )}
-              <ListItemText
-                primary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <Typography variant="subtitle2" noWrap sx={{ flex: 1, fontWeight: 500 }}>
-                      {activity.AccountName || 'Unknown Account'}
-                    </Typography>
-                    <Chip
-                      size="small"
-                      label={activity.Status || 'unknown'}
-                      sx={{
-                        backgroundColor: getStatusColor(activity.Status),
-                        color: 'white',
-                        fontSize: '0.7rem',
-                        height: 20,
-                        textTransform: 'capitalize'
-                      }}
-                    />
-                  </Box>
-                }
-                secondary={
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0.5 }}>
-                      {activity.ActivityTypeName || 'Unknown Type'}
-                    </Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {formatDueDate(activity.DueToStart || activity.estimatedDueDate)}
-                      </Typography>
-                      {activity.PriorityLevelValue && (
-                        <Chip
-                          size="small"
-                          label={`P${activity.PriorityLevelValue || '?'}`}
-                          sx={{
-                            backgroundColor: getPriorityColor(activity.PriorityLevelValue || 0),
-                            color: 'white',
-                            fontSize: '0.6rem',
-                            height: 16
-                          }}
-                        />
-                      )}
-                    </Box>
-                    {isSequenceMode && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                        Day {activity.DaysFromStart || 'N/A'}
-                      </Typography>
-                    )}
-                    {!isSequenceMode && activity.SequenceName && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                        {activity.SequenceName} - Day {activity.DaysFromStart || 'N/A'}
-                      </Typography>
-                    )}
-                  </Box>
-                }
-              />
-            </ListItem>
+  {isSequenceMode && (
+    <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+      {activity.Status === 'completed' ? (
+        <CheckCircleOutline sx={{ color: '#4caf50', fontSize: 20 }} />
+      ) : (
+        <RadioButtonUnchecked sx={{ color: '#999', fontSize: 20 }} />
+      )}
+    </Box>
+  )}
+  <ListItemText
+    primary={
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+        <Typography variant="subtitle2" noWrap sx={{ flex: 1, fontWeight: 500 }}>
+          {activity.AccountName || 'Unknown Account'}
+        </Typography>
+        <Chip
+          size="small"
+          label={activity.Status || 'unknown'}
+          sx={{
+            backgroundColor: getStatusColor(activity.Status),
+            color: 'white',
+            fontSize: '0.7rem',
+            height: 20,
+            textTransform: 'capitalize'
+          }}
+        />
+      </Box>
+    }
+    secondary={
+      <Box>
+        <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0.5 }}>
+          {activity.ActivityTypeName || 'Unknown Type'}
+        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="caption" color="text.secondary">
+            {formatDueDate(activity.DueToStart || activity.estimatedDueDate)}
+          </Typography>
+          {activity.PriorityLevelValue && (
+            <Chip
+              size="small"
+              label={`P${activity.PriorityLevelValue || '?'}`}
+              sx={{
+                backgroundColor: getPriorityColor(activity.PriorityLevelValue || 0),
+                color: 'white',
+                fontSize: '0.6rem',
+                height: 16
+              }}
+            />
+          )}
+        </Box>
+        {isSequenceMode && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+            Day {activity.DaysFromStart || 'N/A'}
+            {activity.SequenceItemDescription && ` - ${activity.SequenceItemDescription}`}
+          </Typography>
+        )}
+        {!isSequenceMode && activity.SequenceName && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+            {activity.SequenceName} - Day {activity.DaysFromStart || 'N/A'}
+          </Typography>
+        )}
+      </Box>
+    }
+  />
+</ListItem>
             {index < activities.length - 1 && <Divider />}
           </React.Fragment>
         ))
@@ -525,7 +533,7 @@ const handleListDragEnd = () => {
             borderRight: '1px solid #e0e0e0',
             overflow: 'hidden'
           }}>
-            {/* Filter Toolbar */}
+            {/* Filter Toolbar - Now Collapsible */}
             <Toolbar sx={{ 
               backgroundColor: '#fff', 
               borderBottom: '1px solid #e0e0e0',
@@ -534,108 +542,122 @@ const handleListDragEnd = () => {
               py: 2,
               flexShrink: 0
             }}>
+              {/* Header with collapse button */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, flex: 1 }}>
-                  {isSequenceMode ? 'Sequence Progress' : 'My Activities'}
+                  {isSequenceMode ? currentSequenceName || 'Sequence Progress' : 'My Activities'}
                 </Typography>
                 {!isSequenceMode && (
                   <Tooltip title="Drag activities to reorder or drop into workspace" arrow>
                     <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
                   </Tooltip>
                 )}
+                <IconButton 
+                  size="small" 
+                  onClick={() => setFilterSectionExpanded(!filterSectionExpanded)}
+                  sx={{ ml: 'auto' }}
+                >
+                  {filterSectionExpanded ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
               </Box>
               
-              {/* Account Filter */}
-              <Box sx={{ mb: 2 }}>
-                <FormControl size="small" fullWidth>
-                  <InputLabel>Account</InputLabel>
-                  <Select
-                    value={selectedAccountId || ''}
-                    onChange={(e) => onAccountChange(e.target.value || null)}
-                    label="Account"
-                  >
-                    <MenuItem value="">All Activities</MenuItem>
-                    {userAccounts.map((account) => (
-                      <MenuItem key={account.AccountID} value={account.AccountID}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Business sx={{ fontSize: 16 }} />
-                          {account.AccountName}
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-
-              {/* Sequence Progress */}
-              {isSequenceMode && sequenceProgress && (
-                <Box sx={{ mb: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Progress
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {sequenceProgress.completedItems} of {sequenceProgress.totalItems}
-                    </Typography>
-                  </Box>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={sequenceProgress.progress} 
-                    sx={{ 
-                      height: 8, 
-                      borderRadius: 4,
-                      backgroundColor: '#e0e0e0',
-                      '& .MuiLinearProgress-bar': {
-                        backgroundColor: '#4caf50'
-                      }
-                    }}
-                  />
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                    {sequenceProgress.progress}% complete
-                  </Typography>
-                </Box>
-              )}
-              
-              {/* Sort and Filter Controls - Only show in All Activities mode */}
-              {!isSequenceMode && (
-                <>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                    <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
-                      <InputLabel>Sort by</InputLabel>
+              {/* Collapsible Filter Section */}
+              <Collapse in={filterSectionExpanded}>
+                <Box>
+                  {/* Account Filter */}
+                  <Box sx={{ mb: 2 }}>
+                    <FormControl size="small" fullWidth>
+                      <InputLabel>Account</InputLabel>
                       <Select
-                        value={currentSort}
-                        onChange={(e) => onSortChange(e.target.value)}
-                        label="Sort by"
+                        value={selectedAccountId || ''}
+                        onChange={(e) => onAccountChange(e.target.value || null)}
+                        label="Account"
                       >
-                        {sortOptions.map((option) => (
-                          <MenuItem key={option.value} value={option.value}>
+                        <MenuItem value="">All Activities</MenuItem>
+                        {userAccounts.map((account) => (
+                          <MenuItem key={account.AccountID} value={account.AccountID}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              {option.icon}
-                              {option.label}
+                              <Business sx={{ fontSize: 16 }} />
+                              {account.AccountName}
                             </Box>
                           </MenuItem>
                         ))}
                       </Select>
                     </FormControl>
-
-                    <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
-                      <InputLabel>Filter</InputLabel>
-                      <Select
-                        value={currentFilter}
-                        onChange={(e) => onFilterChange(e.target.value)}
-                        label="Filter"
-                      >
-                        {filterOptions.map((option) => (
-                          <MenuItem key={option.value} value={option.value}>
-                            {option.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
                   </Box>
-                </>
-              )}
+
+                  {/* Sequence Progress */}
+                  {isSequenceMode && sequenceProgress && (
+                    <Box sx={{ mb: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          Progress
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {sequenceProgress.completedItems} of {sequenceProgress.totalItems}
+                        </Typography>
+                      </Box>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={sequenceProgress.progress} 
+                        sx={{ 
+                          height: 8, 
+                          borderRadius: 4,
+                          backgroundColor: '#e0e0e0',
+                          '& .MuiLinearProgress-bar': {
+                            backgroundColor: '#4caf50'
+                          }
+                        }}
+                      />
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                        {sequenceProgress.progress}% complete
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {/* Sort and Filter Controls - Only in All Activities mode */}
+                  {!isSequenceMode && (
+                    <>
+                      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                        <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
+                          <InputLabel>Sort by</InputLabel>
+                          <Select
+                            value={currentSort}
+                            onChange={(e) => onSortChange(e.target.value)}
+                            label="Sort by"
+                          >
+                            {sortOptions.map((option) => (
+                              <MenuItem key={option.value} value={option.value}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  {option.icon}
+                                  {option.label}
+                                </Box>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+
+                        <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
+                          <InputLabel>Filter</InputLabel>
+                          <Select
+                            value={currentFilter}
+                            onChange={(e) => onFilterChange(e.target.value)}
+                            label="Filter"
+                          >
+                            {filterOptions.map((option) => (
+                              <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Box>
+                    </>
+                  )}
+                </Box>
+              </Collapse>
               
+              {/* Activity/Item Count - Always Visible */}
               <Typography variant="body2" color="text.secondary">
                 {Array.isArray(activities) ? activities.length : 0} {isSequenceMode ? 'visible items' : 'activities'}
               </Typography>
@@ -824,7 +846,9 @@ const handleListDragEnd = () => {
                                     'No due date set'
                                   }
                                 </Typography>
-                              </Grid><Grid item xs={12} md={6}>
+                              </Grid>
+                              
+                              <Grid item xs={12} md={6}>
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
                                   Time Until Due
                                 </Typography>
@@ -866,6 +890,19 @@ const handleListDragEnd = () => {
                             >
                               {currentActivity.Completed ? 'Completed' : 'Mark Complete'}
                             </Button>
+
+                            {isCallActivity(currentActivity) && hasValidPhone(currentActivity) && (
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                component="a"
+                                href={`tel:${formatPhoneForTel(currentActivity.AccountPhone)}`}
+                                startIcon={<Phone />}
+                                sx={{ textDecoration: 'none' }}
+                              >
+                                Call
+                              </Button>
+                            )}
                             
                             {isEmailActivity(currentActivity) && (
                               <Button
@@ -1025,38 +1062,36 @@ const handleListDragEnd = () => {
           />
         )} 
        
-{/* Status Snackbar */}
-<Snackbar
-  open={!!statusMessage}
-  autoHideDuration={4000}
-  onClose={() => showStatus('')}
-  anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-  sx={{
-    '& .MuiSnackbarContent-root': {
-      fontSize: '1.1rem',
-      minWidth: '400px',
-    },
-  }} // <-- fixed missing closing brace
->
-  <Alert 
-    onClose={() => showStatus('')} 
-    severity={statusSeverity} 
-    sx={{ 
-      width: '100%',
-      fontSize: '1.1rem',
-      '& .MuiAlert-message': {
-        fontSize: '1.1rem',
-        fontWeight: 500,
-      },
-    }}
-  >
-    {statusMessage}
-  </Alert>
-</Snackbar>
-
+        {/* Status Snackbar */}
+        <Snackbar
+          open={!!statusMessage}
+          autoHideDuration={4000}
+          onClose={() => showStatus('')}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          sx={{
+            '& .MuiSnackbarContent-root': {
+              fontSize: '1.1rem',
+              minWidth: '400px',
+            },
+          }} 
+        >
+          <Alert 
+            onClose={() => showStatus('')} 
+            severity={statusSeverity} 
+            sx={{ 
+              width: '100%',
+              fontSize: '1.1rem',
+              '& .MuiAlert-message': {
+                fontSize: '1.1rem',
+                fontWeight: 500,
+              },
+            }}
+          >
+            {statusMessage}
+          </Alert>
+        </Snackbar>
 
         {/* Error Alert */}
-    
         {error && (
           <Alert 
             severity="error" 

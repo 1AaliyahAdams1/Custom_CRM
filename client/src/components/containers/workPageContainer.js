@@ -115,6 +115,7 @@ const WorkPageContainer = () => {
           ActivityID: item.ActivityID,
           AccountID: item.AccountID,
           AccountName: item.AccountName,
+          AccountPhone: item.AccountPhone,
           TypeID: item.ActivityTypeID,
           ActivityTypeID: item.ActivityTypeID,
           ActivityTypeName: item.ActivityTypeName,
@@ -278,37 +279,6 @@ const WorkPageContainer = () => {
       showStatus(errorMessage, 'error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // ---------------- SEQUENCE ITEM TOGGLE ----------------
-  const handleToggleSequenceItem = async (sequenceItemId, accountId, currentCompleted) => {
-    try {
-      console.log('Toggling sequence item:', sequenceItemId, 'completed:', !currentCompleted);
-      
-      const response = await updateSequenceItemStatus(
-        userId,
-        sequenceItemId,
-        accountId,
-        !currentCompleted
-      );
-      
-      if (response.success) {
-        showStatus(
-          currentCompleted ? 'Item marked as incomplete' : 'Item completed successfully!',
-          'success'
-        );
-        
-        // Refresh data to get updated progress and visibility
-        fetchWorkPageData();
-      } else {
-        throw new Error(response.message || "Failed to update item status");
-      }
-    } catch (err) {
-      console.error("Error toggling sequence item:", err);
-      const errorMessage = err.message || "Failed to update item status";
-      setError(errorMessage);
-      showStatus(errorMessage, 'error');
     }
   };
 
@@ -626,7 +596,6 @@ const WorkPageContainer = () => {
         selectedAccountId={selectedAccountId}
         sequenceProgress={sequenceProgress}
         onAccountChange={handleAccountChange}
-        onToggleSequenceItem={handleToggleSequenceItem}
         onSequenceItemClick={handleSequenceItemClick}
         
         // Filter and sort
