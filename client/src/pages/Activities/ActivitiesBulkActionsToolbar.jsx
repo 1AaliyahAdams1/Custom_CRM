@@ -15,6 +15,7 @@ import {
   Assignment,
   Schedule,
 } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 
 const ActivitiesBulkActionsToolbar = ({
   selectedCount = 0,
@@ -30,6 +31,7 @@ const ActivitiesBulkActionsToolbar = ({
   loading = false,
   disabled = false,
 }) => {
+  const theme = useTheme();
   const [bulkLoading, setBulkLoading] = useState('');
 
   const handleBulkAction = async (action, handler) => {
@@ -76,7 +78,7 @@ const ActivitiesBulkActionsToolbar = ({
   const canAssign = isCLevel || isManager;
   const canArchive = isCLevel || isManager;
   const canDelete = isCLevel;
-  const canUpdateDueDates = isCLevel || isManager || isSalesRep; // Most users can update due dates
+  const canUpdateDueDates = isCLevel || isManager || isSalesRep;
 
   return (
     <Box
@@ -84,8 +86,8 @@ const ActivitiesBulkActionsToolbar = ({
         position: 'sticky',
         top: 0,
         zIndex: 1200,
-        backgroundColor: 'primary.main',
-        color: 'primary.contrastText',
+        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.primary.contrastText,
         p: 2,
         display: 'flex',
         alignItems: 'center',
@@ -107,7 +109,9 @@ const ActivitiesBulkActionsToolbar = ({
               label={`${incompleteCount} incomplete`}
               size="small"
               sx={{ 
-                backgroundColor: 'rgba(255,255,255,0.2)', 
+                backgroundColor: theme.palette.mode === 'dark' 
+                  ? 'rgba(255,255,255,0.2)' 
+                  : 'rgba(255,255,255,0.2)', 
                 color: 'inherit' 
               }}
             />
@@ -117,7 +121,9 @@ const ActivitiesBulkActionsToolbar = ({
               label={`${completeCount} complete`}
               size="small"
               sx={{ 
-                backgroundColor: 'rgba(76,175,80,0.3)', 
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(76,175,80,0.3)'
+                  : 'rgba(76,175,80,0.3)', 
                 color: 'inherit' 
               }}
             />
@@ -127,7 +133,9 @@ const ActivitiesBulkActionsToolbar = ({
               label={`${overdueCount} overdue`}
               size="small"
               sx={{ 
-                backgroundColor: 'rgba(244,67,54,0.3)', 
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(244,67,54,0.3)'
+                  : 'rgba(244,67,54,0.3)', 
                 color: 'inherit' 
               }}
             />
@@ -152,10 +160,14 @@ const ActivitiesBulkActionsToolbar = ({
               onClick={() => handleBulkAction('complete', onBulkMarkComplete)}
               disabled={Boolean(loading || bulkLoading || disabled)}
               sx={{
-                backgroundColor: 'rgba(76,175,80,0.2)',
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(76,175,80,0.3)'
+                  : 'rgba(76,175,80,0.2)',
                 color: 'inherit',
                 '&:hover': {
-                  backgroundColor: 'rgba(76,175,80,0.3)',
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(76,175,80,0.4)'
+                    : 'rgba(76,175,80,0.3)',
                 },
                 '&:disabled': {
                   backgroundColor: 'rgba(255,255,255,0.05)',
@@ -184,10 +196,14 @@ const ActivitiesBulkActionsToolbar = ({
               onClick={() => handleBulkAction('incomplete', onBulkMarkIncomplete)}
               disabled={Boolean(loading || bulkLoading || disabled)}
               sx={{
-                backgroundColor: 'rgba(255,152,0,0.2)',
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255,152,0,0.3)'
+                  : 'rgba(255,152,0,0.2)',
                 color: 'inherit',
                 '&:hover': {
-                  backgroundColor: 'rgba(255,152,0,0.3)',
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255,152,0,0.4)'
+                    : 'rgba(255,152,0,0.3)',
                 },
                 '&:disabled': {
                   backgroundColor: 'rgba(255,255,255,0.05)',
@@ -216,10 +232,14 @@ const ActivitiesBulkActionsToolbar = ({
               onClick={() => handleBulkAction('due-dates', onBulkUpdateDueDates)}
               disabled={Boolean(loading || bulkLoading || disabled)}
               sx={{
-                backgroundColor: 'rgba(33,150,243,0.2)',
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(33,150,243,0.3)'
+                  : 'rgba(33,150,243,0.2)',
                 color: 'inherit',
                 '&:hover': {
-                  backgroundColor: 'rgba(33,150,243,0.3)',
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(33,150,243,0.4)'
+                    : 'rgba(33,150,243,0.3)',
                 },
                 '&:disabled': {
                   backgroundColor: 'rgba(255,255,255,0.05)',

@@ -14,12 +14,11 @@ import {
   MenuItem,
 } from "@mui/material";
 import { Add, Info } from "@mui/icons-material";
-import { ThemeProvider } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles"; 
 import TableView from "../../components/tableFormat/TableView";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
-import theme from "../../components/Theme";
 import { formatters } from "../../utils/formatters";
 import StatusMessage from "../../components/tableFormat/StatusMessage";
 
@@ -32,7 +31,7 @@ const AccountsPage = ({
   onSelectClick,
   onSelectAllClick,
   onDeactivate,
-  onReactivate, 
+  onReactivate,
   onEdit,
   onView,
   onCreate,
@@ -62,6 +61,8 @@ const AccountsPage = ({
   setAttachmentsPopupOpen,
   userName,
 }) => {
+  const theme = useTheme();
+  
   // Local filter state
   const [accountFilter, setAccountFilter] = useState("all");
 
@@ -117,23 +118,28 @@ const AccountsPage = ({
   ];
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: "100%", backgroundColor: "#fafafa", minHeight: "100vh", p: 3 }}>
+    // ✅ REMOVED: <ThemeProvider theme={theme}> wrapper
+    <Box sx={{ 
+      width: "100%", 
+      backgroundColor: theme.palette.background.default, // ✅ Theme-aware color
+      minHeight: "100vh", 
+      p: 3 
+    }}>
 
-        {/* Status Message */}
-        {statusMessage && (
-          <Box sx={{ mb: 2 }}>
-            <StatusMessage
-              message={statusMessage}
-              severity={statusSeverity}
-              onClose={() => setStatusMessage("")}
-              duration={4000}
-            />
-          </Box>
-        )}
+      {/* Status Message */}
+      {statusMessage && (
+        <Box sx={{ mb: 2 }}>
+          <StatusMessage
+            message={statusMessage}
+            severity={statusSeverity}
+            onClose={() => setStatusMessage("")}
+            duration={4000}
+          />
+        </Box>
+      )}
 
-        {/* Error Alert */}
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {/* Error Alert */}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Paper sx={{ width: "100%", mb: 2, borderRadius: 2, overflow: "hidden" }}>
           {/* Bulk Actions Toolbar */}
@@ -152,137 +158,156 @@ const AccountsPage = ({
             disabled={loading}
           />
 
-          {/* Main Toolbar */}
-          <Toolbar sx={{
-            backgroundColor: "#fff",
-            borderBottom: selected.length > 0 ? "none" : "1px solid #e5e5e5",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 2,
-            py: 2
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography variant="h6" component="div" sx={{ color: "#050505", fontWeight: 600 }}>
-                  Accounts
-                </Typography>
-                <Tooltip title="Manage and view all customer accounts in your system" arrow>
-                  <Info sx={{ fontSize: 18, color: "#666666", cursor: "help" }} />
-                </Tooltip>
-              </Box>
-
-              {/* Account Filter */}
-              <FormControl size="small" sx={{ minWidth: 180 }}>
-                <Select value={accountFilter} onChange={handleFilterChange} displayEmpty
-                  sx={{
-                    backgroundColor: "#fff",
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e0e0" },
-                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#c0c0c0" },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.primary.main },
-                  }}
-                >
-                  {filterOptions.map(option => (
-                    <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {selected.length > 0 && (
-                <Tooltip title={`${selected.length} account${selected.length === 1 ? "" : "s"} selected`} arrow>
-                  <Chip label={`${selected.length} selected`} size="small" sx={{ backgroundColor: "#e0e0e0", color: "#050505" }} />
-                </Tooltip>
-              )}
-            </Box>
-
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-              <Tooltip title="Create a new account in the system" arrow>
-                <Button variant="contained" startIcon={<Add />} onClick={onCreate}>
-                  Add Account
-                </Button>
+        {/* Main Toolbar */}
+        <Toolbar sx={{
+          backgroundColor: theme.palette.background.paper, // ✅ Theme-aware
+          borderBottom: selected.length > 0 ? "none" : `1px solid ${theme.palette.divider}`, // ✅ Theme-aware
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 2,
+          py: 2
+        }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="h6" component="div" sx={{ 
+                color: theme.palette.text.primary, // ✅ Theme-aware
+                fontWeight: 600 
+              }}>
+                Accounts
+              </Typography>
+              <Tooltip title="Manage and view all customer accounts in your system" arrow>
+                <Info sx={{ 
+                  fontSize: 18, 
+                  color: theme.palette.text.secondary, // ✅ Theme-aware
+                  cursor: "help" 
+                }} />
               </Tooltip>
             </Box>
-          </Toolbar>
 
-          {loading ? (
-            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
-              <CircularProgress />
-              <Typography variant="body2" sx={{ mt: 2, color: "#666666" }}>
-                Loading accounts...
-              </Typography>
-            </Box>
-          ) : (
-            <TableView
-              data={accounts}
-              columns={columns}
-              idField="AccountID"
-              selected={selected}
-              onSelectClick={onSelectClick}
-              onSelectAllClick={onSelectAllClick}
-              showSelection
-              onView={onView}
-              onEdit={onEdit}
-              onDelete={onDeactivate}
-              onReactivate={onReactivate} // ADD THIS LINE
-              onAddNote={onAddNote}
-              onAddAttachment={onAddAttachment}
-              onClaimAccount={onClaimAccount}
-              onUnClaimAccount={onUnclaimAccount}
-              onAssignUser={onAssignUser}
-              formatters={formatters}
-              entityType="account"
-              tooltips={{
-                search: "Search records by any visible field or keyword",
-                filter: "Show/hide advanced filtering options",
-                columns: "Customize which columns are visible",
-                actionMenu: {
-                  view: "View detailed information",
-                  edit: "Edit record information",
-                  delete: "Deactivate",
-                  addNote: "Add internal notes",
-                  addAttachment: "Attach files",
-                  claimAccount: "Claim ownership",
-                  assignUser: "Assign a team member",
-                }
-              }}
-            />
-          )}
-        </Paper>
+            {/* Account Filter */}
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <Select value={accountFilter} onChange={handleFilterChange} displayEmpty
+                sx={{
+                  backgroundColor: theme.palette.background.paper, // ✅ Theme-aware
+                  "& .MuiOutlinedInput-notchedOutline": { 
+                    borderColor: theme.palette.divider // ✅ Theme-aware
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": { 
+                    borderColor: theme.palette.text.secondary // ✅ Theme-aware
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { 
+                    borderColor: theme.palette.primary.main 
+                  },
+                }}
+              >
+                {filterOptions.map(option => (
+                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-        {/* Notes Popup */}
-        {notesPopupOpen && (
-          <NotesPopup
-            open={notesPopupOpen}
-            onClose={() => setNotesPopupOpen(false)}
-            onSave={handleSaveNote}
-            onEdit={handleEditNote}
-            entityType="Account"
-            entityId={selectedAccount?.AccountID}
-            entityName={selectedAccount?.AccountName}
-            showExistingNotes={true}
-            maxLength={255}
-            required={false}
-          />
-        )}
+            {selected.length > 0 && (
+              <Tooltip title={`${selected.length} account${selected.length === 1 ? "" : "s"} selected`} arrow>
+                <Chip label={`${selected.length} selected`} size="small" sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' ? '#333' : "#e0e0e0", 
+                  color: theme.palette.text.primary 
+                }} />
+              </Tooltip>
+            )}
+          </Box>
 
-        {/* Attachments Popup */}
-        {attachmentsPopupOpen && selectedAccount && (
-          <AttachmentsPopup
-            open={attachmentsPopupOpen}
-            onClose={() => setAttachmentsPopupOpen(false)}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            <Tooltip title="Create a new account in the system" arrow>
+              <Button variant="contained" startIcon={<Add />} onClick={onCreate}>
+                Add Account
+              </Button>
+            </Tooltip>
+          </Box>
+        </Toolbar>
+
+        {loading ? (
+          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+            <CircularProgress />
+            <Typography variant="body2" sx={{ 
+              mt: 2, 
+              color: theme.palette.text.secondary // ✅ Theme-aware
+            }}>
+              Loading accounts...
+            </Typography>
+          </Box>
+        ) : (
+          <TableView
+            data={accounts}
+            columns={columns}
+            idField="AccountID"
+            selected={selected}
+            onSelectClick={onSelectClick}
+            onSelectAllClick={onSelectAllClick}
+            showSelection
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDeactivate}
+            onReactivate={onReactivate}
+            onAddNote={onAddNote}
+            onAddAttachment={onAddAttachment}
+            onClaimAccount={onClaimAccount}
+            onUnClaimAccount={onUnclaimAccount}
+            onAssignUser={onAssignUser}
+            formatters={formatters}
             entityType="account"
-            entityId={selectedAccount?.AccountID}
-            entityName={selectedAccount?.AccountName}
-            userName={userName}
-            maxFileSize={10}
-            maxFiles={5}
-            onAttachmentsChange={(attachments) => {
-              console.log('Attachments updated:', attachments);
+            tooltips={{
+              search: "Search records by any visible field or keyword",
+              filter: "Show/hide advanced filtering options",
+              columns: "Customize which columns are visible",
+              actionMenu: {
+                view: "View detailed information",
+                edit: "Edit record information",
+                delete: "Deactivate",
+                addNote: "Add internal notes",
+                addAttachment: "Attach files",
+                claimAccount: "Claim ownership",
+                assignUser: "Assign a team member",
+              }
             }}
           />
         )}
+      </Paper>
 
-      </Box>
-    </ThemeProvider>
+      {/* Notes Popup */}
+      {notesPopupOpen && (
+        <NotesPopup
+          open={notesPopupOpen}
+          onClose={() => setNotesPopupOpen(false)}
+          onSave={handleSaveNote}
+          onEdit={handleEditNote}
+          entityType="Account"
+          entityId={selectedAccount?.AccountID}
+          entityName={selectedAccount?.AccountName}
+          showExistingNotes={true}
+          maxLength={255}
+          required={false}
+        />
+      )}
+
+      {/* Attachments Popup */}
+      {attachmentsPopupOpen && selectedAccount && (
+        <AttachmentsPopup
+          open={attachmentsPopupOpen}
+          onClose={() => setAttachmentsPopupOpen(false)}
+          entityType="account"
+          entityId={selectedAccount?.AccountID}
+          entityName={selectedAccount?.AccountName}
+          userName={userName}
+          maxFileSize={10}
+          maxFiles={5}
+          onAttachmentsChange={(attachments) => {
+            console.log('Attachments updated:', attachments);
+          }}
+        />
+      )}
+
+    </Box>
+
   );
 };
 

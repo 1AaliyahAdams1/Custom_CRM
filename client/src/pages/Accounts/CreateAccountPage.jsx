@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -61,7 +61,6 @@ const CreateAccount = () => {
     setFormData(prev => {
       const newData = { ...prev, [name]: value };
       
-      // Clear dependent fields when parent changes
       if (name === 'CountryID') {
         newData.StateProvinceID = "";
         newData.CityID = "";
@@ -72,7 +71,6 @@ const CreateAccount = () => {
       return newData;
     });
 
-    // Real-time validation if field has been touched
     if (touched[name]) {
       const error = validateField(name, value, formData);
       setFieldErrors(prev => ({
@@ -104,14 +102,12 @@ const CreateAccount = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Mark all fields as touched
     const allTouched = {};
     Object.keys(formData).forEach(key => {
       allTouched[key] = true;
     });
     setTouched(allTouched);
 
-    // Validate entire form
     const errors = validateAccountData(formData);
     
     if (errors) {
@@ -135,7 +131,6 @@ const CreateAccount = () => {
       console.error('Error creating account:', error);
       
       if (error.response?.data?.errors) {
-        // Backend validation errors
         setFieldErrors(error.response.data.errors);
         setError('Please fix the validation errors');
       } else if (error.response?.status === 409) {
@@ -222,7 +217,6 @@ const CreateAccount = () => {
           <form onSubmit={handleSubmit}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: getSpacing(3) }}>
               
-              {/* Account Name - REQUIRED */}
               <Box sx={{ gridColumn: '1 / -1' }}>
                 <TextField
                   fullWidth
@@ -239,7 +233,6 @@ const CreateAccount = () => {
                 />
               </Box>
 
-              {/* Location Fields */}
               <Box>
                 <SmartDropdown
                   label="Country"
@@ -321,7 +314,6 @@ const CreateAccount = () => {
                 />
               </Box>
 
-              {/* Contact Information */}
               <Box>
                 <TextField
                   fullWidth
@@ -386,7 +378,6 @@ const CreateAccount = () => {
                 />
               </Box>
 
-              {/* Address Fields */}
               <Box>
                 <TextField
                   fullWidth
@@ -447,7 +438,6 @@ const CreateAccount = () => {
                 />
               </Box>
 
-              {/* Parent Account */}
               <Box sx={{ gridColumn: '1 / -1' }}>
                 <SmartDropdown
                   label="Parent Account"
@@ -468,7 +458,6 @@ const CreateAccount = () => {
                 />
               </Box>
 
-              {/* Numeric Fields */}
               <Box>
                 <TextField
                   fullWidth

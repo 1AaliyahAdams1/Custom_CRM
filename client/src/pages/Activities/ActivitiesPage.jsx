@@ -17,12 +17,11 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Add, Info } from "@mui/icons-material";
-import { ThemeProvider } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import { formatters } from '../../utils/formatters';
 import TableView from '../../components/tableFormat/TableView';
 import ActivityTypePage from './ActivityTypePage'; 
 import ActivitiesBulkActionsToolbar from './ActivitiesBulkActionsToolbar';
-import theme from "../../components/Theme";
 import BulkDueDatesDialog from '../../components/dialogs/BulkDueDatesDialog';
 
 // Tab Panel Component
@@ -96,6 +95,7 @@ const ActivitiesPage = ({
   // Activity Types props (pass through to ActivityTypePage)
   activityTypesProps = {},
 }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [currentTab, setCurrentTab] = useState(0);
   
@@ -132,7 +132,7 @@ const ActivitiesPage = ({
         field: "Description", 
         headerName: "Description", 
         type: "truncated",
-        maxWidth: 300 // Limit width for better table layout
+        maxWidth: 300
       },
       { field: "DueToStart", headerName: "Due To Start", type: "date" },
       { field: "DueToEnd", headerName: "Due To End", type: "date" },
@@ -160,11 +160,6 @@ const ActivitiesPage = ({
       label: 'Activities',
       component: 'activities'
     },
-    // {
-    //   id: 'activity-types',
-    //   label: 'Activity Types', 
-    //   component: 'activityTypes'
-    // },
   ];
 
   // Use all available tabs
@@ -210,226 +205,218 @@ const ActivitiesPage = ({
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box
-        sx={{
-          width: "100%",
-          backgroundColor: "#fafafa",
-          minHeight: "100vh",
-          p: 3,
-        }}
-      >
-        <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-          {/* Error and Success Messages */}
-          {error && (
-            <Alert severity="error" sx={{ m: 2 }}>
-              {error}
-            </Alert>
-          )}
+    <Box
+      sx={{
+        width: "100%",
+        backgroundColor: theme.palette.background.default,
+        minHeight: "100vh",
+        p: 3,
+      }}
+    >
+      <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+        {/* Error and Success Messages */}
+        {error && (
+          <Alert severity="error" sx={{ m: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-          {successMessage && (
-            <Alert
-              severity="success"
-              sx={{ m: 2 }}
-              onClose={() => setSuccessMessage("")}
-            >
-              {successMessage}
-            </Alert>
-          )}
-
-          {/* Bulk Actions Toolbar - Shows when items are selected */}
-          <ActivitiesBulkActionsToolbar
-            selectedCount={selected.length}
-            selectedItems={selectedActivities}
-            onBulkMarkComplete={onBulkMarkComplete}
-            onBulkMarkIncomplete={onBulkMarkIncomplete}
-            onBulkUpdateDueDates={() => setDueDatesDialogOpen(true)}
-            onClearSelection={onClearSelection}
-            userRole={userRole}
-            loading={loading}
-          />
-
-          {/* Activities Toolbar */}
-          <Toolbar
-            sx={{
-              backgroundColor: "#ffffff",
-              borderBottom: "1px solid #e5e5e5",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: 2,
-              py: 2,
-            }}
+        {successMessage && (
+          <Alert
+            severity="success"
+            sx={{ m: 2 }}
+            onClose={() => setSuccessMessage("")}
           >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                flex: 1,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography
-                  variant="h6"
-                  component="div"
-                  sx={{ color: "#050505", fontWeight: 600 }}
-                >
-                  Activities
-                </Typography>
-                <Tooltip title="Manage and view all activities linked to customer accounts" arrow>
-                  <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
-                </Tooltip>
-              </Box>
+            {successMessage}
+          </Alert>
+        )}
 
-              {/* Activity Filter Dropdown */}
-              <FormControl size="small" sx={{ minWidth: 240 }}>
-                <Select
-                  value={activityFilter}
-                  onChange={handleFilterChange}
-                  displayEmpty
-                  sx={{ 
-                    backgroundColor: '#fff',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#e0e0e0',
-                    },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#c0c0c0',
-                    },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                  }}
-                >
-                  {filterOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+        {/* Bulk Actions Toolbar - Shows when items are selected */}
+        <ActivitiesBulkActionsToolbar
+          selectedCount={selected.length}
+          selectedItems={selectedActivities}
+          onBulkMarkComplete={onBulkMarkComplete}
+          onBulkMarkIncomplete={onBulkMarkIncomplete}
+          onBulkUpdateDueDates={() => setDueDatesDialogOpen(true)}
+          onClearSelection={onClearSelection}
+          userRole={userRole}
+          loading={loading}
+        />
 
-              {selected.length > 0 && (
-                <Tooltip title={`${selected.length} activit${selected.length === 1 ? 'y' : 'ies'} selected for operations`} arrow>
-                  <Chip
-                    label={`${selected.length} selected`}
-                    size="small"
-                    sx={{ backgroundColor: "#e0e0e0", color: "#050505" }}
-                  />
-                </Tooltip>
-              )}
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                flexWrap: "wrap",
-              }}
-            >
-              <Tooltip title="Create a new activity in the system" arrow>
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={onCreate}
-                  disabled={loading}
-                  sx={{
-                    backgroundColor: "#050505",
-                    color: "#ffffff",
-                    "&:hover": { backgroundColor: "#333333" },
-                    "&:disabled": {
-                      backgroundColor: "#cccccc",
-                      color: "#666666",
-                    },
-                  }}
-                >
-                  Add Activity
-                </Button>
-              </Tooltip>
-            </Box>
-          </Toolbar>
-
-          {/* Activities Table */}
-          {loading ? (
-            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
-              <CircularProgress />
-              <Tooltip title="Loading activity data from the database" arrow>
-                <Typography variant="body2" sx={{ mt: 2, color: '#666666' }}>
-                  Loading activities...
-                </Typography>
-              </Tooltip>
-            </Box>
-          ) : (
-            <TableView
-              data={activities}
-              columns={activitiesTableConfig.columns}
-              idField={activitiesTableConfig.idField}
-              selected={selected}
-              onSelectClick={onSelectClick}
-              onSelectAllClick={onSelectAllClick}
-              onViewAccount={handleViewAccount}
-              showSelection={true}
-              onView={onView}
-              onEdit={onEdit}
-              onDelete={onDeactivate}
-              onAddNote={onAddNote}
-              onAddAttachment={onAddAttachment}
-              formatters={enhancedFormatters}
-              entityType="activity"
-              tooltips={{
-                search: "Search activities by type, account, or description",
-                filter: "Show/hide advanced filtering options",
-                columns: "Customize which columns are visible in the table",
-                actionMenu: {
-                  view: "View detailed information for this activity",
-                  edit: "Edit this activity's information",
-                  delete: "Delete or deactivate this activity",
-                  addNote: "Add internal notes or comments",
-                  addAttachment: "Attach files or documents"
-                }
-              }}
-            />
-          )}
-
-          {/* Activities Results Footer */}
+        {/* Activities Toolbar */}
+        <Toolbar
+          sx={{
+            backgroundColor: theme.palette.background.paper,
+            borderBottom: selected.length > 0 ? "none" : `1px solid ${theme.palette.divider}`,
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 2,
+            py: 2,
+          }}
+        >
           <Box
             sx={{
-              p: 2,
-              borderTop: "1px solid #e5e5e5",
-              backgroundColor: "#fafafa",
               display: "flex",
-              justifyContent: "space-between",
               alignItems: "center",
+              gap: 2,
+              flex: 1,
             }}
           >
-            <Tooltip title="Total number of activities currently displayed in the table" arrow>
-              <Typography variant="body2" sx={{ color: "#666666", cursor: 'help' }}>
-                Showing {activities.length} of {totalCount || activities.length} activities
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
+              >
+                Activities
               </Typography>
-            </Tooltip>
+              <Tooltip title="Manage and view all activities linked to customer accounts" arrow>
+                <Info sx={{ fontSize: 18, color: theme.palette.text.secondary, cursor: 'help' }} />
+              </Tooltip>
+            </Box>
+
+            {/* Activity Filter Dropdown */}
+            <FormControl size="small" sx={{ minWidth: 240 }}>
+              <Select
+                value={activityFilter}
+                onChange={handleFilterChange}
+                displayEmpty
+                sx={{ 
+                  backgroundColor: theme.palette.background.paper,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: theme.palette.divider,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: theme.palette.text.secondary,
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: theme.palette.primary.main,
+                  },
+                }}
+              >
+                {filterOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             {selected.length > 0 && (
-              <Tooltip title="Number of activities currently selected for operations" arrow>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "#050505", fontWeight: 500, cursor: 'help' }}
-                >
-                  {selected.length} selected
-                </Typography>
+              <Tooltip title={`${selected.length} activit${selected.length === 1 ? 'y' : 'ies'} selected for operations`} arrow>
+                <Chip
+                  label={`${selected.length} selected`}
+                  size="small"
+                  sx={{ 
+                    backgroundColor: theme.palette.mode === 'dark' ? '#333' : "#e0e0e0", 
+                    color: theme.palette.text.primary 
+                  }}
+                />
               </Tooltip>
             )}
           </Box>
-        </Paper>
 
-        {/* Bulk Due Dates Dialog */}
-        <BulkDueDatesDialog
-          open={dueDatesDialogOpen}
-          onClose={() => setDueDatesDialogOpen(false)}
-          onConfirm={handleConfirmDueDatesUpdate}
-          selectedItems={selectedActivities}
-          loading={loading}
-        />
-      </Box>
-    </ThemeProvider>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
+            <Tooltip title="Create a new activity in the system" arrow>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={onCreate}
+                disabled={loading}
+              >
+                Add Activity
+              </Button>
+            </Tooltip>
+          </Box>
+        </Toolbar>
+
+        {/* Activities Table */}
+        {loading ? (
+          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+            <CircularProgress />
+            <Tooltip title="Loading activity data from the database" arrow>
+              <Typography variant="body2" sx={{ mt: 2, color: theme.palette.text.secondary }}>
+                Loading activities...
+              </Typography>
+            </Tooltip>
+          </Box>
+        ) : (
+          <TableView
+            data={activities}
+            columns={activitiesTableConfig.columns}
+            idField={activitiesTableConfig.idField}
+            selected={selected}
+            onSelectClick={onSelectClick}
+            onSelectAllClick={onSelectAllClick}
+            onViewAccount={handleViewAccount}
+            showSelection={true}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDeactivate}
+            onAddNote={onAddNote}
+            onAddAttachment={onAddAttachment}
+            formatters={enhancedFormatters}
+            entityType="activity"
+            tooltips={{
+              search: "Search activities by type, account, or description",
+              filter: "Show/hide advanced filtering options",
+              columns: "Customize which columns are visible in the table",
+              actionMenu: {
+                view: "View detailed information for this activity",
+                edit: "Edit this activity's information",
+                delete: "Delete or deactivate this activity",
+                addNote: "Add internal notes or comments",
+                addAttachment: "Attach files or documents"
+              }
+            }}
+          />
+        )}
+
+        {/* Activities Results Footer */}
+        <Box
+          sx={{
+            p: 2,
+            borderTop: `1px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.background.default,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Tooltip title="Total number of activities currently displayed in the table" arrow>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, cursor: 'help' }}>
+              Showing {activities.length} of {totalCount || activities.length} activities
+            </Typography>
+          </Tooltip>
+          {selected.length > 0 && (
+            <Tooltip title="Number of activities currently selected for operations" arrow>
+              <Typography
+                variant="body2"
+                sx={{ color: theme.palette.text.primary, fontWeight: 500, cursor: 'help' }}
+              >
+                {selected.length} selected
+              </Typography>
+            </Tooltip>
+          )}
+        </Box>
+      </Paper>
+
+      {/* Bulk Due Dates Dialog */}
+      <BulkDueDatesDialog
+        open={dueDatesDialogOpen}
+        onClose={() => setDueDatesDialogOpen(false)}
+        onConfirm={handleConfirmDueDatesUpdate}
+        selectedItems={selectedActivities}
+        loading={loading}
+      />
+    </Box>
   );
 };
 

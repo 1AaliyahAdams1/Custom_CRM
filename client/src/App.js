@@ -1,30 +1,45 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useMemo } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 
-import theme from "./components/Theme"; 
+import { createAppTheme } from "./components/Theme"; 
 import { AuthProvider } from "./context/auth/authContext";
-import { SettingsProvider } from "./context/SettingsContext";
+import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import Layout from "./components/Layout";
 import LoadingScreen from "./components/LoadingScreen";
 import AppRoutes from "./AppRoutes";
 
-function App() {
+// Inner component that has access to settings context
+function AppContent() {
+  const { settings } = useSettings();
+  
+  // Create dynamic theme based on settings
+  const theme = useMemo(
+    () => createAppTheme(settings.general.theme),
+    [settings.general.theme]
+  );
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <AuthProvider> 
-          <SettingsProvider>
-            <Suspense fallback={<LoadingScreen />}>
-              <Layout>
-                <AppRoutes />
-              </Layout>
-            </Suspense>
-          </SettingsProvider>
-        </AuthProvider>
-      </Router>
+      <Suspense fallback={<LoadingScreen />}>
+        <Layout>
+          <AppRoutes />
+        </Layout>
+      </Suspense>
     </ThemeProvider>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider> 
+        <SettingsProvider>
+          <AppContent />
+        </SettingsProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

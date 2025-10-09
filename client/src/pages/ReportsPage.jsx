@@ -16,6 +16,7 @@ import {
   Download,
   Search as SearchIcon,
 } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 import * as XLSX from 'xlsx';
 
 import ActivitiesOutcomeReport from '../components/reports/ActivitiesOutcomesReport';
@@ -25,6 +26,7 @@ import RevenueForecastReport from '../components/reports/RevenueForcastReport';
 import SalesPipelineReport from '../components/reports/SalesPipeLineReport';
 
 const ReportsPage = () => {
+  const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
@@ -449,7 +451,11 @@ const ReportsPage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#fafafa', p: 3 }}>
+    <Box sx={{ 
+      minHeight: '100vh', 
+      backgroundColor: theme.palette.background.default, 
+      p: 3 
+    }}>
       <Box sx={{ width: '100%' }}>
         {/* Header */}
         <Box
@@ -463,10 +469,18 @@ const ReportsPage = () => {
           }}
         >
           <Box>
-            <Typography variant="h3" component="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+            <Typography 
+              variant="h3" 
+              component="h5" 
+              sx={{ 
+                fontWeight: 'bold', 
+                mb: 1,
+                color: theme.palette.text.primary 
+              }}
+            >
               Reports
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
               Comprehensive analytics and insights for your sales performance
             </Typography>
           </Box>
@@ -476,14 +490,6 @@ const ReportsPage = () => {
               startIcon={<Download />}
               onClick={handleExportCurrent}
               disabled={filteredReports.length === 0 || exporting}
-              sx={{
-                color: '#000',
-                borderColor: '#000',
-                '&:hover': {
-                  borderColor: '#333',
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                }
-              }}
             >
               {exporting ? 'Exporting...' : 'Export Current'}
             </Button>
@@ -492,12 +498,6 @@ const ReportsPage = () => {
               startIcon={<Download />}
               onClick={handleExportAll}
               disabled={exporting}
-              sx={{
-                backgroundColor: '#000',
-                '&:hover': {
-                  backgroundColor: '#333'
-                }
-              }}
             >
               {exporting ? 'Exporting...' : 'Export All Reports'}
             </Button>
@@ -508,8 +508,16 @@ const ReportsPage = () => {
         <Card sx={{ boxShadow: 3 }}>
           <CardContent sx={{ p: 0 }}>
             {/* Search Section */}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#f8f9fa' }}>
-              <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
+            <Box sx={{ 
+              borderBottom: 1, 
+              borderColor: theme.palette.divider, 
+              backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#f8f9fa' 
+            }}>
+              <Box sx={{ 
+                p: 3, 
+                borderBottom: 1, 
+                borderColor: theme.palette.divider 
+              }}>
                 <TextField
                   placeholder="Search reports..."
                   value={searchTerm}
@@ -525,7 +533,7 @@ const ReportsPage = () => {
                   }}
                 />
                 {searchTerm && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  <Typography variant="body2" sx={{ mt: 1, color: theme.palette.text.secondary }}>
                     {filteredReports.length} report{filteredReports.length !== 1 ? 's' : ''} found
                   </Typography>
                 )}
@@ -539,7 +547,7 @@ const ReportsPage = () => {
                   sx={{
                     '& .MuiTabs-indicator': {
                       height: 3,
-                      backgroundColor: '#000',
+                      backgroundColor: theme.palette.primary.main,
                     },
                     '& .MuiTab-root': {
                       textTransform: 'none',
@@ -547,9 +555,9 @@ const ReportsPage = () => {
                       fontWeight: 500,
                       minHeight: 56,
                       px: 3,
-                      color: '#666',
+                      color: theme.palette.text.secondary,
                       '&.Mui-selected': {
-                        color: '#000',
+                        color: theme.palette.primary.main,
                       }
                     }
                   }}
@@ -565,7 +573,7 @@ const ReportsPage = () => {
                 </Tabs>
               ) : searchTerm ? (
                 <Box sx={{ height: 56, px: 3, display: 'flex', alignItems: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                     No reports found matching "{searchTerm}"
                   </Typography>
                 </Box>
@@ -580,24 +588,27 @@ const ReportsPage = () => {
                 </Box>
               ) : searchTerm ? (
                 <Box sx={{ textAlign: 'center', py: 8 }}>
-                  <SearchIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                  <SearchIcon sx={{ 
+                    fontSize: 48, 
+                    color: theme.palette.text.secondary, 
+                    mb: 2 
+                  }} />
+                  <Typography variant="h6" sx={{ 
+                    fontWeight: 600, 
+                    mb: 1,
+                    color: theme.palette.text.primary 
+                  }}>
                     No reports found
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  <Typography variant="body2" sx={{ 
+                    color: theme.palette.text.secondary, 
+                    mb: 3 
+                  }}>
                     Try adjusting your search term or browse all available reports.
                   </Typography>
                   <Button
                     variant="outlined"
                     onClick={() => setSearchTerm("")}
-                    sx={{
-                      color: '#000',
-                      borderColor: '#000',
-                      '&:hover': {
-                        borderColor: '#333',
-                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                      }
-                    }}
                   >
                     Clear Search
                   </Button>
