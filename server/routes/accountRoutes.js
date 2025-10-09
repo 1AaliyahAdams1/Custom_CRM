@@ -1,17 +1,25 @@
+
 const express = require("express");
 const router = express.Router();
 const accountController = require("../controllers/accountController");
-router.get("/", accountController.getAllAccounts);
+
+// Bulk operations
+router.post("/bulk-claim", accountController.bulkClaimAccounts);
+router.post("/check-claimability", accountController.checkAccountsClaimability);
+router.post("/bulk-claim-and-sequence", accountController.bulkClaimAccountsAndAddSequence);
+
+// Other routes
 router.get("/unassigned", accountController.getActiveUnassignedAccounts);
 router.get("/user/:userId", accountController.getActiveAccountsByUser);
+
+// Standard CRUD routes
+router.get("/", accountController.getAllAccounts);
 router.get("/:id", accountController.getAccountDetails);
 router.post("/", accountController.createAccount);
 router.put("/:id", accountController.updateAccount);
 router.patch("/:id/deactivate", accountController.deactivateAccount);
 router.patch("/:id/reactivate", accountController.reactivateAccount);
 router.delete("/:id/delete", accountController.deleteAccount);
-
-
 
 module.exports = router;
 
