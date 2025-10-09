@@ -32,7 +32,7 @@ const AccountsPage = ({
   onSelectClick,
   onSelectAllClick,
   onDeactivate,
-  onReactivate, // ADD THIS LINE
+  onReactivate, 
   onEdit,
   onView,
   onCreate,
@@ -41,6 +41,7 @@ const AccountsPage = ({
   onClaimAccount,
   onUnclaimAccount,
   onAssignUser,
+  onUnassignUsers,
   onFilterChange,
   onBulkClaim,
   onBulkAssign,
@@ -99,11 +100,29 @@ const AccountsPage = ({
     { field: "UpdatedAt", headerName: "Updated", type: "dateTime", defaultVisible: false },
     {
       field: "ownerStatus",
-      headerName: "Ownership",
-      type: "chip",
-      chipLabels: { owned: "Owned", unowned: "Unowned", "n/a": "N/A" },
-      chipColors: { owned: "#079141ff", unowned: "#999999", "n/a": "#999999" },
-      defaultVisible: true,
+        headerName: "Ownership",
+        type: "chip",
+        chipLabels: (value, row) => {
+          if (value === "owned") return "Owned";
+          if (value === "owned-shared") return row.ownerDisplayName || "Shared";
+          if (value === "owned-by-multiple") return row.ownerDisplayName || "Multiple users";
+          if (value === "unowned") return "Unowned";
+          if (value === "n/a") return "N/A";
+          if (value && value.startsWith("owned-by-")) {
+            return row.ownerDisplayName || value.replace("owned-by-", "");
+          }
+          return value || "N/A";
+          },
+        chipColors: (value, row) => {
+          if (value === "owned") return "#079141ff"; // green - owned by you only
+          if (value === "owned-shared") return "#2196f3"; // blue - shared with you
+          if (value === "owned-by-multiple") return "#ff9800"; // orange - multiple others
+          if (value === "unowned") return "#999999"; // gray
+          if (value === "n/a") return "#999999"; // gray
+          if (value && value.startsWith("owned-by-")) return "#ff9800"; // orange - single other user
+            return "#999999"; // default gray
+          },
+          defaultVisible: true,
     },
     {
       field: "Active",
@@ -220,12 +239,13 @@ const AccountsPage = ({
               onView={onView}
               onEdit={onEdit}
               onDelete={onDeactivate}
-              onReactivate={onReactivate} // ADD THIS LINE
+              onReactivate={onReactivate} 
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
               onClaimAccount={onClaimAccount}
-              onUnClaimAccount={onUnclaimAccount}
+              onUnclaimAccount={onUnclaimAccount}
               onAssignUser={onAssignUser}
+              onUnassignUsers={onUnassignUsers}
               formatters={formatters}
               entityType="account"
               tooltips={{
