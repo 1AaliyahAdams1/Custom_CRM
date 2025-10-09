@@ -49,6 +49,7 @@ const assignUserRoutes = require("./routes/assignUserRoutes");
 const employeeRoutes = require("./routes/employeeRoutes"); 
 const currencyRoutes = require("./routes/currencyRoutes");
 const noteRoutes = require("./routes/noteRoutes");
+const chatbotRoutes = require("./routes/chatbotRoutes");
 
 //API ROUTES
 const efmvenuesRoute = require('./routes/efm/efmVenueRoute');
@@ -90,6 +91,7 @@ app.use('/assign', assignUserRoutes);
 app.use("/employees", employeeRoutes);
 app.use("/notes", noteRoutes);
 app.use("/currencies", currencyRoutes);
+app.use("/chatbot", chatbotRoutes);
 
 //API Mounting
 app.use('/api/cities', efmcitiesRoute);
