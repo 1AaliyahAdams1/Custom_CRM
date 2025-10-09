@@ -1,233 +1,239 @@
-import React, { useState } from "react";
+import React from 'react';
 import {
-  Box,
-  Button,
+  Toolbar,
   Typography,
-  Chip,
-  CircularProgress,
+  Button,
+  Box,
   Tooltip,
-} from "@mui/material";
-import { Assignment, PersonAdd, Cancel } from "@mui/icons-material";
-import { ROUTE_ACCESS, CLAIM_RULES } from "../../utils/auth/routesAccess";
+  IconButton,
+  CircularProgress,
+  Chip,
+} from '@mui/material';
+import {
+  Close,
+  PersonAdd,
+  Assignment,
+  Delete,
+  FileDownload,
+  Gavel,
+  Timeline,
+} from '@mui/icons-material';
 
 const BulkActionsToolbar = ({
   selectedCount = 0,
   selectedItems = [],
-  entityType = "records",
-  onBulkUnclaim,
+  entityType = 'item',
   onBulkAssign,
   onBulkClaim,
+  onBulkClaimAndSequence,
+  onBulkDeactivate,
+  onBulkExport,
   onClearSelection,
-  userRoles = [],
+  userRole = [],
   loading = false,
   disabled = false,
 }) => {
-  const [bulkLoading, setBulkLoading] = useState("");
+  const roles = Array.isArray(userRole) ? userRole : [userRole];
 
-  // Normalize roles to array
-  const roles = Array.isArray(userRoles)
-    ? userRoles
-    : typeof userRoles === "string"
-      ? [userRoles]
-      : [];
+  // Check user permissions
+  const hasClaimPermission = roles.includes('Sales Representative') || 
+                             roles.includes('Sales Manager') || 
+                             roles.includes('C-Level') ||
+                             roles.includes('C-level');
+  
+  const hasAssignPermission = roles.includes('C-Level') || 
+                              roles.includes('C-level') ||
+                              roles.includes('Sales Manager');
+  
+  const hasDeactivatePermission = roles.includes('C-Level') || 
+                                  roles.includes('C-level') ||
+                                  roles.includes('Sales Manager');
 
-  // Helper function to check access using ROUTE_ACCESS
-  const hasAccess = (routeKey) => {
-    if (!ROUTE_ACCESS[routeKey]) return false;
-    return roles.some((role) => ROUTE_ACCESS[routeKey].includes(role));
-  };
-
-  const handleBulkAction = async (action, handler) => {
-    if (!handler || loading || disabled) return;
-    setBulkLoading(action);
-    try {
-      await handler(selectedItems);
-    } catch (error) {
-      console.error(`Bulk ${action} failed:`, error);
-    } finally {
-      setBulkLoading("");
-    }
-  };
+  // Count claimable accounts
+  const claimableCount = selectedItems.filter(item => 
+    item.ownerStatus === 'unowned' || item.ownerStatus === 'n/a'
+  ).length;
 
   if (selectedCount === 0) return null;
 
-  const canAssign = hasAccess("accountAssign");
-  const canClaim = hasAccess("accountClaim");
-  const canUnclaim = hasAccess("accountUnclaim");
-
-  let claimableCount = 0;
-  if (canClaim) {
-    claimableCount = selectedItems.filter((item) =>
-      roles.some((role) => CLAIM_RULES[role]?.(item))
-    ).length;
-  }
-
   return (
-    <Box
+    <Toolbar
       sx={{
-        position: "sticky",
-        top: 0,
-        zIndex: 1200,
-        backgroundColor: "primary.main",
-        color: "primary.contrastText",
-        p: 2,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-        borderRadius: "8px 8px 0 0",
-        mb: 1,
+        pl: 2,
+        pr: 1,
+        backgroundColor: '#079141ff',
+        color: '#ffffff',
+        minHeight: '64px !important',
+        borderRadius: '8px 8px 0 0',
       }}
     >
-      {/* Left side: selection info */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          {selectedCount} {entityType}
-          {selectedCount !== 1 ? "s" : ""} selected
+      <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, gap: 2 }}>
+        <Typography
+          sx={{ flex: '0 0 auto' }}
+          color="inherit"
+          variant="subtitle1"
+          component="div"
+          fontWeight={600}
+        >
+          {selectedCount} {entityType}{selectedCount !== 1 ? 's' : ''} selected
         </Typography>
 
-        {claimableCount > 0 && claimableCount !== selectedCount && (
+        {hasClaimPermission && claimableCount > 0 && claimableCount !== selectedCount && (
           <Chip
             label={`${claimableCount} claimable`}
             size="small"
-            sx={{
-              backgroundColor: "rgba(255,255,255,0.2)",
-              color: "inherit",
+            sx={{ 
+              backgroundColor: 'rgba(255,255,255,0.2)', 
+              color: 'inherit',
+              fontWeight: 500
             }}
           />
         )}
+
+        {/* Action Buttons */}
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {/* Bulk Claim Button */}
+          {hasClaimPermission && onBulkClaim && claimableCount > 0 && (
+            <Tooltip title={`Claim ${claimableCount} unowned ${entityType}${claimableCount !== 1 ? 's' : ''}`} arrow>
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={loading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <Gavel />}
+                  onClick={onBulkClaim}
+                  disabled={disabled || loading}
+                  sx={{
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    color: '#ffffff',
+                    fontWeight: 600,
+                    '&:hover': {
+                      backgroundColor: 'rgba(255,255,255,0.3)',
+                    },
+                    '&:disabled': {
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.5)',
+                    },
+                  }}
+                >
+                  Claim 
+                </Button>
+              </span>
+            </Tooltip>
+          )}
+
+           {/*Bulk Claim & Add Sequence Button */}
+          {hasClaimPermission && onBulkClaimAndSequence && claimableCount > 0 && (
+            <Tooltip 
+              title={`Claim ${claimableCount} ${entityType}${claimableCount !== 1 ? 's' : ''} and assign sequence with activities`} 
+              arrow
+            >
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={loading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <Timeline />}
+                  onClick={onBulkClaimAndSequence}
+                  disabled={disabled || loading}
+                  sx={{
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    color: '#ffffff',
+                    fontWeight: 600,
+                    '&:hover': {
+                      backgroundColor: 'rgba(255,255,255,0.3)',
+                    },
+                    '&:disabled': {
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.5)',
+                    },
+                  }}
+                >
+                  Claim & Add Sequence
+                </Button>
+              </span>
+            </Tooltip>
+          )}
+
+          {/* Bulk Assign Button */}
+          {hasAssignPermission && onBulkAssign && (
+            <Tooltip title={`Assign ${selectedCount} selected ${entityType}${selectedCount !== 1 ? 's' : ''} to a user`} arrow>
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={loading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <PersonAdd />}
+                  onClick={onBulkAssign}
+                  disabled={disabled || loading}
+                  sx={{
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    color: '#ffffff',
+                    fontWeight: 600,
+                    '&:hover': {
+                      backgroundColor: 'rgba(255,255,255,0.3)',
+                    },
+                    '&:disabled': {
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.5)',
+                    },
+                  }}
+                >
+                  Assign
+                </Button>
+              </span>
+            </Tooltip>
+          )}
+
+          {/* Bulk Deactivate Button */}
+          {hasDeactivatePermission && onBulkDeactivate && (
+            <Tooltip title={`Deactivate ${selectedCount} selected ${entityType}${selectedCount !== 1 ? 's' : ''}`} arrow>
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={loading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <Delete />}
+                  onClick={onBulkDeactivate}
+                  disabled={disabled || loading}
+                  sx={{
+                    backgroundColor: 'rgba(211, 47, 47, 0.9)',
+                    color: '#ffffff',
+                    fontWeight: 600,
+                    '&:hover': {
+                      backgroundColor: 'rgba(198, 40, 40, 0.9)',
+                    },
+                    '&:disabled': {
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.5)',
+                    },
+                  }}
+                >
+                  Deactivate
+                </Button>
+              </span>
+            </Tooltip>
+          )}
+        </Box>
       </Box>
 
-      {/* Right side: actions */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        {/* Bulk Claim */}
-        {canClaim && (
-          <Tooltip
-            title={
-              claimableCount > 0
-                ? `Claim ${claimableCount} ${entityType}${claimableCount !== 1 ? "s" : ""}`
-                : `No ${entityType}s available to claim`
-            }
-          >
-            <span>
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={
-                  bulkLoading === "claim" ? (
-                    <CircularProgress size={16} color="inherit" />
-                  ) : (
-                    <PersonAdd />
-                  )
-                }
-                onClick={() => handleBulkAction("claim", onBulkClaim)}
-                disabled={claimableCount === 0 || loading || bulkLoading || disabled}
-                sx={{
-                  backgroundColor: "rgba(255,255,255,0.15)",
-                  color: "inherit",
-                  "&:hover": { backgroundColor: "rgba(255,255,255,0.25)" },
-                  "&:disabled": {
-                    backgroundColor: "rgba(255,255,255,0.05)",
-                    color: "rgba(255,255,255,0.5)",
-                  },
-                }}
-              >
-                {bulkLoading === "claim"
-                  ? "Claiming..."
-                  : `Claim ${claimableCount}`}
-              </Button>
-            </span>
-          </Tooltip>
-        )}
-
-        {/* Bulk Unclaim*/}
-        {canUnclaim && (
-          <Tooltip
-            title={`Unclaim ${selectedCount} ${entityType}${selectedCount !== 1 ? "s" : ""
-              }`}
-          >
-            <span>
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={
-                  bulkLoading === "unclaim" ? (
-                    <CircularProgress size={16} color="inherit" />
-                  ) : (
-                    <Cancel /> 
-                  )
-                }
-                onClick={() => handleBulkAction("unclaim", onBulkUnclaim)}
-                disabled={loading || bulkLoading || disabled}
-                sx={{
-                  backgroundColor: "rgba(255,255,255,0.15)",
-                  color: "inherit",
-                  "&:hover": { backgroundColor: "rgba(255,255,255,0.25)" },
-                  "&:disabled": {
-                    backgroundColor: "rgba(255,255,255,0.05)",
-                    color: "rgba(255,255,255,0.5)",
-                  },
-                }}
-              >
-                {bulkLoading === "unclaim" ? "Unclaiming..." : "Unclaim"}
-              </Button>
-            </span>
-          </Tooltip>
-        )}
-
-        {/* Bulk Assign */}
-        {canAssign && (
-          <Tooltip
-            title={`Assign team members to ${selectedCount} ${entityType}${selectedCount !== 1 ? "s" : ""
-              }`}
-          >
-            <span>
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={
-                  bulkLoading === "assign" ? (
-                    <CircularProgress size={16} color="inherit" />
-                  ) : (
-                    <Assignment />
-                  )
-                }
-                onClick={() => handleBulkAction("assign", onBulkAssign)}
-                disabled={loading || bulkLoading || disabled}
-                sx={{
-                  backgroundColor: "rgba(255,255,255,0.15)",
-                  color: "inherit",
-                  "&:hover": { backgroundColor: "rgba(255,255,255,0.25)" },
-                  "&:disabled": {
-                    backgroundColor: "rgba(255,255,255,0.05)",
-                    color: "rgba(255,255,255,0.5)",
-                  },
-                }}
-              >
-                {bulkLoading === "assign" ? "Assigning..." : "Assign User"}
-              </Button>
-            </span>
-          </Tooltip>
-        )}
-
-        {/* Clear Selection */}
-        <Tooltip title="Clear selection">
-          <Button
-            variant="text"
-            size="small"
-            startIcon={<Cancel />}
+      {/* Clear Selection Button */}
+      {onClearSelection && (
+        <Tooltip title="Clear selection" arrow>
+          <IconButton
             onClick={onClearSelection}
-            disabled={loading || bulkLoading}
+            disabled={disabled || loading}
             sx={{
-              color: "inherit",
-              "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" },
+              color: '#ffffff',
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255,0.2)',
+              },
+              '&:disabled': {
+                color: 'rgba(255,255,255,0.3)',
+              }
             }}
           >
-            Clear
-          </Button>
+            <Close />
+          </IconButton>
         </Tooltip>
-      </Box>
-    </Box>
+      )}
+    </Toolbar>
   );
 };
 

@@ -1,30 +1,22 @@
 const accountRepo = require("../data/accountRepository");
 
-
-// Hardcoded userId for now
-const userId = 1;
-
-
 async function getAllAccounts() {
   return await accountRepo.getAllAccounts();
 }
-
 
 async function getAccountDetails(id) {
   return await accountRepo.getAccountDetails(id);
 }
 
-
-async function createAccount(data) {
+async function createAccount(data, userId) {
   return await accountRepo.createAccount(data, userId);
 }
 
-
-async function updateAccount(id, data) {
+async function updateAccount(id, data, userId) {
   return await accountRepo.updateAccount(id, data, userId);
 }
 
-async function deactivateAccount(id, userId) {  // Added userId parameter
+async function deactivateAccount(id, userId) {
   const account = await accountRepo.getAccountDetails(id);
   if (!account) {
     throw new Error("Account not found");
@@ -39,17 +31,13 @@ async function deactivateAccount(id, userId) {  // Added userId parameter
   return await accountRepo.deactivateAccount(account, userId, 7);
 }
 
-
 async function reactivateAccount(id, userId) {  
   return await accountRepo.reactivateAccount(id, userId);
 }
 
-
-
-async function deleteAccount(id) {
+async function deleteAccount(id, userId) {
   return await accountRepo.deleteAccount(id, userId);
 }
-
 
 async function getActiveAccountsByUser(userId) {
   return await accountRepo.getActiveAccountsByUser(userId);
@@ -57,6 +45,59 @@ async function getActiveAccountsByUser(userId) {
 
 async function getActiveUnassignedAccounts() {
   return await accountRepo.getActiveUnassignedAccounts();
+}
+
+async function checkAccountsClaimability(accountIds, userId) {
+  if (!Array.isArray(accountIds) || accountIds.length === 0) {
+    throw new Error("Account IDs array is required");
+  }
+  
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+  
+  return await accountRepo.checkAccountsClaimability(accountIds, userId);
+}
+
+async function bulkClaimAccounts(accountIds, userId) {
+  if (!Array.isArray(accountIds) || accountIds.length === 0) {
+    throw new Error("Account IDs array is required");
+  }
+  
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+  
+  // First check claimability
+  const claimabilityCheck = await accountRepo.checkAccountsClaimability(accountIds, userId);
+  
+  const claimableAccounts = claimabilityCheck.filter(acc => 
+    acc.ownerStatus === 'unowned' && acc.Active
+  );
+  
+  if (claimableAccounts.length === 0) {
+    throw new Error("No claimable accounts found in selection");
+  }
+  
+  const claimableIds = claimableAccounts.map(acc => acc.AccountID);
+  
+  return await accountRepo.bulkClaimAccounts(claimableIds, userId);
+}
+
+async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
+  if (!Array.isArray(accountIds) || accountIds.length === 0) {
+    throw new Error("Account IDs array is required");
+  }
+  
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+  
+  if (!sequenceId) {
+    throw new Error("Sequence ID is required");
+  }
+  
+  return await accountRepo.bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId);
 }
 
 
@@ -69,5 +110,8 @@ module.exports = {
   reactivateAccount,
   deleteAccount,
   getActiveAccountsByUser,
-  getActiveUnassignedAccounts
+  getActiveUnassignedAccounts,
+  checkAccountsClaimability,
+  bulkClaimAccounts,
+  bulkClaimAccountsAndAddSequence,
 };

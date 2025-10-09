@@ -9,22 +9,28 @@ import {
   Box,
   CircularProgress,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   List,
   ListItem,
   ListItemText,
   Chip,
   Divider,
 } from '@mui/material';
-import { Gavel, CheckCircle, Info, Cancel } from '@mui/icons-material';
+import { Gavel, Timeline, CheckCircle, Info, Cancel } from '@mui/icons-material';
 
-const BulkClaimDialog = ({
+const BulkClaimAndSequenceDialog = ({
   open,
   onClose,
   onConfirm,
   selectedItems = [],
+  sequences = [],
   loading = false,
 }) => {
   const [analyzing, setAnalyzing] = useState(true);
+  const [selectedSequence, setSelectedSequence] = useState('');
   const [claimableAccounts, setClaimableAccounts] = useState([]);
   const [ownedAccounts, setOwnedAccounts] = useState([]);
   const [inactiveAccounts, setInactiveAccounts] = useState([]);
@@ -38,7 +44,6 @@ const BulkClaimDialog = ({
   const analyzeAccounts = () => {
     setAnalyzing(true);
     
-    // Categorize accounts based on their status
     const claimable = [];
     const owned = [];
     const inactive = [];
@@ -60,18 +65,21 @@ const BulkClaimDialog = ({
   };
 
   const handleConfirm = () => {
-    if (claimableAccounts.length === 0) {
+    if (claimableAccounts.length === 0 || !selectedSequence) {
       return;
     }
     const accountIds = claimableAccounts.map(acc => acc.AccountID);
-    onConfirm(accountIds);
+    onConfirm(accountIds, selectedSequence);
   };
 
   const handleClose = () => {
     if (!loading) {
+      setSelectedSequence('');
       onClose();
     }
   };
+
+  const selectedSequenceData = sequences.find(seq => seq.SequenceID === selectedSequence);
 
   return (
     <Dialog 
@@ -90,8 +98,8 @@ const BulkClaimDialog = ({
         borderBottom: '1px solid #e0e0e0',
         pb: 2
       }}>
-        <Gavel sx={{ color: '#079141ff' }} />
-        Bulk Claim Accounts
+        <Timeline sx={{ color: '#079141ff' }} />
+        Bulk Claim & Add Sequence
       </DialogTitle>
 
       <DialogContent sx={{ mt: 2 }}>
@@ -124,19 +132,65 @@ const BulkClaimDialog = ({
               )}
             </Alert>
 
+            {/* Sequence Selection */}
+            {claimableAccounts.length > 0 && (
+              <Box mb={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Select Sequence</InputLabel>
+                  <Select
+                    value={selectedSequence}
+                    onChange={(e) => setSelectedSequence(e.target.value)}
+                    label="Select Sequence"
+                  >
+                    {sequences.map((seq) => (
+                      <MenuItem key={seq.SequenceID} value={seq.SequenceID}>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {seq.SequenceName}
+                          </Typography>
+                          {seq.SequenceDescription && (
+                            <Typography variant="caption" color="text.secondary">
+                              {seq.SequenceDescription}
+                            </Typography>
+                          )}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                {selectedSequenceData && (
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      What will happen:
+                    </Typography>
+                    <Typography variant="body2">
+                      • {claimableAccounts.length} account(s) will be claimed and assigned to you
+                    </Typography>
+                    <Typography variant="body2">
+                      • "{selectedSequenceData.SequenceName}" sequence will be assigned
+                    </Typography>
+                    <Typography variant="body2">
+                      • All sequence activities will be automatically created
+                    </Typography>
+                  </Alert>
+                )}
+              </Box>
+            )}
+
             {/* Claimable Accounts */}
             {claimableAccounts.length > 0 && (
               <Box mb={3}>
                 <Box display="flex" alignItems="center" gap={1} mb={1}>
                   <CheckCircle sx={{ color: '#079141ff', fontSize: 20 }} />
                   <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    Claimable Accounts ({claimableAccounts.length})
+                    Will Be Claimed ({claimableAccounts.length})
                   </Typography>
                 </Box>
                 <List dense sx={{ 
                   bgcolor: '#f5f5f5', 
                   borderRadius: 1,
-                  maxHeight: 200,
+                  maxHeight: 150,
                   overflow: 'auto'
                 }}>
                   {claimableAccounts.map((account, index) => (
@@ -148,7 +202,7 @@ const BulkClaimDialog = ({
                           secondary={`${account.CityName || 'N/A'}, ${account.CountryName || 'N/A'}`}
                         />
                         <Chip 
-                          label="Unowned" 
+                          label="Ready" 
                           size="small" 
                           sx={{ 
                             bgcolor: '#e8f5e9',
@@ -172,10 +226,13 @@ const BulkClaimDialog = ({
                     Already Owned ({ownedAccounts.length})
                   </Typography>
                 </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                  These accounts are already claimed and will be skipped
+                </Typography>
                 <List dense sx={{ 
                   bgcolor: '#f5f5f5', 
                   borderRadius: 1,
-                  maxHeight: 150,
+                  maxHeight: 120,
                   overflow: 'auto'
                 }}>
                   {ownedAccounts.map((account, index) => (
@@ -185,15 +242,6 @@ const BulkClaimDialog = ({
                         <ListItemText 
                           primary={account.AccountName}
                           secondary="Already claimed"
-                        />
-                        <Chip 
-                          label="Owned" 
-                          size="small" 
-                          sx={{ 
-                            bgcolor: '#e3f2fd',
-                            color: '#1976d2',
-                            fontSize: '0.75rem'
-                          }} 
                         />
                       </ListItem>
                     </React.Fragment>
@@ -211,39 +259,15 @@ const BulkClaimDialog = ({
                     Inactive Accounts ({inactiveAccounts.length})
                   </Typography>
                 </Box>
-                <List dense sx={{ 
-                  bgcolor: '#f5f5f5', 
-                  borderRadius: 1,
-                  maxHeight: 150,
-                  overflow: 'auto'
-                }}>
-                  {inactiveAccounts.map((account, index) => (
-                    <React.Fragment key={account.AccountID}>
-                      {index > 0 && <Divider />}
-                      <ListItem>
-                        <ListItemText 
-                          primary={account.AccountName}
-                          secondary="Cannot claim inactive accounts"
-                        />
-                        <Chip 
-                          label="Inactive" 
-                          size="small" 
-                          sx={{ 
-                            bgcolor: '#ffebee',
-                            color: '#c62828',
-                            fontSize: '0.75rem'
-                          }} 
-                        />
-                      </ListItem>
-                    </React.Fragment>
-                  ))}
-                </List>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                  These accounts are inactive and cannot be claimed
+                </Typography>
               </Box>
             )}
 
             {/* No claimable accounts warning */}
             {claimableAccounts.length === 0 && (
-              <Alert severity="warning" sx={{ mt: 2 }}>
+              <Alert severity="warning">
                 None of the selected accounts can be claimed. All accounts are either already owned or inactive.
               </Alert>
             )}
@@ -262,8 +286,8 @@ const BulkClaimDialog = ({
         <Button
           onClick={handleConfirm}
           variant="contained"
-          disabled={loading || analyzing || claimableAccounts.length === 0}
-          startIcon={loading ? <CircularProgress size={16} /> : <Gavel />}
+          disabled={loading || analyzing || claimableAccounts.length === 0 || !selectedSequence}
+          startIcon={loading ? <CircularProgress size={16} /> : <Timeline />}
           sx={{
             bgcolor: '#079141ff',
             '&:hover': {
@@ -275,8 +299,8 @@ const BulkClaimDialog = ({
           }}
         >
           {loading 
-            ? 'Claiming...' 
-            : `Claim ${claimableAccounts.length} Account${claimableAccounts.length !== 1 ? 's' : ''}`
+            ? 'Processing...' 
+            : `Claim & Add Sequence (${claimableAccounts.length})`
           }
         </Button>
       </DialogActions>
@@ -284,4 +308,4 @@ const BulkClaimDialog = ({
   );
 };
 
-export default BulkClaimDialog;
+export default BulkClaimAndSequenceDialog;

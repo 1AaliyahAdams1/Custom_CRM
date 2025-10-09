@@ -32,7 +32,7 @@ const AccountsPage = ({
   onSelectClick,
   onSelectAllClick,
   onDeactivate,
-  onReactivate, // ADD THIS LINE
+  onReactivate, 
   onEdit,
   onView,
   onCreate,
@@ -43,6 +43,7 @@ const AccountsPage = ({
   onAssignUser,
   onFilterChange,
   onBulkClaim,
+  onBulkClaimAndSequence,
   onBulkAssign,
   onBulkDeactivate,
   onBulkExport,
@@ -142,6 +143,7 @@ const AccountsPage = ({
             entityType="account"
             onBulkAssign={onBulkAssign}
             onBulkClaim={onBulkClaim}
+            onBulkClaimAndSequence={onBulkClaimAndSequence}
             onBulkDeactivate={onBulkDeactivate}
             onBulkExport={onBulkExport}
             onClearSelection={onClearSelection}
