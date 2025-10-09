@@ -137,10 +137,10 @@ const AccountsPage = ({
   ];
 
   return (
-    // ✅ REMOVED: <ThemeProvider theme={theme}> wrapper
+    
     <Box sx={{ 
       width: "100%", 
-      backgroundColor: theme.palette.background.default, // ✅ Theme-aware color
+      backgroundColor: theme.palette.background.default, 
       minHeight: "100vh", 
       p: 3 
     }}>
@@ -179,8 +179,8 @@ const AccountsPage = ({
 
         {/* Main Toolbar */}
         <Toolbar sx={{
-          backgroundColor: theme.palette.background.paper, // ✅ Theme-aware
-          borderBottom: selected.length > 0 ? "none" : `1px solid ${theme.palette.divider}`, // ✅ Theme-aware
+          backgroundColor: theme.palette.background.paper, 
+          borderBottom: selected.length > 0 ? "none" : `1px solid ${theme.palette.divider}`, 
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: 2,
@@ -189,7 +189,7 @@ const AccountsPage = ({
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Typography variant="h6" component="div" sx={{ 
-                color: theme.palette.text.primary, // ✅ Theme-aware
+                color: theme.palette.text.primary, 
                 fontWeight: 600 
               }}>
                 Accounts
@@ -197,7 +197,7 @@ const AccountsPage = ({
               <Tooltip title="Manage and view all customer accounts in your system" arrow>
                 <Info sx={{ 
                   fontSize: 18, 
-                  color: theme.palette.text.secondary, // ✅ Theme-aware
+                  color: theme.palette.text.secondary,
                   cursor: "help" 
                 }} />
               </Tooltip>
@@ -207,12 +207,12 @@ const AccountsPage = ({
             <FormControl size="small" sx={{ minWidth: 180 }}>
               <Select value={accountFilter} onChange={handleFilterChange} displayEmpty
                 sx={{
-                  backgroundColor: theme.palette.background.paper, // ✅ Theme-aware
+                  backgroundColor: theme.palette.background.paper, 
                   "& .MuiOutlinedInput-notchedOutline": { 
-                    borderColor: theme.palette.divider // ✅ Theme-aware
+                    borderColor: theme.palette.divider 
                   },
                   "&:hover .MuiOutlinedInput-notchedOutline": { 
-                    borderColor: theme.palette.text.secondary // ✅ Theme-aware
+                    borderColor: theme.palette.text.secondary
                   },
                   "&.Mui-focused .MuiOutlinedInput-notchedOutline": { 
                     borderColor: theme.palette.primary.main 

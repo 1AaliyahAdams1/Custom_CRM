@@ -21,6 +21,18 @@ async function claimAccount(userId, accountId) {
   await assignUser(userId, accountId);
 }
 
+async function unclaimAccount(userId, accountId) {
+  // Find the active assignment
+  const assignment = await assignedUserRepository.findActiveAssignment(userId, accountId);
+  
+  if (!assignment) {
+    throw new Error("No active assignment found for this account");
+  }
+  
+  // Remove the assignment
+  await removeAssignedUser(assignment.AccountUserID);
+}
+
 
 async function removeAssignedUser(accountUserId) {
   try {
@@ -66,10 +78,13 @@ async function removeSpecificUsers(accountId, userIds) {
   }
 }
 
+
+
 module.exports = {
   assignUser,
   claimAccount,
   removeAssignedUser,
   removeSpecificUsers,
+  unclaimAccount,
 
 };

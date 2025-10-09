@@ -57,3 +57,16 @@ export const removeSpecificUsers = async (accountId, userIds) => {
     throw new Error(errorMessage);
   }
 };
+
+export const unclaimAccount = async (accountId) => {
+  try {
+    const response = await api.patch(`/assign/${accountId}/unclaim`);
+    return response.data;
+  } catch (error) {
+    const errorMessage = error.response?.data?.error ||
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to unclaim account';
+    throw new Error(errorMessage);
+  }
+};

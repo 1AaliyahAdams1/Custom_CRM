@@ -18,6 +18,28 @@ async function claimAccount(req, res) {
   }
 };
 
+async function unclaimAccount(req, res) {
+  try {
+    const userId = req.user?.userId;
+    const { id: accountId } = req.params;
+
+    if (!userId || !accountId) {
+      return res.status(400).json({ error: "userId and accountId are required" });
+    }
+
+    await assignedUserService.unclaimAccount(userId, accountId);
+    res.status(200).json({ 
+      message: "Account unclaimed successfully", 
+      accountId, 
+      userId 
+    });
+  } catch (err) {
+    console.error("Error unclaiming account:", err);
+    res.status(500).json({ error: err.message || "Failed to unclaim account" });
+  }
+}
+
+
 async function assignUser(req, res) {
   try {
     const { employeeId } = req.body;
@@ -84,9 +106,12 @@ const removeSpecificUsers = async (req, res) => {
   }
 };
 
+
+
 module.exports = { 
   claimAccount, 
   assignUser, 
   removeAssignedUser,
-  removeSpecificUsers 
+  removeSpecificUsers,
+  unclaimAccount
 };

@@ -219,7 +219,6 @@ const TableView = ({
   let chipTooltip = null;
   
   if (column.chipLabels) {
-    // Check if chipLabels is a function (for dynamic labels)
     if (typeof column.chipLabels === 'function') {
       chipLabel = column.chipLabels(value, row);
     } else if (column.chipLabels[value]) {
@@ -228,7 +227,6 @@ const TableView = ({
   }
   
   if (column.chipColors) {
-    // Check if chipColors is a function (for dynamic colors)
     if (typeof column.chipColors === 'function') {
       chipColor = column.chipColors(value, row);
     } else if (column.chipColors[value]) {
@@ -236,19 +234,29 @@ const TableView = ({
     }
   }
   
-  // Handle special case for ownership with dynamic names
+  // Handle special case for ownership with dynamic names and tooltips
   if (column.field === 'ownerStatus') {
     if (value === 'owned-shared') {
       chipLabel = row.ownerDisplayName || 'Shared';
       chipColor = "#2196f3"; // blue for shared ownership
-      chipTooltip = row.ownerTooltip || 'Multiple users assigned';
+      chipTooltip = row.ownerTooltip || null;
     } else if (value === 'owned-by-multiple') {
       chipLabel = row.ownerDisplayName || 'Multiple users';
       chipColor = "#ff9800"; // orange for owned by others
-      chipTooltip = row.ownerTooltip || 'Multiple users assigned';
+      chipTooltip = row.ownerTooltip || null;
     } else if (value && value.startsWith('owned-by-')) {
       chipLabel = row.ownerDisplayName || value.replace('owned-by-', '');
       chipColor = "#ff9800"; // orange for owned by others
+      chipTooltip = row.ownerTooltip || null;
+    } else if (value === 'owned') {
+      chipLabel = 'Owned';
+      chipColor = "#079141ff"; // green
+    } else if (value === 'unowned') {
+      chipLabel = 'Unowned';
+      chipColor = "#999999"; // gray
+    } else if (value === 'n/a') {
+      chipLabel = 'N/A';
+      chipColor = "#999999"; // gray
     }
   }
   
@@ -264,12 +272,16 @@ const TableView = ({
     />
   );
   
-  // Wrap in tooltip if needed
-  return chipTooltip ? (
-    <Tooltip title={<span>{chipTooltip}</span>} arrow>
-      {chip}
-    </Tooltip>
-  ) : chip;
+  // Wrap in tooltip if tooltip text exists
+  if (chipTooltip) {
+    return (
+      <Tooltip title={chipTooltip} arrow placement="top">
+        <span>{chip}</span>
+      </Tooltip>
+    );
+  }
+  
+  return chip;
       case "boolean":
         return (
           <Chip

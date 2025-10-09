@@ -18,6 +18,7 @@ import {
   assignUser,
   removeAssignedUser,
   removeSpecificUsers, 
+  unclaimAccount,
 } from "../../services/assignService";
 import {
   createNote,
@@ -77,7 +78,7 @@ const AccountsContainer = () => {
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [accountToReactivate, setAccountToReactivate] = useState(null);
   const [accountForUnassign, setAccountForUnassign] = useState(null);
-const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
+  const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
 
 
   // ---------------- USER ROLES ----------------
@@ -139,12 +140,36 @@ const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
             }
           });
         } else {
+          // SALES REP VIEW - Now includes shared ownership logic
           const assignedRes = await fetchActiveAccountsByUser(userId);
           const unassignedRes = await fetchActiveUnassignedAccounts();
           const assignedAccounts = Array.isArray(assignedRes) ? assignedRes : [];
           const unassignedAccounts = Array.isArray(unassignedRes) ? unassignedRes : [];
 
-          assignedAccounts.forEach((acc) => (acc.ownerStatus = "owned"));
+          assignedAccounts.forEach((acc) => {
+            const assignedIdsStr = acc.AssignedEmployeeIDs;
+            const assignedNamesStr = acc.AssignedEmployeeNames;
+            
+            if (assignedIdsStr && assignedNamesStr) {
+              const assignedIds = assignedIdsStr.split(',').map(id => id.trim());
+              const assignedNames = assignedNamesStr.split(',').map(name => name.trim());
+              
+              if (assignedIds.length === 1) {
+                // Only this user is assigned
+                acc.ownerStatus = "owned";
+              } else {
+                // Multiple users assigned (shared account)
+                acc.ownerStatus = "owned-shared";
+                acc.ownerDisplayName = `You + ${assignedIds.length - 1} other${assignedIds.length - 1 > 1 ? 's' : ''}`;
+                acc.ownerTooltip = assignedNames.join(', ');
+                acc.assignedUserCount = assignedIds.length;
+                acc.allAssignedNames = assignedNames;
+              }
+            } else {
+              acc.ownerStatus = "owned";
+            }
+          });
+          
           unassignedAccounts.forEach((acc) => (acc.ownerStatus = "unowned"));
 
           const map = new Map();
@@ -168,26 +193,27 @@ const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
   };
 
   const fetchSequences = useCallback(async () => {
-  try {
-    const response = await getAllSequences();
-    setSequences(response);
-  } catch (err) {
-    console.error('Error fetching sequences:', err);
-  }
-}, []);
+    try {
+      const response = await getAllSequences();
+      setSequences(response);
+    } catch (err) {
+      console.error('Error fetching sequences:', err);
+    }
+  }, []);
 
   useEffect(() => {
     fetchAccounts();
   }, [refreshFlag, canViewAll, isCLevel]);
 
   useEffect(() => {
-  fetchSequences();
-}, [fetchSequences]);
+    fetchSequences();
+  }, [fetchSequences]);
+
   // ---------------- FILTER ----------------
   const applyFilter = (accounts, filterType) => {
     switch (filterType) {
       case "my":
-        return accounts.filter((acc) => acc.ownerStatus === "owned");
+        return accounts.filter((acc) => acc.ownerStatus === "owned" || acc.ownerStatus === "owned-shared");
       case "unassigned":
         return accounts.filter(
           (acc) => acc.ownerStatus === "unowned" || acc.ownerStatus === "n/a"
@@ -433,7 +459,7 @@ const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
   const handleUnclaimAccount = async (account) => {
     if (!hasAccess("accountUnclaim")) return;
     try {
-      await removeAssignedUser(account.AccountID);
+      await unclaimAccount(account.AccountID);
       setStatusMessage(`Account unclaimed: ${account.AccountName}`);
       setStatusSeverity("success");
 
@@ -450,7 +476,7 @@ const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
     }
   };
 
-  //  Handle Unassign Users
+  // Handle Unassign Users
   const handleUnassignUsers = (account) => {
     if (!hasAccess("accountAssign")) return;
     setAccountForUnassign(account);
@@ -473,7 +499,7 @@ const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
       console.error("Error unassigning users:", err);
       setStatusMessage(err.message || "Failed to unassign users");
       setStatusSeverity("error");
-      throw err; // Re-throw so dialog can handle it
+      throw err;
     } finally {
       setBulkLoading(false);
     }
@@ -505,112 +531,108 @@ const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
     setBulkClaimDialogOpen(true);
   };
 
-const confirmBulkClaim = async (accountIds) => {
-  setBulkLoading(true);
+  const confirmBulkClaim = async (accountIds) => {
+    setBulkLoading(true);
 
-  try {
-    const result = await bulkClaimAccounts(accountIds);
-    
-    // Build success message
-    let message = '';
-    if (result.claimedCount > 0) {
-      message = `Successfully claimed ${result.claimedCount} account(s)`;
+    try {
+      const result = await bulkClaimAccounts(accountIds);
       
-      // Add details about claimed accounts
-      if (result.claimed && result.claimed.length > 0) {
-        const claimedNames = result.claimed
-          .slice(0, 3)
-          .map(a => a.accountName)
-          .join(', ');
-        message += `: ${claimedNames}`;
-        if (result.claimed.length > 3) {
-          message += ` and ${result.claimed.length - 3} more`;
+      let message = '';
+      if (result.claimedCount > 0) {
+        message = `Successfully claimed ${result.claimedCount} account(s)`;
+        
+        if (result.claimed && result.claimed.length > 0) {
+          const claimedNames = result.claimed
+            .slice(0, 3)
+            .map(a => a.accountName)
+            .join(', ');
+          message += `: ${claimedNames}`;
+          if (result.claimed.length > 3) {
+            message += ` and ${result.claimed.length - 3} more`;
+          }
         }
+        
+        if (result.failedCount > 0) {
+          message += `. ${result.failedCount} account(s) could not be claimed`;
+        }
+        
+        setStatusMessage(message);
+        setStatusSeverity("success");
+      } else {
+        message = "No accounts were claimed";
+        if (result.failed && result.failed.length > 0) {
+          const firstReason = result.failed[0].reason;
+          message += `. Reason: ${firstReason}`;
+        }
+        setStatusMessage(message);
+        setStatusSeverity("warning");
       }
       
-      if (result.failedCount > 0) {
-        message += `. ${result.failedCount} account(s) could not be claimed`;
-      }
+      setRefreshFlag((flag) => !flag);
+      setSelected([]);
+      setBulkClaimDialogOpen(false);
       
-      setStatusMessage(message);
-      setStatusSeverity("success");
-    } else {
-      // No accounts were claimed
-      message = "No accounts were claimed";
-      if (result.failed && result.failed.length > 0) {
-        const firstReason = result.failed[0].reason;
-        message += `. Reason: ${firstReason}`;
+    } catch (err) {
+      console.error("Bulk claim error:", err);
+      
+      if (err.message && err.message.includes("authentication")) {
+        setStatusMessage("Authentication error. Please log in again and try.");
+        setStatusSeverity("error");
+      } else {
+        setStatusMessage(err.message || "Failed to claim selected accounts");
+        setStatusSeverity("error");
       }
-      setStatusMessage(message);
-      setStatusSeverity("warning");
+    } finally {
+      setBulkLoading(false);
     }
-    
-    // Refresh the account list
-    setRefreshFlag((flag) => !flag);
-    setSelected([]);
-    setBulkClaimDialogOpen(false);
-    
-  } catch (err) {
-    console.error("Bulk claim error:", err);
-    
-    // Handle authentication errors specifically
-    if (err.message && err.message.includes("authentication")) {
-      setStatusMessage("Authentication error. Please log in again and try.");
-      setStatusSeverity("error");
-    } else {
-      setStatusMessage(err.message || "Failed to claim selected accounts");
-      setStatusSeverity("error");
-    }
-  } finally {
-    setBulkLoading(false);
-  }
-};
+  };
 
-const handleBulkClaimAndSequence = () => {
-  if (!hasAccess("accountClaim")) return;
-  if (selected.length === 0) {
-    setStatusMessage("Please select accounts to claim and assign sequence");
-    setStatusSeverity("warning");
-    return;
-  }
-  setBulkClaimSequenceDialogOpen(true);
-};
-
-const confirmBulkClaimAndSequence = async (accountIds, sequenceId) => {
-  setBulkLoading(true);
-  
-  try {
-    const result = await bulkClaimAccountsAndAddSequence(accountIds, sequenceId);
-    
-    if (result.claimedCount > 0) {
-      let message = `Successfully claimed ${result.claimedCount} account(s)`;
-      
-      if (result.totalActivitiesCreated > 0) {
-        message += ` and created ${result.totalActivitiesCreated} activities`;
-      }
-      
-      if (result.failedCount > 0) {
-        message += `. ${result.failedCount} account(s) could not be claimed.`;
-      }
-      
-      setStatusMessage(message);
-      setStatusSeverity("success");
-    } else {
-      setStatusMessage("No accounts were claimed");
+  const handleBulkClaimAndSequence = () => {
+    if (!hasAccess("accountClaim")) return;
+    if (selected.length === 0) {
+      setStatusMessage("Please select accounts to claim and assign sequence");
       setStatusSeverity("warning");
+      return;
     }
+    setBulkClaimSequenceDialogOpen(true);
+  };
+
+  const confirmBulkClaimAndSequence = async (accountIds, sequenceId) => {
+    setBulkLoading(true);
     
-    setRefreshFlag((flag) => !flag);
-    setSelected([]);
-    setBulkClaimSequenceDialogOpen(false);
-  } catch (err) {
-    console.error("Bulk claim and sequence error:", err);
-    setStatusMessage(err.message || "Failed to claim accounts and assign sequence");
-    setStatusSeverity("error");
-  } finally {
-    setBulkLoading(false);
-  }
-};
+    try {
+      const result = await bulkClaimAccountsAndAddSequence(accountIds, sequenceId);
+      
+      if (result.claimedCount > 0) {
+        let message = `Successfully claimed ${result.claimedCount} account(s)`;
+        
+        if (result.totalActivitiesCreated > 0) {
+          message += ` and created ${result.totalActivitiesCreated} activities`;
+        }
+        
+        if (result.failedCount > 0) {
+          message += `. ${result.failedCount} account(s) could not be claimed.`;
+        }
+        
+        setStatusMessage(message);
+        setStatusSeverity("success");
+      } else {
+        setStatusMessage("No accounts were claimed");
+        setStatusSeverity("warning");
+      }
+      
+      setRefreshFlag((flag) => !flag);
+      setSelected([]);
+      setBulkClaimSequenceDialogOpen(false);
+    } catch (err) {
+      console.error("Bulk claim and sequence error:", err);
+      setStatusMessage(err.message || "Failed to claim accounts and assign sequence");
+      setStatusSeverity("error");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const handleBulkAssign = () => {
     if (!hasAccess("accountAssign")) return;
     if (selected.length === 0) {
@@ -700,6 +722,7 @@ const confirmBulkClaimAndSequence = async (accountIds, sequenceId) => {
         onClaimAccount={handleClaimAccount}
         onAssignUser={handleAssignUser}
         onUnclaimAccount={handleUnclaimAccount}
+        onUnassignUsers={handleUnassignUsers}
         onFilterChange={handleFilterChange}
         onBulkClaim={handleBulkClaim}
         onBulkClaimAndSequence={handleBulkClaimAndSequence}
@@ -794,6 +817,17 @@ const confirmBulkClaimAndSequence = async (accountIds, sequenceId) => {
         onConfirm={confirmBulkClaimAndSequence}
         selectedItems={selectedAccountObjects}
         sequences={sequences}
+        loading={bulkLoading}
+      />
+
+      <UnassignUserDialog
+        open={unassignUserDialogOpen}
+        onClose={() => {
+          setUnassignUserDialogOpen(false);
+          setAccountForUnassign(null);
+        }}
+        onConfirm={confirmUnassignUsers}
+        account={accountForUnassign}
         loading={bulkLoading}
       />
     </>

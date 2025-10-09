@@ -116,6 +116,27 @@ async function findAssignedUsersByAccount(accountId) {
   return result.recordset;
 }
 
+// ===============================================
+// Find active assignment by UserID and AccountID
+// ===============================================
+async function findActiveAssignment(userId, accountId) {
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .input("UserID", sql.Int, userId)
+    .input("AccountID", sql.Int, accountId)
+    .query(`
+      SELECT AccountUserID
+      FROM AssignedUser
+      WHERE UserID = @UserID 
+        AND AccountID = @AccountID 
+        AND Active = 1
+    `);
+  return result.recordset[0] || null;
+}
+
+
+
+
 
 // ==========================================
 // Exports
@@ -130,4 +151,5 @@ module.exports = {
   deleteAssignedUser,
   findAssignedUser,
   findAssignedUsersByAccount,
+  findActiveAssignment,
 };
