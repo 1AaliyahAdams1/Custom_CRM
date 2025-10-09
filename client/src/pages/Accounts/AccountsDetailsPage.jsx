@@ -257,7 +257,7 @@ export default function AccountDetailsPage() {
     return tabs;
   }, [createFilteredDataService, createAttachmentDataService, processDealData]);
 
-  // action handlers
+  // Action handlers
   const relatedDataActions = useMemo(() => {
     const actions = {
       contact: {
@@ -340,9 +340,9 @@ export default function AccountDetailsPage() {
       });
     }
     return chips;
-  }, [account?.Active, account?.AccountType]);
+  }, [account]);
 
-  // event handlers
+  // Event handlers
   const handleSave = useCallback(async (formData) => {
     try {
       console.log('Saving account:', formData);
