@@ -42,6 +42,7 @@ const AccountsPage = ({
   onAssignUser,
   onFilterChange,
   onBulkClaim,
+  onBulkClaimAndSequence,
   onBulkAssign,
   onBulkDeactivate,
   onBulkExport,
@@ -60,7 +61,6 @@ const AccountsPage = ({
   setAttachmentsPopupOpen,
   userName,
 }) => {
-  // ✅ ADD THIS to access current theme
   const theme = useTheme();
   
   // Local filter state
@@ -141,21 +141,22 @@ const AccountsPage = ({
       {/* Error Alert */}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Paper sx={{ width: "100%", mb: 2, borderRadius: 2, overflow: "hidden" }}>
-        {/* Bulk Actions Toolbar */}
-        <BulkActionsToolbar
-          selectedCount={selected.length}
-          selectedItems={selectedItems}
-          entityType="account"
-          onBulkAssign={onBulkAssign}
-          onBulkClaim={onBulkClaim}
-          onBulkDeactivate={onBulkDeactivate}
-          onBulkExport={onBulkExport}
-          onClearSelection={onClearSelection}
-          userRole={userRoles}
-          loading={bulkLoading}
-          disabled={loading}
-        />
+        <Paper sx={{ width: "100%", mb: 2, borderRadius: 2, overflow: "hidden" }}>
+          {/* Bulk Actions Toolbar */}
+          <BulkActionsToolbar
+            selectedCount={selected.length}
+            selectedItems={selectedItems}
+            entityType="account"
+            onBulkAssign={onBulkAssign}
+            onBulkClaim={onBulkClaim}
+            onBulkClaimAndSequence={onBulkClaimAndSequence}
+            onBulkDeactivate={onBulkDeactivate}
+            onBulkExport={onBulkExport}
+            onClearSelection={onClearSelection}
+            userRole={userRoles}
+            loading={bulkLoading}
+            disabled={loading}
+          />
 
         {/* Main Toolbar */}
         <Toolbar sx={{

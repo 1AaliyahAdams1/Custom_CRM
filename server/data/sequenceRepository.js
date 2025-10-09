@@ -72,17 +72,14 @@ async function getSequenceWithItems(id) {
           seq.Active AS SequenceActive,
           si.SequenceItemID,
           si.ActivityTypeID,
-          si.ActivityTypeID,
           at.TypeName AS ActivityTypeName,
           si.SequenceItemDescription,
           si.DaysFromStart,
           si.CreatedAt AS ItemCreatedAt,
           si.UpdatedAt AS ItemUpdatedAt,
           si.Active AS ItemActive
-          si.Active AS ItemActive
         FROM Sequence seq
         LEFT JOIN SequenceItem si ON seq.SequenceID = si.SequenceID
-        LEFT JOIN ActivityType at ON si.ActivityTypeID = at.TypeID AND at.Active = 1
         LEFT JOIN ActivityType at ON si.ActivityTypeID = at.TypeID AND at.Active = 1
         WHERE seq.SequenceID = @SequenceID
         ORDER BY si.DaysFromStart
@@ -332,15 +329,12 @@ async function createSequenceItem(itemData, changedBy) {
     const result = await pool.request()
       .input("SequenceID", sql.Int, SequenceID)
       .input("ActivityTypeID", sql.Int, ActivityTypeID)
-      .input("ActivityTypeID", sql.Int, ActivityTypeID)
       .input("SequenceItemDescription", sql.NVarChar(sql.MAX), SequenceItemDescription)
       .input("DaysFromStart", sql.Int, DaysFromStart)
       .input("Active", sql.Bit, Active)
       .query(`
         INSERT INTO SequenceItem (SequenceID, ActivityTypeID, SequenceItemDescription, DaysFromStart, CreatedAt, UpdatedAt, Active)
-        INSERT INTO SequenceItem (SequenceID, ActivityTypeID, SequenceItemDescription, DaysFromStart, CreatedAt, UpdatedAt, Active)
         OUTPUT INSERTED.SequenceItemID
-        VALUES (@SequenceID, @ActivityTypeID, @SequenceItemDescription, @DaysFromStart, GETDATE(), GETDATE(), @Active)
         VALUES (@SequenceID, @ActivityTypeID, @SequenceItemDescription, @DaysFromStart, GETDATE(), GETDATE(), @Active)
       `);
 
@@ -383,13 +377,10 @@ async function createSequenceWithItems(sequenceData, items, changedBy) {
         await itemRequest
           .input("SequenceID", sql.Int, newSequenceID)
           .input("ActivityTypeID", sql.Int, item.ActivityTypeID)
-          .input("ActivityTypeID", sql.Int, item.ActivityTypeID)
           .input("SequenceItemDescription", sql.NVarChar(sql.MAX), item.SequenceItemDescription)
           .input("DaysFromStart", sql.Int, item.DaysFromStart)
           .input("Active", sql.Bit, item.Active !== undefined ? item.Active : true)
           .query(`
-            INSERT INTO SequenceItem (SequenceID, ActivityTypeID, SequenceItemDescription, DaysFromStart, CreatedAt, UpdatedAt, Active)
-            VALUES (@SequenceID, @ActivityTypeID, @SequenceItemDescription, @DaysFromStart, GETDATE(), GETDATE(), @Active)
             INSERT INTO SequenceItem (SequenceID, ActivityTypeID, SequenceItemDescription, DaysFromStart, CreatedAt, UpdatedAt, Active)
             VALUES (@SequenceID, @ActivityTypeID, @SequenceItemDescription, @DaysFromStart, GETDATE(), GETDATE(), @Active)
           `);
@@ -628,7 +619,6 @@ const getActivities = async (userId, options = {}) => {
       switch (options.sortBy) {
         case 'priority':
           orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END, ISNULL(pl.PriorityLevelValue, 0) DESC, a.DueToStart ASC";
-          orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END, ISNULL(pl.PriorityLevelValue, 0) DESC, a.DueToStart ASC";
           break;
         case 'account':
           orderBy = "acc.AccountName ASC, a.DueToStart ASC";
@@ -643,7 +633,6 @@ const getActivities = async (userId, options = {}) => {
           orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) AND a.Completed = 0 THEN 1 ELSE 2 END, a.DueToStart ASC";
           break;
         default: 
-          orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END, a.DueToStart ASC, ISNULL(pl.PriorityLevelValue, 0) DESC";
           orderBy = "CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END, a.DueToStart ASC, ISNULL(pl.PriorityLevelValue, 0) DESC";
       }
     }
@@ -686,14 +675,11 @@ const getActivities = async (userId, options = {}) => {
           END AS IsUrgent,
           CASE 
             WHEN ISNULL(pl.PriorityLevelValue, 0) >= 3 THEN 1
-            WHEN ISNULL(pl.PriorityLevelValue, 0) >= 3 THEN 1
             ELSE 0
           END AS IsHighPriority
       FROM Activity a 
       INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
       INNER JOIN Account acc ON a.AccountID = acc.AccountID 
-      LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-      LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
       LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
       LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
       LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
@@ -749,9 +735,7 @@ const getActivitiesByUser = async (userId) => {
         INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
         INNER JOIN Account acc ON a.AccountID = acc.AccountID 
         LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
-        LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
+        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1  
         LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
         LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
         WHERE au.UserID = @UserID 
@@ -760,7 +744,6 @@ const getActivitiesByUser = async (userId) => {
         ORDER BY 
           CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 0 ELSE 1 END,
           a.DueToStart ASC, 
-          ISNULL(pl.PriorityLevelValue, 0) DESC
           ISNULL(pl.PriorityLevelValue, 0) DESC
       `);
 
@@ -889,14 +872,11 @@ const getActivityByID = async (activityId, userId) => {
             END AS IsUrgent,
             CASE 
               WHEN ISNULL(pl.PriorityLevelValue, 0) >= 8 THEN 1
-              WHEN ISNULL(pl.PriorityLevelValue, 0) >= 8 THEN 1
               ELSE 0
             END AS IsHighPriority
         FROM Activity a 
         INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
         INNER JOIN Account acc ON a.AccountID = acc.AccountID 
-        LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
         LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
         LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
         LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
@@ -1026,8 +1006,6 @@ const completeActivityAndGetNext = async (activityId, userId) => {
         INNER JOIN Account acc ON a.AccountID = acc.AccountID 
         LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
         LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
-        LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
         LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
         LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
         WHERE au.UserID = @UserID 
@@ -1038,7 +1016,6 @@ const completeActivityAndGetNext = async (activityId, userId) => {
         ORDER BY 
           CASE WHEN a.DueToStart < GETDATE() THEN 0 ELSE 1 END,
           a.DueToStart ASC, 
-          ISNULL(pl.PriorityLevelValue, 0) DESC
           ISNULL(pl.PriorityLevelValue, 0) DESC
       `);
 
@@ -1096,11 +1073,9 @@ const getWorkDashboardSummary = async (userId) => {
           SUM(CASE WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 1 ELSE 0 END) AS OverdueActivities,
           SUM(CASE WHEN a.DueToStart <= DATEADD(hour, 2, GETDATE()) AND a.DueToStart >= GETDATE() AND a.Completed = 0 THEN 1 ELSE 0 END) AS UrgentActivities,
           SUM(CASE WHEN ISNULL(pl.PriorityLevelValue, 0) >= 3 AND a.Completed = 0 THEN 1 ELSE 0 END) AS HighPriorityActivities,
-          SUM(CASE WHEN ISNULL(pl.PriorityLevelValue, 0) >= 3 AND a.Completed = 0 THEN 1 ELSE 0 END) AS HighPriorityActivities,
           SUM(CASE WHEN CAST(a.DueToStart AS DATE) = CAST(GETDATE() AS DATE) AND a.Completed = 0 THEN 1 ELSE 0 END) AS TodayActivities
         FROM Activity a 
         INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
-        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
         LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1
         WHERE au.UserID = @UserID 
           AND a.Active = 1 
@@ -1139,7 +1114,6 @@ const getSequencesAndItemsByUser = async (userId) => {
             acc.AccountName
         FROM Sequence seq
         INNER JOIN SequenceItem si ON seq.SequenceID = si.SequenceID AND si.Active = 1
-        INNER JOIN ActivityType at ON si.ActivityTypeID = at.TypeID AND at.Active = 1
         INNER JOIN ActivityType at ON si.ActivityTypeID = at.TypeID AND at.Active = 1
         INNER JOIN Account acc ON seq.SequenceID = acc.SequenceID AND acc.Active = 1
         INNER JOIN AssignedUser au ON acc.AccountID = au.AccountID AND au.Active = 1
@@ -1234,8 +1208,6 @@ const getNextActivity = async (userId, currentActivityId = null) => {
       INNER JOIN Account acc ON a.AccountID = acc.AccountID 
       LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
       LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
-      LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
-      LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1 
       LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
       LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
       WHERE au.UserID = @UserID 
@@ -1246,7 +1218,6 @@ const getNextActivity = async (userId, currentActivityId = null) => {
       ORDER BY 
         CASE WHEN a.DueToStart < GETDATE() THEN 0 ELSE 1 END,
         a.DueToStart ASC, 
-        ISNULL(pl.PriorityLevelValue, 0) DESC
         ISNULL(pl.PriorityLevelValue, 0) DESC
     `);
 
@@ -1823,11 +1794,6 @@ module.exports = {
   getNextActivity,
   getActivityMetadata,
   getAccountSequenceWithActivities,
-  getUserSmartWorkPageData,
-  updateSequenceItemStatus,
-  getSequenceProgress,
-  getSmartSequenceView,
-  createActivityFromSequenceItem,
   getUserSmartWorkPageData,
   updateSequenceItemStatus,
   getSequenceProgress,
