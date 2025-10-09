@@ -28,6 +28,7 @@ import FiltersDialog from "../dialogs/FiltersDialog";
 import ActionMenu from "./ActionMenu";
 import AssignUserDialog from "../../components/dialogs/AssignUserDialog"; 
 import UnassignUserDialog from "../dialogs/UnAssignUserDialog";
+import UnassignUserDialog from "../dialogs/UnAssignUserDialog";
 
 const TableView = ({
   data = [],
@@ -45,7 +46,11 @@ const TableView = ({
   onAddAttachment,
   onClaimAccount,
   onUnclaimAccount, 
+  onUnclaimAccount, 
   onAssignUser,
+  onUnassignUsers, 
+  onReactivate, 
+  onPermanentDelete, 
   onUnassignUsers, 
   onReactivate, 
   onPermanentDelete, 
@@ -286,8 +291,10 @@ const TableView = ({
         return (
           <Chip
             label={value ? "Yes" : "No"}
+            label={value ? "Yes" : "No"}
             size="small"
             sx={{
+              backgroundColor: value ? "#4caf50" : "#f44336",
               backgroundColor: value ? "#4caf50" : "#f44336",
               color: "#fff",
               fontWeight: 500,
@@ -460,6 +467,28 @@ const TableView = ({
         onPermanentDelete={onPermanentDelete}
         menuItems={menuItems}
         tooltips={tooltips}
+         anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        menuRow={menuRow}
+        idField={idField}
+        entityType={entityType}
+        onView={onView}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onAddNote={onAddNote}
+        onAddAttachment={onAddAttachment}
+        onClaimAccount={onClaimAccount}
+        onUnclaimAccount={onUnclaimAccount}
+        onAssignUser={(row) => {
+            setCurrentRow(row);
+            setAssignDialogOpen(true);
+        }}
+        onUnassignUsers={onUnassignUsers}  
+        onReactivate={onReactivate}
+        onPermanentDelete={onPermanentDelete}
+        menuItems={menuItems}
+        tooltips={tooltips}
         />
       )}
 
@@ -479,6 +508,8 @@ const TableView = ({
         menuRow={currentRow}
         onAssign={onAssignUser}
       />
+
+      
 
       
     </>

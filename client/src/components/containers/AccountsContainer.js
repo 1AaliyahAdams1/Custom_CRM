@@ -32,6 +32,7 @@ import {
   downloadAttachment,
 } from "../../services/attachmentService";
 import { getAllEmployees } from "../../services/employeeService";
+import { getAllEmployees } from "../../services/employeeService";
 
 // Components
 import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
@@ -41,6 +42,7 @@ import BulkAssignDialog from "../../components/dialogs/BulkAssignDialog";
 import BulkClaimAndSequenceDialog from "../../components/dialogs/BulkClaimAndSequenceDialog";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
+import UnassignUserDialog from "../../components/dialogs/UnAssignUserDialog";
 import UnassignUserDialog from "../../components/dialogs/UnAssignUserDialog";
 
 // Utils
@@ -139,6 +141,41 @@ const AccountsContainer = () => {
               acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
             }
           });
+          const rawData = await getAllAccounts();
+          accountsData = Array.isArray(rawData) ? rawData : [];
+          
+          accountsData.forEach((acc) => {
+            const assignedIdsStr = acc.AssignedEmployeeIDs;
+            const assignedNamesStr = acc.AssignedEmployeeNames;
+            
+            if (assignedIdsStr && assignedNamesStr) {
+              const assignedIds = assignedIdsStr.split(',').map(id => id.trim());
+              const assignedNames = assignedNamesStr.split(',').map(name => name.trim());
+              
+              const isOwnedByMe = assignedIds.some(id => String(id) === String(userId));
+              
+              if (isOwnedByMe && assignedIds.length === 1) {
+                acc.ownerStatus = "owned";
+              } else if (isOwnedByMe && assignedIds.length > 1) {
+                acc.ownerStatus = "owned-shared";
+                acc.ownerDisplayName = `You + ${assignedIds.length - 1} other${assignedIds.length - 1 > 1 ? 's' : ''}`;
+                acc.ownerTooltip = assignedNames.join(', ');
+                acc.assignedUserCount = assignedIds.length;
+                acc.allAssignedNames = assignedNames;
+              } else if (assignedIds.length === 1) {
+                acc.ownerStatus = `owned-by-${assignedNames[0]}`;
+                acc.ownerDisplayName = assignedNames[0];
+              } else {
+                acc.ownerStatus = "owned-by-multiple";
+                acc.ownerDisplayName = `${assignedIds.length} users`;
+                acc.ownerTooltip = assignedNames.join(', ');
+                acc.assignedUserCount = assignedIds.length;
+                acc.allAssignedNames = assignedNames;
+              }
+            } else {
+              acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
+            }
+          });
         } else {
           // SALES REP VIEW - Now includes shared ownership logic
           const assignedRes = await fetchActiveAccountsByUser(userId);
@@ -184,7 +221,11 @@ const AccountsContainer = () => {
       setFilteredAccounts(applyFilter(accountsData, currentFilter));
     } catch (err) {
       console.error("Error fetching accounts:", err);
+    } catch (err) {
+      console.error("Error fetching accounts:", err);
       setError("Failed to load accounts. Please try again.");
+      setAllAccounts([]);
+      setFilteredAccounts([]);
       setAllAccounts([]);
       setFilteredAccounts([]);
     } finally {
@@ -203,6 +244,7 @@ const AccountsContainer = () => {
 
   useEffect(() => {
     fetchAccounts();
+  }, [refreshFlag, canViewAll, isCLevel]);
   }, [refreshFlag, canViewAll, isCLevel]);
 
   useEffect(() => {
@@ -406,6 +448,7 @@ const AccountsContainer = () => {
   };
 
   // ---------------- CLAIM / ASSIGN / UNASSIGN ----------------
+  // ---------------- CLAIM / ASSIGN / UNASSIGN ----------------
   const handleClaimAccount = async (account) => {
     if (!hasAccess("accountClaim")) return;
     try {
@@ -446,8 +489,27 @@ const AccountsContainer = () => {
       setAllAccounts(updateAccounts);
       setFilteredAccounts(updateAccounts);
       
+      
+      const employeeName = "User";
+      
+      const updateAccounts = (accounts) =>
+        accounts.map((a) =>
+          a.AccountID === account.AccountID 
+            ? { 
+                ...a, 
+                AssignedEmployeeID: employeeId,
+                AssignedEmployeeName: employeeName,
+                ownerStatus: employeeId === userId ? "owned" : `owned by ${employeeName}`
+              } 
+            : a
+        );
+      
+      setAllAccounts(updateAccounts);
+      setFilteredAccounts(updateAccounts);
+      
       setStatusMessage(`User assigned to ${account.AccountName}`);
       setStatusSeverity("success");
+      
       
       setRefreshFlag((flag) => !flag);
     } catch (err) {

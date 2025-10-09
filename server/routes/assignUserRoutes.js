@@ -4,6 +4,7 @@ const { claimAccount,unclaimAccount, assignUser,removeSpecificUsers, removeAssig
 const { authenticateJWT } = require("../middleware/authMiddleware");
 
 // Claim account
+// Claim account
 router.patch("/:id/claim", authenticateJWT, claimAccount);
 
 // Unclaim account

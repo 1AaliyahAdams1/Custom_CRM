@@ -9,8 +9,15 @@ async function claimAccount(req, res) {
     if (!userId || !accountId) {
       return res.status(400).json({ error: "userId and accountId are required" });
     }
+    const userId = req.user?.userId;
+    const { id: accountId } = req.params;
+
+    if (!userId || !accountId) {
+      return res.status(400).json({ error: "userId and accountId are required" });
+    }
 
     await assignedUserService.claimAccount(userId, accountId);
+    res.status(200).json({ message: "Account claimed successfully", accountId, userId });
     res.status(200).json({ message: "Account claimed successfully", accountId, userId });
   } catch (err) {
     console.error("Error claiming account:", err);
@@ -44,6 +51,8 @@ async function assignUser(req, res) {
   try {
     const { employeeId } = req.body;
     const { id: accountId } = req.params;
+    const { employeeId } = req.body;
+    const { id: accountId } = req.params;
 
     if (!employeeId) {
       return res.status(400).json({ error: "employeeId is required" });
@@ -52,16 +61,21 @@ async function assignUser(req, res) {
     const userId = await employeeRepository.getUserIdByEmployeeId(employeeId);
     if (!userId) {
       return res.status(404).json({ error: "No user found for this employee" });
+      return res.status(404).json({ error: "No user found for this employee" });
     }
 
     await assignedUserService.assignUser(userId, accountId);
     res.status(200).json({ message: "User assigned successfully", accountId, employeeId, userId });
+    res.status(200).json({ message: "User assigned successfully", accountId, employeeId, userId });
   } catch (err) {
     console.error("Error assigning user:", err);
     res.status(500).json({ error: err.message || "Failed to assign user" });
+    res.status(500).json({ error: err.message || "Failed to assign user" });
   }
 };
+};
 
+async function removeAssignedUser(req, res) {
 async function removeAssignedUser(req, res) {
   try {
     const { accountUserId } = req.params;
@@ -69,6 +83,7 @@ async function removeAssignedUser(req, res) {
       return res.status(400).json({ message: "accountUserId is required" });
     }
 
+    await assignedUserService.removeAssignedUser(parseInt(accountUserId, 10));
     await assignedUserService.removeAssignedUser(parseInt(accountUserId, 10));
     res.status(200).json({ message: "Assigned user removed (deactivated or deleted)" });
   } catch (err) {
