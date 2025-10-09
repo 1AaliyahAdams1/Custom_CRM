@@ -291,7 +291,7 @@ const TableView = ({
         return (
           <Chip
             label={value ? "Yes" : "No"}
-            label={value ? "Yes" : "No"}
+            
             size="small"
             sx={{
               backgroundColor: value ? "#4caf50" : "#f44336",
@@ -443,55 +443,32 @@ const TableView = ({
       </Box>
 
       {/* Action Menu */}
-      {menuRow && (
-        <ActionMenu
-         anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        menuRow={menuRow}
-        idField={idField}
-        entityType={entityType}
-        onView={onView}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        onAddNote={onAddNote}
-        onAddAttachment={onAddAttachment}
-        onClaimAccount={onClaimAccount}
-        onUnclaimAccount={onUnclaimAccount}
-        onAssignUser={(row) => {
-            setCurrentRow(row);
-            setAssignDialogOpen(true);
-        }}
-        onUnassignUsers={onUnassignUsers}  
-        onReactivate={onReactivate}
-        onPermanentDelete={onPermanentDelete}
-        menuItems={menuItems}
-        tooltips={tooltips}
-         anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        menuRow={menuRow}
-        idField={idField}
-        entityType={entityType}
-        onView={onView}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        onAddNote={onAddNote}
-        onAddAttachment={onAddAttachment}
-        onClaimAccount={onClaimAccount}
-        onUnclaimAccount={onUnclaimAccount}
-        onAssignUser={(row) => {
-            setCurrentRow(row);
-            setAssignDialogOpen(true);
-        }}
-        onUnassignUsers={onUnassignUsers}  
-        onReactivate={onReactivate}
-        onPermanentDelete={onPermanentDelete}
-        menuItems={menuItems}
-        tooltips={tooltips}
-        />
-      )}
-
+{menuRow && (
+  <ActionMenu
+    anchorEl={anchorEl}
+    open={Boolean(anchorEl)}
+    onClose={handleMenuClose}
+    menuRow={menuRow}
+    idField={idField}
+    entityType={entityType}
+    onView={onView}
+    onEdit={onEdit}
+    onDelete={onDelete}
+    onAddNote={onAddNote}
+    onAddAttachment={onAddAttachment}
+    onClaimAccount={onClaimAccount}
+    onUnclaimAccount={onUnclaimAccount}
+    onAssignUser={(row) => {
+      setCurrentRow(row);
+      setAssignDialogOpen(true);
+    }}
+    onUnassignUsers={onUnassignUsers}
+    onReactivate={onReactivate}
+    onPermanentDelete={onPermanentDelete}
+    menuItems={menuItems}
+    tooltips={tooltips}
+  />
+)}
       {/* Columns Dialog */}
       <ColumnsDialog
         open={columnsDialogOpen}

@@ -31,7 +31,7 @@ export const assignUser = async (accountId, employeeId) => {
 export const removeAssignedUser = async (accountUserId) => {
   try {
     const response = await api.delete(`/assign/${accountUserId}`);
-    const response = await api.delete(`/assign/${accountUserId}`);
+    
     return response.data;
   } catch (error) {
     const errorMessage =
