@@ -76,6 +76,9 @@ const AccountsContainer = () => {
 
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [accountToReactivate, setAccountToReactivate] = useState(null);
+  const [accountForUnassign, setAccountForUnassign] = useState(null);
+const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
+
 
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
