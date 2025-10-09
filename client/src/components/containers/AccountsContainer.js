@@ -17,6 +17,7 @@ import {
   claimAccount,
   assignUser,
   removeAssignedUser,
+  removeSpecificUsers, 
 } from "../../services/assignService";
 import {
   createNote,
@@ -29,6 +30,7 @@ import {
   deleteAttachment,
   downloadAttachment,
 } from "../../services/attachmentService";
+import { getAllEmployees } from "../../services/employeeService";
 
 // Components
 import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
@@ -38,6 +40,7 @@ import BulkAssignDialog from "../../components/dialogs/BulkAssignDialog";
 import BulkClaimAndSequenceDialog from "../../components/dialogs/BulkClaimAndSequenceDialog";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
+import UnassignUserDialog from "../../components/dialogs/UnAssignUserDialog";
 
 // Utils
 import { ROUTE_ACCESS } from "../../utils/auth/routesAccess";
@@ -73,6 +76,9 @@ const AccountsContainer = () => {
 
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [accountToReactivate, setAccountToReactivate] = useState(null);
+  const [accountForUnassign, setAccountForUnassign] = useState(null);
+const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
+
 
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -97,8 +103,41 @@ const AccountsContainer = () => {
 
       if (canViewAll) {
         if (isCLevel) {
-          accountsData = await getAllAccounts();
-          accountsData.forEach((acc) => (acc.ownerStatus = "n/a"));
+          const rawData = await getAllAccounts();
+          accountsData = Array.isArray(rawData) ? rawData : [];
+          
+          accountsData.forEach((acc) => {
+            const assignedIdsStr = acc.AssignedEmployeeIDs;
+            const assignedNamesStr = acc.AssignedEmployeeNames;
+            
+            if (assignedIdsStr && assignedNamesStr) {
+              const assignedIds = assignedIdsStr.split(',').map(id => id.trim());
+              const assignedNames = assignedNamesStr.split(',').map(name => name.trim());
+              
+              const isOwnedByMe = assignedIds.some(id => String(id) === String(userId));
+              
+              if (isOwnedByMe && assignedIds.length === 1) {
+                acc.ownerStatus = "owned";
+              } else if (isOwnedByMe && assignedIds.length > 1) {
+                acc.ownerStatus = "owned-shared";
+                acc.ownerDisplayName = `You + ${assignedIds.length - 1} other${assignedIds.length - 1 > 1 ? 's' : ''}`;
+                acc.ownerTooltip = assignedNames.join(', ');
+                acc.assignedUserCount = assignedIds.length;
+                acc.allAssignedNames = assignedNames;
+              } else if (assignedIds.length === 1) {
+                acc.ownerStatus = `owned-by-${assignedNames[0]}`;
+                acc.ownerDisplayName = assignedNames[0];
+              } else {
+                acc.ownerStatus = "owned-by-multiple";
+                acc.ownerDisplayName = `${assignedIds.length} users`;
+                acc.ownerTooltip = assignedNames.join(', ');
+                acc.assignedUserCount = assignedIds.length;
+                acc.allAssignedNames = assignedNames;
+              }
+            } else {
+              acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
+            }
+          });
         } else {
           const assignedRes = await fetchActiveAccountsByUser(userId);
           const unassignedRes = await fetchActiveUnassignedAccounts();
@@ -118,8 +157,11 @@ const AccountsContainer = () => {
 
       setAllAccounts(accountsData);
       setFilteredAccounts(applyFilter(accountsData, currentFilter));
-    } catch {
+    } catch (err) {
+      console.error("Error fetching accounts:", err);
       setError("Failed to load accounts. Please try again.");
+      setAllAccounts([]);
+      setFilteredAccounts([]);
     } finally {
       setLoading(false);
     }
@@ -136,7 +178,7 @@ const AccountsContainer = () => {
 
   useEffect(() => {
     fetchAccounts();
-  }, [refreshFlag]);
+  }, [refreshFlag, canViewAll, isCLevel]);
 
   useEffect(() => {
   fetchSequences();
@@ -337,7 +379,7 @@ const AccountsContainer = () => {
     }
   };
 
-  // ---------------- CLAIM / ASSIGN ----------------
+  // ---------------- CLAIM / ASSIGN / UNASSIGN ----------------
   const handleClaimAccount = async (account) => {
     if (!hasAccess("accountClaim")) return;
     try {
@@ -360,8 +402,27 @@ const AccountsContainer = () => {
     if (!hasAccess("accountAssign")) return;
     try {
       await assignUser(account.AccountID, employeeId);
+      
+      const employeeName = "User";
+      
+      const updateAccounts = (accounts) =>
+        accounts.map((a) =>
+          a.AccountID === account.AccountID 
+            ? { 
+                ...a, 
+                AssignedEmployeeID: employeeId,
+                AssignedEmployeeName: employeeName,
+                ownerStatus: employeeId === userId ? "owned" : `owned by ${employeeName}`
+              } 
+            : a
+        );
+      
+      setAllAccounts(updateAccounts);
+      setFilteredAccounts(updateAccounts);
+      
       setStatusMessage(`User assigned to ${account.AccountName}`);
       setStatusSeverity("success");
+      
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       setStatusMessage(err.message || "Failed to assign user");
@@ -386,6 +447,35 @@ const AccountsContainer = () => {
     } catch (err) {
       setStatusMessage(err.message || "Failed to unclaim account");
       setStatusSeverity("error");
+    }
+  };
+
+  //  Handle Unassign Users
+  const handleUnassignUsers = (account) => {
+    if (!hasAccess("accountAssign")) return;
+    setAccountForUnassign(account);
+    setUnassignUserDialogOpen(true);
+  };
+
+  // Confirm Unassign Users
+  const confirmUnassignUsers = async (account, selectedUserIds) => {
+    setBulkLoading(true);
+    try {
+      await removeSpecificUsers(account.AccountID, selectedUserIds);
+      
+      setStatusMessage(`Successfully unassigned ${selectedUserIds.length} user(s) from ${account.AccountName}`);
+      setStatusSeverity("success");
+      
+      setRefreshFlag((flag) => !flag);
+      setUnassignUserDialogOpen(false);
+      setAccountForUnassign(null);
+    } catch (err) {
+      console.error("Error unassigning users:", err);
+      setStatusMessage(err.message || "Failed to unassign users");
+      setStatusSeverity("error");
+      throw err; // Re-throw so dialog can handle it
+    } finally {
+      setBulkLoading(false);
     }
   };
 

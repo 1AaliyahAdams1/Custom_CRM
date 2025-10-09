@@ -30,7 +30,7 @@ export const assignUser = async (accountId, employeeId) => {
 
 export const removeAssignedUser = async (accountUserId) => {
   try {
-    const response = await api.delete(`/assigned-users/${accountUserId}`);
+    const response = await api.delete(`/assign/${accountUserId}`);
     return response.data;
   } catch (error) {
     const errorMessage =
@@ -38,6 +38,22 @@ export const removeAssignedUser = async (accountUserId) => {
       error.response?.data?.message ||
       error.message ||
       'Failed to remove assigned user';
+    throw new Error(errorMessage);
+  }
+};
+
+export const removeSpecificUsers = async (accountId, userIds) => {
+  try {
+    const response = await api.delete(`/assign/account/${accountId}/users`, {
+      data: { userIds }
+    });
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.error ||
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to unassign users';
     throw new Error(errorMessage);
   }
 };
