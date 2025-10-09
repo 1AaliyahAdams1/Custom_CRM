@@ -2,6 +2,12 @@ import api from "../utils/api";
 
 const RESOURCE = "/accounts";
 
+// Helper to get current user ID from localStorage
+const getCurrentUserId = () => {
+  const user = JSON.parse(localStorage.getItem("user")) || {};
+  return user.UserID || user.id || user.userId;
+};
+
 export const getAllAccounts = async () => {
   try {
     const response = await api.get('/accounts');
@@ -31,7 +37,6 @@ export const fetchAccountById = async (id) => {
     throw error;
   }
 };
-
 
 export const createAccount = async (data) => {
   if (!data.AccountName) throw new Error("Account name is required");
@@ -103,6 +108,94 @@ export async function fetchActiveUnassignedAccounts() {
     return response.data;
   } catch (error) {
     console.error("Error fetching active unassigned accounts:", error);
+    throw error;
+  }
+}
+
+// Check if accounts are claimable
+export async function checkAccountsClaimability(accountIds) {
+  if (!Array.isArray(accountIds) || accountIds.length === 0) {
+    throw new Error("Account IDs array is required");
+  }
+  
+  const userId = getCurrentUserId();
+  if (!userId) {
+    throw new Error("User not logged in");
+  }
+  
+  try {
+    const response = await api.post(`${RESOURCE}/check-claimability`, { 
+      accountIds,
+      userId 
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error checking account claimability:", error);
+    throw error;
+  }
+}
+
+// Bulk claim accounts
+export async function bulkClaimAccounts(accountIds) {
+  if (!Array.isArray(accountIds) || accountIds.length === 0) {
+    throw new Error("Account IDs array is required");
+  }
+  
+  // Get userId from localStorage
+  const userId = getCurrentUserId();
+  
+  if (!userId) {
+    throw new Error("User not logged in. Please log in and try again.");
+  }
+  
+  try {
+    const response = await api.post(`${RESOURCE}/bulk-claim`, { 
+      accountIds,
+      userId  // 
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error bulk claiming accounts:", error);
+    throw error;
+  }
+}
+
+// Get all sequences for dropdown
+export async function getAllSequences() {
+  try {
+    const response = await api.get('/sequences');
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching sequences:", error);
+    throw error;
+  }
+}
+
+// Bulk claim and add sequence
+export async function bulkClaimAccountsAndAddSequence(accountIds, sequenceId) {
+  if (!Array.isArray(accountIds) || accountIds.length === 0) {
+    throw new Error("Account IDs array is required");
+  }
+  
+  if (!sequenceId) {
+    throw new Error("Sequence ID is required");
+  }
+  
+  const userId = getCurrentUserId();
+  
+  if (!userId) {
+    throw new Error("User not logged in. Please log in and try again.");
+  }
+  
+  try {
+    const response = await api.post(`${RESOURCE}/bulk-claim-and-sequence`, { 
+      accountIds,
+      sequenceId,
+      userId
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error bulk claiming accounts and adding sequence:", error);
     throw error;
   }
 }

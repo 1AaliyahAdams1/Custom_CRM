@@ -28,6 +28,7 @@ const WorkPageContainer = () => {
   const [selectedAccount, setSelectedAccount] = useState(null);
   
   
+  
   // ---------------- USER DATA ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const userId = storedUser.UserID || storedUser.id || null;
@@ -215,7 +216,7 @@ const WorkPageContainer = () => {
 
   const handleAccountChange = useCallback((accountId) => {
     console.log('Account changed to:', accountId);
-    
+    setSelectedAccountId(accountId);
     // Close all tabs when switching accounts/views
     setOpenTabs([]);
     setActiveTab(null);
@@ -522,6 +523,7 @@ const WorkPageContainer = () => {
   };
  
  
+ 
   // ---------------- DRAG AND DROP ----------------
   
   // Drag and drop for OPENING activities in workspace
@@ -659,6 +661,7 @@ const WorkPageContainer = () => {
     </>
   );
 };
+
 
 
 export default WorkPageContainer;

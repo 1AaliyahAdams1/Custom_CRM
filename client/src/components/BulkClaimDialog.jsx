@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -7,237 +7,277 @@ import {
   Button,
   Typography,
   Box,
+  CircularProgress,
+  Alert,
   List,
   ListItem,
   ListItemText,
-  CircularProgress,
-  Alert,
+  Chip,
+  Divider,
 } from '@mui/material';
+import { Gavel, CheckCircle, Cancel, Info } from '@mui/icons-material';
 
 const BulkClaimDialog = ({
   open,
   onClose,
-  selectedItems = [],
   onConfirm,
+  selectedItems = [],
   loading = false,
 }) => {
-  const [error, setError] = useState('');
+  const [analyzing, setAnalyzing] = useState(true);
+  const [claimableAccounts, setClaimableAccounts] = useState([]);
+  const [ownedAccounts, setOwnedAccounts] = useState([]);
+  const [inactiveAccounts, setInactiveAccounts] = useState([]);
 
-  // Filter claimable accounts based on user role
-  // Sales Rep can claim 'unowned' accounts
-  // C-level can claim 'n/a' accounts
-  const claimableAccounts = selectedItems.filter(account => {
-    return account.ownerStatus === 'unowned' || account.ownerStatus === 'n/a';
-  });
+  useEffect(() => {
+    if (open && selectedItems.length > 0) {
+      analyzeAccounts();
+    }
+  }, [open, selectedItems]);
+
+  const analyzeAccounts = () => {
+    setAnalyzing(true);
+    
+    // Categorize accounts based on their status
+    const claimable = [];
+    const owned = [];
+    const inactive = [];
+
+    selectedItems.forEach(account => {
+      if (!account.Active) {
+        inactive.push(account);
+      } else if (account.ownerStatus === 'owned') {
+        owned.push(account);
+      } else if (account.ownerStatus === 'unowned' || account.ownerStatus === 'n/a') {
+        claimable.push(account);
+      }
+    });
+
+    setClaimableAccounts(claimable);
+    setOwnedAccounts(owned);
+    setInactiveAccounts(inactive);
+    setAnalyzing(false);
+  };
 
   const handleConfirm = () => {
     if (claimableAccounts.length === 0) {
-      setError('No claimable accounts selected');
       return;
     }
-    setError(''); // Clear any errors
-    onConfirm(claimableAccounts);
+    const accountIds = claimableAccounts.map(acc => acc.AccountID);
+    onConfirm(accountIds);
   };
 
   const handleClose = () => {
-    setError('');
-    onClose();
+    if (!loading) {
+      onClose();
+    }
   };
 
   return (
     <Dialog 
       open={open} 
-      onClose={handleClose} 
-      maxWidth="md" 
+      onClose={handleClose}
+      maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { 
-          borderRadius: 2,
-          backgroundColor: 'white',
-          color: 'black'
-        }
+        sx: { borderRadius: 2 }
       }}
     >
       <DialogTitle sx={{ 
         display: 'flex', 
         alignItems: 'center', 
         gap: 1,
-        pb: 1,
-        color: 'black'
+        borderBottom: '1px solid #e0e0e0',
+        pb: 2
       }}>
+        <Gavel sx={{ color: '#079141ff' }} />
         Bulk Claim Accounts
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2 }}>
-        {error && (
-          <Alert 
-            severity="error" 
-            sx={{ 
-              mb: 2,
-              backgroundColor: 'white',
-              color: 'black',
-              border: '1px solid black',
-              '& .MuiAlert-icon': {
-                color: 'black'
-              }
-            }}
-          >
-            {error}
-          </Alert>
-        )}
-
-        <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
-          You are about to claim {claimableAccounts.length} unowned account{claimableAccounts.length !== 1 ? 's' : ''} from {selectedItems.length} selected account{selectedItems.length !== 1 ? 's' : ''}:
-        </Typography>
-
-        {/* Claimable accounts preview */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, color: 'black' }}>
-            Accounts to be claimed:
-          </Typography>
-          <Box sx={{ 
-            maxHeight: 150, 
-            overflow: 'auto', 
-            border: '1px solid black', 
-            borderRadius: 1,
-            backgroundColor: '#f9f9f9'
-          }}>
-            <List dense>
-              {claimableAccounts.slice(0, 10).map((account, index) => (
-                <ListItem key={account.AccountID || index}>
-                  <ListItemText 
-                    primary={account.AccountName}
-                    secondary={`${account.CityName || 'Unknown'}, ${account.CountryName || 'Unknown'}`}
-                    sx={{
-                      '& .MuiListItemText-primary': { color: 'black' },
-                      '& .MuiListItemText-secondary': { color: '#666' }
-                    }}
-                  />
-                </ListItem>
-              ))}
-              {claimableAccounts.length > 10 && (
-                <ListItem>
-                  <ListItemText 
-                    primary={`... and ${claimableAccounts.length - 10} more accounts`}
-                    sx={{ 
-                      fontStyle: 'italic',
-                      '& .MuiListItemText-primary': { color: '#666' }
-                    }}
-                  />
-                </ListItem>
+      <DialogContent sx={{ mt: 2 }}>
+        {analyzing ? (
+          <Box display="flex" flexDirection="column" alignItems="center" py={4}>
+            <CircularProgress />
+            <Typography variant="body2" sx={{ mt: 2, color: '#666' }}>
+              Analyzing selected accounts...
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            {/* Summary Alert */}
+            <Alert 
+              severity={claimableAccounts.length > 0 ? "info" : "warning"}
+              icon={<Info />}
+              sx={{ mb: 3 }}
+            >
+              <Typography variant="body2">
+                {selectedItems.length} account{selectedItems.length !== 1 ? 's' : ''} selected
+              </Typography>
+              {claimableAccounts.length > 0 ? (
+                <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
+                  {claimableAccounts.length} can be claimed
+                </Typography>
+              ) : (
+                <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
+                  No accounts available to claim
+                </Typography>
               )}
-            </List>
-          </Box>
-        </Box>
+            </Alert>
 
-        {/* Non-claimable accounts notice */}
-        {selectedItems.length > claimableAccounts.length && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1, color: '#666' }}>
-              Accounts that cannot be claimed (already owned or unavailable):
-            </Typography>
-            <Box sx={{ 
-              maxHeight: 100, 
-              overflow: 'auto', 
-              border: '1px solid #ddd', 
-              borderRadius: 1,
-              backgroundColor: '#f5f5f5'
-            }}>
-              <List dense>
-                {selectedItems
-                  .filter(account => account.ownerStatus !== 'unowned')
-                  .slice(0, 5)
-                  .map((account, index) => (
-                    <ListItem key={account.AccountID || index}>
-                      <ListItemText 
-                        primary={account.AccountName}
-                        secondary={`Status: ${account.ownerStatus}`}
-                        sx={{
-                          '& .MuiListItemText-primary': { color: '#666' },
-                          '& .MuiListItemText-secondary': { color: '#999' }
-                        }}
-                      />
-                    </ListItem>
+            {/* Claimable Accounts */}
+            {claimableAccounts.length > 0 && (
+              <Box mb={3}>
+                <Box display="flex" alignItems="center" gap={1} mb={1}>
+                  <CheckCircle sx={{ color: '#079141ff', fontSize: 20 }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Claimable Accounts ({claimableAccounts.length})
+                  </Typography>
+                </Box>
+                <List dense sx={{ 
+                  bgcolor: '#f5f5f5', 
+                  borderRadius: 1,
+                  maxHeight: 200,
+                  overflow: 'auto'
+                }}>
+                  {claimableAccounts.map((account, index) => (
+                    <React.Fragment key={account.AccountID}>
+                      {index > 0 && <Divider />}
+                      <ListItem>
+                        <ListItemText 
+                          primary={account.AccountName}
+                          secondary={`${account.CityName || 'N/A'}, ${account.CountryName || 'N/A'}`}
+                        />
+                        <Chip 
+                          label="Unowned" 
+                          size="small" 
+                          sx={{ 
+                            bgcolor: '#e8f5e9',
+                            color: '#2e7d32',
+                            fontSize: '0.75rem'
+                          }} 
+                        />
+                      </ListItem>
+                    </React.Fragment>
                   ))}
-                {(selectedItems.length - claimableAccounts.length) > 5 && (
-                  <ListItem>
-                    <ListItemText 
-                      primary={`... and ${(selectedItems.length - claimableAccounts.length) - 5} more accounts`}
-                      sx={{ 
-                        fontStyle: 'italic',
-                        '& .MuiListItemText-primary': { color: '#999' }
-                      }}
-                    />
-                  </ListItem>
-                )}
-              </List>
-            </Box>
-          </Box>
-        )}
+                </List>
+              </Box>
+            )}
 
-        {claimableAccounts.length > 0 && (
-          <Box sx={{ 
-            mt: 2, 
-            p: 2, 
-            backgroundColor: '#f5f5f5', 
-            borderRadius: 1,
-            border: '1px solid #ddd'
-          }}>
-            <Typography variant="body2" sx={{ color: 'black' }}>
-              <strong>Confirmation:</strong> You are about to claim ownership of {claimableAccounts.length} account
-              {claimableAccounts.length !== 1 ? 's' : ''}. These accounts will be assigned to you and marked as owned.
-            </Typography>
-          </Box>
-        )}
+            {/* Already Owned Accounts */}
+            {ownedAccounts.length > 0 && (
+              <Box mb={3}>
+                <Box display="flex" alignItems="center" gap={1} mb={1}>
+                  <Info sx={{ color: '#1976d2', fontSize: 20 }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Already Owned ({ownedAccounts.length})
+                  </Typography>
+                </Box>
+                <List dense sx={{ 
+                  bgcolor: '#f5f5f5', 
+                  borderRadius: 1,
+                  maxHeight: 150,
+                  overflow: 'auto'
+                }}>
+                  {ownedAccounts.map((account, index) => (
+                    <React.Fragment key={account.AccountID}>
+                      {index > 0 && <Divider />}
+                      <ListItem>
+                        <ListItemText 
+                          primary={account.AccountName}
+                          secondary="Already claimed"
+                        />
+                        <Chip 
+                          label="Owned" 
+                          size="small" 
+                          sx={{ 
+                            bgcolor: '#e3f2fd',
+                            color: '#1976d2',
+                            fontSize: '0.75rem'
+                          }} 
+                        />
+                      </ListItem>
+                    </React.Fragment>
+                  ))}
+                </List>
+              </Box>
+            )}
 
-        {claimableAccounts.length === 0 && (
-          <Box sx={{ 
-            mt: 2, 
-            p: 2, 
-            backgroundColor: '#fff3cd', 
-            borderRadius: 1,
-            border: '1px solid #ffc107'
-          }}>
-            <Typography variant="body2" sx={{ color: '#856404' }}>
-              <strong>Notice:</strong> None of the selected accounts can be claimed. Only unowned accounts are eligible for claiming.
-            </Typography>
-          </Box>
+            {/* Inactive Accounts */}
+            {inactiveAccounts.length > 0 && (
+              <Box mb={2}>
+                <Box display="flex" alignItems="center" gap={1} mb={1}>
+                  <Cancel sx={{ color: '#d32f2f', fontSize: 20 }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Inactive Accounts ({inactiveAccounts.length})
+                  </Typography>
+                </Box>
+                <List dense sx={{ 
+                  bgcolor: '#f5f5f5', 
+                  borderRadius: 1,
+                  maxHeight: 150,
+                  overflow: 'auto'
+                }}>
+                  {inactiveAccounts.map((account, index) => (
+                    <React.Fragment key={account.AccountID}>
+                      {index > 0 && <Divider />}
+                      <ListItem>
+                        <ListItemText 
+                          primary={account.AccountName}
+                          secondary="Cannot claim inactive accounts"
+                        />
+                        <Chip 
+                          label="Inactive" 
+                          size="small" 
+                          sx={{ 
+                            bgcolor: '#ffebee',
+                            color: '#c62828',
+                            fontSize: '0.75rem'
+                          }} 
+                        />
+                      </ListItem>
+                    </React.Fragment>
+                  ))}
+                </List>
+              </Box>
+            )}
+
+            {/* No claimable accounts warning */}
+            {claimableAccounts.length === 0 && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                None of the selected accounts can be claimed. All accounts are either already owned or inactive.
+              </Alert>
+            )}
+          </>
         )}
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 2 }}>
+      <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #e0e0e0' }}>
         <Button 
-          onClick={handleClose}
+          onClick={handleClose} 
           disabled={loading}
-          sx={{
-            color: 'black',
-            borderColor: 'black',
-            '&:hover': {
-              backgroundColor: '#f5f5f5',
-              borderColor: 'black'
-            }
-          }}
+          sx={{ color: '#666' }}
         >
           Cancel
         </Button>
-        <Button 
+        <Button
           onClick={handleConfirm}
           variant="contained"
-          disabled={claimableAccounts.length === 0 || loading}
-          startIcon={loading ? <CircularProgress size={16} sx={{ color: 'white' }} /> : null}
+          disabled={loading || analyzing || claimableAccounts.length === 0}
+          startIcon={loading ? <CircularProgress size={16} /> : <Gavel />}
           sx={{
-            backgroundColor: 'black',
-            color: 'white',
+            bgcolor: '#079141ff',
             '&:hover': {
-              backgroundColor: '#333'
+              bgcolor: '#067a37',
             },
             '&:disabled': {
-              backgroundColor: '#ccc',
-              color: '#666'
+              bgcolor: '#ccc',
             }
           }}
         >
-          {loading ? 'Claiming...' : `Claim ${claimableAccounts.length} Account${claimableAccounts.length !== 1 ? 's' : ''}`}
+          {loading 
+            ? 'Claiming...' 
+            : `Claim ${claimableAccounts.length} Account${claimableAccounts.length !== 1 ? 's' : ''}`
+          }
         </Button>
       </DialogActions>
     </Dialog>

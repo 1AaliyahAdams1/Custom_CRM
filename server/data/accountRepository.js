@@ -62,8 +62,6 @@ async function createAccount(accountData, changedBy) {
       return result.recordset.length > 0 ? value : null;
     }
 
-    
-
     const validCityID = await validateFK("City", "CityID", CityID);
     const validStateProvinceID = await validateFK("StateProvince", "StateProvinceID", StateProvinceID);
     const validCountryID = await validateFK("Country", "CountryID", CountryID);
@@ -74,9 +72,6 @@ async function createAccount(accountData, changedBy) {
     }
 
     const result = await pool.request()
-  
-
-    // Call your CreateAccount stored procedure
       .input("AccountName", sql.NVarChar(255), AccountName)
       .input("CityID", sql.Int, validCityID)
       .input("street_address1", sql.NVarChar(255), street_address1)
@@ -98,11 +93,10 @@ async function createAccount(accountData, changedBy) {
       .input("ChangedBy", sql.Int, changedBy)
       .input("StateProvinceID", sql.Int, validStateProvinceID)
       .input("CountryID", sql.Int, validCountryID)
-      .input("ActionTypeID", sql.Int, 1) // Create action
+      .input("ActionTypeID", sql.Int, 1)
       .input("sequenceID", sql.Int, sequenceID)
       .execute("CreateAccount");
 
-    // Get the AccountID safely
     const newAccountID = result.recordset?.[0]?.AccountID;
     if (!newAccountID) throw new Error("Failed to create account");
 
@@ -120,7 +114,6 @@ async function updateAccount(id, accountData, changedBy = 1) {
   try {
     const pool = await sql.connect(dbConfig);
 
-    // First get the existing account details
     const existingResult = await pool.request()
       .input("AccountID", sql.Int, id)
       .execute('GetAccountDetails');
@@ -154,7 +147,6 @@ async function updateAccount(id, accountData, changedBy = 1) {
       SequenceID = existing.SequenceID
     } = accountData;
 
-    // Use the UpdateAccount stored procedure
     await pool.request()
       .input("AccountID", sql.Int, id)
       .input("AccountName", sql.NVarChar, AccountName)
@@ -198,12 +190,10 @@ async function deactivateAccount(account, changedBy, actionTypeId) {
   try {
     const pool = await sql.connect(dbConfig);
 
-    // First update the account status in the main table
     await pool.request()
       .input('AccountID', sql.Int, account.AccountID)
       .query('UPDATE Account SET Active = 0, UpdatedAt = GETDATE() WHERE AccountID = @AccountID');
 
-    // Then log the deactivation
     await pool.request()
       .input('AccountID', sql.Int, account.AccountID)
       .input('AccountName', sql.NVarChar(255), account.AccountName)
@@ -223,7 +213,7 @@ async function deactivateAccount(account, changedBy, actionTypeId) {
       .input('number_of_releases', sql.SmallInt, account.number_of_releases)
       .input('number_of_events_anually', sql.SmallInt, account.number_of_events_anually)
       .input('ParentAccount', sql.Int, account.ParentAccount)
-      .input('Active', sql.Bit, false) // Set to false for deactivation
+      .input('Active', sql.Bit, false)
       .input('CreatedAt', sql.SmallDateTime, account.CreatedAt)
       .input('UpdatedAt', sql.SmallDateTime, new Date())
       .input('ChangedBy', sql.Int, changedBy)
@@ -247,7 +237,6 @@ async function reactivateAccount(id, changedBy) {
   try {
     const pool = await sql.connect(dbConfig);
 
-    // Get existing account details first
     const existingResult = await pool.request()
       .input("AccountID", sql.Int, id)
       .execute('GetAccountDetails');
@@ -262,12 +251,10 @@ async function reactivateAccount(id, changedBy) {
       throw new Error("Account is already active");
     }
 
-    // Update the account status
     await pool.request()
       .input('AccountID', sql.Int, id)
       .query('UPDATE Account SET Active = 1, UpdatedAt = GETDATE() WHERE AccountID = @AccountID');
 
-    // Try to log the action, but don't fail if it errors
     try {
       await pool.request()
         .input("AccountID", sql.Int, id)
@@ -298,7 +285,6 @@ async function reactivateAccount(id, changedBy) {
         .execute('ReactivateAccount');
     } catch (procError) {
       console.error("Stored procedure error (non-critical):", procError);
-      // Continue anyway - the main update succeeded
     }
 
     return { message: "Account reactivated", AccountID: id };
@@ -309,7 +295,7 @@ async function reactivateAccount(id, changedBy) {
 }
 
 //======================================
-// Get account details by ID using stored procedure
+// Get account details by ID
 //======================================
 async function getAccountDetails(id) {
   try {
@@ -332,7 +318,6 @@ async function deleteAccount(id, changedBy) {
   try {
     const pool = await sql.connect(dbConfig);
 
-    // Get existing account details first
     const existingResult = await pool.request()
       .input("AccountID", sql.Int, id)
       .execute('GetAccountDetails');
@@ -370,8 +355,8 @@ async function deleteAccount(id, changedBy) {
       .input("CreatedAt", sql.SmallDateTime, existing.CreatedAt)
       .input("UpdatedAt", sql.SmallDateTime, new Date())
       .input("ChangedBy", sql.Int, changedBy)
-      .input("StateProvinceID", sql.Int, StateProvinceID)
-      .input("CountryID", sql.Int, CountryID)
+      .input("StateProvinceID", sql.Int, existing.StateProvinceID)
+      .input("CountryID", sql.Int, existing.CountryID)
       .input("ActionTypeID", sql.Int, 3)
       .execute('DeleteAccount');
 
@@ -382,6 +367,9 @@ async function deleteAccount(id, changedBy) {
   }
 }
 
+//======================================
+// Get active accounts by user
+//======================================
 async function getActiveAccountsByUser(userId) {
   try {
     const pool = await sql.connect(dbConfig);
@@ -429,6 +417,9 @@ async function getActiveAccountsByUser(userId) {
   }
 }
 
+//======================================
+// Get active unassigned accounts
+//======================================
 async function getActiveUnassignedAccounts() {
   try {
     const pool = await sql.connect(dbConfig);
@@ -475,13 +466,319 @@ async function getActiveUnassignedAccounts() {
   }
 }
 
+//======================================
+// Check if accounts are claimable (NEW)
+//======================================
+async function checkAccountsClaimability(accountIds, userId) {
+  try {
+    const pool = await sql.connect(dbConfig);
+    
+    // Convert array to comma-separated string for IN clause
+    const idsString = accountIds.join(',');
+    
+    const result = await pool.request()
+      .input('UserID', sql.Int, userId)
+      .query(`
+        SELECT 
+          a.AccountID,
+          a.AccountName,
+          a.Active,
+          CASE 
+            WHEN au.UserID IS NULL THEN 'unowned'
+            WHEN au.UserID = @UserID THEN 'owned'
+            ELSE 'owned_by_other'
+          END as ownerStatus,
+          au.UserID as CurrentOwnerID
+        FROM Account a
+        LEFT JOIN AssignedUser au ON a.AccountID = au.AccountID AND au.Active = 1
+        WHERE a.AccountID IN (${idsString})
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Error checking account claimability:", error);
+    throw error;
+  }
+}
+
+//======================================
+// Bulk claim accounts
+//======================================
+async function bulkClaimAccounts(accountIds, userId) {
+  let pool;
+  
+  try {
+    pool = await sql.connect(dbConfig);
+    
+    const claimed = [];
+    const failed = [];
+    
+    for (const accountId of accountIds) {
+      try {
+        // Check if account is claimable
+        const checkResult = await pool.request()
+          .input('AccountID', sql.Int, accountId)
+          .query(`
+            SELECT 
+              a.AccountID,
+              a.Active,
+              a.AccountName,
+              au.UserID as CurrentOwnerID
+            FROM Account a
+            LEFT JOIN AssignedUser au ON a.AccountID = au.AccountID AND au.Active = 1
+            WHERE a.AccountID = @AccountID
+          `);
+        
+        if (checkResult.recordset.length === 0) {
+          failed.push({ 
+            accountId, 
+            accountName: 'Unknown',
+            reason: 'Account not found' 
+          });
+          console.log(`Account ${accountId} not found`);
+          continue;
+        }
+        
+        const account = checkResult.recordset[0];
+        
+        if (!account.Active) {
+          failed.push({ 
+            accountId, 
+            accountName: account.AccountName,
+            reason: 'Account is inactive' 
+          });
+          console.log(`Account ${accountId} is inactive`);
+          continue;
+        }
+        
+        if (account.CurrentOwnerID) {
+          if (account.CurrentOwnerID === userId) {
+            failed.push({ 
+              accountId, 
+              accountName: account.AccountName,
+              reason: 'You already own this account' 
+            });
+          } else {
+            failed.push({ 
+              accountId, 
+              accountName: account.AccountName,
+              reason: 'Account already claimed by another user' 
+            });
+          }
+          continue;
+        }
+        
+        // Claim the account by inserting into AssignedUser
+        await pool.request()
+          .input('AccountID', sql.Int, accountId)
+          .input('UserID', sql.Int, userId)
+          .input('Active', sql.Bit, true)
+          .query(`
+            INSERT INTO AssignedUser (AccountID, UserID, Active)
+            VALUES (@AccountID, @UserID, @Active)
+          `);
+        
+        claimed.push({
+          accountId,
+          accountName: account.AccountName
+        });
+        
+      } catch (err) {
+        console.error(`Error claiming account ${accountId}:`, err);
+        failed.push({ 
+          accountId, 
+          accountName: 'Unknown',
+          reason: err.message || 'Database error' 
+        });
+      }
+    }
+    
+    return {
+      success: true,
+      claimed,
+      failed,
+      claimedCount: claimed.length,
+      failedCount: failed.length,
+      message: `Successfully claimed ${claimed.length} out of ${accountIds.length} accounts`
+    };
+    
+  } catch (err) {
+    console.error("Database error in bulkClaimAccounts:", err);
+    throw new Error(`Failed to process bulk claim: ${err.message}`);
+  }
+}
+
+//======================================
+// Bulk claim accounts and assign sequence with activities
+//======================================
+async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
+  const pool = await sql.connect(dbConfig);
+  const transaction = new sql.Transaction(pool);
+  
+  try {
+    await transaction.begin();
+    
+    const claimed = [];
+    const failed = [];
+    
+    // Get sequence items first
+    const sequenceItemsResult = await new sql.Request(transaction)
+      .input('SequenceID', sql.Int, sequenceId)
+      .query(`
+        SELECT 
+          si.SequenceItemID,
+          si.ActivityTypeID,
+          si.DaysFromStart,
+          si.SequenceItemDescription
+        FROM SequenceItem si
+        WHERE si.SequenceID = @SequenceID
+          AND si.Active = 1
+        ORDER BY si.DaysFromStart
+      `);
+    
+    const sequenceItems = sequenceItemsResult.recordset;
+    
+    if (sequenceItems.length === 0) {
+      throw new Error('Sequence has no active items');
+    }
+    
+    for (const accountId of accountIds) {
+      try {
+        // 1. Check if account is claimable
+        const checkResult = await new sql.Request(transaction)
+          .input('AccountID', sql.Int, accountId)
+          .query(`
+            SELECT 
+              a.AccountID,
+              a.Active,
+              a.AccountName,
+              a.CreatedAt,
+              au.UserID as CurrentOwnerID
+            FROM Account a
+            LEFT JOIN AssignedUser au ON a.AccountID = au.AccountID AND au.Active = 1
+            WHERE a.AccountID = @AccountID
+          `);
+        
+        if (checkResult.recordset.length === 0) {
+          failed.push({ 
+            accountId, 
+            accountName: 'Unknown',
+            reason: 'Account not found' 
+          });
+          continue;
+        }
+        
+        const account = checkResult.recordset[0];
+        
+        if (!account.Active) {
+          failed.push({ 
+            accountId, 
+            accountName: account.AccountName,
+            reason: 'Account is inactive' 
+          });
+          continue;
+        }
+        
+        if (account.CurrentOwnerID && account.CurrentOwnerID !== userId) {
+          failed.push({ 
+            accountId, 
+            accountName: account.AccountName,
+            reason: 'Account already claimed by another user' 
+          });
+          continue;
+        }
+        
+        // 2. Claim account (if not already owned by this user)
+        if (!account.CurrentOwnerID) {
+          await new sql.Request(transaction)
+            .input('AccountID', sql.Int, accountId)
+            .input('UserID', sql.Int, userId)
+            .input('Active', sql.Bit, true)
+            .query(`
+              INSERT INTO AssignedUser (AccountID, UserID, Active)
+              VALUES (@AccountID, @UserID, @Active)
+            `);
+        }
+        
+        // 3. Assign sequence to account
+        await new sql.Request(transaction)
+          .input('AccountID', sql.Int, accountId)
+          .input('SequenceID', sql.Int, sequenceId)
+          .query(`
+            UPDATE Account 
+            SET SequenceID = @SequenceID, UpdatedAt = GETDATE()
+            WHERE AccountID = @AccountID
+          `);
+        
+        // 4. Create activities for all sequence items
+        let activitiesCreated = 0;
+        const accountCreated = new Date(account.CreatedAt);
+        
+        for (const item of sequenceItems) {
+          // Calculate due date based on account creation date
+          const dueDate = new Date(accountCreated);
+          dueDate.setDate(dueDate.getDate() + item.DaysFromStart);
+          
+          await new sql.Request(transaction)
+            .input('AccountID', sql.Int, accountId)
+            .input('TypeID', sql.Int, item.ActivityTypeID)
+            .input('DueToStart', sql.SmallDateTime, dueDate)
+            .input('SequenceItemID', sql.Int, item.SequenceItemID)
+            .input('Completed', sql.Bit, false)
+            .input('Active', sql.Bit, true)
+            .query(`
+              INSERT INTO Activity (
+                AccountID, TypeID, DueToStart, 
+                SequenceItemID, Completed, Active
+              )
+              VALUES (
+                @AccountID, @TypeID, @DueToStart,
+                @SequenceItemID, @Completed, @Active
+              )
+            `);
+          
+          activitiesCreated++;
+        }
+        
+        claimed.push({
+          accountId,
+          accountName: account.AccountName,
+          activitiesCreated
+        });
+        
+      } catch (err) {
+        failed.push({ 
+          accountId, 
+          accountName: 'Unknown',
+          reason: err.message || 'Database error' 
+        });
+      }
+    }
+    
+    await transaction.commit();
+    
+    return {
+      success: true,
+      claimed,
+      failed,
+      claimedCount: claimed.length,
+      failedCount: failed.length,
+      totalActivitiesCreated: claimed.reduce((sum, item) => sum + item.activitiesCreated, 0),
+      message: `Successfully claimed ${claimed.length} account(s) and created activities`
+    };
+    
+  } catch (err) {
+    await transaction.rollback();
+    console.error("Database error in bulkClaimAccountsAndAddSequence:", err);
+    throw new Error(`Failed to process bulk claim and sequence: ${err.message}`);
+  }
+}
+
 // =======================
 // Exports
 // =======================
 module.exports = {
   getAllAccounts,
-  // getActiveAccounts,
-  // getInactiveAccounts,
   createAccount,
   updateAccount,
   deactivateAccount,
@@ -489,6 +786,8 @@ module.exports = {
   deleteAccount,
   getAccountDetails,
   getActiveAccountsByUser,
-  getActiveUnassignedAccounts
-
+  getActiveUnassignedAccounts,
+  checkAccountsClaimability,
+  bulkClaimAccounts,
+  bulkClaimAccountsAndAddSequence,
 };

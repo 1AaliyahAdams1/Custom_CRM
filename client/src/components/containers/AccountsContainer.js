@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AccountsPage from "../../pages/Accounts/AccountsPage";
 
@@ -8,7 +8,10 @@ import {
   fetchActiveAccountsByUser,
   fetchActiveUnassignedAccounts,
   deactivateAccount,
-  reactivateAccount, 
+  reactivateAccount,
+  bulkClaimAccounts,
+  getAllSequences,
+  bulkClaimAccountsAndAddSequence,
 } from "../../services/accountService";
 import {
   claimAccount,
@@ -34,6 +37,8 @@ import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import BulkAssignDialog from "../../components/dialogs/BulkAssignDialog";
+import BulkClaimAndSequenceDialog from "../../components/dialogs/BulkClaimAndSequenceDialog";
+import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
 import UnassignUserDialog from "../../components/dialogs/UnAssignUserDialog";
 
@@ -59,18 +64,18 @@ const AccountsContainer = () => {
   // Dialogs / Popups
   const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
   const [bulkClaimDialogOpen, setBulkClaimDialogOpen] = useState(false);
+  const [bulkClaimAndSequenceDialogOpen, setBulkClaimSequenceDialogOpen] = useState(false);
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [accountToDelete, setAccountToDelete] = useState(null);
+
+  const [sequences, setSequences] = useState([])
+
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [accountToReactivate, setAccountToReactivate] = useState(null);
-
-  // ADD THESE - Unassign User Dialog State
-  const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
-  const [accountForUnassign, setAccountForUnassign] = useState(null);
 
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -159,10 +164,22 @@ const AccountsContainer = () => {
     }
   };
 
+  const fetchSequences = useCallback(async () => {
+  try {
+    const response = await getAllSequences();
+    setSequences(response);
+  } catch (err) {
+    console.error('Error fetching sequences:', err);
+  }
+}, []);
+
   useEffect(() => {
     fetchAccounts();
   }, [refreshFlag, canViewAll, isCLevel]);
 
+  useEffect(() => {
+  fetchSequences();
+}, [fetchSequences]);
   // ---------------- FILTER ----------------
   const applyFilter = (accounts, filterType) => {
     switch (filterType) {
@@ -209,7 +226,7 @@ const AccountsContainer = () => {
       setStatusSeverity("success");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
-      setStatusMessage(err.message || "Failed to delete account");
+      setStatusMessage(err.message || "Failed to deactivate account");
       setStatusSeverity("error");
     } finally {
       setBulkLoading(false);
@@ -477,28 +494,127 @@ const AccountsContainer = () => {
 
   const handleBulkClaim = () => {
     if (!hasAccess("accountClaim")) return;
+    if (selected.length === 0) {
+      setStatusMessage("Please select accounts to claim");
+      setStatusSeverity("warning");
+      return;
+    }
     setBulkClaimDialogOpen(true);
   };
 
-  const confirmBulkClaim = async (claimableAccounts) => {
-    setBulkLoading(true);
-    try {
-      await Promise.all(claimableAccounts.map((acc) => claimAccount(acc.AccountID)));
-      setStatusMessage(`Successfully claimed ${claimableAccounts.length} account(s)`);
+const confirmBulkClaim = async (accountIds) => {
+  setBulkLoading(true);
+
+  try {
+    const result = await bulkClaimAccounts(accountIds);
+    
+    // Build success message
+    let message = '';
+    if (result.claimedCount > 0) {
+      message = `Successfully claimed ${result.claimedCount} account(s)`;
+      
+      // Add details about claimed accounts
+      if (result.claimed && result.claimed.length > 0) {
+        const claimedNames = result.claimed
+          .slice(0, 3)
+          .map(a => a.accountName)
+          .join(', ');
+        message += `: ${claimedNames}`;
+        if (result.claimed.length > 3) {
+          message += ` and ${result.claimed.length - 3} more`;
+        }
+      }
+      
+      if (result.failedCount > 0) {
+        message += `. ${result.failedCount} account(s) could not be claimed`;
+      }
+      
+      setStatusMessage(message);
       setStatusSeverity("success");
-      setRefreshFlag((flag) => !flag);
-      setSelected([]);
-      setBulkClaimDialogOpen(false);
-    } catch (err) {
+    } else {
+      // No accounts were claimed
+      message = "No accounts were claimed";
+      if (result.failed && result.failed.length > 0) {
+        const firstReason = result.failed[0].reason;
+        message += `. Reason: ${firstReason}`;
+      }
+      setStatusMessage(message);
+      setStatusSeverity("warning");
+    }
+    
+    // Refresh the account list
+    setRefreshFlag((flag) => !flag);
+    setSelected([]);
+    setBulkClaimDialogOpen(false);
+    
+  } catch (err) {
+    console.error("Bulk claim error:", err);
+    
+    // Handle authentication errors specifically
+    if (err.message && err.message.includes("authentication")) {
+      setStatusMessage("Authentication error. Please log in again and try.");
+      setStatusSeverity("error");
+    } else {
       setStatusMessage(err.message || "Failed to claim selected accounts");
       setStatusSeverity("error");
-    } finally {
-      setBulkLoading(false);
     }
-  };
+  } finally {
+    setBulkLoading(false);
+  }
+};
 
+const handleBulkClaimAndSequence = () => {
+  if (!hasAccess("accountClaim")) return;
+  if (selected.length === 0) {
+    setStatusMessage("Please select accounts to claim and assign sequence");
+    setStatusSeverity("warning");
+    return;
+  }
+  setBulkClaimSequenceDialogOpen(true);
+};
+
+const confirmBulkClaimAndSequence = async (accountIds, sequenceId) => {
+  setBulkLoading(true);
+  
+  try {
+    const result = await bulkClaimAccountsAndAddSequence(accountIds, sequenceId);
+    
+    if (result.claimedCount > 0) {
+      let message = `Successfully claimed ${result.claimedCount} account(s)`;
+      
+      if (result.totalActivitiesCreated > 0) {
+        message += ` and created ${result.totalActivitiesCreated} activities`;
+      }
+      
+      if (result.failedCount > 0) {
+        message += `. ${result.failedCount} account(s) could not be claimed.`;
+      }
+      
+      setStatusMessage(message);
+      setStatusSeverity("success");
+    } else {
+      setStatusMessage("No accounts were claimed");
+      setStatusSeverity("warning");
+    }
+    
+    setRefreshFlag((flag) => !flag);
+    setSelected([]);
+    setBulkClaimSequenceDialogOpen(false);
+  } catch (err) {
+    console.error("Bulk claim and sequence error:", err);
+    setStatusMessage(err.message || "Failed to claim accounts and assign sequence");
+    setStatusSeverity("error");
+  } finally {
+    setBulkLoading(false);
+  }
+};
   const handleBulkAssign = () => {
     if (!hasAccess("accountAssign")) return;
+    if (selected.length === 0) {
+      setStatusMessage("Please select accounts to assign");
+      setStatusSeverity("warning");
+      return;
+    }
     setBulkAssignDialogOpen(true);
   };
 
@@ -524,6 +640,11 @@ const AccountsContainer = () => {
 
   const handleBulkDeactivate = () => {
     if (!hasAccess("accountsEdit")) return;
+    if (selected.length === 0) {
+      setStatusMessage("Please select accounts to deactivate");
+      setStatusSeverity("warning");
+      return;
+    }
     setBulkDeleteDialogOpen(true);
   };
 
@@ -568,7 +689,6 @@ const AccountsContainer = () => {
         onSelectAllClick={handleSelectAllClick}
         onDeactivate={handleDeactivateClick}
         onReactivate={handleReactivateClick}
-        onUnassignUsers={handleUnassignUsers}
         onEdit={handleEdit}
         onView={handleView}
         onCreate={handleCreate}
@@ -579,6 +699,7 @@ const AccountsContainer = () => {
         onUnclaimAccount={handleUnclaimAccount}
         onFilterChange={handleFilterChange}
         onBulkClaim={handleBulkClaim}
+        onBulkClaimAndSequence={handleBulkClaimAndSequence}
         onBulkAssign={handleBulkAssign}
         onBulkDeactivate={handleBulkDeactivate}
         onBulkExport={handleBulkExport}
@@ -656,23 +777,21 @@ const AccountsContainer = () => {
         selectedCount={selected.length}
       />
 
-      {/*  Unassign User Dialog */}
-      <UnassignUserDialog
-        open={unassignUserDialogOpen}
-        onClose={() => {
-          setUnassignUserDialogOpen(false);
-          setAccountForUnassign(null);
-        }}
-        onConfirm={confirmUnassignUsers}
-        account={accountForUnassign}
-        loading={bulkLoading}
-      />
-
       <BulkClaimDialog
         open={bulkClaimDialogOpen}
         onClose={() => setBulkClaimDialogOpen(false)}
         onConfirm={confirmBulkClaim}
-        selectedAccounts={selectedAccountObjects}
+        selectedItems={selectedAccountObjects}
+        loading={bulkLoading}
+      />
+
+      <BulkClaimAndSequenceDialog
+        open={bulkClaimAndSequenceDialogOpen}
+        onClose={() => setBulkClaimSequenceDialogOpen(false)}
+        onConfirm={confirmBulkClaimAndSequence}
+        selectedItems={selectedAccountObjects}
+        sequences={sequences}
+        loading={bulkLoading}
       />
     </>
   );

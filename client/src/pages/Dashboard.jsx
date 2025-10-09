@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { Box, Alert } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   getSalesPipelineReport,
   getRevenueForecastReport,
@@ -12,12 +14,13 @@ import RevenueChart from "../components/dashboardCharts/RevenueForecastChart";
 import ClosedDealsChart from "../components/dashboardCharts/ClosedDealsChart";
 import CustomerSegmentChart from "../components/dashboardCharts/CustomerSegmentationChart";
 import ActivitiesOutcomesChart from "../components/dashboardCharts/ActivitiesOutcomesChart";
-import MetricsGrid from "../components/dashboardCharts/MetricsGrid";
 import WelcomeBanner from "../components/WelcomeBanner";
 import ChartCard from "../components/dashboardCharts/ChartCard";
 import LoadingScreen from "../components/LoadingScreen";
 
 const Dashboard = () => {
+  const theme = useTheme();
+  
   const [data, setData] = useState({
     salesPipeline: null,
     revenue: null,
@@ -32,7 +35,6 @@ const Dashboard = () => {
     const fetchReports = async () => {
       try {
         setLoading(true);
-
         const [
           salesPipeline,
           revenue,
@@ -66,51 +68,72 @@ const Dashboard = () => {
   }, []);
 
   if (loading) return <LoadingScreen message="Loading dashboard data..." />;
-  if (error) return <p className="text-red-500">{error}</p>;
+  
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
-    <div className="p-6 grid grid-cols-12 gap-6">
+    <Box 
+      sx={{ 
+        p: 3,
+        backgroundColor: theme.palette.background.default,
+        minHeight: '100vh',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(12, 1fr)',
+        gap: 3
+      }}
+    >
       {/* Welcome Banner */}
-      <div className="col-span-12">
+      <Box sx={{ gridColumn: 'span 12' }}>
         <WelcomeBanner />
-      </div>
-
-      {/* KPI Cards
-      <div className="col-span-12">
-        <MetricsGrid />
-      </div> */}
+      </Box>
 
       {/* Row 1 */}
-      <div className="col-span-12 lg:col-span-6">
-        <ChartCard title="Sales Pipeline">
-          <SalesPipelineChart data={data.salesPipeline} />
-        </ChartCard>
-      </div>
-      <div className="col-span-12 lg:col-span-6">
-        <ChartCard title="Revenue Forecast">
-          <RevenueChart data={data.revenue} />
-        </ChartCard>
-      </div>
+      {data.salesPipeline && (
+        <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 6' } }}>
+          <ChartCard title="Sales Pipeline">
+            <SalesPipelineChart data={data.salesPipeline} />
+          </ChartCard>
+        </Box>
+      )}
+      {data.revenue && (
+        <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 6' } }}>
+          <ChartCard title="Revenue Forecast">
+            <RevenueChart data={data.revenue} />
+          </ChartCard>
+        </Box>
+      )}
 
       {/* Row 2 */}
-      <div className="col-span-12 lg:col-span-6">
-        <ChartCard title="Closed Deals">
-          <ClosedDealsChart data={data.closedDeals} />
-        </ChartCard>
-      </div>
-      <div className="col-span-12 lg:col-span-6">
-        <ChartCard title="Customer Segmentation">
-          <CustomerSegmentChart data={data.customers} />
-        </ChartCard>
-      </div>
+      {data.closedDeals && (
+        <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 6' } }}>
+          <ChartCard title="Closed Deals">
+            <ClosedDealsChart data={data.closedDeals} />
+          </ChartCard>
+        </Box>
+      )}
+      {data.customers && (
+        <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 6' } }}>
+          <ChartCard title="Customer Segmentation">
+            <CustomerSegmentChart data={data.customers} />
+          </ChartCard>
+        </Box>
+      )}
 
       {/* Row 3 */}
-      <div className="col-span-12 lg:col-span-6">
-        <ChartCard title="Activities vs Outcomes">
-          <ActivitiesOutcomesChart data={data.activities} />
-        </ChartCard>
-      </div>
-    </div>
+      {data.activities && (
+        <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 6' } }}>
+          <ChartCard title="Activities vs Outcomes">
+            <ActivitiesOutcomesChart data={data.activities} />
+          </ChartCard>
+        </Box>
+      )}
+    </Box>
   );
 };
 

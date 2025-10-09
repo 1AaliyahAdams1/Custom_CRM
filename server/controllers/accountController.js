@@ -1,5 +1,4 @@
-// controllers/accountController.js
-const accountService = require("../services/accountService"); // adjust path to match your project
+const accountService = require("../services/accountService");
 
 // Get all accounts
 async function getAllAccounts(req, res) {
@@ -27,7 +26,8 @@ async function getAccountDetails(req, res) {
 // Create account
 async function createAccount(req, res) {
   try {
-    const newAccount = await accountService.createAccount(req.body);
+    const userId = req.user?.id || req.user?.userId || req.user?.UserID || 1;
+    const newAccount = await accountService.createAccount(req.body, userId);
     res.status(201).json(newAccount);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -37,7 +37,8 @@ async function createAccount(req, res) {
 // Update account
 async function updateAccount(req, res) {
   try {
-    const updatedAccount = await accountService.updateAccount(req.params.id, req.body);
+    const userId = req.user?.id || req.user?.userId || req.user?.UserID || 1;
+    const updatedAccount = await accountService.updateAccount(req.params.id, req.body, userId);
     res.status(200).json(updatedAccount);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -47,14 +48,13 @@ async function updateAccount(req, res) {
 // Deactivate account
 async function deactivateAccount(req, res) {
   try {
-    // Get userId from authenticated user
-    const userId = req.user?.id || req.user?.userId || 1; // Use 1 as fallback for now
-    console.log("Reactivate - User ID:", userId);  // ADD THIS
-    console.log("Reactivate - Account ID:", req.params.id);  // ADD THIS
+    const userId = req.user?.id || req.user?.userId || req.user?.UserID || 1;
+    console.log("Deactivate - User ID:", userId);
+    console.log("Deactivate - Account ID:", req.params.id);
     const result = await accountService.deactivateAccount(req.params.id, userId);
     res.status(200).json(result);
   } catch (error) {
-    console.error("Reactivate error:", error.message); 
+    console.error("Deactivate error:", error.message);
     res.status(400).json({ message: error.message });
   }
 }
@@ -62,12 +62,13 @@ async function deactivateAccount(req, res) {
 // Reactivate account
 async function reactivateAccount(req, res) {
   try {
-    // Get userId
-    const userId = req.user?.id || req.user?.userId || 1; // Use 1 as fallback for now
-    
+    const userId = req.user?.id || req.user?.userId || req.user?.UserID || 1;
+    console.log("Reactivate - User ID:", userId);
+    console.log("Reactivate - Account ID:", req.params.id);
     const result = await accountService.reactivateAccount(req.params.id, userId);
     res.status(200).json(result);
   } catch (error) {
+    console.error("Reactivate error:", error.message);
     res.status(400).json({ message: error.message });
   }
 }
@@ -75,7 +76,8 @@ async function reactivateAccount(req, res) {
 // Delete account
 async function deleteAccount(req, res) {
   try {
-    const result = await accountService.deleteAccount(req.params.id);
+    const userId = req.user?.id || req.user?.userId || req.user?.UserID || 1;
+    const result = await accountService.deleteAccount(req.params.id, userId);
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -102,6 +104,82 @@ async function getActiveUnassignedAccounts(req, res) {
   }
 }
 
+async function checkAccountsClaimability(req, res) {
+  try {
+    // Extract userId from req.user OR req.body (for flexibility)
+    const userId = req.user?.id || req.user?.userId || req.user?.UserID || req.body?.userId;
+    const { accountIds } = req.body;
+    
+    if (!Array.isArray(accountIds) || accountIds.length === 0) {
+      return res.status(400).json({ message: "Account IDs array is required" });
+    }
+    
+    if (!userId) {
+      return res.status(401).json({ message: "User authentication required" });
+    }
+    
+    const result = await accountService.checkAccountsClaimability(accountIds, userId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Check claimability error:", error.message);
+    res.status(500).json({ message: error.message });
+  }
+}
+
+// Bulk claim accounts 
+async function bulkClaimAccounts(req, res) {
+  try {
+    // Extract userId from req.user OR req.body (for flexibility)
+    const userId = req.user?.id || req.user?.userId || req.user?.UserID || req.body?.userId;
+    const { accountIds } = req.body;
+    
+    if (!Array.isArray(accountIds) || accountIds.length === 0) {
+      return res.status(400).json({ message: "Account IDs array is required" });
+    }
+    
+    if (!userId) {
+      return res.status(401).json({ message: "User authentication required. Please log in and try again." });
+    }
+    
+    const result = await accountService.bulkClaimAccounts(accountIds, userId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Bulk claim error:", error.message);
+    res.status(400).json({ message: error.message });
+  }
+}
+
+async function bulkClaimAccountsAndAddSequence(req, res) {
+  try {
+    const userId = req.user?.id || req.user?.userId || req.user?.UserID || req.body?.userId;
+    const { accountIds, sequenceId } = req.body;
+    
+    if (!Array.isArray(accountIds) || accountIds.length === 0) {
+      return res.status(400).json({ message: "Account IDs array is required" });
+    }
+    
+    if (!sequenceId) {
+      return res.status(400).json({ message: "Sequence ID is required" });
+    }
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        message: "User authentication required. Please log in and try again." 
+      });
+    }
+    
+    const result = await accountService.bulkClaimAccountsAndAddSequence(
+      accountIds, 
+      userId, 
+      sequenceId
+    );
+    
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
 module.exports = {
   getAllAccounts,
   getAccountDetails,
@@ -111,5 +189,8 @@ module.exports = {
   reactivateAccount,
   deleteAccount,
   getActiveAccountsByUser,
-  getActiveUnassignedAccounts
+  getActiveUnassignedAccounts,
+  checkAccountsClaimability,
+  bulkClaimAccounts,
+  bulkClaimAccountsAndAddSequence,
 };

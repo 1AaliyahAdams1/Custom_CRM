@@ -21,8 +21,6 @@ import {
   Search as SearchIcon, 
   FilterList as FilterIcon, 
   ViewColumn as ColumnsIcon,
-  ArrowUpward,
-  ArrowDownward,
 } from "@mui/icons-material";
 
 import ColumnsDialog from "../dialogs/ColumnsDialog";
@@ -56,10 +54,6 @@ const TableView = ({
   formatters = {},
   tooltips = {},
 }) => {
-
-  console.log("TableView onReactivate:", onReactivate); // ADD THIS LINE
-  console.log("TableView onReactivate exists:", !!onReactivate); // ADD THIS LINE
-
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuRow, setMenuRow] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -70,20 +64,22 @@ const TableView = ({
   const [currentRow, setCurrentRow] = useState(null);
   const [customFilteredData, setCustomFilteredData] = useState(null);
 
-  // Sorting state
+  // Sorting
   const [orderBy, setOrderBy] = useState("");
   const [order, setOrder] = useState("asc");
 
-  // Column widths state for resizable columns
+  // Column widths
   const [columnWidths, setColumnWidths] = useState({});
-
   const [visibleColumns, setVisibleColumns] = useState(
     columns.reduce((acc, col) => ({ ...acc, [col.field]: col.defaultVisible !== false }), {})
   );
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
   const isSelected = (id) => selected.includes(id);
 
-  // --- Sorting Functions ---
   const handleSort = (columnField) => {
     const isAsc = orderBy === columnField && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
@@ -92,76 +88,62 @@ const TableView = ({
 
   const sortData = (data) => {
     if (!orderBy) return data;
-    
     return [...data].sort((a, b) => {
       const aVal = a[orderBy];
       const bVal = b[orderBy];
-      
-      // Handle null/undefined values
       if (aVal == null && bVal == null) return 0;
       if (aVal == null) return order === "asc" ? 1 : -1;
       if (bVal == null) return order === "asc" ? -1 : 1;
-      
-      // Handle different data types
+
       if (typeof aVal === "string" && typeof bVal === "string") {
-        const result = aVal.toLowerCase().localeCompare(bVal.toLowerCase());
-        return order === "asc" ? result : -result;
+        return order === "asc"
+          ? aVal.toLowerCase().localeCompare(bVal.toLowerCase())
+          : bVal.toLowerCase().localeCompare(aVal.toLowerCase());
       }
-      
       if (typeof aVal === "number" && typeof bVal === "number") {
         return order === "asc" ? aVal - bVal : bVal - aVal;
       }
-      
-      // Handle dates
       if (aVal instanceof Date && bVal instanceof Date) {
         return order === "asc" ? aVal - bVal : bVal - aVal;
       }
-      
-      // Fallback to string comparison
-      const aStr = String(aVal).toLowerCase();
-      const bStr = String(bVal).toLowerCase();
-      const result = aStr.localeCompare(bStr);
-      return order === "asc" ? result : -result;
+      return order === "asc"
+        ? String(aVal).toLowerCase().localeCompare(String(bVal).toLowerCase())
+        : String(bVal).toLowerCase().localeCompare(String(aVal).toLowerCase());
     });
   };
 
-  // --- Column Resizing Functions ---
+  // Column resizing
   const handleMouseDown = useCallback((e, columnField) => {
     e.preventDefault();
     const startX = e.clientX;
-    const startWidth = columnWidths[columnField] || 150; // Default width
-    
+    const startWidth = columnWidths[columnField] || 150;
     const handleMouseMove = (moveEvent) => {
       const diff = moveEvent.clientX - startX;
-      const newWidth = Math.max(80, startWidth + diff); // Minimum width of 80px
       setColumnWidths(prev => ({
         ...prev,
-        [columnField]: newWidth
+        [columnField]: Math.max(80, startWidth + diff)
       }));
     };
-    
     const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
   }, [columnWidths]);
 
-  // --- Menu Handling ---
+  // Menu
   const handleMenuClick = (event, row) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
     setMenuRow(row);
   };
-
   const handleMenuClose = () => {
     setAnchorEl(null);
     setTimeout(() => setMenuRow(null), 200);
   };
 
-  // --- Enhanced Filters Handling ---
+  // Filters
   const handleApplyFilters = (newFilters, preFilteredData = null) => {
     setFilters(newFilters);
     setCustomFilteredData(preFilteredData);
@@ -170,85 +152,41 @@ const TableView = ({
   const handleSelectAll = (event) => onSelectAllClick && onSelectAllClick(event);
   const handleSelectRow = (id) => onSelectClick && onSelectClick(id);
 
-  // --- Generic Tooltip Messages ---
-  const getSearchTooltip = () => {
-    return tooltips?.search || `Search ${entityType} by any visible field or keyword`;
-  };
-
-  const getFilterTooltip = () => {
-    const activeFiltersCount = Object.keys(filters).length;
-    const baseMessage = tooltips?.filter || `${filtersExpanded ? 'Hide' : 'Show'} advanced filtering options`;
-    return activeFiltersCount > 0 
-      ? `${baseMessage} (${activeFiltersCount} filter${activeFiltersCount === 1 ? '' : 's'} active)`
-      : baseMessage;
-  };
-
-  const getColumnsTooltip = () => {
-    return tooltips?.columns || 'Customize which columns are visible in the table';
-  };
-
-  const getActionsTooltip = () => {
-    return tooltips?.actions || `Available actions for this ${entityType || 'record'}`;
-  };
-
-  // --- Data Filtering and Sorting ---
   const getFilteredData = () => {
     let filteredData;
-    
-    // Use custom filtered data if available (from advanced filters)
     if (customFilteredData) {
-      if (!searchTerm) {
-        filteredData = customFilteredData;
-      } else {
-        filteredData = customFilteredData.filter((item) => {
-          return columns.some((col) => {
-            const val = item[col.field];
-            return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
-          });
-        });
-      }
+      filteredData = searchTerm
+        ? customFilteredData.filter(item =>
+            columns.some(col => item[col.field]?.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+          )
+        : customFilteredData;
     } else {
-      // Standard filtering based on search term and basic filters
-      filteredData = data.filter((item) => {
-        // Apply search term filter
-        if (searchTerm) {
-          const matchesSearch = columns.some((col) => {
-            const val = item[col.field];
-            return val && val.toString().toLowerCase().includes(searchTerm.toLowerCase());
-          });
-          if (!matchesSearch) return false;
+      filteredData = data.filter(item => {
+        if (searchTerm && !columns.some(col => item[col.field]?.toString().toLowerCase().includes(searchTerm.toLowerCase()))) {
+          return false;
         }
-
-        // Apply other filters
         return Object.entries(filters).every(([field, filterValue]) => {
-          if (!filterValue || filterValue === '') return true;
+          if (!filterValue) return true;
           const itemValue = item[field];
-          
-          // Handle array filters (for multi-select)
-          if (Array.isArray(filterValue)) {
-            return filterValue.includes(itemValue);
-          }
-          
-          // Handle string filters
-          if (typeof filterValue === 'string') {
-            return itemValue && itemValue.toString().toLowerCase().includes(filterValue.toLowerCase());
-          }
-          
+          if (Array.isArray(filterValue)) return filterValue.includes(itemValue);
+          if (typeof filterValue === "string") return itemValue?.toString().toLowerCase().includes(filterValue.toLowerCase());
           return itemValue === filterValue;
         });
       });
     }
-    
-    // Apply sorting
     return sortData(filteredData);
   };
 
   const filteredData = getFilteredData();
-  const displayedColumns = columns.filter((col) => visibleColumns[col.field]);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
 
-  // --- Handle clickable cell content ---
+  const displayedColumns = columns.filter(col => visibleColumns[col.field]);
+
   const handleCellClick = (event, row, column) => {
-    if (column.type === 'clickable' && column.onClick) {
+    if (column.type === "clickable" && column.onClick) {
       event.stopPropagation();
       column.onClick(row);
     }
@@ -263,20 +201,12 @@ const TableView = ({
         return (
           <Box
             component="span"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (column.onClick) {
-                column.onClick(row);
-              }
-            }}
+            onClick={(e) => handleCellClick(e, row, column)}
             sx={{
               color: 'primary.main',
               cursor: 'pointer',
               textDecoration: 'none',
-              '&:hover': {
-                textDecoration: 'underline',
-              },
-              ...column.clickableStyle,
+              '&:hover': { textDecoration: 'underline' },
             }}
           >
             {value || "-"}
@@ -356,38 +286,9 @@ const TableView = ({
         if (!value) return "-";
         const href = value.startsWith("http") ? value : `https://${value}`;
         return (
-          <Link
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            sx={{ textDecoration: "none", color: "inherit" }}
-          >
+          <Link href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
             {value}
           </Link>
-        );
-      case "truncated":
-        if (!value) return "-";
-        return (
-          <Tooltip title={<span>{value}</span>}>
-            <span
-              style={{
-                display: "block",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                maxWidth: column.maxWidth || 200,
-              }}
-            >
-              {value}
-            </span>
-          </Tooltip>
-        );
-      case "tooltip":
-        return (
-          <Tooltip title={<span>{value || ""}</span>}>
-            <span>{value || "-"}</span>
-          </Tooltip>
         );
       default:
         return value || "-";
@@ -401,85 +302,33 @@ const TableView = ({
 
   return (
     <>
-      {/* Toolbar with Tooltips */}
+      {/* Toolbar */}
       <Box display="flex" alignItems="center" gap={2} mb={1} flexWrap="wrap">
-        <Tooltip 
-          title={<span>{getFilterTooltip()}</span>} 
-          arrow
-          enterDelay={300}
-        >
+        <Tooltip title={`Filters`} arrow>
           <Button
             variant="outlined"
             startIcon={<FilterIcon />}
             onClick={() => setFiltersExpanded(!filtersExpanded)}
-            sx={{
-              backgroundColor: filtersExpanded ? 'primary.main' : 'transparent',
-              color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
-              '&:hover': {
-                backgroundColor: filtersExpanded ? 'primary.dark' : 'primary.light',
-                color: filtersExpanded ? 'primary.contrastText' : 'primary.main',
-              }
-            }}
           >
             {filtersExpanded ? "Hide Filters" : "Show Filters"}
-            {Object.keys(filters).length > 0 && (
-              <Tooltip 
-                title={<span>{`${Object.keys(filters).length} active filter${Object.keys(filters).length === 1 ? '' : 's'}`}</span>} 
-                arrow
-              >
-                <Chip 
-                  label={Object.keys(filters).length} 
-                  size="small" 
-                  sx={{ ml: 1 }} 
-                />
-              </Tooltip>
-            )}
           </Button>
         </Tooltip>
-
-        <Tooltip 
-          title={<span>{getSearchTooltip()}</span>} 
-          arrow
-          enterDelay={300}
+        <TextField
+          size="small"
+          variant="outlined"
+          placeholder={`Search ${entityType}...`}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1 }} /> }}
+          sx={{ minWidth: 250 }}
+        />
+        <Button
+          variant="outlined"
+          startIcon={<ColumnsIcon />}
+          onClick={() => setColumnsDialogOpen(true)}
         >
-          <TextField
-            size="small"
-            variant="outlined"
-            placeholder={`Search ${entityType}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{ 
-              startAdornment: <SearchIcon sx={{ mr: 1, color: '#666' }} /> 
-            }}
-            sx={{ 
-              minWidth: 250,
-              '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': {
-                  borderColor: 'primary.main',
-                },
-              }
-            }}
-          />
-        </Tooltip>
-
-        <Tooltip 
-          title={<span>{getColumnsTooltip()}</span>} 
-          arrow
-          enterDelay={300}
-        >
-          <Button
-            variant="outlined"
-            startIcon={<ColumnsIcon />}
-            onClick={() => setColumnsDialogOpen(true)}
-            sx={{
-              '&:hover': {
-                backgroundColor: 'primary.light',
-              }
-            }}
-          >
-            Columns
-          </Button>
-        </Tooltip>
+          Columns
+        </Button>
       </Box>
 
       {filtersExpanded && (
@@ -491,185 +340,61 @@ const TableView = ({
         />
       )}
 
-      {/* Table with Sortable & Resizable Headers */}
+      {/* Table */}
       <TableContainer>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
               {showSelection && (
-                <TableCell 
-                  padding="checkbox"
-                  sx={{ 
-                    width: 50,
-                    position: 'relative'
-                  }}
-                >
-                  <Tooltip title={<span>Select all visible records</span>} arrow>
-                    <Checkbox
-                      color="primary"
-                      indeterminate={
-                        selected.length > 0 && selected.length < filteredData.length
-                      }
-                      checked={
-                        filteredData.length > 0 &&
-                        selected.length === filteredData.length
-                      }
-                      onChange={handleSelectAll}
-                    />
-                  </Tooltip>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    color="primary"
+                    indeterminate={selected.length > 0 && selected.length < filteredData.length}
+                    checked={filteredData.length > 0 && selected.length === filteredData.length}
+                    onChange={handleSelectAll}
+                  />
                 </TableCell>
               )}
               {displayedColumns.map((column, index) => (
-                <TableCell 
-                  key={column.field} 
-                  sx={{ 
-                    fontWeight: 600,
-                    width: columnWidths[column.field] || 'auto',
-                    minWidth: 80,
-                    position: 'relative',
-                    userSelect: 'none',
-                    '&:hover .resize-handle': {
-                      opacity: 1,
-                    }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    {column.sortable !== false ? (
-                      <Tooltip 
-                        title={
-                          <span>
-                            {orderBy === column.field 
-                              ? `Currently sorted ${order === 'asc' ? 'ascending' : 'descending'}. Click to sort ${order === 'asc' ? 'descending' : 'ascending'}.`
-                              : `Click to sort by ${column.headerName || column.field}`
-                            }
-                          </span>
-                        }
-                        arrow
-                        enterDelay={500}
-                      >
-                        <TableSortLabel
-                          active={orderBy === column.field}
-                          direction={orderBy === column.field ? order : 'asc'}
-                          onClick={() => handleSort(column.field)}
-                          sx={{ 
-                            flex: 1,
-                            '&:hover': {
-                              color: 'primary.main',
-                            },
-                            '&.Mui-active': {
-                              color: 'primary.main',
-                              '& .MuiTableSortLabel-icon': {
-                                color: 'primary.main !important',
-                              },
-                            },
-                          }}
-                        >
-                          {column.headerName || column.field}
-                        </TableSortLabel>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip 
-                        title={<span>This column is not sortable</span>}
-                        arrow
-                        enterDelay={700}
-                      >
-                        <Box sx={{ flex: 1 }}>
-                          {column.headerName || column.field}
-                        </Box>
-                      </Tooltip>
-                    )}
-                    
-                    {/* Resize Handle */}
-                    {index < displayedColumns.length - 1 && (
-                      <Tooltip 
-                        title={<span>Drag to resize column width</span>} 
-                        arrow 
-                        enterDelay={700}
-                        placement="top"
-                      >
-                        <Box
-                          className="resize-handle"
-                          onMouseDown={(e) => handleMouseDown(e, column.field)}
-                          sx={{
-                            width: 4,
-                            height: 30,
-                            cursor: 'col-resize',
-                            backgroundColor: 'divider',
-                            opacity: 0,
-                            transition: 'opacity 0.2s',
-                            borderRadius: 1,
-                            ml: 1,
-                            '&:hover': {
-                              backgroundColor: 'primary.main',
-                              opacity: '1 !important',
-                            }
-                          }}
-                        />
-                      </Tooltip>
-                    )}
-                  </Box>
+                <TableCell key={column.field}>
+                  <TableSortLabel
+                    active={orderBy === column.field}
+                    direction={orderBy === column.field ? order : 'asc'}
+                    onClick={() => handleSort(column.field)}
+                  >
+                    {column.headerName || column.field}
+                  </TableSortLabel>
                 </TableCell>
               ))}
-              {showActions && (
-                <TableCell 
-                  sx={{ 
-                    fontWeight: 600,
-                    width: 80,
-                  }}
-                >
-                  Actions
-                </TableCell>
-              )}
+              {showActions && <TableCell>Actions</TableCell>}
             </TableRow>
           </TableHead>
 
           <TableBody>
-            {filteredData.map((row) => {
+            {paginatedData.map((row) => {
               const isItemSelected = showSelection ? isSelected(row[idField]) : false;
               return (
                 <TableRow
                   key={row[idField]}
                   hover
                   selected={isItemSelected}
-                  onClick={
-                    showSelection ? () => handleSelectRow(row[idField]) : undefined
-                  }
-                  sx={{ cursor: showSelection ? "pointer" : "default" }}
+                  onClick={showSelection ? () => handleSelectRow(row[idField]) : undefined}
                 >
                   {showSelection && (
                     <TableCell padding="checkbox">
-                      <Tooltip title={<span>{`${isItemSelected ? 'Deselect' : 'Select'} this record`}</span>} arrow>
-                        <Checkbox color="primary" checked={isItemSelected} />
-                      </Tooltip>
+                      <Checkbox color="primary" checked={isItemSelected} />
                     </TableCell>
                   )}
                   {displayedColumns.map((column) => (
-                    <TableCell 
-                      key={column.field}
-                      sx={{
-                        width: columnWidths[column.field] || 'auto',
-                        maxWidth: columnWidths[column.field] || 'none',
-                        overflow: 'hidden',
-                      }}
-                    >
+                    <TableCell key={column.field}>
                       {renderCellContent(row, column)}
                     </TableCell>
                   ))}
                   {showActions && (
                     <TableCell>
-                      <Tooltip title={<span>{getActionsTooltip()}</span>} arrow>
-                        <IconButton 
-                          size="small" 
-                          onClick={(e) => handleMenuClick(e, row)}
-                          sx={{
-                            '&:hover': {
-                              backgroundColor: 'action.hover',
-                            }
-                          }}
-                        >
-                          <MoreVert />
-                        </IconButton>
-                      </Tooltip>
+                      <IconButton onClick={(e) => handleMenuClick(e, row)}>
+                        <MoreVert />
+                      </IconButton>
                     </TableCell>
                   )}
                 </TableRow>
@@ -679,7 +404,26 @@ const TableView = ({
         </Table>
       </TableContainer>
 
-      {/* Action Menu with Enhanced Tooltips */}
+      {/* Pagination */}
+      <Box display="flex" justifyContent="flex-end" alignItems="center" mt={1} gap={2}>
+        <Button
+          size="small"
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(prev => prev - 1)}
+        >
+          Previous
+        </Button>
+        <Box>Page {currentPage} of {Math.ceil(filteredData.length / rowsPerPage)}</Box>
+        <Button
+          size="small"
+          disabled={currentPage >= Math.ceil(filteredData.length / rowsPerPage)}
+          onClick={() => setCurrentPage(prev => prev + 1)}
+        >
+          Next
+        </Button>
+      </Box>
+
+      {/* Action Menu */}
       {menuRow && (
         <ActionMenu
          anchorEl={anchorEl}
@@ -728,6 +472,5 @@ const TableView = ({
     </>
   );
 };
-
 
 export default TableView;
