@@ -2,17 +2,18 @@ import React, { Suspense, useMemo } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 
-import { createAppTheme } from "./components/Theme"; 
+import { createAppTheme } from "./components/Theme";
 import { AuthProvider } from "./context/auth/authContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import Layout from "./components/Layout";
 import LoadingScreen from "./components/LoadingScreen";
 import AppRoutes from "./AppRoutes";
 
+
 // Inner component that has access to settings context
 function AppContent() {
   const { settings } = useSettings();
-  
+
   // Create dynamic theme based on settings
   const theme = useMemo(
     () => createAppTheme(settings.general.theme),
@@ -34,7 +35,7 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthProvider> 
+      <AuthProvider>
         <SettingsProvider>
           <AppContent />
         </SettingsProvider>

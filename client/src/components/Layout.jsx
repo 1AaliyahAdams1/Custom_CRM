@@ -3,6 +3,8 @@ import { useLocation } from "react-router-dom";
 import { useSettings } from "../context/SettingsContext";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import Chatbot from "./Chatbot"; 
+
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -39,9 +41,13 @@ const Layout = ({ children }) => {
         >
           {children}
         </main>
+
+        {/* Add Chatbot only when layout is shown */}
+        {showLayout && <Chatbot />}
       </div>
     </div>
   );
 };
+
 
 export default Layout;
