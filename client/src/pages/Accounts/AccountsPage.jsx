@@ -31,7 +31,7 @@ const AccountsPage = ({
   onSelectClick,
   onSelectAllClick,
   onDeactivate,
-  onReactivate,
+  onReactivate, 
   onEdit,
   onView,
   onCreate,
@@ -40,6 +40,7 @@ const AccountsPage = ({
   onClaimAccount,
   onUnclaimAccount,
   onAssignUser,
+  onUnassignUsers,
   onFilterChange,
   onBulkClaim,
   onBulkClaimAndSequence,
@@ -101,11 +102,29 @@ const AccountsPage = ({
     { field: "UpdatedAt", headerName: "Updated", type: "dateTime", defaultVisible: false },
     {
       field: "ownerStatus",
-      headerName: "Ownership",
-      type: "chip",
-      chipLabels: { owned: "Owned", unowned: "Unowned", "n/a": "N/A" },
-      chipColors: { owned: "#079141ff", unowned: "#999999", "n/a": "#999999" },
-      defaultVisible: true,
+        headerName: "Ownership",
+        type: "chip",
+        chipLabels: (value, row) => {
+          if (value === "owned") return "Owned";
+          if (value === "owned-shared") return row.ownerDisplayName || "Shared";
+          if (value === "owned-by-multiple") return row.ownerDisplayName || "Multiple users";
+          if (value === "unowned") return "Unowned";
+          if (value === "n/a") return "N/A";
+          if (value && value.startsWith("owned-by-")) {
+            return row.ownerDisplayName || value.replace("owned-by-", "");
+          }
+          return value || "N/A";
+          },
+        chipColors: (value, row) => {
+          if (value === "owned") return "#079141ff"; // green - owned by you only
+          if (value === "owned-shared") return "#2196f3"; // blue - shared with you
+          if (value === "owned-by-multiple") return "#ff9800"; // orange - multiple others
+          if (value === "unowned") return "#999999"; // gray
+          if (value === "n/a") return "#999999"; // gray
+          if (value && value.startsWith("owned-by-")) return "#ff9800"; // orange - single other user
+            return "#999999"; // default gray
+          },
+          defaultVisible: true,
     },
     {
       field: "Active",
@@ -225,53 +244,51 @@ const AccountsPage = ({
           </Box>
         </Toolbar>
 
-        {loading ? (
-          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
-            <CircularProgress />
-            <Typography variant="body2" sx={{ 
-              mt: 2, 
-              color: theme.palette.text.secondary // ✅ Theme-aware
-            }}>
-              Loading accounts...
-            </Typography>
-          </Box>
-        ) : (
-          <TableView
-            data={accounts}
-            columns={columns}
-            idField="AccountID"
-            selected={selected}
-            onSelectClick={onSelectClick}
-            onSelectAllClick={onSelectAllClick}
-            showSelection
-            onView={onView}
-            onEdit={onEdit}
-            onDelete={onDeactivate}
-            onReactivate={onReactivate}
-            onAddNote={onAddNote}
-            onAddAttachment={onAddAttachment}
-            onClaimAccount={onClaimAccount}
-            onUnClaimAccount={onUnclaimAccount}
-            onAssignUser={onAssignUser}
-            formatters={formatters}
-            entityType="account"
-            tooltips={{
-              search: "Search records by any visible field or keyword",
-              filter: "Show/hide advanced filtering options",
-              columns: "Customize which columns are visible",
-              actionMenu: {
-                view: "View detailed information",
-                edit: "Edit record information",
-                delete: "Deactivate",
-                addNote: "Add internal notes",
-                addAttachment: "Attach files",
-                claimAccount: "Claim ownership",
-                assignUser: "Assign a team member",
-              }
-            }}
-          />
-        )}
-      </Paper>
+          {loading ? (
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+              <CircularProgress />
+              <Typography variant="body2" sx={{ mt: 2, color: "#666666" }}>
+                Loading accounts...
+              </Typography>
+            </Box>
+          ) : (
+            <TableView
+              data={accounts}
+              columns={columns}
+              idField="AccountID"
+              selected={selected}
+              onSelectClick={onSelectClick}
+              onSelectAllClick={onSelectAllClick}
+              showSelection
+              onView={onView}
+              onEdit={onEdit}
+              onDelete={onDeactivate}
+              onReactivate={onReactivate} 
+              onAddNote={onAddNote}
+              onAddAttachment={onAddAttachment}
+              onClaimAccount={onClaimAccount}
+              onUnclaimAccount={onUnclaimAccount}
+              onAssignUser={onAssignUser}
+              onUnassignUsers={onUnassignUsers}
+              formatters={formatters}
+              entityType="account"
+              tooltips={{
+                search: "Search records by any visible field or keyword",
+                filter: "Show/hide advanced filtering options",
+                columns: "Customize which columns are visible",
+                actionMenu: {
+                  view: "View detailed information",
+                  edit: "Edit record information",
+                  delete: "Deactivate",
+                  addNote: "Add internal notes",
+                  addAttachment: "Attach files",
+                  claimAccount: "Claim ownership",
+                  assignUser: "Assign a team member",
+                }
+              }}
+            />
+          )}
+        </Paper>
 
       {/* Notes Popup */}
       {notesPopupOpen && (

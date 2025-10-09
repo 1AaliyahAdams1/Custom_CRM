@@ -94,6 +94,27 @@ async function findAssignedUser(criteria) {
   return result.recordset[0] || null; 
 }
 
+// ==========================================
+// Find AssignedUsers by AccountID
+// ==========================================
+async function findAssignedUsersByAccount(accountId) {
+  const pool = await sql.connect(dbConfig);
+  const result = await pool.request()
+    .input("AccountID", sql.Int, accountId)
+    .query(`
+      SELECT 
+        au.AccountUserID,
+        au.AccountID,
+        au.UserID,
+        e.EmployeeName,
+        au.Active
+      FROM AssignedUser au
+      JOIN Employee e ON au.UserID = e.EmployeeID
+      WHERE au.AccountID = @AccountID AND au.Active = 1
+      ORDER BY e.EmployeeName
+    `);
+  return result.recordset;
+}
 
 
 // ==========================================
@@ -108,4 +129,5 @@ module.exports = {
   reactivateAssignedUser,
   deleteAssignedUser,
   findAssignedUser,
+  findAssignedUsersByAccount,
 };

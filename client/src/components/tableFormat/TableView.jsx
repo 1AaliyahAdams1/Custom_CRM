@@ -27,6 +27,7 @@ import ColumnsDialog from "../dialogs/ColumnsDialog";
 import FiltersDialog from "../dialogs/FiltersDialog";
 import ActionMenu from "./ActionMenu";
 import AssignUserDialog from "../../components/dialogs/AssignUserDialog"; 
+import UnassignUserDialog from "../dialogs/UnAssignUserDialog";
 
 const TableView = ({
   data = [],
@@ -43,11 +44,11 @@ const TableView = ({
   onAddNote,
   onAddAttachment,
   onClaimAccount,
-  onUnclaimAccount,
+  onUnclaimAccount, 
   onAssignUser,
-  onUnassignUser,
-  onReactivate,
-  onPermanentDelete,
+  onUnassignUsers, 
+  onReactivate, 
+  onPermanentDelete, 
   entityType = "records",
   menuItems = [],
   formatters = {},
@@ -212,12 +213,70 @@ const TableView = ({
           </Box>
         );
       case "chip":
+  // Handle dynamic chip values
+  let chipLabel = value;
+  let chipColor = "#1976d2"; // default color
+  let chipTooltip = null;
+  
+  if (column.chipLabels) {
+    // Check if chipLabels is a function (for dynamic labels)
+    if (typeof column.chipLabels === 'function') {
+      chipLabel = column.chipLabels(value, row);
+    } else if (column.chipLabels[value]) {
+      chipLabel = column.chipLabels[value];
+    }
+  }
+  
+  if (column.chipColors) {
+    // Check if chipColors is a function (for dynamic colors)
+    if (typeof column.chipColors === 'function') {
+      chipColor = column.chipColors(value, row);
+    } else if (column.chipColors[value]) {
+      chipColor = column.chipColors[value];
+    }
+  }
+  
+  // Handle special case for ownership with dynamic names
+  if (column.field === 'ownerStatus') {
+    if (value === 'owned-shared') {
+      chipLabel = row.ownerDisplayName || 'Shared';
+      chipColor = "#2196f3"; // blue for shared ownership
+      chipTooltip = row.ownerTooltip || 'Multiple users assigned';
+    } else if (value === 'owned-by-multiple') {
+      chipLabel = row.ownerDisplayName || 'Multiple users';
+      chipColor = "#ff9800"; // orange for owned by others
+      chipTooltip = row.ownerTooltip || 'Multiple users assigned';
+    } else if (value && value.startsWith('owned-by-')) {
+      chipLabel = row.ownerDisplayName || value.replace('owned-by-', '');
+      chipColor = "#ff9800"; // orange for owned by others
+    }
+  }
+  
+  const chip = (
+    <Chip
+      label={chipLabel}
+      size="small"
+      sx={{
+        backgroundColor: chipColor,
+        color: "#fff",
+        fontWeight: 500,
+      }}
+    />
+  );
+  
+  // Wrap in tooltip if needed
+  return chipTooltip ? (
+    <Tooltip title={<span>{chipTooltip}</span>} arrow>
+      {chip}
+    </Tooltip>
+  ) : chip;
+      case "boolean":
         return (
           <Chip
-            label={column.chipLabels?.[value] || value}
+            label={value ? "Yes" : "No"}
             size="small"
             sx={{
-              backgroundColor: column.chipColors?.[value] || "#1976d2",
+              backgroundColor: value ? "#4caf50" : "#f44336",
               color: "#fff",
               fontWeight: 500,
             }}
@@ -367,25 +426,28 @@ const TableView = ({
       {/* Action Menu */}
       {menuRow && (
         <ActionMenu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          menuRow={menuRow}
-          idField={idField}
-          entityType={entityType}
-          onView={onView}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onAddNote={onAddNote}
-          onAddAttachment={onAddAttachment}
-          onClaimAccount={onClaimAccount}
-          onUnclaimAccount={onUnclaimAccount}
-          onAssignUser={(row) => { setCurrentRow(row); setAssignDialogOpen(true); }}
-          onUnassignUser={onUnassignUser}
-          onReactivate={onReactivate}
-          onPermanentDelete={onPermanentDelete}
-          menuItems={menuItems}
-          tooltips={tooltips}
+         anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        menuRow={menuRow}
+        idField={idField}
+        entityType={entityType}
+        onView={onView}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onAddNote={onAddNote}
+        onAddAttachment={onAddAttachment}
+        onClaimAccount={onClaimAccount}
+        onUnclaimAccount={onUnclaimAccount}
+        onAssignUser={(row) => {
+            setCurrentRow(row);
+            setAssignDialogOpen(true);
+        }}
+        onUnassignUsers={onUnassignUsers}  
+        onReactivate={onReactivate}
+        onPermanentDelete={onPermanentDelete}
+        menuItems={menuItems}
+        tooltips={tooltips}
         />
       )}
 
@@ -405,6 +467,8 @@ const TableView = ({
         menuRow={currentRow}
         onAssign={onAssignUser}
       />
+
+      
     </>
   );
 };

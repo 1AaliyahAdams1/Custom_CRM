@@ -10,10 +10,16 @@ const getCurrentUserId = () => {
 
 export const getAllAccounts = async () => {
   try {
-    const response = await api.get(RESOURCE);
+    const response = await api.get('/accounts');
     return response.data;
   } catch (error) {
-    console.error("Error fetching all accounts:", error);
+    console.error('Error fetching all accounts:', error);
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      url: error.config?.url
+    });
     throw error;
   }
 };
