@@ -75,7 +75,7 @@ const AccountsContainer = () => {
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [accountToDelete, setAccountToDelete] = useState(null);
   const [accountToReactivate, setAccountToReactivate] = useState(null);
-  const [accountToReactivate, setAccountToReactivate] = useState(null);
+
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [accountForUnassign, setAccountForUnassign] = useState(null);
   const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
@@ -155,7 +155,7 @@ const AccountsContainer = () => {
             } else {
               acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
             }
-          });
+          }}});
         } else {
           const assignedRes = await fetchActiveAccountsByUser(userId);
           const unassignedRes = await fetchActiveUnassignedAccounts();
@@ -204,21 +204,11 @@ const AccountsContainer = () => {
       console.error("Error fetching sequences:", err);
     }
   }, []);
-    try {
-      const res = await getAllSequences();
-      setSequences(res);
-    } catch (err) {
-      console.error("Error fetching sequences:", err);
-    }
-  }, []);
 
   useEffect(() => {
     fetchAccounts();
   }, [refreshFlag, canViewAll, isCLevel]);
 
-  useEffect(() => {
-    fetchSequences();
-  }, [fetchSequences]);
 
   // ---------------- SELECTION HANDLERS ----------------
   const handleSelectClick = (id) => {
@@ -579,6 +569,6 @@ const AccountsContainer = () => {
         onRefresh={() => setRefreshFlag((f) => !f)}
       />
     </>
-  );
+  )};
 
 export default AccountsContainer;
