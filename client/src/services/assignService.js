@@ -31,6 +31,7 @@ export const assignUser = async (accountId, employeeId) => {
 export const removeAssignedUser = async (accountUserId) => {
   try {
     const response = await api.delete(`/assign/${accountUserId}`);
+    
     return response.data;
   } catch (error) {
     const errorMessage =
@@ -54,6 +55,19 @@ export const removeSpecificUsers = async (accountId, userIds) => {
       error.response?.data?.message ||
       error.message ||
       'Failed to unassign users';
+    throw new Error(errorMessage);
+  }
+};
+
+export const unclaimAccount = async (accountId) => {
+  try {
+    const response = await api.patch(`/assign/${accountId}/unclaim`);
+    return response.data;
+  } catch (error) {
+    const errorMessage = error.response?.data?.error ||
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to unclaim account';
     throw new Error(errorMessage);
   }
 };
