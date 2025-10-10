@@ -5,6 +5,7 @@ import {
   Button,
   CircularProgress,
   Alert,
+  Paper,
   Chip,
   Toolbar,
   Snackbar,
@@ -21,6 +22,7 @@ import {
   Switch,
   IconButton,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   Info as InfoIcon,
   Edit as EditIcon,
@@ -30,18 +32,15 @@ import {
   Power as PowerIcon,
   Delete as DeleteIcon,
   Close as CloseIcon,
-  LocationCity as LocationCityIcon,
-  Add,
 } from "@mui/icons-material";
-
+import { Add } from "@mui/icons-material";
 import TableView from '../../components/tableFormat/TableView';
 import { formatters } from '../../utils/formatters';
 
 const CityPage = ({
   cities = [],
-  statesProvinces = [], // For dropdown in add city popup
-  entertainmentCities = [], // For dropdown in add city popup
-  countries = [], //  For country dropdown
+  statesProvinces = [],
+  entertainmentCities = [],
   loading = false,
   error,
   setError,
@@ -63,201 +62,128 @@ const CityPage = ({
   onAddNote,
   onAddAttachment,
   onAssignUser,
+  showStatus,
+  notesPopupOpen,
+  setNotesPopupOpen,
+  attachmentsPopupOpen,
+  setAttachmentsPopupOpen,
   selectedCity,
+  popupLoading,
+  popupError,
+  handleSaveNote,
+  handleDeleteNote,
+  handleEditNote,
+  handleUploadAttachment,
+  handleDeleteAttachment,
+  handleDownloadAttachment,
 }) => {
-  // Add City Dialog State
+  const theme = useTheme();
+
   const [addCityDialogOpen, setAddCityDialogOpen] = useState(false);
   const [newCity, setNewCity] = useState({
     CityName: '',
     StateProvinceID: '',
     EntertainmentCityID: '',
-    CountryID: '', // Country field
     Active: true
   });
   const [addCityLoading, setAddCityLoading] = useState(false);
 
-  // Utility function to get consistent City ID (handling both CityID and EFMCityID)
-  const getCityId = (city) => {
-    return city.CityID || city.EFMCityID || city.City_ID;
-  };
-
-  // Create maps for quick lookup - handling both naming conventions
-  const stateProvinceMap = React.useMemo(() => {
-    const map = {};
-    statesProvinces.forEach(state => {
-      // Handle multiple naming conventions
-      const stateId = state.StateProvinceID || state.StateProvince_ID;
-      const stateName = state.StateProvinceName || state.StateProvince_Name;
-      if (stateId) {
-        map[stateId] = stateName;
-      }
-    });
-    return map;
-  }, [statesProvinces]);
-
-  const entertainmentCityMap = React.useMemo(() => {
-    const map = {};
-    entertainmentCities.forEach(entertainment => {
-      // Handle multiple naming conventions
-      const entertainmentId = entertainment.EntertainmentCityID || entertainment.EntertainmentCity_ID;
-      const entertainmentName = entertainment.EntertainmentCityName || entertainment.EntertainmentCity_Name;
-      if (entertainmentId) {
-        map[entertainmentId] = entertainmentName;
-      }
-    });
-    return map;
-  }, [entertainmentCities]);
-
-  // Country mapping
-  const countryMap = React.useMemo(() => {
-    const map = {};
-    countries.forEach(country => {
-      // Handle multiple naming conventions
-      const countryId = country.CountryID || country.Country_ID;
-      const countryName = country.CountryName || country.Country_Name;
-      if (countryId) {
-        map[countryId] = countryName;
-      }
-    });
-    return map;
-  }, [countries]);
-
-  // Enhanced cities data with state/province, entertainment city, and country names
-  const enhancedCities = React.useMemo(() => {
-    return cities.map(city => {
-      // Handle multiple naming conventions for IDs
-      const stateProvinceId = city.StateProvinceID || city.StateProvince_ID;
-      const entertainmentCityId = city.EntertainmentCityID || city.EntertainmentCity_ID;
-      const countryId = city.CountryID || city.Country_ID; // Country ID handling
-      
-      return {
-        ...city,
-        // Ensure consistent field names for display
-        CityID: getCityId(city),
-        CityName: city.CityName || city.City_Name,
-        StateProvinceID: stateProvinceId,
-        EntertainmentCityID: entertainmentCityId,
-        CountryID: countryId, //  Consistent country ID
-        // Enhanced display names
-        StateProvince_Name: stateProvinceMap[stateProvinceId] || 'N/A',
-        EntertainmentCity_Name: entertainmentCityMap[entertainmentCityId] || 'N/A',
-        Country_Name: countryMap[countryId] || 'N/A' //  Country name
-      };
-    });
-  }, [cities, stateProvinceMap, entertainmentCityMap, countryMap]);
-
   const columns = [
     { field: 'CityName', headerName: 'City Name', type: 'tooltip', defaultVisible: true },
-    { field: 'StateProvince_Name', headerName: 'State/Province', defaultVisible: true },
-    { field: 'Country_Name', headerName: 'Country', defaultVisible: true }, //  Country column
-    { field: 'EntertainmentCity_Name', headerName: 'Entertainment City', defaultVisible: false },
-    { field: 'Active', headerName: 'Status', defaultVisible: true },
+    { field: 'StateProvinceName', headerName: 'State/Province', defaultVisible: true },
+    { field: 'EntertainmentCityName', headerName: 'Entertainment City', defaultVisible: true },
+    { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
+    { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
+    {
+      field: 'Active',
+      headerName: 'Status',
+      type: 'chip',
+      chipLabels: { true: 'Active', false: 'Inactive' },
+      chipColors: { true: '#079141ff', false: '#999999' },
+      defaultVisible: true,
+    },
   ];
 
-  // Enhanced menu items for cities
   const getMenuItems = (city) => {
-    const cityId = getCityId(city); // Use utility function for consistent ID handling
     const baseItems = [
       {
         label: 'View Details',
-        icon: <InfoIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onView && onView(city),
         show: !!onView,
       },
       {
         label: 'Edit',
-        icon: <EditIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onEdit && onEdit(city),
         show: !!onEdit,
       },
       {
         label: 'Add Notes',
-        icon: <NoteIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <NoteIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onAddNote && onAddNote(city),
         show: !!onAddNote,
       },
       {
         label: 'Add Attachments',
-        icon: <AttachFileIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <AttachFileIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onAddAttachment && onAddAttachment(city),
         show: !!onAddAttachment,
       },
     ];
 
-    // Add reactivate/deactivate based on current status
-    const isActive = city.Active === true || city.Active === 1;
-    if (isActive) {
+    if (city.Active) {
       baseItems.push({
         label: 'Deactivate',
         icon: <PowerOffIcon sx={{ mr: 1, color: '#ff9800' }} />,
-        onClick: () => onDeactivate && onDeactivate(cityId),
+        onClick: () => onDeactivate && onDeactivate(city.CityID),
         show: !!onDeactivate,
       });
     } else {
       baseItems.push({
         label: 'Reactivate',
         icon: <PowerIcon sx={{ mr: 1, color: '#4caf50' }} />,
-        onClick: () => onReactivate && onReactivate(cityId),
+        onClick: () => onReactivate && onReactivate(city.CityID),
         show: !!onReactivate,
       });
     }
 
-    // Add delete option
     baseItems.push({
       label: 'Delete',
       icon: <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />,
-      onClick: () => onDelete && onDelete(cityId),
+      onClick: () => onDelete && onDelete(city.CityID),
       show: !!onDelete,
     });
 
     return baseItems;
   };
 
-  // Custom formatters for city-specific fields
   const cityFormatters = {
     ...formatters,
     Active: (value) => {
-      const isActive = value === true || value === 1;
       return (
         <Chip
-          label={isActive ? 'Active' : 'Inactive'}
+          label={value ? 'Active' : 'Inactive'}
           size="small"
           sx={{
-            backgroundColor: isActive ? '#079141ff' : '#999999',
+            backgroundColor: value ? '#079141ff' : '#999999',
             color: '#fff',
             fontWeight: 500,
           }}
         />
       );
     },
-    StateProvince_Name: (value) => {
+    EntertainmentCityName: (value) => {
       return value || 'N/A';
-    },
-    EntertainmentCity_Name: (value) => {
-      return value === 'N/A' ? (
-        <Typography variant="body2" sx={{ color: '#999' }}>
-          N/A
-        </Typography>
-      ) : value;
-    },
-    // Country formatter
-    Country_Name: (value) => {
-      return value === 'N/A' ? (
-        <Typography variant="body2" sx={{ color: '#999' }}>
-          N/A
-        </Typography>
-      ) : value;
     }
   };
 
-  // Handle Add City Dialog
   const handleOpenAddCityDialog = () => {
     setAddCityDialogOpen(true);
     setNewCity({
       CityName: '',
       StateProvinceID: '',
       EntertainmentCityID: '',
-      CountryID: '', // Reset country field
       Active: true
     });
   };
@@ -268,38 +194,20 @@ const CityPage = ({
       CityName: '',
       StateProvinceID: '',
       EntertainmentCityID: '',
-      CountryID: '', //Reset country field
       Active: true
     });
   };
 
   const handleAddCity = async () => {
-    if (!newCity.CityName.trim()) {
-      setError && setError('City name is required');
+    if (!newCity.CityName.trim() || !newCity.StateProvinceID) {
+      setError && setError('City name and state/province are required');
       return;
     }
-
-    if (!newCity.StateProvinceID) {
-      setError && setError('State/Province is required');
-      return;
-    }
-
-    //  Country validation 
-    // if (!newCity.CountryID) {
-    //   setError && setError('Country is required');
-    //   return;
-    // }
 
     setAddCityLoading(true);
     try {
       if (onCreate) {
-        const cityData = {
-          ...newCity,
-          StateProvinceID: parseInt(newCity.StateProvinceID),
-          EntertainmentCityID: newCity.EntertainmentCityID ? parseInt(newCity.EntertainmentCityID) : null,
-          CountryID: newCity.CountryID ? parseInt(newCity.CountryID) : null //  Country handling
-        };
-        await onCreate(cityData);
+        await onCreate(newCity);
         handleCloseAddCityDialog();
         setSuccessMessage && setSuccessMessage('City added successfully');
       }
@@ -318,163 +226,146 @@ const CityPage = ({
   };
 
   return (
-    <>
-      {/* Error and Success Messages */}
+    <Box sx={{ 
+      width: '100%', 
+      backgroundColor: theme.palette.background.default,
+      minHeight: '100vh', 
+      p: 3 
+    }}>
       {error && (
-        <Alert severity="error" sx={{ m: 2 }}>
+        <Alert 
+          severity="error" 
+          sx={{ mb: 2 }}
+          onClose={() => setError && setError('')}
+        >
           {error}
         </Alert>
       )}
 
       {successMessage && (
-        <Alert
-          severity="success"
-          sx={{ m: 2 }}
-          onClose={() => setSuccessMessage && setSuccessMessage("")}
+        <Alert 
+          severity="success" 
+          sx={{ mb: 2 }}
+          onClose={() => setSuccessMessage && setSuccessMessage('')}
         >
           {successMessage}
         </Alert>
       )}
 
-      {/* Cities Toolbar */}
-      <Toolbar
-        sx={{
-          backgroundColor: "#ffffff",
-          borderBottom: "1px solid #e5e5e5",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 2,
-          py: 2,
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            flex: 1,
-          }}
-        >
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{ color: "#050505", fontWeight: 600 }}
-          >
-            Cities
-          </Typography>
-          {selected.length > 0 && (
-            <Chip
-              label={`${selected.length} selected`}
-              size="small"
-              sx={{ backgroundColor: "#e0e0e0", color: "#050505" }}
-            />
-          )}
-        </Box>
-
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={handleOpenAddCityDialog}
-            disabled={loading}
-            sx={{
-              backgroundColor: "#050505",
-              color: "#ffffff",
-              "&:hover": { backgroundColor: "#333333" },
-              "&:disabled": {
-                backgroundColor: "#cccccc",
-                color: "#666666",
-              },
-            }}
-          >
-            Add City
-          </Button>
-          {selected.length > 0 && (
+      <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+        <Toolbar sx={{ 
+          backgroundColor: theme.palette.background.paper,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          justifyContent: 'space-between', 
+          flexWrap: 'wrap', 
+          gap: 2, 
+          py: 2 
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+            <Typography variant="h6" component="div" sx={{ 
+              color: theme.palette.text.primary,
+              fontWeight: 600 
+            }}>
+              Cities
+            </Typography>
+            {selected.length > 0 && (
+              <Chip 
+                label={`${selected.length} selected`} 
+                size="small" 
+                sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' ? '#333' : '#e0e0e0',
+                  color: theme.palette.text.primary
+                }} 
+              />
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
             <Button
-              variant="outlined"
-              color="warning"
-              onClick={onBulkDeactivate}
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleOpenAddCityDialog}
             >
-              Deactivate Selected
+              Add City
             </Button>
+            {selected.length > 0 && (
+              <Button
+                variant="outlined"
+                color="warning"
+                onClick={onBulkDeactivate}
+              >
+                Deactivate Selected
+              </Button>
+            )}
+          </Box>
+        </Toolbar>
+
+        {loading ? (
+          <Box display="flex" justifyContent="center" p={8}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <TableView
+            data={cities}
+            columns={columns}
+            idField="CityID"
+            selected={selected}
+            onSelectClick={onSelectClick}
+            onSelectAllClick={onSelectAllClick}
+            showSelection={true}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onAddNote={onAddNote}
+            onAddAttachment={onAddAttachment}
+            onAssignUser={onAssignUser}
+            formatters={cityFormatters}
+            entityType="city"
+            getMenuItems={getMenuItems}
+          />
+        )}
+
+        <Box sx={{ 
+          p: 2, 
+          borderTop: `1px solid ${theme.palette.divider}`,
+          backgroundColor: theme.palette.background.default,
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center' 
+        }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            Showing {cities.length} cities
+          </Typography>
+          {selected.length > 0 && (
+            <Typography variant="body2" sx={{ 
+              color: theme.palette.text.primary,
+              fontWeight: 500 
+            }}>
+              {selected.length} selected
+            </Typography>
           )}
         </Box>
-      </Toolbar>
-
-      {/* Cities Table */}
-      {loading ? (
-        <Box display="flex" justifyContent="center" p={8}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <TableView
-          data={enhancedCities}
-          columns={columns}
-          idField="CityID" // Updated to use consistent CityID
-          selected={selected}
-          onSelectClick={onSelectClick}
-          onSelectAllClick={onSelectAllClick}
-          showSelection={true}
-          onView={onView}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onAddNote={onAddNote}
-          onAddAttachment={onAddAttachment}
-          onAssignUser={onAssignUser}
-          formatters={cityFormatters}
-          entityType="city"
-          getMenuItems={getMenuItems}
-        />
-      )}
-
-      {/* Results Footer */}
-      <Box
-        sx={{
-          p: 2,
-          borderTop: "1px solid #e5e5e5",
-          backgroundColor: "#fafafa",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Typography variant="body2" sx={{ color: "#666666" }}>
-          Showing {enhancedCities.length} cities
-        </Typography>
-        {selected.length > 0 && (
-          <Typography
-            variant="body2"
-            sx={{ color: "#050505", fontWeight: 500 }}
-          >
-            {selected.length} selected
-          </Typography>
-        )}
-      </Box>
+      </Paper>
 
       {/* Add City Dialog */}
-      <Dialog
-        open={addCityDialogOpen}
+      <Dialog 
+        open={addCityDialogOpen} 
         onClose={handleCloseAddCityDialog}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.background.paper,
+          }
+        }}
       >
-        <DialogTitle sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
           alignItems: 'center',
-          borderBottom: '1px solid #e5e5e5'
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          color: theme.palette.text.primary
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LocationCityIcon sx={{ color: '#1976d2' }} />
-            Add New City
-          </Box>
+          Add New City
           <IconButton onClick={handleCloseAddCityDialog} size="small">
             <CloseIcon />
           </IconButton>
@@ -488,8 +379,6 @@ const CityPage = ({
               fullWidth
               required
               variant="outlined"
-              helperText="Enter the full city name"
-              inputProps={{ maxLength: 100 }}
             />
 
             <FormControl fullWidth required>
@@ -499,41 +388,11 @@ const CityPage = ({
                 onChange={(e) => handleInputChange('StateProvinceID', e.target.value)}
                 label="State/Province"
               >
-                <MenuItem value="">
-                  <em>Select a state/province</em>
-                </MenuItem>
-                {statesProvinces.map((state) => {
-                  const stateId = state.StateProvinceID || state.StateProvince_ID;
-                  const stateName = state.StateProvinceName || state.StateProvince_Name;
-                  return (
-                    <MenuItem key={stateId} value={stateId}>
-                      {stateName}
-                    </MenuItem>
-                  );
-                })}
-              </Select>
-            </FormControl>
-
-            {/* Country Selection */}
-            <FormControl fullWidth>
-              <InputLabel>Country (Optional)</InputLabel>
-              <Select
-                value={newCity.CountryID}
-                onChange={(e) => handleInputChange('CountryID', e.target.value)}
-                label="Country (Optional)"
-              >
-                <MenuItem value="">
-                  <em>Select a country</em>
-                </MenuItem>
-                {countries.map((country) => {
-                  const countryId = country.CountryID || country.Country_ID;
-                  const countryName = country.CountryName || country.Country_Name;
-                  return (
-                    <MenuItem key={countryId} value={countryId}>
-                      {countryName}
-                    </MenuItem>
-                  );
-                })}
+                {statesProvinces.map((state) => (
+                  <MenuItem key={state.StateProvinceID} value={state.StateProvinceID}>
+                    {state.StateProvinceName}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 
@@ -547,15 +406,11 @@ const CityPage = ({
                 <MenuItem value="">
                   <em>None</em>
                 </MenuItem>
-                {entertainmentCities.map((entertainment) => {
-                  const entertainmentId = entertainment.EntertainmentCityID || entertainment.EntertainmentCity_ID;
-                  const entertainmentName = entertainment.EntertainmentCityName || entertainment.EntertainmentCity_Name;
-                  return (
-                    <MenuItem key={entertainmentId} value={entertainmentId}>
-                      {entertainmentName}
-                    </MenuItem>
-                  );
-                })}
+                {entertainmentCities.map((entertainment) => (
+                  <MenuItem key={entertainment.EntertainmentCityID} value={entertainment.EntertainmentCityID}>
+                    {entertainment.EntertainmentCityName}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 
@@ -571,18 +426,17 @@ const CityPage = ({
             />
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 3, borderTop: '1px solid #e5e5e5' }}>
+        <DialogActions sx={{ 
+          p: 3, 
+          borderTop: `1px solid ${theme.palette.divider}`
+        }}>
           <Button onClick={handleCloseAddCityDialog} color="inherit">
             Cancel
           </Button>
           <Button
             onClick={handleAddCity}
             variant="contained"
-            disabled={
-              addCityLoading ||
-              !newCity.CityName.trim() ||
-              !newCity.StateProvinceID
-            }
+            disabled={addCityLoading || !newCity.CityName.trim() || !newCity.StateProvinceID}
           >
             {addCityLoading ? <CircularProgress size={20} /> : 'Add City'}
           </Button>
@@ -596,15 +450,15 @@ const CityPage = ({
         onClose={() => setStatusMessage && setStatusMessage('')}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert
-          onClose={() => setStatusMessage && setStatusMessage('')}
-          severity={statusSeverity}
+        <Alert 
+          onClose={() => setStatusMessage && setStatusMessage('')} 
+          severity={statusSeverity} 
           sx={{ width: '100%' }}
         >
           {statusMessage}
         </Alert>
       </Snackbar>
-    </>
+    </Box>
   );
 };
 

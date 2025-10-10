@@ -23,16 +23,10 @@ const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 const CountryContainer = lazy(() => import("./components/containers/CountryContainer"));
 const CityPage = lazy(() => import("./pages/GeographicData/CityPage"));
 const CurrencyPage = lazy(() => import("./pages/GeographicData/CurrencyPage"));
-const StateProvincePage = lazy(() => import("./pages/GeographicData/StateProvincePage"));
 const IndustryContainer = lazy(() => import("./components/containers/IndustryContainer"));
 const PriorityLevelContainer = lazy(() => import("./components/containers/PriorityLevelContainer"));
 const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
 const DealStagePage = lazy(() => import("./pages/Deals/DealStagePage"));
-
-const CompaniesPage = lazy(() => import("./pages/Companies/CompaniesPage"));
-const EventsPage = lazy(() => import("./pages/Events/EventsPage"));
-const OwnersPage = lazy(() => import("./pages/Owners/OwnersPage"));
-const DiscountCodesPage = lazy(() => import("./pages/DiscountCodes/DiscountCodePage"));
 
 
 const AccountsDetailsPage = lazy(() => import("./pages/Accounts/AccountsDetailsPage"));
@@ -40,27 +34,18 @@ const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsP
 const DealsDetailsPage = lazy(() => import("./pages/Deals/DealsDetailsPage"));
 const ActivitiesDetailsPage = lazy(() => import("./pages/Activities/ActivitiesDetailsPage"));
 const ProductDetailsPage = lazy(() => import("./pages/Products/ProductDetailsPage"));
-const CompaniesDetailsPage = lazy(() => import("./pages/Companies/CompanyDetailsPage"));
-const EventsDetailsPage = lazy(() => import("./pages/Events/EventDetailsPage"));
-const DiscountCodesDetailsPage = lazy(() => import("./pages/DiscountCodes/DiscountCodeDetails"));
 
 const CreateAccountPage = lazy(() => import("./pages/Accounts/CreateAccountPage"));
 const CreateContactsPage = lazy(() => import("./pages/Contacts/CreateContactsPage"));
 const CreateDealPage = lazy(() => import("./pages/Deals/CreateDealPage"));
 const CreateActivitiesPage = lazy(() => import("./pages/Activities/CreateActivitiesPage"));
 const CreateProduct = lazy(() => import("./pages/Products/CreateProductPage"));
-const CreateCompanyPage = lazy(() => import("./pages/Companies/AddCompanyPage"));
-const CreateDiscountCodePage = lazy(() => import("./pages/DiscountCodes/CreateDiscountCodePage"));
-const CreateEventPage = lazy(() => import("./pages/Events/CreateEventPage"));
 
 const EditAccountPage = lazy(() => import("./pages/Accounts/EditAccountPage"));
 const EditContactPage = lazy(() => import("./pages/Contacts/EditContactPage"));
 const EditDealPage = lazy(() => import("./pages/Deals/EditDealPage"));
 const EditActivityPage = lazy(() => import("./pages/Activities/EditActivityPage"));
 const EditProductPage = lazy(() => import("./pages/Products/EditProductPage"));
-const EditCompanyPage = lazy(() => import("./pages/Companies/EditCompanyPage"));
-const EditDiscountCodePage = lazy(() => import("./pages/DiscountCodes/EditDiscountCodePage"));
-const EditEventPage = lazy(() => import("./pages/Events/EditEventsPage"));
 
 const SequencesPage = lazy(() => import("./components/containers/SequencesContainer"));
 const SequencesDetailPage = lazy(() => import("./pages/Sequences/SequencesDetailsPage"));
@@ -70,8 +55,6 @@ const EditSequencesPage = lazy(() => import("./pages/Sequences/EditSequencesPage
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-
-const DealRoomPage = lazy(() => import("./pages/DealRoom/DealRoom"));
 
 const AppRoutes = () => {
   console.log("AppRoutes component is rendering");
@@ -319,146 +302,8 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      {/* --- Companies Routes --- */}
-      <Route
-        path="/companies"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.companies}>
-            <CompaniesPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/companies/create"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.companiesCreate}>
-            <CreateCompanyPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/companies/edit/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.companiesEdit}>
-            <EditCompanyPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/companies/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.companiesDetails}> 
-            <CompaniesDetailsPage />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/companies/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.companiesDetails}> 
-            <CompaniesDetailsPage />
-          </PrivateRoute>
-        }
-      />
-
-
-      {/* --- Events Routes --- */}
-      <Route
-        path="/events"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.events}>
-            <EventsPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/events/create"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsCreate}>
-            <CreateEventPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/events/edit/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsEdit}>
-            <EditEventPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/events/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsDetails}>
-            <EventsDetailsPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/events/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.eventsDetails}>
-            <EventsDetailsPage />
-          </PrivateRoute>
-        }
-      />
-
-    
-      {/* --- Owners Routes --- */}
-      <Route
-        path="/owners"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.owners}>
-            <OwnersPage />
-          </PrivateRoute>
-        }
-      />
-      {/* --- Discount Codes Routes --- */}
-      <Route
-        path="/discount-codes"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodes}>
-            <DiscountCodesPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/discount-codes/create"
-        element={   
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesCreate}>
-            <CreateDiscountCodePage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/discount-codes/edit/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesEdit}>
-            <EditDiscountCodePage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/discount-codes/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesDetails}>
-            <DiscountCodesDetailsPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/discount-codes/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.discountcodesDetails}>
-            <DiscountCodesDetailsPage />
-          </PrivateRoute>
-        }
-      />
       
-
-      {/* --- Geography Routes (Updated) --- */} 
+      {/* --- Geography Routes --- */} 
       {/* Main geography route - shows countries by default */}
       <Route
         path="/countries"
@@ -470,14 +315,6 @@ const AppRoutes = () => {
       />
 
       {/* Geography sub-routes - all use the same container but with different tabs */}
-      <Route
-        path="/countries/states"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.states}>
-            <CountryContainer />
-          </PrivateRoute>
-        }
-      />
 
       <Route
         path="/countries/cities"
@@ -495,16 +332,10 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-
       {/* Legacy routes - redirect to new structure */}
       <Route
         path="/cities"
         element={<Navigate to="/countries/cities" replace />}
-      />
-
-      <Route
-        path="/states"
-        element={<Navigate to="/countries/states" replace />}
       />
       <Route
         path="/currencies"
@@ -563,15 +394,6 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.settings}>
             <SettingsPage />
-          </PrivateRoute>
-        }
-      />
-      {/* --- Deal Room Route --- */}
-      <Route
-        path="/deal-room"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.dealRoom}>
-            <DealRoomPage />
           </PrivateRoute>
         }
       />

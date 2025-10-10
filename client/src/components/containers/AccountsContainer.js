@@ -39,6 +39,7 @@ import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import BulkAssignDialog from "../../components/dialogs/BulkAssignDialog";
 import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
+import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
 import BulkClaimAndSequenceDialog from "../../components/dialogs/BulkClaimAndSequenceDialog";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import UnassignUserDialog from "../../components/dialogs/UnAssignUserDialog";
@@ -73,6 +74,7 @@ const AccountsContainer = () => {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [accountToDelete, setAccountToDelete] = useState(null);
+  const [accountToReactivate, setAccountToReactivate] = useState(null);
   const [accountToReactivate, setAccountToReactivate] = useState(null);
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [accountForUnassign, setAccountForUnassign] = useState(null);
@@ -109,7 +111,17 @@ const AccountsContainer = () => {
           const rawData = await getAllAccounts();
           accountsData = Array.isArray(rawData) ? rawData : [];
 
+
           accountsData.forEach((acc) => {
+            const idsStr = acc.AssignedEmployeeIDs;
+            const namesStr = acc.AssignedEmployeeNames;
+
+            if (idsStr && namesStr) {
+              const ids = idsStr.split(",").map((id) => id.trim());
+              const names = namesStr.split(",").map((n) => n.trim());
+              const isOwnedByMe = ids.includes(String(userId));
+
+              if (isOwnedByMe && ids.length === 1) {
             const idsStr = acc.AssignedEmployeeIDs;
             const namesStr = acc.AssignedEmployeeNames;
 
@@ -121,7 +133,13 @@ const AccountsContainer = () => {
               if (isOwnedByMe && ids.length === 1) {
                 acc.ownerStatus = "owned";
               } else if (isOwnedByMe && ids.length > 1) {
+              } else if (isOwnedByMe && ids.length > 1) {
                 acc.ownerStatus = "owned-shared";
+                acc.ownerDisplayName = `You + ${ids.length - 1} other${ids.length - 1 > 1 ? "s" : ""}`;
+                acc.ownerTooltip = names.join(", ");
+              } else if (ids.length === 1) {
+                acc.ownerStatus = `owned-by-${names[0]}`;
+                acc.ownerDisplayName = names[0];
                 acc.ownerDisplayName = `You + ${ids.length - 1} other${ids.length - 1 > 1 ? "s" : ""}`;
                 acc.ownerTooltip = names.join(", ");
               } else if (ids.length === 1) {
@@ -129,6 +147,8 @@ const AccountsContainer = () => {
                 acc.ownerDisplayName = names[0];
               } else {
                 acc.ownerStatus = "owned-by-multiple";
+                acc.ownerDisplayName = `${ids.length} users`;
+                acc.ownerTooltip = names.join(", ");
                 acc.ownerDisplayName = `${ids.length} users`;
                 acc.ownerTooltip = names.join(", ");
               }
@@ -150,6 +170,7 @@ const AccountsContainer = () => {
           unassigned.forEach((a) => (a.ownerStatus = "unowned"));
 
           const map = new Map();
+          [...assigned, ...unassigned].forEach((a) => map.set(a.AccountID, a));
           [...assigned, ...unassigned].forEach((a) => map.set(a.AccountID, a));
           accountsData = Array.from(map.values());
         }
@@ -176,6 +197,13 @@ const AccountsContainer = () => {
   };
 
   const fetchSequences = useCallback(async () => {
+    try {
+      const res = await getAllSequences();
+      setSequences(res);
+    } catch (err) {
+      console.error("Error fetching sequences:", err);
+    }
+  }, []);
     try {
       const res = await getAllSequences();
       setSequences(res);
@@ -404,7 +432,6 @@ const AccountsContainer = () => {
         error={error}
         statusMessage={statusMessage}
         statusSeverity={statusSeverity}
-        setStatusMessage={setStatusMessage}
         selected={selected}
         onSelectClick={handleSelectClick}
         onSelectAllClick={handleSelectAllClick}
@@ -553,6 +580,5 @@ const AccountsContainer = () => {
       />
     </>
   );
-};
 
 export default AccountsContainer;

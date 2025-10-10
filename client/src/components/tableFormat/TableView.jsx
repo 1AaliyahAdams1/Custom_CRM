@@ -496,6 +496,18 @@ const TableView = ({
         onSave={handleColumnsSave}
         columns={columns}
       />
+
+      {/* Assign User Dialog */}
+      <AssignUserDialog
+        open={assignDialogOpen}
+        onClose={() => setAssignDialogOpen(false)}
+        menuRow={currentRow}
+        onAssign={onAssignUser}
+      />
+
+      
+
+      
     </>
   );
 };
