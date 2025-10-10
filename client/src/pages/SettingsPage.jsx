@@ -282,36 +282,6 @@ const Settings = () => {
                         </ListItem>
                         <Divider sx={{ borderColor: currentTheme.divider }} />
                         
-                        <ListItem sx={{ py: getSpacing(2) }}>
-                            <ListItemIcon>
-                                <ViewList sx={{ color: currentTheme.text.secondary }} />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Items Per Page"
-                                secondary="Default number of items to display per page"
-                                primaryTypographyProps={{ color: currentTheme.text.primary }}
-                                secondaryTypographyProps={{ color: currentTheme.text.secondary }}
-                            />
-                            <ListItemSecondaryAction>
-                                <FormControl size="small" sx={{ minWidth: 100 }}>
-                                    <Select
-                                        value={settings.general.itemsPerPage}
-                                        onChange={(e) => updateSettings('general', { itemsPerPage: e.target.value })}
-                                        sx={{
-                                            color: currentTheme.text.primary,
-                                            '.MuiOutlinedInput-notchedOutline': {
-                                                borderColor: currentTheme.divider
-                                            }
-                                        }}
-                                    >
-                                        <MenuItem value={10}>10</MenuItem>
-                                        <MenuItem value={25}>25</MenuItem>
-                                        <MenuItem value={50}>50</MenuItem>
-                                        <MenuItem value={100}>100</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </ListItemSecondaryAction>
-                        </ListItem>
                         <Divider sx={{ borderColor: currentTheme.divider }} />
                         
                         <ListItem sx={{ py: getSpacing(2) }}>

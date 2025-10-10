@@ -19,7 +19,7 @@ import {
   Chip,
   Divider,
 } from '@mui/material';
-import { Gavel, Timeline, CheckCircle, Info, Cancel } from '@mui/icons-material';
+import {Timeline, CheckCircle, Info, Cancel } from '@mui/icons-material';
 
 const BulkClaimAndSequenceDialog = ({
   open,
@@ -99,7 +99,7 @@ const BulkClaimAndSequenceDialog = ({
         pb: 2
       }}>
         <Timeline sx={{ color: '#079141ff' }} />
-        Bulk Claim & Add Sequence
+        Bulk Claim & Assign Sequence
       </DialogTitle>
 
       <DialogContent sx={{ mt: 2 }}>
