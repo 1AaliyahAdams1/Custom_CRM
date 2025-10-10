@@ -16,7 +16,6 @@ import {
   Alert,
   CircularProgress,
   Divider,
-  Chip,
   Autocomplete,
   InputAdornment,
   Tooltip,
@@ -29,12 +28,10 @@ import {
   Info as InfoIcon,
   AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
-import { ThemeProvider } from '@mui/material/styles';
-import theme from '../../components/Theme';
+import { ThemeProvider, useTheme } from '@mui/material/styles';
+import defaultTheme from '../../components/Theme';
 
 const AddCountryPage = ({
- 
-  
   onSave,
   onCancel,
   loading: externalLoading = false,
@@ -45,6 +42,8 @@ const AddCountryPage = ({
   onLoadRegions,
 }) => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  
   // Form state
   const [formData, setFormData] = useState({
     CountryName: '',
@@ -299,7 +298,6 @@ const AddCountryPage = ({
     setSuccessMessage('');
   };
 
-  
   const handleCancel = () => {
     navigate('/country');
   };
@@ -316,8 +314,16 @@ const AddCountryPage = ({
   const displayError = externalError || submitError;
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3, display:'flex', flexDirection:'column', alignItems:'center' }}>
+    <ThemeProvider theme={defaultTheme}>
+      <Box sx={{ 
+        width: '100%', 
+        backgroundColor: theme.palette.background.default,
+        minHeight: '100vh', 
+        p: 3, 
+        display:'flex', 
+        flexDirection:'column', 
+        alignItems:'center' 
+      }}>
         {/* Header */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -325,11 +331,17 @@ const AddCountryPage = ({
               <ArrowBackIcon />
             </IconButton>
             
-            <Typography variant="h4" component="h1" sx={{ color: 'primary.main', fontWeight: 600 }}>
+            <Typography variant="h4" component="h1" sx={{ 
+              color: theme.palette.text.primary,
+              fontWeight: 600 
+            }}>
               Add New Country
             </Typography>
           </Box>
-          <Typography variant="body1" color="text.secondary" sx={{ ml: 7 }}>
+          <Typography variant="body1" sx={{ 
+            ml: 7,
+            color: theme.palette.text.secondary
+          }}>
             Add a new country to expand client base
           </Typography>
         </Box>
@@ -483,7 +495,11 @@ const AddCountryPage = ({
                   </Box>
                 }
               />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, ml: 4 }}>
+              <Typography variant="body2" sx={{ 
+                mt: 1, 
+                ml: 4,
+                color: theme.palette.text.secondary
+              }}>
                 {formData.Active 
                   ? 'Entertainment.FM has active clients in this country' 
                   : 'Country will be inactive'
@@ -521,7 +537,13 @@ const AddCountryPage = ({
             </Box>
 
             {/* Form Actions */}
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2, borderTop: '1px solid #e5e5e5' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              gap: 2, 
+              justifyContent: 'flex-end', 
+              pt: 2, 
+              borderTop: `1px solid ${theme.palette.divider}`
+            }}>
               <Button
                 variant="outlined"
                 startIcon={<ClearIcon />}
@@ -551,42 +573,6 @@ const AddCountryPage = ({
             </Box>
           </form>
         </Paper>
-
-        {/* Form Summary
-        {(formData.CountryName || formData.CountryCode) && (
-          <Paper sx={{ mt: 3, p: 3, maxWidth: 800, backgroundColor: '#f8f9fa' }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Preview
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {formData.CountryName && (
-                <Chip 
-                  label={`Name: ${formData.CountryName}`} 
-                  variant="outlined" 
-                  color="primary" 
-                />
-              )}
-              {formData.CountryCode && (
-                <Chip 
-                  label={`Code: ${formData.CountryCode}`} 
-                  variant="outlined" 
-                  color="primary" 
-                />
-              )}
-              {formData.Region && (
-                <Chip 
-                  label={`Region: ${formData.Region}`} 
-                  variant="outlined" 
-                />
-              )}
-              <Chip 
-                label={`Status: ${formData.Active ? 'Active' : 'Inactive'}`} 
-                variant="outlined" 
-                color={formData.Active ? 'success' : 'default'}
-              />
-            </Box>
-          </Paper>
-        )} */}
       </Box>
     </ThemeProvider>
   );

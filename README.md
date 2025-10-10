@@ -77,6 +77,8 @@ PACKAGES for Root folder [Custom_CRM]
 
 > npm install node-cron
 
+> npm install node-fetch
+
 
 PACKAGES for Client folder [client]
 > C:\Desktop\Custom_CRM\client [CHANGE THIS COMMAND TO MATCH YOUR FILE DIRECTORY]

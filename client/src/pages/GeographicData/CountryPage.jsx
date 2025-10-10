@@ -37,12 +37,9 @@ import {
   Language as LanguageIcon,
   Add,
 } from "@mui/icons-material";
-
-import { ThemeProvider } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import TableView from '../../components/tableFormat/TableView';
-import theme from "../../components/Theme";
 import { formatters } from '../../utils/formatters';
-import StateProvincePage from './StateProvincePage';
 import CityPage from './CityPage';
 import CurrencyPage from "./CurrencyPage";
 
@@ -62,7 +59,6 @@ function TabPanel({ children, value, index, ...other }) {
 }
 
 const CountryPage = ({
-  // Country props
   countries = [],
   currencies = [],
   loading = false,
@@ -87,7 +83,6 @@ const CountryPage = ({
   onAddAttachment,
   onAssignUser,
   showStatus,
-  // Popup props
   notesPopupOpen,
   setNotesPopupOpen,
   attachmentsPopupOpen,
@@ -101,21 +96,13 @@ const CountryPage = ({
   handleUploadAttachment,
   handleDeleteAttachment,
   handleDownloadAttachment,
-
-  // City props (pass through to CityPage)
   cityProps = {},
-
-  // State/Province props (pass through to StateProvincePage)
-  stateProvinceProps = {},
-
-  // Currency props (pass through to CurrencyPage)
   currencyProps = {},
-
-  // Tab management
   currentTab = 0,
   onTabChange,
 }) => {
-  // Add Country Dialog State
+  const theme = useTheme(); // ✅ Theme hook
+
   const [addCountryDialogOpen, setAddCountryDialogOpen] = useState(false);
   const [newCountry, setNewCountry] = useState({
     CountryName: '',
@@ -125,78 +112,47 @@ const CountryPage = ({
   });
   const [addCountryLoading, setAddCountryLoading] = useState(false);
 
-  // Utility function to get consistent Country ID (prioritizing EFM fields)
-  const getCountryId = (country) => {
-    return country.EFMCountryID || country.CountryID;
-  };
+  const getCountryId = (country) => country.EFMCountryID || country.CountryID;
+  const getCurrencyId = (country) => country.EFMCurrencyID || country.CurrencyID;
 
-  // Utility function to get consistent Currency ID (prioritizing EFM fields)
-  const getCurrencyId = (country) => {
-    return country.EFMCurrencyID || country.CurrencyID;
-  };
-
-  // Create currency map for quick lookup
   const currencyMap = React.useMemo(() => {
     const map = {};
     currencies.forEach(currency => {
-      // Handle multiple naming conventions - prioritize EFM fields
       const currencyId = currency.EFMCurrencyID || currency.CurrencyID;
-      const currencyName = currency.CurrencyName;
-      const currencyCode = currency.CurrencyCode;
       if (currencyId) {
         map[currencyId] = {
-          name: currencyName,
-          code: currencyCode
+          name: currency.CurrencyName,
+          code: currency.CurrencyCode
         };
       }
     });
     return map;
   }, [currencies]);
 
-  // Enhanced countries data with currency names
   const enhancedCountries = React.useMemo(() => {
     return countries.map(country => {
       const currencyId = getCurrencyId(country);
       const currencyInfo = currencyMap[currencyId];
-      
       return {
         ...country,
-        // Ensure consistent field names
         CountryID: getCountryId(country),
         CountryName: country.CountryName,
         CountryCode: country.CountryCode,
         CurrencyID: currencyId,
-        // Enhanced display fields
         CurrencyName: currencyInfo?.name || 'No Currency',
         CurrencyCode: currencyInfo?.code || null
       };
     });
   }, [countries, currencyMap]);
 
-  // Define available tabs
   const availableTabs = [
-    {
-      id: 'countries',
-      label: 'Countries',
-      component: 'countries'
-    },
-    {
-      id: 'cities',
-      label: 'Cities',
-      component: 'cities'
-    },
-    {
-      id: 'currencies',
-      label: 'Currencies',
-      component: 'currencies'
-    },
+    { id: 'countries', label: 'Countries', component: 'countries' },
+    { id: 'cities', label: 'Cities', component: 'cities' },
+    { id: 'currencies', label: 'Currencies', component: 'currencies' },
   ];
 
-  // Handle tab change
   const handleTabChange = (event, newValue) => {
-    if (onTabChange) {
-      onTabChange(newValue);
-    }
+    if (onTabChange) onTabChange(newValue);
   };
 
   const columns = [
@@ -206,529 +162,176 @@ const CountryPage = ({
     { field: 'Active', headerName: 'Status', defaultVisible: true },
   ];
 
-  // Enhanced menu items for countries
   const getMenuItems = (country) => {
-    const countryId = getCountryId(country); // Use utility function for consistent ID handling
-    const baseItems = [
-      {
-        label: 'View Details',
-        icon: <InfoIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onView && onView(country),
-        show: !!onView,
-      },
-      {
-        label: 'Edit',
-        icon: <EditIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onEdit && onEdit(country),
-        show: !!onEdit,
-      },
-      {
-        label: 'Add Notes',
-        icon: <NoteIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onAddNote && onAddNote(country),
-        show: !!onAddNote,
-      },
-      {
-        label: 'Add Attachments',
-        icon: <AttachFileIcon sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => onAddAttachment && onAddAttachment(country),
-        show: !!onAddAttachment,
-      },
-    ];
-
-    // Add reactivate/deactivate based on current status
+    const countryId = getCountryId(country);
     const isActive = country.Active === true || country.Active === 1;
-    if (isActive) {
-      baseItems.push({
-        label: 'Deactivate',
-        icon: <PowerOffIcon sx={{ mr: 1, color: '#ff9800' }} />,
-        onClick: () => onDeactivate && onDeactivate(countryId),
-        show: !!onDeactivate,
-      });
-    } else {
-      baseItems.push({
-        label: 'Reactivate',
-        icon: <PowerIcon sx={{ mr: 1, color: '#4caf50' }} />,
-        onClick: () => onReactivate && onReactivate(countryId),
-        show: !!onReactivate,
-      });
-    }
-
-    // Add delete option
-    baseItems.push({
-      label: 'Delete',
-      icon: <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />,
-      onClick: () => onDelete && onDelete(countryId),
-      show: !!onDelete,
-    });
-
+    const baseItems = [
+      { label: 'View Details', icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onView && onView(country), show: !!onView },
+      { label: 'Edit', icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onEdit && onEdit(country), show: !!onEdit },
+      { label: 'Add Notes', icon: <NoteIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onAddNote && onAddNote(country), show: !!onAddNote },
+      { label: 'Add Attachments', icon: <AttachFileIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onAddAttachment && onAddAttachment(country), show: !!onAddAttachment },
+    ];
+    if (isActive) baseItems.push({ label: 'Deactivate', icon: <PowerOffIcon sx={{ mr: 1, color: theme.palette.warning.main }} />, onClick: () => onDeactivate && onDeactivate(countryId), show: !!onDeactivate });
+    else baseItems.push({ label: 'Reactivate', icon: <PowerIcon sx={{ mr: 1, color: theme.palette.success.main }} />, onClick: () => onReactivate && onReactivate(countryId), show: !!onReactivate });
+    baseItems.push({ label: 'Delete', icon: <DeleteIcon sx={{ mr: 1, color: theme.palette.error.main }} />, onClick: () => onDelete && onDelete(countryId), show: !!onDelete });
     return baseItems;
   };
 
-  // Custom formatters for country-specific fields
   const countryFormatters = {
     ...formatters,
     Active: (value) => {
       const isActive = value === true || value === 1;
-      return (
-        <Chip
-          label={isActive ? 'Active' : 'Inactive'}
-          size="small"
-          sx={{
-            backgroundColor: isActive ? '#079141ff' : '#999999',
-            color: '#fff',
-            fontWeight: 500,
-          }}
-        />
-      );
+      return <Chip label={isActive ? 'Active' : 'Inactive'} size="small" sx={{ backgroundColor: isActive ? theme.palette.success.main : theme.palette.grey[500], color: theme.palette.common.white, fontWeight: 500 }} />;
     },
-    CountryCode: (value) => {
-      return (
-        <Chip
-          label={value}
-          size="small"
-          variant="outlined"
-          sx={{
-            fontFamily: 'monospace',
-            fontWeight: 'bold',
-            backgroundColor: '#f5f5f5',
-          }}
-        />
-      );
-    },
+    CountryCode: (value) => <Chip label={value} size="small" variant="outlined" sx={{ fontFamily: 'monospace', fontWeight: 'bold', backgroundColor: theme.palette.background.paper }} />,
     CurrencyName: (value, row) => {
-      if (!value || value === 'No Currency') {
-        return (
-          <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic' }}>
-            No Currency
-          </Typography>
-        );
-      }
-      
-      // Display currency name with code if available
-      const currencyCode = row?.CurrencyCode;
+      if (!value || value === 'No Currency') return <Typography variant="body2" sx={{ color: theme.palette.grey[500], fontStyle: 'italic' }}>No Currency</Typography>;
       return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="body2">
-            {value}
-          </Typography>
-          {currencyCode && (
-            <Chip
-              label={currencyCode}
-              size="small"
-              sx={{
-                fontSize: '0.75rem',
-                height: '20px',
-                backgroundColor: '#e3f2fd',
-                color: '#1565c0',
-                fontWeight: 'bold'
-              }}
-            />
-          )}
+          <Typography variant="body2">{value}</Typography>
+          {row?.CurrencyCode && <Chip label={row.CurrencyCode} size="small" sx={{ fontSize: '0.75rem', height: '20px', backgroundColor: theme.palette.info.light, color: theme.palette.info.dark, fontWeight: 'bold' }} />}
         </Box>
       );
     }
   };
 
-  // Handle Add Country Dialog
   const handleOpenAddCountryDialog = () => {
     setAddCountryDialogOpen(true);
-    setNewCountry({
-      CountryName: '',
-      CountryCode: '',
-      CurrencyID: '',
-      Active: true
-    });
+    setNewCountry({ CountryName: '', CountryCode: '', CurrencyID: '', Active: true });
   };
 
   const handleCloseAddCountryDialog = () => {
     setAddCountryDialogOpen(false);
-    setNewCountry({
-      CountryName: '',
-      CountryCode: '',
-      CurrencyID: '',
-      Active: true
-    });
+    setNewCountry({ CountryName: '', CountryCode: '', CurrencyID: '', Active: true });
   };
 
   const handleAddCountry = async () => {
-    if (!newCountry.CountryName.trim()) {
-      setError && setError('Country name is required');
-      return;
-    }
-
-    if (!newCountry.CountryCode.trim()) {
-      setError && setError('Country code is required');
-      return;
-    }
-
-    if (newCountry.CountryCode.length > 5) {
-      setError && setError('Country code must be 5 characters or less');
-      return;
-    }
+    if (!newCountry.CountryName.trim()) return setError && setError('Country name is required');
+    if (!newCountry.CountryCode.trim()) return setError && setError('Country code is required');
+    if (newCountry.CountryCode.length > 5) return setError && setError('Country code must be 5 characters or less');
 
     setAddCountryLoading(true);
     try {
       if (onCreate) {
-        const countryData = {
-          ...newCountry,
-          CurrencyID: newCountry.CurrencyID !== '' ? parseInt(newCountry.CurrencyID) : null
-        };
+        const countryData = { ...newCountry, CurrencyID: newCountry.CurrencyID !== '' ? parseInt(newCountry.CurrencyID) : null };
         await onCreate(countryData);
         handleCloseAddCountryDialog();
         setSuccessMessage && setSuccessMessage('Country added successfully');
       }
-    } catch (error) {
+    } catch {
       setError && setError('Failed to add country');
     } finally {
       setAddCountryLoading(false);
     }
   };
 
-  const handleInputChange = (field, value) => {
-    setNewCountry(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleCountryCodeChange = (e) => {
-    const value = e.target.value.toUpperCase();
-    if (value.length <= 5) {
-      handleInputChange('CountryCode', value);
-    }
-  };
+  const handleInputChange = (field, value) => setNewCountry(prev => ({ ...prev, [field]: value }));
+  const handleCountryCodeChange = (e) => { const value = e.target.value.toUpperCase(); if (value.length <= 5) handleInputChange('CountryCode', value); };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box
-        sx={{
-          width: "100%",
-          backgroundColor: "#fafafa",
-          minHeight: "100vh",
-          p: 3,
-        }}
-      >
-        {/* Main Paper Container */}
-        <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-          {/* Tabs Header */}
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs
-              value={currentTab}
-              onChange={handleTabChange}
-              sx={{
-                backgroundColor: '#fff',
-                '& .MuiTab-root': {
+    <Box sx={{ width: "100%", backgroundColor: theme.palette.background.default, minHeight: "100vh", p: 3 }}>
+      <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+        <Box sx={{ borderBottom: 1, borderColor: theme.palette.divider }}>
+          <Tabs value={currentTab} onChange={handleTabChange} sx={{ backgroundColor: theme.palette.background.paper }}>
+            {availableTabs.map((tab, index) => (
+              <Tab
+                key={tab.id}
+                label={tab.label}
+                sx={{
+                  color: currentTab === index ? theme.palette.text.primary : theme.palette.text.secondary,
+                  '&.Mui-selected': { color: theme.palette.text.primary, fontWeight: 600 },
                   textTransform: 'none',
                   fontSize: '1rem',
-                  fontWeight: 500,
-                  minHeight: 56,
-                },
-                '& .MuiTabs-indicator': {
-                  backgroundColor: '#050505',
-                }
-              }}
-            >
-              {availableTabs.map((tab, index) => (
-                <Tab
-                  key={tab.id}
-                  label={tab.label}
-                  sx={{
-                    color: currentTab === index ? '#050505' : '#666666',
-                    '&.Mui-selected': {
-                      color: '#050505',
-                      fontWeight: 600,
-                    }
-                  }}
-                />
-              ))}
-            </Tabs>
-          </Box>
-
-          {/* Tab Content */}
-          {availableTabs.map((tab, index) => (
-            <TabPanel key={tab.id} value={currentTab} index={index}>
-
-              {/* Countries Tab Content */}
-              {tab.component === 'countries' && (
-                <>
-                  {/* Error and Success Messages */}
-                  {error && (
-                    <Alert severity="error" sx={{ m: 2 }}>
-                      {error}
-                    </Alert>
-                  )}
-
-                  {successMessage && (
-                    <Alert
-                      severity="success"
-                      sx={{ m: 2 }}
-                      onClose={() => setSuccessMessage && setSuccessMessage("")}
-                    >
-                      {successMessage}
-                    </Alert>
-                  )}
-
-                  {/* Countries Toolbar */}
-                  <Toolbar
-                    sx={{
-                      backgroundColor: "#ffffff",
-                      borderBottom: "1px solid #e5e5e5",
-                      justifyContent: "space-between",
-                      flexWrap: "wrap",
-                      gap: 2,
-                      py: 2,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        flex: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="h6"
-                        component="div"
-                        sx={{ color: "#050505", fontWeight: 600 }}
-                      >
-                        Countries
-                      </Typography>
-                      {selected.length > 0 && (
-                        <Chip
-                          label={`${selected.length} selected`}
-                          size="small"
-                          sx={{ backgroundColor: "#e0e0e0", color: "#050505" }}
-                        />
-                      )}
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        onClick={handleOpenAddCountryDialog}
-                        disabled={loading}
-                        sx={{
-                          backgroundColor: "#050505",
-                          color: "#ffffff",
-                          "&:hover": { backgroundColor: "#333333" },
-                          "&:disabled": {
-                            backgroundColor: "#cccccc",
-                            color: "#666666",
-                          },
-                        }}
-                      >
-                        Add Country
-                      </Button>
-                      {selected.length > 0 && (
-                        <Button
-                          variant="outlined"
-                          color="warning"
-                          onClick={onBulkDeactivate}
-                        >
-                          Deactivate Selected
-                        </Button>
-                      )}
-                    </Box>
-                  </Toolbar>
-
-                  {/* Countries Table */}
-                  {loading ? (
-                    <Box display="flex" justifyContent="center" p={8}>
-                      <CircularProgress />
-                    </Box>
-                  ) : (
-                    <TableView
-                      data={enhancedCountries}
-                      columns={columns}
-                      idField="CountryID"
-                      selected={selected}
-                      onSelectClick={onSelectClick}
-                      onSelectAllClick={onSelectAllClick}
-                      showSelection={true}
-                      onView={onView}
-                      onEdit={onEdit}
-                      onDelete={onDelete}
-                      onAddNote={onAddNote}
-                      onAddAttachment={onAddAttachment}
-                      onAssignUser={onAssignUser}
-                      formatters={countryFormatters}
-                      entityType="country"
-                      getMenuItems={getMenuItems}
-                    />
-                  )}
-
-                  {/* Countries Results Footer */}
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderTop: "1px solid #e5e5e5",
-                      backgroundColor: "#fafafa",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ color: "#666666" }}>
-                      Showing {enhancedCountries.length} countries
-                    </Typography>
-                    {selected.length > 0 && (
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#050505", fontWeight: 500 }}
-                      >
-                        {selected.length} selected
-                      </Typography>
-                    )}
-                  </Box>
-                </>
-              )}
-
-              {/* States/Provinces Tab Content */}
-              {tab.component === 'statesProvinces' && (
-                <StateProvincePage {...stateProvinceProps} />
-              )}
-
-              {/* Cities Tab Content */}
-              {tab.component === 'cities' && (
-                <CityPage {...cityProps} />
-              )}
-              
-              {/* Currencies Tab Content */}
-              {tab.component === 'currencies' && (
-                <CurrencyPage {...currencyProps} />
-              )}
-
-            </TabPanel>
-          ))}
-        </Paper>
-
-        {/* Add Country Dialog */}
-        <Dialog
-          open={addCountryDialogOpen}
-          onClose={handleCloseAddCountryDialog}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: '1px solid #e5e5e5'
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PublicIcon sx={{ color: '#1976d2' }} />
-              Add New Country
-            </Box>
-            <IconButton onClick={handleCloseAddCountryDialog} size="small">
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ pt: 3 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField
-                label="Country Name"
-                value={newCountry.CountryName}
-                onChange={(e) => handleInputChange('CountryName', e.target.value)}
-                fullWidth
-                required
-                variant="outlined"
-                helperText="Enter the full country name"
-                inputProps={{ maxLength: 100 }}
-              />
-
-              <TextField
-                label="Country Code"
-                value={newCountry.CountryCode}
-                onChange={handleCountryCodeChange}
-                fullWidth
-                required
-                variant="outlined"
-                helperText="Enter ISO Alpha-2/3 country code (e.g., US, USA, ZA)"
-                inputProps={{ maxLength: 5 }}
-                InputProps={{
-                  startAdornment: <LanguageIcon sx={{ mr: 1, color: '#666' }} />,
+                  minHeight: 56
                 }}
               />
+            ))}
+          </Tabs>
+        </Box>
 
-              <FormControl fullWidth>
-                <InputLabel>Currency (Optional)</InputLabel>
-                <Select
-                  value={newCountry.CurrencyID}
-                  onChange={(e) => handleInputChange('CurrencyID', e.target.value)}
-                  label="Currency (Optional)"
-                >
-                  <MenuItem value="">
-                    <em>No Currency</em>
-                  </MenuItem>
-                  {currencies.map((currency) => {
-                    const currencyId = currency.EFMCurrencyID || currency.CurrencyID;
-                    return (
-                      <MenuItem key={currencyId} value={currencyId}>
-                        {currency.CurrencyName} ({currency.CurrencyCode})
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-              </FormControl>
+        {availableTabs.map((tab, index) => (
+          <TabPanel key={tab.id} value={currentTab} index={index}>
+            {tab.component === 'countries' && (
+              <>
+                {error && <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>}
+                {successMessage && <Alert severity="success" sx={{ m: 2 }} onClose={() => setSuccessMessage && setSuccessMessage("")}>{successMessage}</Alert>}
 
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={newCountry.Active}
-                    onChange={(e) => handleInputChange('Active', e.target.checked)}
-                    color="primary"
+                <Toolbar sx={{ backgroundColor: theme.palette.background.paper, borderBottom: `1px solid ${theme.palette.divider}`, justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, py: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+                    <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>Countries</Typography>
+                    {selected.length > 0 && <Chip label={`${selected.length} selected`} size="small" sx={{ backgroundColor: theme.palette.mode === 'dark' ? '#333' : "#e0e0e0", color: theme.palette.text.primary }} />}
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <Button variant="contained" startIcon={<Add />} onClick={handleOpenAddCountryDialog} disabled={loading} sx={{ backgroundColor: theme.palette.primary.main, color: theme.palette.primary.contrastText, "&:hover": { backgroundColor: theme.palette.primary.dark } }}>Add Country</Button>
+                    {selected.length > 0 && <Button variant="outlined" color="warning" onClick={onBulkDeactivate}>Deactivate Selected</Button>}
+                  </Box>
+                </Toolbar>
+
+                {loading ? (
+                  <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>
+                ) : (
+                  <TableView
+                    data={enhancedCountries}
+                    columns={columns}
+                    idField="CountryID"
+                    selected={selected}
+                    onSelectClick={onSelectClick}
+                    onSelectAllClick={onSelectAllClick}
+                    showSelection
+                    onView={onView}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onAddNote={onAddNote}
+                    onAddAttachment={onAddAttachment}
+                    onAssignUser={onAssignUser}
+                    formatters={countryFormatters}
+                    entityType="country"
+                    getMenuItems={getMenuItems}
                   />
-                }
-                label="Active"
-              />
-            </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 3, borderTop: '1px solid #e5e5e5' }}>
-            <Button onClick={handleCloseAddCountryDialog} color="inherit">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddCountry}
-              variant="contained"
-              disabled={
-                addCountryLoading ||
-                !newCountry.CountryName.trim() ||
-                !newCountry.CountryCode.trim() ||
-                newCountry.CountryCode.length > 5
-              }
-            >
-              {addCountryLoading ? <CircularProgress size={20} /> : 'Add Country'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+                )}
 
-        {/* Status Snackbar */}
-        <Snackbar
-          open={!!statusMessage}
-          autoHideDuration={4000}
-          onClose={() => setStatusMessage && setStatusMessage('')}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          <Alert
-            onClose={() => setStatusMessage && setStatusMessage('')}
-            severity={statusSeverity}
-            sx={{ width: '100%' }}
-          >
-            {statusMessage}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </ThemeProvider>
+                <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}`, backgroundColor: theme.palette.background.default, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>Showing {enhancedCountries.length} countries</Typography>
+                  {selected.length > 0 && <Typography variant="body2" sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>{selected.length} selected</Typography>}
+                </Box>
+              </>
+            )}
+
+            {tab.component === 'cities' && <CityPage {...cityProps} />}
+            {tab.component === 'currencies' && <CurrencyPage {...currencyProps} />}
+          </TabPanel>
+        ))}
+      </Paper>
+
+      <Dialog open={addCountryDialogOpen} onClose={handleCloseAddCountryDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.palette.divider}` }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><PublicIcon color="primary" />Add New Country</Box>
+          <IconButton onClick={handleCloseAddCountryDialog} size="small"><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField label="Country Name" value={newCountry.CountryName} onChange={(e) => handleInputChange('CountryName', e.target.value)} fullWidth required variant="outlined" helperText="Enter the full country name" inputProps={{ maxLength: 100 }} />
+            <TextField label="Country Code" value={newCountry.CountryCode} onChange={handleCountryCodeChange} fullWidth required variant="outlined" helperText="Enter ISO Alpha-2/3 country code (e.g., US, USA, ZA)" inputProps={{ maxLength: 5 }} InputProps={{ startAdornment: <LanguageIcon sx={{ mr: 1, color: theme.palette.text.secondary }} /> }} />
+            <FormControl fullWidth>
+              <InputLabel>Currency (Optional)</InputLabel>
+              <Select value={newCountry.CurrencyID} onChange={(e) => handleInputChange('CurrencyID', e.target.value)} label="Currency (Optional)">
+                <MenuItem value=""><em>No Currency</em></MenuItem>
+                {currencies.map(currency => { const currencyId = currency.EFMCurrencyID || currency.CurrencyID; return <MenuItem key={currencyId} value={currencyId}>{currency.CurrencyName} ({currency.CurrencyCode})</MenuItem> })}
+              </Select>
+            </FormControl>
+            <FormControlLabel control={<Switch checked={newCountry.Active} onChange={(e) => handleInputChange('Active', e.target.checked)} color="primary" />} label="Active" />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: `1px solid ${theme.palette.divider}` }}>
+          <Button onClick={handleCloseAddCountryDialog} color="inherit">Cancel</Button>
+          <Button onClick={handleAddCountry} variant="contained" disabled={addCountryLoading || !newCountry.CountryName.trim() || !newCountry.CountryCode.trim() || newCountry.CountryCode.length > 5}>{addCountryLoading ? <CircularProgress size={20} /> : 'Add Country'}</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={!!statusMessage} autoHideDuration={4000} onClose={() => setStatusMessage && setStatusMessage('')} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert onClose={() => setStatusMessage && setStatusMessage('')} severity={statusSeverity} sx={{ width: '100%' }}>{statusMessage}</Alert>
+      </Snackbar>
+    </Box>
   );
 };
 
