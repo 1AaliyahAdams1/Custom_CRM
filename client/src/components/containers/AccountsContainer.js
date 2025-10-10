@@ -42,6 +42,7 @@ import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
 import BulkClaimAndSequenceDialog from "../../components/dialogs/BulkClaimAndSequenceDialog";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import UnassignUserDialog from "../../components/dialogs/UnAssignUserDialog";
+import AssignUserDialog from "../../components/dialogs/AssignUserDialog";
 
 // Utils
 import { ROUTE_ACCESS } from "../../utils/auth/routesAccess";
@@ -62,6 +63,7 @@ const AccountsContainer = () => {
   const [bulkLoading, setBulkLoading] = useState(false);
 
   // Dialogs / Popups
+  const [assignUserDialogOpen, setAssignUserDialogOpen] = useState(false);
   const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
   const [bulkClaimDialogOpen, setBulkClaimDialogOpen] = useState(false);
   const [bulkClaimAndSequenceDialogOpen, setBulkClaimSequenceDialogOpen] = useState(false);
@@ -76,6 +78,10 @@ const AccountsContainer = () => {
   const [accountForUnassign, setAccountForUnassign] = useState(null);
   const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
   const [sequences, setSequences] = useState([]);
+  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
+  const [accountToClaim, setAccountToClaim] = useState(null);
+  const [unclaimDialogOpen, setUnclaimDialogOpen] = useState(false);
+  const [accountToUnclaim, setAccountToUnclaim] = useState(null);
 
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -186,63 +192,173 @@ const AccountsContainer = () => {
     fetchSequences();
   }, [fetchSequences]);
 
+  // ---------------- SELECTION HANDLERS ----------------
+  const handleSelectClick = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllClick = (event) => {
+    if (event.target.checked) {
+      const newSelected = filteredAccounts.map((acc) => acc.AccountID);
+      setSelected(newSelected);
+    } else {
+      setSelected([]);
+    }
+  };
+
   // ---------------- ACTION HANDLERS ----------------
-  const handleDeactivateAccount = async () => {
+  const handleView = (account) => {
+    console.log("View account:", account);
+    navigate(`/accounts/${account.AccountID}`);
+  };
+
+  //  Navigate with just the ID
+  const handleEdit = (account) => {
+    console.log("Edit account:", account);
+    navigate(`/accounts/edit/${account.AccountID}`);
+  };
+
+  const handleAddNote = (account) => {
+    setSelectedAccount(account);
+    setNotesPopupOpen(true);
+  };
+
+  const handleAddAttachment = (account) => {
+    setSelectedAccount(account);
+    setAttachmentsPopupOpen(true);
+  };
+
+  const handleClaimAccount = async (account) => {
+    setAccountToClaim(account);
+    setClaimDialogOpen(true);
+  };
+
+  const handleConfirmClaim = async () => {
+    if (!accountToClaim) return;
+    try {
+      await claimAccount(accountToClaim.AccountID, userId);
+      setStatusMessage("Account claimed successfully");
+      setStatusSeverity("success");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      console.error("Error claiming account:", err);
+      setStatusMessage("Failed to claim account");
+      setStatusSeverity("error");
+    } finally {
+      setClaimDialogOpen(false);
+      setAccountToClaim(null);
+    }
+  };
+
+  const handleUnclaimAccount = async (account) => {
+    setAccountToUnclaim(account);
+    setUnclaimDialogOpen(true);
+  };
+
+  const handleConfirmUnclaim = async () => {
+    if (!accountToUnclaim) return;
+    try {
+      await unclaimAccount(accountToUnclaim.AccountID, userId);
+      setStatusMessage("Account unclaimed successfully");
+      setStatusSeverity("success");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      console.error("Error unclaiming account:", err);
+      setStatusMessage("Failed to unclaim account");
+      setStatusSeverity("error");
+    } finally {
+      setUnclaimDialogOpen(false);
+      setAccountToUnclaim(null);
+    }
+  };
+
+  const handleDeactivateAccount = async (account) => {
+    setAccountToDelete(account);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDeactivate = async () => {
     if (!accountToDelete) return;
     try {
       await deactivateAccount(accountToDelete.AccountID);
       setStatusMessage("Account deactivated successfully");
       setStatusSeverity("success");
       setRefreshFlag((f) => !f);
-    } catch {
+    } catch (err) {
+      console.error("Error deactivating account:", err);
       setStatusMessage("Failed to deactivate account");
       setStatusSeverity("error");
     } finally {
       setDeleteDialogOpen(false);
+      setAccountToDelete(null);
     }
   };
 
-  const handleReactivateAccount = async () => {
+  const handleReactivateAccount = async (account) => {
+    setAccountToReactivate(account);
+    setReactivateDialogOpen(true);
+  };
+
+  const handleConfirmReactivate = async () => {
     if (!accountToReactivate) return;
     try {
       await reactivateAccount(accountToReactivate.AccountID);
       setStatusMessage("Account reactivated successfully");
       setStatusSeverity("success");
       setRefreshFlag((f) => !f);
-    } catch {
+    } catch (err) {
+      console.error("Error reactivating account:", err);
       setStatusMessage("Failed to reactivate account");
       setStatusSeverity("error");
     } finally {
       setReactivateDialogOpen(false);
+      setAccountToReactivate(null);
     }
   };
 
-  const handleAssignUser = async (employeeId) => {
+  //  This is for SINGLE account assignment (from action menu)
+  const handleAssignUserToAccount = (account) => {
+    setSelectedAccount(account);
+    setAssignUserDialogOpen(true); // Changed from setBulkAssignDialogOpen
+  };
+
+  const handleConfirmAssignUser = async (employeeId) => {
     if (!selectedAccount) return;
     try {
       await assignUser(selectedAccount.AccountID, employeeId);
       setStatusMessage("User assigned successfully");
       setStatusSeverity("success");
       setRefreshFlag((f) => !f);
-    } catch {
+    } catch (err) {
+      console.error("Error assigning user:", err);
       setStatusMessage("Failed to assign user");
       setStatusSeverity("error");
     } finally {
-      setBulkAssignDialogOpen(false);
+      setAssignUserDialogOpen(false); // Changed from setBulkAssignDialogOpen
+      setSelectedAccount(null);
     }
   };
 
-  const handleUnassignUser = async (accountId, employeeId) => {
+  const handleUnassignUsers = (account) => {
+    setAccountForUnassign(account);
+    setUnassignUserDialogOpen(true);
+  };
+
+  const handleConfirmUnassignUser = async (accountId, employeeId) => {
     try {
       await removeAssignedUser(accountId, employeeId);
       setStatusMessage("User unassigned successfully");
       setStatusSeverity("success");
       setRefreshFlag((f) => !f);
-    } catch {
+    } catch (err) {
+      console.error("Error unassigning user:", err);
       setStatusMessage("Failed to unassign user");
       setStatusSeverity("error");
     } finally {
       setUnassignUserDialogOpen(false);
+      setAccountForUnassign(null);
     }
   };
 
@@ -252,8 +368,10 @@ const AccountsContainer = () => {
       await Promise.all(selected.map((id) => deactivateAccount(id)));
       setStatusMessage("Selected accounts deactivated successfully");
       setStatusSeverity("success");
+      setSelected([]);
       setRefreshFlag((f) => !f);
-    } catch {
+    } catch (err) {
+      console.error("Error in bulk delete:", err);
       setStatusMessage("Bulk delete failed");
       setStatusSeverity("error");
     } finally {
@@ -266,8 +384,10 @@ const AccountsContainer = () => {
       await bulkClaimAccounts(selected, employeeId);
       setStatusMessage("Accounts claimed successfully");
       setStatusSeverity("success");
+      setSelected([]);
       setRefreshFlag((f) => !f);
-    } catch {
+    } catch (err) {
+      console.error("Error in bulk claim:", err);
       setStatusMessage("Bulk claim failed");
       setStatusSeverity("error");
     } finally {
@@ -284,37 +404,27 @@ const AccountsContainer = () => {
         error={error}
         statusMessage={statusMessage}
         statusSeverity={statusSeverity}
+        setStatusMessage={setStatusMessage}
         selected={selected}
-        setSelected={setSelected}
+        onSelectClick={handleSelectClick}
+        onSelectAllClick={handleSelectAllClick}
         currentFilter={currentFilter}
         setCurrentFilter={setCurrentFilter}
         onRefresh={() => setRefreshFlag((f) => !f)}
-        onDeactivate={(acc) => {
-          setAccountToDelete(acc);
-          setDeleteDialogOpen(true);
-        }}
-        onReactivate={(acc) => {
-          setAccountToReactivate(acc);
-          setReactivateDialogOpen(true);
-        }}
-        onAssignUser={(acc) => {
-          setSelectedAccount(acc);
-          setBulkAssignDialogOpen(true);
-        }}
-        onUnassignUser={(acc) => {
-          setAccountForUnassign(acc);
-          setUnassignUserDialogOpen(true);
-        }}
+        onView={handleView}
+        onEdit={handleEdit}
+        onDeactivate={handleDeactivateAccount}
+        onReactivate={handleReactivateAccount}
+        onAssignUser={handleAssignUserToAccount}
+        onUnassignUsers={handleUnassignUsers}
+        onAddNote={handleAddNote}
+        onAddAttachment={handleAddAttachment}
+        onClaimAccount={handleClaimAccount}
+        onUnclaimAccount={handleUnclaimAccount}
         onBulkClaim={() => setBulkClaimDialogOpen(true)}
         onBulkDelete={() => setBulkDeleteDialogOpen(true)}
-        onNotesPopup={(acc) => {
-          setSelectedAccount(acc);
-          setNotesPopupOpen(true);
-        }}
-        onAttachmentsPopup={(acc) => {
-          setSelectedAccount(acc);
-          setAttachmentsPopupOpen(true);
-        }}
+        selectedAccount={selectedAccount}
+        userName={storedUser.name || storedUser.username || "User"}
       />
 
       {/* DIALOGS */}
@@ -322,8 +432,11 @@ const AccountsContainer = () => {
         open={deleteDialogOpen}
         title="Deactivate Account"
         content="Are you sure you want to deactivate this account?"
-        onClose={() => setDeleteDialogOpen(false)}
-        onConfirm={handleDeactivateAccount}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setAccountToDelete(null);
+        }}
+        onConfirm={handleConfirmDeactivate}
       />
 
       <ConfirmDialog
@@ -338,21 +451,63 @@ const AccountsContainer = () => {
         open={reactivateDialogOpen}
         title="Reactivate Account"
         content="Do you want to reactivate this account?"
-        onClose={() => setReactivateDialogOpen(false)}
-        onConfirm={handleReactivateAccount}
+        onClose={() => {
+          setReactivateDialogOpen(false);
+          setAccountToReactivate(null);
+        }}
+        onConfirm={handleConfirmReactivate}
+      />
+
+      <ConfirmDialog
+        open={claimDialogOpen}
+        title="Claim Account"
+        content={`Are you sure you want to claim ownership of "${accountToClaim?.AccountName}"?`}
+        onClose={() => {
+          setClaimDialogOpen(false);
+          setAccountToClaim(null);
+        }}
+        onConfirm={handleConfirmClaim}
+      />
+
+      <ConfirmDialog
+        open={unclaimDialogOpen}
+        title="Unclaim Account"
+        content={`Are you sure you want to remove yourself from "${accountToUnclaim?.AccountName}"?`}
+        onClose={() => {
+          setUnclaimDialogOpen(false);
+          setAccountToUnclaim(null);
+        }}
+        onConfirm={handleConfirmUnclaim}
       />
 
       <UnassignUserDialog
         open={unassignUserDialogOpen}
         account={accountForUnassign}
-        onClose={() => setUnassignUserDialogOpen(false)}
-        onConfirm={handleUnassignUser}
+        onClose={() => {
+          setUnassignUserDialogOpen(false);
+          setAccountForUnassign(null);
+        }}
+        onConfirm={handleConfirmUnassignUser}
+      />
+
+      {/* Separate single assign dialog */}
+      <AssignUserDialog
+        open={assignUserDialogOpen}
+        onClose={() => {
+          setAssignUserDialogOpen(false);
+          setSelectedAccount(null);
+        }}
+        onAssign={handleConfirmAssignUser}
+        account={selectedAccount}
       />
 
       <BulkAssignDialog
         open={bulkAssignDialogOpen}
         onClose={() => setBulkAssignDialogOpen(false)}
-        onAssign={handleAssignUser}
+        onAssign={(employeeId) => {
+          // Handle bulk assignment
+          console.log("Bulk assign to employee:", employeeId);
+        }}
       />
 
       <BulkClaimDialog
@@ -361,17 +516,40 @@ const AccountsContainer = () => {
         onClaim={handleBulkClaim}
       />
 
+      {/*  Pass all required service functions */}
       <NotesPopup
         open={notesPopupOpen}
-        onClose={() => setNotesPopupOpen(false)}
+        onClose={() => {
+          setNotesPopupOpen(false);
+          setSelectedAccount(null);
+        }}
         account={selectedAccount}
-        onSave={() => setRefreshFlag((f) => !f)}
+        entityType="Account"
+        entityId={selectedAccount?.AccountID}
+        entityName={selectedAccount?.AccountName}
+        onSave={createNote}
+        onEdit={updateNote}
+        onDeactivate={deactivateNote}
+        onReactivate={reactivateNote}
+        onRefresh={() => setRefreshFlag((f) => !f)}
       />
 
+      {/*  Pass all required service functions */}
       <AttachmentsPopup
         open={attachmentsPopupOpen}
-        onClose={() => setAttachmentsPopupOpen(false)}
+        onClose={() => {
+          setAttachmentsPopupOpen(false);
+          setSelectedAccount(null);
+        }}
         account={selectedAccount}
+        entityType="account"
+        entityId={selectedAccount?.AccountID}
+        entityName={selectedAccount?.AccountName}
+        userName={storedUser.name || storedUser.username || "User"}
+        onUpload={uploadAttachment}
+        onDelete={deleteAttachment}
+        onDownload={downloadAttachment}
+        onRefresh={() => setRefreshFlag((f) => !f)}
       />
     </>
   );
