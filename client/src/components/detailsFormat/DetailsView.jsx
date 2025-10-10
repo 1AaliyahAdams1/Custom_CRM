@@ -37,7 +37,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import DetailsActions from "./DetailsActions";
 import SmartDropdown from "../../components/SmartDropdown";
-import AssignUserDialog from "../AssignUserDialog";
+import AssignUserDialog from "../dialogs/AssignUserDialog";
 import TableView from "../../components/tableFormat/TableView";
 import { formatters } from "../../utils/formatters";
 import { claimAccount, assignUser } from "../../services/assignService";

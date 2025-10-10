@@ -8,12 +8,11 @@ import {
   CircularProgress,
   Alert,
   Paper,
-  Grid,
   Skeleton,
 } from "@mui/material";
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { getContactDetails, updateContact, getContactsByAccountId } from "../../services/contactService";
+import { ThemeProvider, useTheme } from '@mui/material/styles';
+import { getContactDetails, updateContact } from "../../services/contactService";
 import { getAllAccounts } from "../../services/accountService";
 import {
   cityService,
@@ -23,7 +22,7 @@ import {
   jobTitleService
 } from '../../services/dropdownServices';
 import SmartDropdown from '../../components/SmartDropdown';
-import theme from "../../components/Theme";
+import defaultTheme from "../../components/Theme";
 
 // Modular validation function for contacts
 const validateContactField = (fieldName, value) => {
@@ -89,7 +88,9 @@ const validateContactData = (formData) => {
 
 const EditContactPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get contact ID from URL params
+  const { id } = useParams();
+  const theme = useTheme();
+  
   const [cities, setCities] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [countries, setCountries] = useState([]);
@@ -323,8 +324,13 @@ const EditContactPage = () => {
 
   if (loading) {
     return (
-      <ThemeProvider theme={theme}>
-        <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
+      <ThemeProvider theme={defaultTheme}>
+        <Box sx={{ 
+          width: '100%', 
+          backgroundColor: theme.palette.background.default,
+          minHeight: '100vh', 
+          p: 3 
+        }}>
           <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
               <Skeleton variant="rectangular" width={80} height={40} />
@@ -347,14 +353,21 @@ const EditContactPage = () => {
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
+    <ThemeProvider theme={defaultTheme}>
+      <Box sx={{ 
+        width: '100%', 
+        backgroundColor: theme.palette.background.default,
+        minHeight: '100vh', 
+        p: 3 
+      }}>
         <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-
-              <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
+              <Typography variant="h4" sx={{ 
+                color: theme.palette.text.primary,
+                fontWeight: 600 
+              }}>
                 Edit Contact
               </Typography>
             </Box>
@@ -381,10 +394,6 @@ const EditContactPage = () => {
                 startIcon={saving ? <CircularProgress size={20} /> : <Save />}
                 onClick={handleSubmit}
                 disabled={saving}
-                sx={{
-                  backgroundColor: '#050505',
-                  '&:hover': { backgroundColor: '#333333' },
-                }}
               >
                 {saving ? 'Updating...' : 'Update Contact'}
               </Button>

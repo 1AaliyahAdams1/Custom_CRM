@@ -14,23 +14,21 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import SmartDropdown from '../../components/SmartDropdown';
 import { createContact } from '../../services/contactService';
 import { getAllPersons, createPerson } from '../../services/personService';
 import { getAllAccounts } from '../../services/accountService';
 import { cityService, jobTitleService } from '../../services/dropdownServices';
-import theme from "../../components/Theme";
 
-// Modular validation function for contacts
+// Validation functions
 const validateContactField = (fieldName, value) => {
   if (!value || (typeof value === 'string' && value.trim().length === 0)) {
-    // Required fields validation
     const requiredFields = ['AccountID', 'PersonID', 'JobTitleID', 'WorkEmail'];
     if (requiredFields.includes(fieldName)) {
       return `${fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
     }
-    return null; // No validation for empty optional fields
+    return null;
   }
 
   switch (fieldName) {
@@ -74,14 +72,12 @@ const validateContactField = (fieldName, value) => {
       break;
   }
 
-  return null; // No error
+  return null;
 };
 
-// Validate entire contact data
 const validateContactData = (contactData, personData, isNewPerson) => {
   const errors = [];
 
-  // Validate contact fields
   const contactFieldsToValidate = ['AccountID', 'JobTitleID', 'WorkEmail', 'WorkPhone'];
   contactFieldsToValidate.forEach(field => {
     const error = validateContactField(field, contactData[field]);
@@ -90,7 +86,6 @@ const validateContactData = (contactData, personData, isNewPerson) => {
     }
   });
 
-  // Validate person fields if creating new person
   if (isNewPerson) {
     const personFieldsToValidate = ['first_name', 'surname', 'middle_name', 'Title', 'personal_email', 'personal_mobile', 'linkedin_link'];
     personFieldsToValidate.forEach(field => {
@@ -100,7 +95,6 @@ const validateContactData = (contactData, personData, isNewPerson) => {
       }
     });
 
-    // Required person fields for new person
     if (!personData.first_name || personData.first_name.trim().length === 0) {
       errors.push('First name is required for new person');
     }
@@ -108,7 +102,6 @@ const validateContactData = (contactData, personData, isNewPerson) => {
       errors.push('Surname is required for new person');
     }
   } else {
-    // Validate PersonID selection for existing person
     if (!contactData.PersonID) {
       errors.push('Please select a person');
     }
@@ -119,6 +112,8 @@ const validateContactData = (contactData, personData, isNewPerson) => {
 
 const CreateContactsPage = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -127,7 +122,6 @@ const CreateContactsPage = () => {
 
   const [isNewPerson, setIsNewPerson] = useState(true);
 
-  // Separate state for person form data
   const [personData, setPersonData] = useState({
     Title: '',
     first_name: '',
@@ -139,7 +133,6 @@ const CreateContactsPage = () => {
     CityID: '',
   });
 
-  // Separate state for contact form data
   const [contactData, setContactData] = useState({
     AccountID: '',
     PersonID: '',
@@ -148,7 +141,6 @@ const CreateContactsPage = () => {
     WorkPhone: '',
   });
 
-  // Enhanced error display with icon
   const getFieldError = (fieldName, isPersonField = false) => {
     const data = isPersonField ? personData : contactData;
     const touchedKey = `${isPersonField ? 'person' : 'contact'}_${fieldName}`;
@@ -166,7 +158,6 @@ const CreateContactsPage = () => {
     return touched[touchedKey] && fieldErrors[touchedKey];
   };
 
-  // Services wrapped for dropdowns
   const accountService = {
     getAll: async () => {
       try {
@@ -191,18 +182,15 @@ const CreateContactsPage = () => {
     },
   };
 
-  // Handle toggle between new/existing person
   const handlePersonToggle = (event) => {
     const checked = event.target.checked;
     setIsNewPerson(checked);
 
-    // Clear validation states
     setFieldErrors({});
     setTouched({});
     setError(null);
 
     if (checked) {
-      // Clear personData when switching to new person
       setPersonData({
         Title: '',
         first_name: '',
@@ -213,10 +201,8 @@ const CreateContactsPage = () => {
         personal_mobile: '',
         CityID: '',
       });
-      // Clear selected PersonID in contactData
       setContactData((prev) => ({ ...prev, PersonID: '' }));
     } else {
-      // Clear new person fields
       setPersonData({
         Title: '',
         first_name: '',
@@ -230,7 +216,6 @@ const CreateContactsPage = () => {
     }
   };
 
-  // Input handlers for personData with validation
   const handlePersonChange = (e) => {
     const { name, value } = e.target;
     setPersonData((prev) => ({
@@ -244,7 +229,6 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
-    // Real-time validation
     if (touched[touchedKey]) {
       const error = validateContactField(name, value);
       setFieldErrors(prev => ({
@@ -272,7 +256,6 @@ const CreateContactsPage = () => {
     }));
   };
 
-  // Input handlers for contactData with validation
   const handleContactChange = (e) => {
     const { name, value, type, checked } = e.target;
     setContactData((prev) => ({
@@ -286,7 +269,6 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
-    // Real-time validation
     if (touched[touchedKey]) {
       const error = validateContactField(name, value);
       setFieldErrors(prev => ({
@@ -314,11 +296,9 @@ const CreateContactsPage = () => {
     }));
   };
 
-  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Mark all fields as touched
     const allTouched = {};
     Object.keys(contactData).forEach(key => {
       allTouched[`contact_${key}`] = true;
@@ -330,7 +310,6 @@ const CreateContactsPage = () => {
     }
     setTouched(allTouched);
 
-    // Validate all data
     const validationErrors = validateContactData(contactData, personData, isNewPerson);
     
     if (validationErrors.length > 0) {
@@ -344,13 +323,9 @@ const CreateContactsPage = () => {
     try {
       let personIdToUse = contactData.PersonID;
 
-      console.log('personIdToUse:', personIdToUse, 'typeof:', typeof personIdToUse);
-
       if (isNewPerson) {
-        console.log('Creating person:', personData);
         const createdPerson = await createPerson(personData);
         personIdToUse = createdPerson.PersonID || createdPerson.id || createdPerson;
-        console.log('personIdToUse:', personIdToUse, 'typeof:', typeof personIdToUse);
       }
 
       if (!personIdToUse) {
@@ -358,7 +333,6 @@ const CreateContactsPage = () => {
         return;
       }
 
-      
       const cleanedContactData = {
         AccountID: contactData.AccountID === "" ? null : Number(contactData.AccountID),
         PersonID: Number(personIdToUse),
@@ -367,15 +341,11 @@ const CreateContactsPage = () => {
         WorkPhone: contactData.WorkPhone === "" ? null : contactData.WorkPhone,
       };
 
-      console.log('Creating Contact:', cleanedContactData);
       await createContact(cleanedContactData);
-
-      
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setSuccessMessage("Contact created successfully!");
       
-      // Navigate after a short delay
       setTimeout(() => {
         navigate('/contacts');
       }, 1500);
@@ -404,339 +374,336 @@ const CreateContactsPage = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-        <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
-          {/* Header */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
-                Create New Contact
-              </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<ArrowBack />}
-                onClick={() => navigate(-1)}
-                sx={{ minWidth: 'auto' }}
-              >
-                Back
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<Clear />}
-                onClick={handleCancel}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                sx={{
-                  backgroundColor: '#050505',
-                  '&:hover': { backgroundColor: '#333333' },
-                }}
-              >
-                {isSubmitting ? 'Saving...' : 'Save Contact'}
-              </Button>
-            </Box>
+    <Box sx={{ 
+      width: '100%', 
+      backgroundColor: theme.palette.background.default,
+      minHeight: '100vh', 
+      p: 3 
+    }}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h4" sx={{ 
+              color: theme.palette.text.primary,
+              fontWeight: 600 
+            }}>
+              Create New Contact
+            </Typography>
           </Box>
+          
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBack />}
+              onClick={() => navigate(-1)}
+              sx={{ minWidth: 'auto' }}
+            >
+              Back
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Clear />}
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : 'Save Contact'}
+            </Button>
+          </Box>
+        </Box>
 
-          {/* Error Alert */}
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-          {/* Success Alert */}
-          {successMessage && (
-            <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
-              {successMessage}
-            </Alert>
-          )}
+        {/* Success Alert */}
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+            {successMessage}
+          </Alert>
+        )}
 
-          {/* Form */}
-          <Paper elevation={0} sx={{ p: 3 }}>
-            <form onSubmit={handleSubmit}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
-                {/* Account Dropdown - Required */}
+        {/* Form */}
+        <Paper elevation={0} sx={{ p: 3 }}>
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+              {/* Account Dropdown - Required */}
+              <Box sx={{ gridColumn: '1 / -1' }}>
+                <SmartDropdown
+                  label="Account"
+                  name="AccountID"
+                  value={contactData.AccountID}
+                  onChange={handleContactChange}
+                  service={accountService}
+                  displayField="AccountName"
+                  valueField="AccountID"
+                  placeholder="Search for account..."
+                  required
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('AccountID', false)}
+                  helperText={getFieldError('AccountID', false)}
+                />
+              </Box>
+
+              {/* Person Selection Toggle Card */}
+              <Box sx={{ gridColumn: '1 / -1' }}>
+                <Card variant="outlined" sx={{ 
+                  border: `1px solid ${theme.palette.divider}`
+                }}>
+                  <CardContent>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="h6" fontWeight={600} color={theme.palette.text.primary}>
+                        Person Information
+                      </Typography>
+                      <FormControlLabel
+                        control={
+                          <Switch 
+                            checked={isNewPerson} 
+                            onChange={handlePersonToggle} 
+                            disabled={isSubmitting}
+                          />
+                        }
+                        label={isNewPerson ? 'Create New Person' : 'Use Existing Person'}
+                      />
+                    </Box>
+                    <Typography variant="body2" color={theme.palette.text.secondary} sx={{ mt: 1 }}>
+                      {isNewPerson
+                        ? 'Fill in the person details below to create a new person record'
+                        : 'Select an existing person from the dropdown'}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Box>
+
+              {/* Existing Person Dropdown */}
+              {!isNewPerson && (
                 <Box sx={{ gridColumn: '1 / -1' }}>
                   <SmartDropdown
-                    label="Account"
-                    name="AccountID"
-                    value={contactData.AccountID}
+                    label="Select Person"
+                    name="PersonID"
+                    value={contactData.PersonID}
                     onChange={handleContactChange}
-                    service={accountService}
-                    displayField="AccountName"
-                    valueField="AccountID"
-                    placeholder="Search for account..."
+                    service={personDropdownService}
+                    displayField="PersonID"
+                    valueField="PersonID"
+                    placeholder="Search for person..."
                     required
                     disabled={isSubmitting}
-                    error={isFieldInvalid('AccountID', false)}
-                    helperText={getFieldError('AccountID', false)}
+                    customDisplayFormatter={(item) =>
+                      `${item.first_name || ''} ${item.surname || ''}`.trim()
+                    }
+                    error={isFieldInvalid('PersonID', false)}
+                    helperText={getFieldError('PersonID', false)}
                   />
                 </Box>
+              )}
 
-                {/* Person Selection Toggle Card */}
-                <Box sx={{ gridColumn: '1 / -1' }}>
-                  <Card variant="outlined" sx={{ border: '1px solid #e5e5e5' }}>
-                    <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="h6" fontWeight={600} color="#050505">
-                          Person Information
-                        </Typography>
-                        <FormControlLabel
-                          control={
-                            <Switch 
-                              checked={isNewPerson} 
-                              onChange={handlePersonToggle} 
-                              disabled={isSubmitting}
-                              sx={{
-                                '& .MuiSwitch-switchBase.Mui-checked': {
-                                  color: '#050505',
-                                },
-                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                                  backgroundColor: '#050505',
-                                },
-                              }}
-                            />
-                          }
-                          label={isNewPerson ? 'Create New Person' : 'Use Existing Person'}
-                        />
-                      </Box>
-                      <Typography variant="body2" color="#666666" sx={{ mt: 1 }}>
-                        {isNewPerson
-                          ? 'Fill in the person details below to create a new person record'
-                          : 'Select an existing person from the dropdown'}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Box>
-
-                {/* Existing Person Dropdown */}
-                {!isNewPerson && (
-                  <Box sx={{ gridColumn: '1 / -1' }}>
-                    <SmartDropdown
-                      label="Select Person"
-                      name="PersonID"
-                      value={contactData.PersonID}
-                      onChange={handleContactChange}
-                      service={personDropdownService}
-                      displayField="PersonID"
-                      valueField="PersonID"
-                      placeholder="Search for person..."
-                      required
+              {/* New Person Fields */}
+              {isNewPerson && (
+                <>
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label="Title (Optional)"
+                      name="Title"
+                      value={personData.Title}
+                      onChange={handlePersonChange}
+                      onBlur={handlePersonBlur}
                       disabled={isSubmitting}
-                      customDisplayFormatter={(item) =>
-                        `${item.first_name || ''} ${item.surname || ''}`.trim()
-                      }
-                      error={isFieldInvalid('PersonID', false)}
-                      helperText={getFieldError('PersonID', false)}
+                      error={isFieldInvalid('Title', true)}
+                      helperText={getFieldError('Title', true)}
+                      FormHelperTextProps={{
+                        component: 'div'
+                      }}
                     />
                   </Box>
-                )}
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label="First Name"
+                      name="first_name"
+                      value={personData.first_name}
+                      onChange={handlePersonChange}
+                      onBlur={handlePersonBlur}
+                      required
+                      disabled={isSubmitting}
+                      error={isFieldInvalid('first_name', true)}
+                      helperText={getFieldError('first_name', true)}
+                      FormHelperTextProps={{
+                        component: 'div'
+                      }}
+                    />
+                  </Box>
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label="Middle Name (Optional)"
+                      name="middle_name"
+                      value={personData.middle_name}
+                      onChange={handlePersonChange}
+                      onBlur={handlePersonBlur}
+                      disabled={isSubmitting}
+                      error={isFieldInvalid('middle_name', true)}
+                      helperText={getFieldError('middle_name', true)}
+                      FormHelperTextProps={{
+                        component: 'div'
+                      }}
+                    />
+                  </Box>
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label="Surname"
+                      name="surname"
+                      value={personData.surname}
+                      onChange={handlePersonChange}
+                      onBlur={handlePersonBlur}
+                      required
+                      disabled={isSubmitting}
+                      error={isFieldInvalid('surname', true)}
+                      helperText={getFieldError('surname', true)}
+                      FormHelperTextProps={{
+                        component: 'div'
+                      }}
+                    />
+                  </Box>
+                  <Box>
+                    <SmartDropdown
+                      label="City (Optional)"
+                      name="CityID"
+                      value={personData.CityID}
+                      onChange={handlePersonChange}
+                      service={cityService}
+                      displayField="CityName"
+                      valueField="CityID"
+                      placeholder="Search for city..."
+                      disabled={isSubmitting}
+                    />
+                  </Box>
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label="Personal Email (Optional)"
+                      name="personal_email"
+                      value={personData.personal_email}
+                      onChange={handlePersonChange}
+                      onBlur={handlePersonBlur}
+                      type="email"
+                      disabled={isSubmitting}
+                      error={isFieldInvalid('personal_email', true)}
+                      helperText={getFieldError('personal_email', true)}
+                      FormHelperTextProps={{
+                        component: 'div'
+                      }}
+                    />
+                  </Box>
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label="Personal Mobile (Optional)"
+                      name="personal_mobile"
+                      value={personData.personal_mobile}
+                      onChange={handlePersonChange}
+                      onBlur={handlePersonBlur}
+                      disabled={isSubmitting}
+                      error={isFieldInvalid('personal_mobile', true)}
+                      helperText={getFieldError('personal_mobile', true)}
+                      FormHelperTextProps={{
+                        component: 'div'
+                      }}
+                    />
+                  </Box>
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label="LinkedIn Link (Optional)"
+                      name="linkedin_link"
+                      value={personData.linkedin_link}
+                      onChange={handlePersonChange}
+                      onBlur={handlePersonBlur}
+                      disabled={isSubmitting}
+                      error={isFieldInvalid('linkedin_link', true)}
+                      helperText={getFieldError('linkedin_link', true)}
+                      FormHelperTextProps={{
+                        component: 'div'
+                      }}
+                    />
+                  </Box>
+                </>
+              )}
 
-                {/* New Person Fields */}
-                {isNewPerson && (
-                  <>
-                    <Box>
-                      <TextField
-                        fullWidth
-                        label="Title (Optional)"
-                        name="Title"
-                        value={personData.Title}
-                        onChange={handlePersonChange}
-                        onBlur={handlePersonBlur}
-                        disabled={isSubmitting}
-                        error={isFieldInvalid('Title', true)}
-                        helperText={getFieldError('Title', true)}
-                        FormHelperTextProps={{
-                          component: 'div'
-                        }}
-                      />
-                    </Box>
-                    <Box>
-                      <TextField
-                        fullWidth
-                        label="First Name"
-                        name="first_name"
-                        value={personData.first_name}
-                        onChange={handlePersonChange}
-                        onBlur={handlePersonBlur}
-                        required
-                        disabled={isSubmitting}
-                        error={isFieldInvalid('first_name', true)}
-                        helperText={getFieldError('first_name', true)}
-                        FormHelperTextProps={{
-                          component: 'div'
-                        }}
-                      />
-                    </Box>
-                    <Box>
-                      <TextField
-                        fullWidth
-                        label="Middle Name (Optional)"
-                        name="middle_name"
-                        value={personData.middle_name}
-                        onChange={handlePersonChange}
-                        onBlur={handlePersonBlur}
-                        disabled={isSubmitting}
-                        error={isFieldInvalid('middle_name', true)}
-                        helperText={getFieldError('middle_name', true)}
-                        FormHelperTextProps={{
-                          component: 'div'
-                        }}
-                      />
-                    </Box>
-                    <Box>
-                      <TextField
-                        fullWidth
-                        label="Surname"
-                        name="surname"
-                        value={personData.surname}
-                        onChange={handlePersonChange}
-                        onBlur={handlePersonBlur}
-                        required
-                        disabled={isSubmitting}
-                        error={isFieldInvalid('surname', true)}
-                        helperText={getFieldError('surname', true)}
-                        FormHelperTextProps={{
-                          component: 'div'
-                        }}
-                      />
-                    </Box>
-                    <Box>
-                      <SmartDropdown
-                        label="City (Optional)"
-                        name="CityID"
-                        value={personData.CityID}
-                        onChange={handlePersonChange}
-                        service={cityService}
-                        displayField="CityName"
-                        valueField="CityID"
-                        placeholder="Search for city..."
-                        disabled={isSubmitting}
-                      />
-                    </Box>
-                    <Box>
-                      <TextField
-                        fullWidth
-                        label="Personal Email (Optional)"
-                        name="personal_email"
-                        value={personData.personal_email}
-                        onChange={handlePersonChange}
-                        onBlur={handlePersonBlur}
-                        type="email"
-                        disabled={isSubmitting}
-                        error={isFieldInvalid('personal_email', true)}
-                        helperText={getFieldError('personal_email', true)}
-                        FormHelperTextProps={{
-                          component: 'div'
-                        }}
-                      />
-                    </Box>
-                    <Box>
-                      <TextField
-                        fullWidth
-                        label="Personal Mobile (Optional)"
-                        name="personal_mobile"
-                        value={personData.personal_mobile}
-                        onChange={handlePersonChange}
-                        onBlur={handlePersonBlur}
-                        disabled={isSubmitting}
-                        error={isFieldInvalid('personal_mobile', true)}
-                        helperText={getFieldError('personal_mobile', true)}
-                        FormHelperTextProps={{
-                          component: 'div'
-                        }}
-                      />
-                    </Box>
-                    <Box>
-                      <TextField
-                        fullWidth
-                        label="LinkedIn Link (Optional)"
-                        name="linkedin_link"
-                        value={personData.linkedin_link}
-                        onChange={handlePersonChange}
-                        onBlur={handlePersonBlur}
-                        disabled={isSubmitting}
-                        error={isFieldInvalid('linkedin_link', true)}
-                        helperText={getFieldError('linkedin_link', true)}
-                        FormHelperTextProps={{
-                          component: 'div'
-                        }}
-                      />
-                    </Box>
-                  </>
-                )}
-
-                {/* Job Title Dropdown - Required */}
-                <Box>
-                  <SmartDropdown
-                    label="Job Title"
-                    name="JobTitleID"
-                    value={contactData.JobTitleID}
-                    onChange={handleContactChange}
-                    service={jobTitleService}
-                    displayField="JobTitleName"
-                    valueField="JobTitleID"
-                    placeholder="Search for job title..."
-                    required
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('JobTitleID', false)}
-                    helperText={getFieldError('JobTitleID', false)}
-                  />
-                </Box>
-
-                {/* Work Email - Required */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Work Email"
-                    name="WorkEmail"
-                    value={contactData.WorkEmail}
-                    onChange={handleContactChange}
-                    onBlur={handleContactBlur}
-                    type="email"
-                    required
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('WorkEmail', false)}
-                    helperText={getFieldError('WorkEmail', false)}
-                    FormHelperTextProps={{
-                      component: 'div'
-                    }}
-                  />
-                </Box>
-
-                {/* Work Phone - Optional */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Work Phone (Optional)"
-                    name="WorkPhone"
-                    value={contactData.WorkPhone}
-                    onChange={handleContactChange}
-                    onBlur={handleContactBlur}
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('WorkPhone', false)}
-                    helperText={getFieldError('WorkPhone', false)}
-                    FormHelperTextProps={{
-                      component: 'div'
-                    }}
-                  />
-                </Box>
+              {/* Job Title Dropdown - Required */}
+              <Box>
+                <SmartDropdown
+                  label="Job Title"
+                  name="JobTitleID"
+                  value={contactData.JobTitleID}
+                  onChange={handleContactChange}
+                  service={jobTitleService}
+                  displayField="JobTitleName"
+                  valueField="JobTitleID"
+                  placeholder="Search for job title..."
+                  required
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('JobTitleID', false)}
+                  helperText={getFieldError('JobTitleID', false)}
+                />
               </Box>
-            </form>
-          </Paper>
-        </Box>
+
+              {/* Work Email - Required */}
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Work Email"
+                  name="WorkEmail"
+                  value={contactData.WorkEmail}
+                  onChange={handleContactChange}
+                  onBlur={handleContactBlur}
+                  type="email"
+                  required
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('WorkEmail', false)}
+                  helperText={getFieldError('WorkEmail', false)}
+                  FormHelperTextProps={{
+                    component: 'div'
+                  }}
+                />
+              </Box>
+
+              {/* Work Phone - Optional */}
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Work Phone (Optional)"
+                  name="WorkPhone"
+                  value={contactData.WorkPhone}
+                  onChange={handleContactChange}
+                  onBlur={handleContactBlur}
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('WorkPhone', false)}
+                  helperText={getFieldError('WorkPhone', false)}
+                  FormHelperTextProps={{
+                    component: 'div'
+                  }}
+                />
+              </Box>
+            </Box>
+          </form>
+        </Paper>
       </Box>
-    </ThemeProvider>
+    </Box>
   );
 };
+
 export default CreateContactsPage;
