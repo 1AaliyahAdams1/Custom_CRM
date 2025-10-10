@@ -28,7 +28,6 @@ import FiltersDialog from "../dialogs/FiltersDialog";
 import ActionMenu from "./ActionMenu";
 import AssignUserDialog from "../../components/dialogs/AssignUserDialog"; 
 import UnassignUserDialog from "../dialogs/UnAssignUserDialog";
-import UnassignUserDialog from "../dialogs/UnAssignUserDialog";
 
 const TableView = ({
   data = [],
@@ -46,14 +45,10 @@ const TableView = ({
   onAddAttachment,
   onClaimAccount,
   onUnclaimAccount, 
-  onUnclaimAccount, 
   onAssignUser,
   onUnassignUsers, 
   onReactivate, 
-  onPermanentDelete, 
-  onUnassignUsers, 
-  onReactivate, 
-  onPermanentDelete, 
+  onPermanentDelete,  
   entityType = "records",
   menuItems = [],
   formatters = {},

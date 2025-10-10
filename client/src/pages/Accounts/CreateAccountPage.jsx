@@ -20,7 +20,6 @@ import {
   stateProvinceService
 } from '../../services/dropdownServices';
 import SmartDropdown from '../../components/SmartDropdown';
-import { validateAccountData, validateField } from '../../utils/validation/accountValidation';
 
 const CreateAccount = () => {
   const navigate = useNavigate();
@@ -71,14 +70,6 @@ const CreateAccount = () => {
       return newData;
     });
 
-    if (touched[name]) {
-      const error = validateField(name, value, formData);
-      setFieldErrors(prev => ({
-        ...prev,
-        [name]: error
-      }));
-    }
-
     if (error) {
       setError(null);
     }
@@ -91,12 +82,6 @@ const CreateAccount = () => {
       ...prev,
       [name]: true
     }));
-
-    const error = validateField(name, value, formData);
-    setFieldErrors(prev => ({
-      ...prev,
-      [name]: error
-    }));
   };
 
   const handleSubmit = async (e) => {
@@ -107,14 +92,6 @@ const CreateAccount = () => {
       allTouched[key] = true;
     });
     setTouched(allTouched);
-
-    const errors = validateAccountData(formData);
-    
-    if (errors) {
-      setFieldErrors(errors);
-      setError("Please fix the errors below before submitting");
-      return;
-    }
 
     setIsSubmitting(true);
     setError(null);
