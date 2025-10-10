@@ -187,7 +187,7 @@ const ActionMenu = ({
       {
         label: 'Reactivate',
         icon: <RestoreFromTrash sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => handleClick(() => onReactivate(menuRow[idField])),
+        onClick: () => handleClick(onReactivate),
         show: !!onReactivate && (menuRow?.Active === false || menuRow?.Active === 0),
         tooltip: getTooltip('reactivate', 'Reactivate this record'),
       },
@@ -196,7 +196,7 @@ const ActionMenu = ({
       {
         label: 'Deactivate',
         icon: <Block sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => handleClick(() => onDelete(menuRow[idField])),
+        onClick: () => handleClick(onDelete),
         show: !!onDelete && menuRow?.Active !== false,
         tooltip: getTooltip('delete', 'Deactivate this record'),
       },
@@ -205,7 +205,7 @@ const ActionMenu = ({
       // {
       //   label: 'Delete Permanently',
       //   icon: <DeleteForever sx={{ mr: 1, color: '#d32f2f' }} />,
-      //   onClick: () => handleClick(() => onPermanentDelete(menuRow[idField])),
+      //   onClick: () => handleClick(onPermanentDelete),
       //   show: !!onPermanentDelete && menuRow?.Active === false,
       //   tooltip: getTooltip('permanentDelete', 'Permanently delete this record (cannot be undone)'),
       // },
