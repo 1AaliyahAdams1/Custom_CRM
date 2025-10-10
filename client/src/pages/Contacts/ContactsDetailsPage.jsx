@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Alert, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { getContactDetails, deactivateContact } from "../../services/contactService";
 import { getAllAccounts } from "../../services/accountService";
@@ -12,6 +13,7 @@ import { getAllAttachments } from "../../services/attachmentService";
 export default function ContactDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
   
   const idRef = useRef(id);
   const navigateRef = useRef(navigate);
@@ -274,7 +276,7 @@ export default function ContactDetailsPage() {
       }
     ];
     return tabs;
-  }, [createFilteredDataService, createAttachmentDataService, processDealData]);
+  }, [createFilteredDataService, createAttachmentDataService, processDealData, contact?.AccountID]);
 
   // Action handlers
   const relatedDataActions = useMemo(() => {
@@ -407,7 +409,12 @@ export default function ContactDetailsPage() {
   if (!contact) return <Alert severity="warning">Contact not found.</Alert>;
 
   return (
-    <Box sx={{ width: "100%", p: 2, backgroundColor: "#fafafa", minHeight: "100vh" }}>
+    <Box sx={{ 
+      width: "100%", 
+      p: 2, 
+      backgroundColor: theme.palette.background.default,
+      minHeight: "100vh" 
+    }}>
       {successMessage && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
           {successMessage}

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Paper } from "@mui/material";
-import theme from "./Theme";
+import { Box, Typography, Paper, Avatar, useTheme } from "@mui/material";
 
 const getTimeBasedGreeting = () => {
   const hour = new Date().getHours();
@@ -19,80 +18,89 @@ const getCurrentDateTime = () => {
 };
 
 const WelcomeBanner = () => {
+  const theme = useTheme();
   const [greeting, setGreeting] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [username, setUsername] = useState("User");
 
   useEffect(() => {
-    // Read user from localStorage immediately
     const storedUser = JSON.parse(localStorage.getItem("user")) || {};
-    const name = storedUser.FirstName || storedUser.username || "User";
+    const name = storedUser.FirstName || storedUser.Username || "User";
     setUsername(name);
 
-    // Update greeting and date
     const updateDateTime = () => {
       setGreeting(getTimeBasedGreeting());
       setCurrentDate(getCurrentDateTime());
     };
     updateDateTime();
-
     const interval = setInterval(updateDateTime, 60000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <Paper
-      elevation={3}
+      elevation={4}
       sx={{
-        background: "linear-gradient(135deg, #c0c0c0 0%, #e0e0e0 100%)", // full silver gradient
+        background: `linear-gradient(135deg, ${theme.palette.primary.main}33 0%, ${theme.palette.primary.dark}1A 100%)`,
         color: theme.palette.text.primary,
         borderRadius: 3,
-        p: 4,
-        mb: 3,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+        p: { xs: 3, md: 5 },
+        mb: 4,
+        boxShadow: theme.shadows[4],
+        transition: "all 0.3s ease",
       }}
     >
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
         <Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
-            <Box
+            <Avatar
               sx={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                backgroundColor: "#fafafa50",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                width: 56,
+                height: 56,
+                bgcolor: theme.palette.secondary.main,
                 fontSize: "1.5rem",
               }}
             >
-              👤
-            </Box>
-            <Typography variant="h4" sx={{ fontWeight: "bold", color: theme.palette.text.primary }}>
+              {username.charAt(0).toUpperCase()}
+            </Avatar>
+            <Typography variant="h4" fontWeight="bold" color="text.primary">
               {greeting}, {username}!
             </Typography>
           </Box>
-          <Typography variant="h6" sx={{ color: theme.palette.text.secondary }}>
+          <Typography variant="h6" color="text.secondary">
             Welcome to your CRM dashboard
           </Typography>
         </Box>
-        <Box sx={{ textAlign: "right" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, opacity: 0.8 }}>
-            <Box
+
+        <Box sx={{ textAlign: { xs: "left", md: "right" } }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              opacity: 0.85,
+              mt: { xs: 2, md: 0 },
+            }}
+          >
+            <Avatar
               sx={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                backgroundColor: "#fafafa50",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                width: 36,
+                height: 36,
+                bgcolor: theme.palette.background.default,
+                color: theme.palette.text.primary,
               }}
             >
               📅
-            </Box>
-            <Typography variant="body1" sx={{ color: theme.palette.text.primary }}>
+            </Avatar>
+            <Typography variant="body1" color="text.primary">
               {currentDate}
             </Typography>
           </Box>
