@@ -1,61 +1,36 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import WorkPage from "../../pages/WorkPage";
 import {
-  getWorkPageData,
-  getUserAccounts,
-  getSequenceProgress,
-  updateSequenceItemStatus,
-  getActivityForWorkspace,
+  getWorkPageActivities,
+  getAccountActivitiesGrouped,
   completeActivity,
   updateActivity,
-  getActivityMetadata,
-  getOrCreateActivityFromSequenceItem,
+  updateActivityDueDateWithCascade,
   deleteActivity,
+  getActivityMetadata,
 } from "../../services/workService";
 import {
   createNote,
   updateNote,
-  deactivateNote,
-  reactivateNote,
 } from "../../services/noteService";
 import EmailDialog from "../../components/EmailDialog";
 
 const WorkPageContainer = () => {
-  const navigate = useNavigate();
-
-  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState(null);
-  
-  
-  
-  // ---------------- USER DATA ----------------
+  // User data
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const userId = storedUser.UserID || storedUser.id || null;
 
-  // ---------------- STATE ----------------
-  const [showEmailForm, setShowEmailForm] = useState({}); 
-
-  // Activities state
+  // State
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [refreshFlag, setRefreshFlag] = useState(false);
-
-  // Account and sequence state
-  const [userAccounts, setUserAccounts] = useState([]);
-  const [selectedAccountId, setSelectedAccountId] = useState(null);
-  const [sequenceProgress, setSequenceProgress] = useState(null);
-
-  // Filter and sort state
   const [currentSort, setCurrentSort] = useState('dueDate');
   const [currentFilter, setCurrentFilter] = useState('all');
 
-  // Tab management state
+  // Tab management
   const [openTabs, setOpenTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
-  const [tabActivities, setTabActivities] = useState({});
+  const [tabData, setTabData] = useState({}); // accountId -> grouped data
   const [tabLoading, setTabLoading] = useState({});
 
   // Activity metadata
@@ -68,111 +43,43 @@ const WorkPageContainer = () => {
   const [statusMessage, setStatusMessage] = useState("");
   const [statusSeverity, setStatusSeverity] = useState("success");
 
-  // ---------------- FETCH USER ACCOUNTS ----------------
-  const fetchUserAccounts = useCallback(async () => {
-    if (!userId) return;
+  // Email dialog state
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailDialogActivity, setEmailDialogActivity] = useState(null);
 
-    try {
-      const response = await getUserAccounts(userId);
-      
-      if (response.success && response.data) {
-        setUserAccounts(response.data);
-        console.log('User accounts loaded:', response.data.length);
-      } else {
-        setUserAccounts([]);
-      }
-    } catch (err) {
-      console.error('Error fetching user accounts:', err);
-      setUserAccounts([]);
-    }
-  }, [userId]);
+  // Notes popup state
+  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
+  const [notesPopupActivity, setNotesPopupActivity] = useState(null);
 
-  // ---------------- FETCH WORK PAGE DATA ----------------
-  const fetchWorkPageData = useCallback(async () => {
+  // Dragging state
+  const [draggedIndex, setDraggedIndex] = useState(null);
+
+  // ---------------- FETCH ACTIVITIES ----------------
+  const fetchActivities = useCallback(async () => {
     if (!userId) {
       setError("User ID not found. Please log in again.");
       return;
     }
 
-    console.log('=== FETCH WORK PAGE DATA ===');
-    console.log('UserId:', userId);
-    console.log('Sort:', currentSort);
-    console.log('Filter:', currentFilter);
-    console.log('AccountId:', selectedAccountId);
-
     setLoading(true);
     setError(null);
     
     try {
-      const response = await getWorkPageData(userId, currentSort, currentFilter, selectedAccountId);
+      const response = await getWorkPageActivities(userId, currentSort, currentFilter);
       
-      console.log('Response received:', response);
-      
-      if (response && response.mode === 'sequence') {
-        // Sequence view mode - transform to activities
-        console.log('Using sequence mode with smart visibility');
-        
-        const sequenceData = response.data;
-        const transformedActivities = sequenceData.items.map(item => ({
-          ActivityID: item.ActivityID,
-          AccountID: item.AccountID,
-          AccountName: item.AccountName,
-          AccountPhone: item.AccountPhone,
-          TypeID: item.ActivityTypeID,
-          ActivityTypeID: item.ActivityTypeID,
-          ActivityTypeName: item.ActivityTypeName,
-          ActivityTypeDescription: item.ActivityTypeDescription,
-          PriorityLevelID: item.PriorityLevelID,
-          PriorityLevelName: item.PriorityLevelName,
-          PriorityLevelValue: item.PriorityLevelValue,
-          DueToStart: item.DueToStart,
-          DueToEnd: item.DueToEnd,
-          Completed: item.Completed,
-          Status: item.Status,
-          SequenceItemID: item.SequenceItemID,
-          SequenceItemDescription: item.SequenceItemDescription,
-          DaysFromStart: item.DaysFromStart,
-          SequenceID: sequenceData.sequence.SequenceID,
-          SequenceName: sequenceData.sequence.SequenceName,
-          SequenceDescription: sequenceData.sequence.SequenceDescription,
-          estimatedDueDate: item.estimatedDueDate,
-          Active: true
-        }));
-        
-        setActivities(transformedActivities);
-        setSequenceProgress(sequenceData.progress);
-        
-      } else if (response && response.mode === 'activities') {
-        // Activities list mode
-        console.log('Using activities list mode');
-        
-        const activitiesArray = Array.isArray(response.data?.activities) 
-          ? response.data.activities 
-          : [];
-        
-        console.log('Activities array length:', activitiesArray.length);
-        setActivities(activitiesArray);
-        setSequenceProgress(null);
-        
-        setSequenceProgress(null);
-        
+      if (response.success && response.data) {
+        setActivities(response.data.activities || []);
       } else {
-        console.error('Unexpected response format:', response);
         setActivities([]);
-        setSequenceProgress(null);
-        setSequenceProgress(null);
       }
-      
     } catch (err) {
       console.error('Fetch error:', err);
-      setError(err.message || "Failed to load data. Please try again.");
+      setError(err.message || "Failed to load activities. Please try again.");
       setActivities([]);
-      setSequenceProgress(null);
-      setSequenceProgress(null);
     } finally {
       setLoading(false);
     }
-  }, [userId, currentSort, currentFilter, selectedAccountId]);
+  }, [userId, currentSort, currentFilter]);
 
   // ---------------- FETCH METADATA ----------------
   const fetchMetadata = useCallback(async () => {
@@ -189,15 +96,9 @@ const WorkPageContainer = () => {
   // ---------------- EFFECTS ----------------
   useEffect(() => {
     if (userId) {
-      fetchUserAccounts();
+      fetchActivities();
     }
-  }, [fetchUserAccounts]);
-
-  useEffect(() => {
-    if (userId) {
-      fetchWorkPageData();
-    }
-  }, [fetchWorkPageData]);
+  }, [fetchActivities]);
 
   useEffect(() => {
     fetchMetadata();
@@ -205,30 +106,15 @@ const WorkPageContainer = () => {
 
   // ---------------- FILTER & SORT HANDLERS ----------------
   const handleSortChange = useCallback((sortBy) => {
-    console.log('Sort changed to:', sortBy);
     setCurrentSort(sortBy);
   }, []);
 
   const handleFilterChange = useCallback((filterType) => {
-    console.log('Filter changed to:', filterType);
     setCurrentFilter(filterType);
   }, []);
 
-  const handleAccountChange = useCallback((accountId) => {
-    console.log('Account changed to:', accountId);
-    setSelectedAccountId(accountId);
-    // Close all tabs when switching accounts/views
-    setOpenTabs([]);
-    setActiveTab(null);
-    setTabActivities({});
-    setTabLoading({});
-    setSequenceProgress(null);
-  }, []);
-
-  // ---------------- REORDER ACTIVITIES ----------------
+  // ---------------- REORDER ACTIVITIES (UI only) ----------------
   const handleReorderActivities = useCallback((fromIndex, toIndex) => {
-    console.log('Reordering activities from', fromIndex, 'to', toIndex);
-    
     setActivities(prevActivities => {
       const newActivities = [...prevActivities];
       const [movedActivity] = newActivities.splice(fromIndex, 1);
@@ -236,74 +122,27 @@ const WorkPageContainer = () => {
       return newActivities;
     });
     
-    showStatus('Activities reordered successfully', 'success');
+    showStatus('Activities reordered', 'success');
   }, []);
-
-  // ---------------- SEQUENCE ITEM CLICK (Auto-generate activity) ----------------
-  const handleSequenceItemClick = async (sequenceItem) => {
-    try {
-      console.log('Sequence item clicked:', sequenceItem);
-      
-      // Check if activity already exists
-      if (sequenceItem.ActivityID) {
-        // Activity exists, open it normally
-        handleActivityClick(sequenceItem);
-        return;
-      }
-      
-      // Activity doesn't exist, create it
-      setLoading(true);
-      showStatus('Creating activity...', 'info');
-      
-      const response = await getOrCreateActivityFromSequenceItem(
-        userId,
-        sequenceItem.SequenceItemID,
-        sequenceItem.AccountID
-      );
-      
-      if (response.success && response.data.activity) {
-        showStatus(
-          response.data.created ? 'Activity created successfully!' : 'Activity loaded',
-          'success'
-        );
-        
-        // Refresh the list to show the new activity
-        await fetchWorkPageData();
-        
-        // Open the activity in a tab
-        setTimeout(() => {
-          handleActivityClick(response.data.activity);
-        }, 300);
-      } else {
-        throw new Error('Failed to create or load activity');
-      }
-    } catch (err) {
-      console.error('Error handling sequence item click:', err);
-      const errorMessage = err.message || 'Failed to create activity';
-      setError(errorMessage);
-      showStatus(errorMessage, 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // ---------------- TAB MANAGEMENT ----------------
   const handleActivityClick = async (activity) => {
     try {
-      console.log('Opening activity in tab:', activity.ActivityID);
+      const accountId = activity.AccountID;
       
-      const existingTabIndex = openTabs.findIndex(tab => tab.activityId === activity.ActivityID);
+      // Check if tab already open
+      const existingTabIndex = openTabs.findIndex(tab => tab.accountId === accountId);
       
       if (existingTabIndex !== -1) {
         setActiveTab(existingTabIndex);
         return;
       }
 
+      // Create new tab
       const newTab = {
-        activityId: activity.ActivityID,
-        title: activity.AccountName || 'Activity',
-        subtitle: activity.ActivityTypeName || 'Activity',
-        status: activity.Status || 'normal'
+        accountId: accountId,
+        accountName: activity.AccountName,
+        currentActivityId: activity.ActivityID
       };
 
       const newTabs = [...openTabs, newTab];
@@ -312,28 +151,30 @@ const WorkPageContainer = () => {
       setOpenTabs(newTabs);
       setActiveTab(newTabIndex);
       
-      setTabLoading(prev => ({ ...prev, [activity.ActivityID]: true }));
+      // Load account data
+      setTabLoading(prev => ({ ...prev, [accountId]: true }));
 
-      const response = await getActivityForWorkspace(activity.ActivityID, userId);
+      const response = await getAccountActivitiesGrouped(userId, accountId);
       
       if (response.success && response.data) {
-        setTabActivities(prev => ({
+        setTabData(prev => ({
           ...prev,
-          [activity.ActivityID]: response.data
+          [accountId]: response.data
         }));
       } else {
-        throw new Error("Failed to load activity details");
+        throw new Error("Failed to load account activities");
       }
     } catch (err) {
-      console.error("Error opening activity tab:", err);
-      setError(err.message || "Failed to open activity");
+      console.error("Error opening account tab:", err);
+      showStatus(err.message || "Failed to open account", 'error');
       
-      const tabIndex = openTabs.findIndex(tab => tab.activityId === activity.ActivityID);
+      // Remove tab if failed to load
+      const tabIndex = openTabs.findIndex(tab => tab.accountId === activity.AccountID);
       if (tabIndex !== -1) {
         handleTabClose(tabIndex);
       }
     } finally {
-      setTabLoading(prev => ({ ...prev, [activity.ActivityID]: false }));
+      setTabLoading(prev => ({ ...prev, [activity.AccountID]: false }));
     }
   };
 
@@ -342,15 +183,15 @@ const WorkPageContainer = () => {
     const newTabs = openTabs.filter((_, index) => index !== tabIndex);
     
     if (tabToClose) {
-      setTabActivities(prev => {
+      setTabData(prev => {
         const updated = { ...prev };
-        delete updated[tabToClose.activityId];
+        delete updated[tabToClose.accountId];
         return updated;
       });
       
       setTabLoading(prev => {
         const updated = { ...prev };
-        delete updated[tabToClose.activityId];
+        delete updated[tabToClose.accountId];
         return updated;
       });
     }
@@ -376,183 +217,159 @@ const WorkPageContainer = () => {
   // ---------------- ACTIVITY ACTIONS ----------------
   const handleCompleteActivity = async (activityId, notes = '') => {
     try {
-      console.log('Completing activity:', activityId);
-      
       const response = await completeActivity(activityId, userId, notes);
       
-      if (response.success && response.data) {
-        setSuccessMessage(`Activity completed successfully!`);
-        setStatusSeverity("success");
+      if (response.success) {
+        showStatus('Activity completed successfully!', 'success');
         
-        const tabIndex = openTabs.findIndex(tab => tab.activityId === activityId);
-        if (tabIndex !== -1) {
-          handleTabClose(tabIndex);
+        // Refresh activities list
+        await fetchActivities();
+        
+        // Refresh current tab data
+        if (activeTab !== null && openTabs[activeTab]) {
+          const accountId = openTabs[activeTab].accountId;
+          const tabResponse = await getAccountActivitiesGrouped(userId, accountId);
+          if (tabResponse.success) {
+            setTabData(prev => ({
+              ...prev,
+              [accountId]: tabResponse.data
+            }));
+          }
         }
-
-        if (response.data.nextActivity) {
-          setTimeout(() => {
-            handleActivityClick(response.data.nextActivity);
-          }, 500);
-        }
-
-        fetchWorkPageData();
-      } else {
-        throw new Error(response.message || "Failed to complete activity");
       }
     } catch (err) {
       console.error("Error completing activity:", err);
-      const errorMessage = err.message || "Failed to complete activity";
-      setError(errorMessage);
-      setStatusMessage(errorMessage);
-      setStatusSeverity("error");
+      showStatus(err.message || "Failed to complete activity", 'error');
     }
   };
   
   const handleUpdateActivity = async (activityId, updateData) => {
     try {
-      console.log('Updating activity:', activityId, updateData);
-      
       const response = await updateActivity(activityId, userId, updateData);
       
-      if (response.success && response.data) {
-        setSuccessMessage("Activity updated successfully!");
-        setStatusSeverity("success");
+      if (response.success) {
+        showStatus('Activity updated successfully!', 'success');
         
-        setTabActivities(prev => ({
-          ...prev,
-          [activityId]: response.data.activity || response.data
-        }));
+        await fetchActivities();
         
-        fetchWorkPageData();
-      } else {
-        throw new Error(response.message || "Failed to update activity");
+        // Refresh current tab
+        if (activeTab !== null && openTabs[activeTab]) {
+          const accountId = openTabs[activeTab].accountId;
+          const tabResponse = await getAccountActivitiesGrouped(userId, accountId);
+          if (tabResponse.success) {
+            setTabData(prev => ({
+              ...prev,
+              [accountId]: tabResponse.data
+            }));
+          }
+        }
       }
     } catch (err) {
       console.error("Error updating activity:", err);
-      const errorMessage = err.message || "Failed to update activity";
-      setError(errorMessage);
-      setStatusMessage(errorMessage);
-      setStatusSeverity("error");
+      showStatus(err.message || "Failed to update activity", 'error');
     }
   };
 
-  const handleSendEmailClick = (activityId) => {
-    setShowEmailForm(prev => ({ ...prev, [activityId]: true }));
-  };
-
-  const handleCloseEmailDialog = (activityId) => {
-    setShowEmailForm(prev => ({ ...prev, [activityId]: false }));
+  const handleUpdateDueDateWithCascade = async (activityId, newDueDate) => {
+    try {
+      const response = await updateActivityDueDateWithCascade(activityId, userId, newDueDate);
+      
+      if (response.success) {
+        showStatus('Due date updated (subsequent activities adjusted)', 'success');
+        
+        await fetchActivities();
+        
+        // Refresh current tab
+        if (activeTab !== null && openTabs[activeTab]) {
+          const accountId = openTabs[activeTab].accountId;
+          const tabResponse = await getAccountActivitiesGrouped(userId, accountId);
+          if (tabResponse.success) {
+            setTabData(prev => ({
+              ...prev,
+              [accountId]: tabResponse.data
+            }));
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error updating due date:", err);
+      showStatus(err.message || "Failed to update due date", 'error');
+    }
   };
 
   const handleDeleteActivity = async (activityId) => {
     try {
-      console.log('Deleting activity:', activityId);
-      
       const response = await deleteActivity(activityId, userId);
       
-      if (response.success && response.data) {
-        setSuccessMessage("Activity deleted successfully!");
-        setStatusSeverity("success");
+      if (response.success) {
+        showStatus('Activity deleted successfully!', 'success');
         
-        const tabIndex = openTabs.findIndex(tab => tab.activityId === activityId);
-        if (tabIndex !== -1) {
-          handleTabClose(tabIndex);
+        await fetchActivities();
+        
+        // Refresh current tab
+        if (activeTab !== null && openTabs[activeTab]) {
+          const accountId = openTabs[activeTab].accountId;
+          const tabResponse = await getAccountActivitiesGrouped(userId, accountId);
+          if (tabResponse.success) {
+            setTabData(prev => ({
+              ...prev,
+              [accountId]: tabResponse.data
+            }));
+          }
         }
-
-        if (response.data.nextActivity) {
-          setTimeout(() => {
-            handleActivityClick(response.data.nextActivity);
-          }, 500);
-        }
-
-        fetchWorkPageData();
-      } else {
-        throw new Error(response.message || "Failed to delete activity");
       }
     } catch (err) {
       console.error("Error deleting activity:", err);
-      const errorMessage = err.message || "Failed to delete activity";
-      setError(errorMessage);
-      setStatusMessage(errorMessage);
-      setStatusSeverity("error");
+      showStatus(err.message || "Failed to delete activity", 'error');
     }
   };
 
-  // ---------------- NOTES ----------------
-  const handleAddNote = (account) => {
-    setSelectedAccount(account);
+  // ---------------- EMAIL & NOTES ----------------
+  const handleSendEmailClick = (activity) => {
+    setEmailDialogActivity(activity);
+    setEmailDialogOpen(true);
+  };
+
+  const handleCloseEmailDialog = () => {
+    setEmailDialogOpen(false);
+    setEmailDialogActivity(null);
+  };
+
+  const handleAddNoteClick = (activity) => {
+    setNotesPopupActivity(activity);
     setNotesPopupOpen(true);
   };
 
   const handleSaveNote = async (noteData) => {
-    setStatusMessage("Note added successfully!");
-    setStatusSeverity("success");
-    setRefreshFlag((flag) => !flag);
-  };
-
-  const handleEditNote = async (noteData) => {
-    setStatusMessage("Note updated successfully!");
-    setStatusSeverity("success");
-    setRefreshFlag((flag) => !flag);
-  };
-
-  const handleDeactivateNote = async (noteId) => {
     try {
-      await deactivateNote(noteId);
-      setStatusMessage("Note deactivated successfully!");
-      setStatusSeverity("success");
-      setRefreshFlag((flag) => !flag);
+      await createNote(noteData);
+      showStatus('Note added successfully!', 'success');
+      setNotesPopupOpen(false);
+      setNotesPopupActivity(null);
     } catch (err) {
-      setStatusMessage(err.message || "Failed to deactivate note");
-      setStatusSeverity("error");
-      throw err;
+      showStatus(err.message || 'Failed to add note', 'error');
     }
   };
 
-  const handleReactivateNote = async (noteId) => {
-    try {
-      await reactivateNote(noteId);
-      setStatusMessage("Note reactivated successfully!");
-      setStatusSeverity("success");
-      setRefreshFlag((flag) => !flag);
-    } catch (err) {
-      setStatusMessage(err.message || "Failed to reactivate note");
-      setStatusSeverity("error");
-      throw err;
-    }
-  };
- 
- 
- 
   // ---------------- DRAG AND DROP ----------------
-  
-  // Drag and drop for OPENING activities in workspace
-  const handleDragStart = (event, activity) => {
+  const handleDragStart = (event, index, activity) => {
+    setDraggedIndex(index);
     event.dataTransfer.setData("application/json", JSON.stringify(activity));
-    event.dataTransfer.effectAllowed = "copy";
+    event.dataTransfer.effectAllowed = "copyMove";
   };
 
- const handleDrop = async (event) => {
-  event.preventDefault();
-  try {
-    const droppedData = JSON.parse(event.dataTransfer.getData("application/json"));
-    console.log('Dropped data:', droppedData);
+  const handleDrop = async (event) => {
+    event.preventDefault();
+    setDraggedIndex(null);
     
-    // Check if it's a sequence item without an activity
-    if (droppedData.SequenceItemID && !droppedData.ActivityID) {
-      // This is a sequence item that needs activity creation
-      await handleSequenceItemClick(droppedData);
-    } else if (droppedData.ActivityID) {
-      // This is an existing activity
+    try {
+      const droppedData = JSON.parse(event.dataTransfer.getData("application/json"));
       await handleActivityClick(droppedData);
-    } else {
-      console.warn('Unknown drop data format');
+    } catch (err) {
+      console.error("Error handling drop:", err);
+      showStatus('Failed to open activity', 'error');
     }
-  } catch (err) {
-    console.error("Error handling drop:", err);
-    showStatus('Failed to open item', 'error');
-  }
-};
+  };
 
   const handleDragOver = (event) => {
     event.preventDefault();
@@ -567,21 +384,20 @@ const WorkPageContainer = () => {
 
   const clearMessages = () => {
     setError(null);
-    setSuccessMessage("");
     setStatusMessage("");
   };
 
-  // ---------------- GET CURRENT TAB ACTIVITY ----------------
-  const getCurrentActivity = () => {
+  // ---------------- GET CURRENT TAB DATA ----------------
+  const getCurrentTabData = () => {
     if (activeTab === null || !openTabs[activeTab]) return null;
     const currentTab = openTabs[activeTab];
-    return tabActivities[currentTab.activityId] || null;
+    return tabData[currentTab.accountId] || null;
   };
 
   const getCurrentTabLoading = () => {
     if (activeTab === null || !openTabs[activeTab]) return false;
     const currentTab = openTabs[activeTab];
-    return tabLoading[currentTab.activityId] || false;
+    return tabLoading[currentTab.accountId] || false;
   };
 
   return (
@@ -591,16 +407,8 @@ const WorkPageContainer = () => {
         activities={activities}
         loading={loading}
         error={error}
-        successMessage={successMessage}
         statusMessage={statusMessage}
         statusSeverity={statusSeverity}
-        
-        // Account and sequence
-        userAccounts={userAccounts}
-        selectedAccountId={selectedAccountId}
-        sequenceProgress={sequenceProgress}
-        onAccountChange={handleAccountChange}
-        onSequenceItemClick={handleSequenceItemClick}
         
         // Filter and sort
         currentSort={currentSort}
@@ -611,57 +419,45 @@ const WorkPageContainer = () => {
         // Tab management
         openTabs={openTabs}
         activeTab={activeTab}
-        currentActivity={getCurrentActivity()}
+        currentTabData={getCurrentTabData()}
         currentTabLoading={getCurrentTabLoading()}
         onTabChange={handleTabChange}
         onTabClose={handleTabClose}
-        
-        onSendEmailClick={handleSendEmailClick}
-        showEmailForm={showEmailForm}
         
         // Activity actions
         onActivityClick={handleActivityClick}
         onCompleteActivity={handleCompleteActivity}
         onUpdateActivity={handleUpdateActivity}
+        onUpdateDueDateWithCascade={handleUpdateDueDateWithCascade}
         onDeleteActivity={handleDeleteActivity}
-
-        // Notes
-        onAddNote={handleAddNote}
-        notesPopupOpen={notesPopupOpen}
-        setNotesPopupOpen={setNotesPopupOpen}
-        handleSaveNote={handleSaveNote}
-        handleEditNote={handleEditNote}
-        handleDeactivateNote={handleDeactivateNote}
-        handleReactivateNote={handleReactivateNote}
+        onSendEmailClick={handleSendEmailClick}
+        onAddNoteClick={handleAddNoteClick}
         
         // Drag and drop
         onDragStart={handleDragStart}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onReorderActivities={handleReorderActivities}
-        // Metadata for editing forms
+        draggedIndex={draggedIndex}
+        
+        // Metadata
         activityMetadata={activityMetadata}
         
-        // Utility functions
+        // Utility
         onClearMessages={clearMessages}
         showStatus={showStatus}
       />
       
-      {/* Email Dialog for each activity that has email form open */}
-      {Object.keys(showEmailForm).map((activityId) => 
-        showEmailForm[activityId] && (
-          <EmailDialog
-            key={`email-${activityId}`}
-            open={true}
-            onClose={() => handleCloseEmailDialog(Number(activityId))}
-            activity={tabActivities[activityId]}
-          />
-        )
+      {/* Email Dialog */}
+      {emailDialogOpen && emailDialogActivity && (
+        <EmailDialog
+          open={emailDialogOpen}
+          onClose={handleCloseEmailDialog}
+          activity={emailDialogActivity}
+        />
       )}
     </>
   );
 };
-
-
 
 export default WorkPageContainer;
