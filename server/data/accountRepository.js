@@ -640,6 +640,8 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
       throw new Error('Sequence has no active items');
     }
     
+    const assignmentDate = new Date();
+    
     for (const accountId of accountIds) {
       try {
        
@@ -708,10 +710,9 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
           `);
      
         let activitiesCreated = 0;
-        const accountCreated = new Date(account.CreatedAt);
         
         for (const item of sequenceItems) {
-          const dueDate = new Date(accountCreated);
+          const dueDate = new Date(assignmentDate);
           dueDate.setDate(dueDate.getDate() + item.DaysFromStart);
           
           await new sql.Request(transaction)

@@ -63,12 +63,35 @@ export default function SequencesDetailPage() {
       try {
         const sequenceId = parseInt(idRef.current, 10);
         const response = await fetchSequenceWithItems(sequenceId);
-        const allData = response?.data || response;
+        const sequenceData = response?.data || response;
         
-        // Filter out the sequence info and keep only items
-        const items = allData.filter(item => item.SequenceItemID);
+        console.log('Sequence data received:', sequenceData);
         
-        // Remove duplicates based on SequenceItemID
+        // The backend service transforms the data into: { SequenceID, SequenceName, ..., Items: [...] }
+        // So we need to extract the Items array (capital I)
+        let items = [];
+        
+        if (sequenceData && typeof sequenceData === 'object') {
+          // Check for Items property (capital I) - this is what the backend returns
+          items = sequenceData.Items || 
+                  sequenceData.items || 
+                  sequenceData.SequenceItems || 
+                  sequenceData.sequenceItems ||
+                  [];
+        } else if (Array.isArray(sequenceData)) {
+          // Fallback: if it's an array, use it directly
+          items = sequenceData;
+        }
+        
+        // Ensure we have an array
+        if (!Array.isArray(items)) {
+          console.warn('Could not find items array in response. Expected Items property. Got:', sequenceData);
+          return { data: [] };
+        }
+        
+        console.log('Extracted items:', items);
+        
+        // Remove duplicates based on SequenceItemID (shouldn't be needed but safe)
         const uniqueItems = items.reduce((acc, current) => {
           const exists = acc.find(item => item.SequenceItemID === current.SequenceItemID);
           if (!exists) {
@@ -98,11 +121,9 @@ export default function SequencesDetailPage() {
             { field: 'DaysFromStart', headerName: 'Day', type: 'number', defaultVisible: true },
             { field: 'ActivityTypeName', headerName: 'Activity Type', type: 'text', defaultVisible: true },
             { field: 'SequenceItemDescription', headerName: 'Description', type: 'truncated', maxWidth: 300, defaultVisible: true },
-            { field: 'PriorityLevelName', headerName: 'Priority', type: 'text', defaultVisible: true },
-            { field: 'PriorityLevelValue', headerName: 'Priority Value', type: 'number', defaultVisible: true },
-            { field: 'ItemCreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
+            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
             {
-              field: 'ItemActive',
+              field: 'Active',
               headerName: 'Active',
               type: 'chip',
               chipLabels: { true: 'Active', false: 'Inactive' },
