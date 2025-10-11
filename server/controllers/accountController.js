@@ -129,7 +129,6 @@ async function checkAccountsClaimability(req, res) {
 // Bulk claim accounts 
 async function bulkClaimAccounts(req, res) {
   try {
-    // Extract userId from req.user OR req.body (for flexibility)
     const userId = req.user?.id || req.user?.userId || req.user?.UserID || req.body?.userId;
     const { accountIds } = req.body;
     
@@ -180,6 +179,38 @@ async function bulkClaimAccountsAndAddSequence(req, res) {
   }
 }
 
+async function assignSequenceToAccount(req, res) {
+  try {
+    const userId = req.user?.id || req.user?.userId || req.user?.UserID || req.body?.userId;
+    const { sequenceId } = req.body;
+    const accountId = req.params.id;
+    
+    if (!accountId) {
+      return res.status(400).json({ message: "Account ID is required" });
+    }
+    
+    if (!sequenceId) {
+      return res.status(400).json({ message: "Sequence ID is required" });
+    }
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        message: "User authentication required. Please log in and try again." 
+      });
+    }
+    
+    const result = await accountService.assignSequenceToAccount(
+      accountId, 
+      sequenceId,
+      userId
+    );
+    
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
 module.exports = {
   getAllAccounts,
   getAccountDetails,
@@ -193,4 +224,5 @@ module.exports = {
   checkAccountsClaimability,
   bulkClaimAccounts,
   bulkClaimAccountsAndAddSequence,
+   assignSequenceToAccount,
 };

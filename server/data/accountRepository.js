@@ -535,7 +535,6 @@ async function bulkClaimAccounts(accountIds, userId) {
             accountName: 'Unknown',
             reason: 'Account not found' 
           });
-          console.log(`Account ${accountId} not found`);
           continue;
         }
         
@@ -547,7 +546,6 @@ async function bulkClaimAccounts(accountIds, userId) {
             accountName: account.AccountName,
             reason: 'Account is inactive' 
           });
-          console.log(`Account ${accountId} is inactive`);
           continue;
         }
         
@@ -644,7 +642,7 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
     
     for (const accountId of accountIds) {
       try {
-        // 1. Check if account is claimable
+       
         const checkResult = await new sql.Request(transaction)
           .input('AccountID', sql.Int, accountId)
           .query(`
@@ -688,7 +686,7 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
           continue;
         }
         
-        // 2. Claim account (if not already owned by this user)
+  
         if (!account.CurrentOwnerID) {
           await new sql.Request(transaction)
             .input('AccountID', sql.Int, accountId)
@@ -699,8 +697,7 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
               VALUES (@AccountID, @UserID, @Active)
             `);
         }
-        
-        // 3. Assign sequence to account
+       
         await new sql.Request(transaction)
           .input('AccountID', sql.Int, accountId)
           .input('SequenceID', sql.Int, sequenceId)
@@ -709,13 +706,11 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
             SET SequenceID = @SequenceID, UpdatedAt = GETDATE()
             WHERE AccountID = @AccountID
           `);
-        
-        // 4. Create activities for all sequence items
+     
         let activitiesCreated = 0;
         const accountCreated = new Date(account.CreatedAt);
         
         for (const item of sequenceItems) {
-          // Calculate due date based on account creation date
           const dueDate = new Date(accountCreated);
           dueDate.setDate(dueDate.getDate() + item.DaysFromStart);
           

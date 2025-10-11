@@ -12,7 +12,8 @@ import {
   RestoreFromTrash, 
   DeleteForever, 
   Block,
-  PersonOff 
+  PersonOff,
+  Timeline
 } from '@mui/icons-material';
 
 const ActionMenu = ({
@@ -31,16 +32,12 @@ const ActionMenu = ({
   onUnclaimAccount,
   onAssignUser,
   onUnassignUsers, 
+  onAssignSequence,
   onReactivate,
   onPermanentDelete,
   menuItems = [],
   tooltips = {},
 }) => {
-
-  console.log("ActionMenu menuRow:", menuRow);
-  console.log("menuRow.AssignedEmployeeIDs:", menuRow?.AssignedEmployeeIDs);
-  console.log("menuRow.AssignedEmployeeNames:", menuRow?.AssignedEmployeeNames);
-  console.log("onUnassignUsers exists:", !!onUnassignUsers);
 
   // Get current user roles once
   const roles = useMemo(() => {
@@ -115,6 +112,14 @@ const ActionMenu = ({
               hasRole('Sales Representative') && 
               (menuRow?.ownerStatus === 'unowned' || menuRow?.ownerStatus === 'n/a'),
         tooltip: getTooltip('claimAccount', 'Claim ownership of this account'),
+      },
+
+      {
+        label: 'Assign Sequence',
+        icon: <Timeline sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(onAssignSequence),
+        show: !!onAssignSequence && menuRow?.ownerStatus === "owned",
+        tooltip: getTooltip('assignSequence', 'Assign a sequence to this account'),
       },
       
       // Unclaim Account (for users to remove themselves)
@@ -226,6 +231,7 @@ const ActionMenu = ({
     onUnclaimAccount,
     onAssignUser,
     onUnassignUsers,
+    onAssignSequence,
     onReactivate,
     onPermanentDelete,
     menuItems,

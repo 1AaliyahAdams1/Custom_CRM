@@ -12,6 +12,7 @@ import {
   bulkClaimAccounts,
   getAllSequences,
   bulkClaimAccountsAndAddSequence,
+  assignSequenceToAccount,
 } from "../../services/accountService";
 import {
   claimAccount,
@@ -39,8 +40,8 @@ import NotesPopup from "../../components/NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import BulkAssignDialog from "../../components/dialogs/BulkAssignDialog";
 import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
-
 import BulkClaimAndSequenceDialog from "../../components/dialogs/BulkClaimAndSequenceDialog";
+import AssignSequenceDialog from "../../components/dialogs/AssignSequenceDialog";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
 import UnassignUserDialog from "../../components/dialogs/UnAssignUserDialog";
 import AssignUserDialog from "../../components/dialogs/AssignUserDialog";
@@ -67,7 +68,8 @@ const AccountsContainer = () => {
   const [assignUserDialogOpen, setAssignUserDialogOpen] = useState(false);
   const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
   const [bulkClaimDialogOpen, setBulkClaimDialogOpen] = useState(false);
-  const [bulkClaimAndSequenceDialogOpen, setBulkClaimSequenceDialogOpen] = useState(false);
+  const [bulkClaimAndSequenceDialogOpen, setBulkClaimAndSequenceDialogOpen] = useState(false);
+  const [assignSequenceDialogOpen, setAssignSequenceDialogOpen] = useState(false);
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
   const [attachmentsPopupOpen, setAttachmentsPopupOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -85,6 +87,9 @@ const AccountsContainer = () => {
   const [unclaimDialogOpen, setUnclaimDialogOpen] = useState(false);
   const [accountToUnclaim, setAccountToUnclaim] = useState(null);
 
+  const selectedAccountObjects = filteredAccounts.filter((a) =>
+  selected.includes(a.AccountID)
+);
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
@@ -100,7 +105,7 @@ const AccountsContainer = () => {
   const canViewAll = hasAccess("accounts");
 
   // ---------------- FETCH ACCOUNTS ----------------
-  const fetchAccounts = async () => {
+const fetchAccounts = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -110,7 +115,6 @@ const AccountsContainer = () => {
         if (isCLevel) {
           const rawData = await getAllAccounts();
           accountsData = Array.isArray(rawData) ? rawData : [];
-
 
           accountsData.forEach((acc) => {
             const idsStr = acc.AssignedEmployeeIDs;
@@ -122,24 +126,9 @@ const AccountsContainer = () => {
               const isOwnedByMe = ids.includes(String(userId));
 
               if (isOwnedByMe && ids.length === 1) {
-            const idsStr = acc.AssignedEmployeeIDs;
-            const namesStr = acc.AssignedEmployeeNames;
-
-            if (idsStr && namesStr) {
-              const ids = idsStr.split(",").map((id) => id.trim());
-              const names = namesStr.split(",").map((n) => n.trim());
-              const isOwnedByMe = ids.includes(String(userId));
-
-              if (isOwnedByMe && ids.length === 1) {
                 acc.ownerStatus = "owned";
               } else if (isOwnedByMe && ids.length > 1) {
-              } else if (isOwnedByMe && ids.length > 1) {
                 acc.ownerStatus = "owned-shared";
-                acc.ownerDisplayName = `You + ${ids.length - 1} other${ids.length - 1 > 1 ? "s" : ""}`;
-                acc.ownerTooltip = names.join(", ");
-              } else if (ids.length === 1) {
-                acc.ownerStatus = `owned-by-${names[0]}`;
-                acc.ownerDisplayName = names[0];
                 acc.ownerDisplayName = `You + ${ids.length - 1} other${ids.length - 1 > 1 ? "s" : ""}`;
                 acc.ownerTooltip = names.join(", ");
               } else if (ids.length === 1) {
@@ -149,13 +138,11 @@ const AccountsContainer = () => {
                 acc.ownerStatus = "owned-by-multiple";
                 acc.ownerDisplayName = `${ids.length} users`;
                 acc.ownerTooltip = names.join(", ");
-                acc.ownerDisplayName = `${ids.length} users`;
-                acc.ownerTooltip = names.join(", ");
               }
             } else {
               acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
             }
-          }}});
+          });
         } else {
           const assignedRes = await fetchActiveAccountsByUser(userId);
           const unassignedRes = await fetchActiveUnassignedAccounts();
@@ -170,7 +157,6 @@ const AccountsContainer = () => {
           unassigned.forEach((a) => (a.ownerStatus = "unowned"));
 
           const map = new Map();
-          [...assigned, ...unassigned].forEach((a) => map.set(a.AccountID, a));
           [...assigned, ...unassigned].forEach((a) => map.set(a.AccountID, a));
           accountsData = Array.from(map.values());
         }
@@ -188,6 +174,15 @@ const AccountsContainer = () => {
     }
   };
 
+  const fetchSequences = useCallback(async () => {
+    try {
+      const response = await getAllSequences();
+      setSequences(response);
+    } catch (err) {
+      console.error('Error fetching sequences:', err);
+    }
+  }, []);
+
   // ---------------- FILTER ----------------
   const applyFilter = (accounts, filter) => {
     if (filter === "all") return accounts;
@@ -196,18 +191,13 @@ const AccountsContainer = () => {
     return accounts;
   };
 
-  const fetchSequences = useCallback(async () => {
-    try {
-      const res = await getAllSequences();
-      setSequences(res);
-    } catch (err) {
-      console.error("Error fetching sequences:", err);
-    }
-  }, []);
-
   useEffect(() => {
     fetchAccounts();
   }, [refreshFlag, canViewAll, isCLevel]);
+
+  useEffect(() => {
+  fetchSequences();
+}, [fetchSequences]);
 
 
   // ---------------- SELECTION HANDLERS ----------------
@@ -232,7 +222,6 @@ const AccountsContainer = () => {
     navigate(`/accounts/${account.AccountID}`);
   };
 
-  //  Navigate with just the ID
   const handleEdit = (account) => {
     console.log("Edit account:", account);
     navigate(`/accounts/edit/${account.AccountID}`);
@@ -336,10 +325,9 @@ const AccountsContainer = () => {
     }
   };
 
-  //  This is for SINGLE account assignment (from action menu)
   const handleAssignUserToAccount = (account) => {
     setSelectedAccount(account);
-    setAssignUserDialogOpen(true); // Changed from setBulkAssignDialogOpen
+    setAssignUserDialogOpen(true);
   };
 
   const handleConfirmAssignUser = async (employeeId) => {
@@ -354,7 +342,7 @@ const AccountsContainer = () => {
       setStatusMessage("Failed to assign user");
       setStatusSeverity("error");
     } finally {
-      setAssignUserDialogOpen(false); // Changed from setBulkAssignDialogOpen
+      setAssignUserDialogOpen(false); 
       setSelectedAccount(null);
     }
   };
@@ -380,6 +368,38 @@ const AccountsContainer = () => {
     }
   };
 
+    const handleAssignSequence = (account) => {
+    setSelectedAccount(account);
+    setAssignSequenceDialogOpen(true);
+  };
+
+  const handleConfirmAssignSequence = async (sequenceId) => {
+    if (!selectedAccount) return;
+    
+    setBulkLoading(true);
+    
+    try {
+      const result = await assignSequenceToAccount(selectedAccount.AccountID, sequenceId);
+      
+      let message = `Sequence assigned successfully to ${selectedAccount.AccountName}`;
+      if (result.totalActivitiesCreated) {
+        message += ` and ${result.totalActivitiesCreated} activities created`;
+      }
+      
+      setStatusMessage(message);
+      setStatusSeverity("success");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      console.error("Error assigning sequence:", err);
+      setStatusMessage(err.message || "Failed to assign sequence");
+      setStatusSeverity("error");
+    } finally {
+      setBulkLoading(false);
+      setAssignSequenceDialogOpen(false);
+      setSelectedAccount(null);
+    }
+  };
+
   const handleBulkDelete = async () => {
     if (selected.length === 0) return;
     try {
@@ -397,21 +417,89 @@ const AccountsContainer = () => {
     }
   };
 
-  const handleBulkClaim = async (employeeId) => {
+  const handleBulkClaim = async () => {
+    setBulkLoading(true);
+    
     try {
-      await bulkClaimAccounts(selected, employeeId);
-      setStatusMessage("Accounts claimed successfully");
-      setStatusSeverity("success");
-      setSelected([]);
+      const result = await bulkClaimAccounts(selected);
+      
+      let message = "";
+      
+      if (result.claimedCount > 0) {
+        message = `Successfully claimed ${result.claimedCount} account(s)`;
+        if (result.failedCount > 0) {
+          message += `. ${result.failedCount} account(s) could not be claimed.`;
+        }
+        setStatusSeverity("success");
+      } else {
+        message = "No accounts were claimed.";
+        if (result.failed && result.failed.length > 0) {
+          const reasons = result.failed.map(f => f.reason).join(", ");
+          message += ` Reasons: ${reasons}`;
+        }
+        setStatusSeverity("warning");
+      }
+      
+      setStatusMessage(message);
       setRefreshFlag((f) => !f);
+      setSelected([]);
     } catch (err) {
       console.error("Error in bulk claim:", err);
-      setStatusMessage("Bulk claim failed");
+      setStatusMessage(err.message || "Bulk claim failed");
       setStatusSeverity("error");
     } finally {
+      setBulkLoading(false);
       setBulkClaimDialogOpen(false);
     }
   };
+
+  const handleBulkClaimAndSequence = () => {
+    if (!hasAccess("accountClaim")) return;
+
+    if (selected.length === 0) {
+      setStatusMessage("Please select accounts to claim and assign sequence");
+      setStatusSeverity("warning");
+      return;
+    }
+
+    setBulkClaimAndSequenceDialogOpen(true);
+  };
+
+const confirmBulkClaimAndSequence = async (sequenceId) => {
+    setBulkLoading(true);
+
+    try {
+      const result = await bulkClaimAccountsAndAddSequence(selected, sequenceId);
+
+      let message = "";
+
+      if (result.claimedCount > 0) {
+        message = `Successfully claimed ${result.claimedCount} account(s)`;
+        if (result.totalActivitiesCreated > 0) {
+          message += ` and created ${result.totalActivitiesCreated} activities`;
+        }
+        if (result.failedCount > 0) {
+          message += `. ${result.failedCount} account(s) could not be claimed.`;
+        }
+        setStatusSeverity("success");
+      } else {
+        message = "No accounts were claimed.";
+        setStatusSeverity("warning");
+      }
+
+      setStatusMessage(message);
+      setRefreshFlag((flag) => !flag);
+      setSelected([]);
+    } catch (err) {
+      console.error("Bulk claim and sequence error:", err);
+      setStatusMessage(err.message || "Failed to claim accounts and assign sequence");
+      setStatusSeverity("error");
+    } finally {
+      setBulkLoading(false);
+      setBulkClaimAndSequenceDialogOpen(false);
+    }
+  };
+
 
   // ---------------- RENDER ----------------
   return (
@@ -438,6 +526,8 @@ const AccountsContainer = () => {
         onAddAttachment={handleAddAttachment}
         onClaimAccount={handleClaimAccount}
         onUnclaimAccount={handleUnclaimAccount}
+        onAssignSequence={handleAssignSequence}
+        onBulkClaimAndSequence={handleBulkClaimAndSequence}
         onBulkClaim={() => setBulkClaimDialogOpen(true)}
         onBulkDelete={() => setBulkDeleteDialogOpen(true)}
         selectedAccount={selectedAccount}
@@ -530,10 +620,32 @@ const AccountsContainer = () => {
       <BulkClaimDialog
         open={bulkClaimDialogOpen}
         onClose={() => setBulkClaimDialogOpen(false)}
-        onClaim={handleBulkClaim}
+        onConfirm={handleBulkClaim}
+        selectedItems={selectedAccountObjects}
+        loading={bulkLoading}
       />
 
-      {/*  Pass all required service functions */}
+      <BulkClaimAndSequenceDialog
+        open={bulkClaimAndSequenceDialogOpen}
+        onClose={() => setBulkClaimAndSequenceDialogOpen(false)}
+        onConfirm={confirmBulkClaimAndSequence}
+        selectedItems={selectedAccountObjects}
+        sequences={sequences}
+        loading={bulkLoading}
+      />
+
+      <AssignSequenceDialog
+        open={assignSequenceDialogOpen}
+        onClose={() => {
+          setAssignSequenceDialogOpen(false);
+          setSelectedAccount(null);
+        }}
+        onConfirm={handleConfirmAssignSequence}
+        account={selectedAccount}
+        sequences={sequences}
+        loading={bulkLoading}
+      />
+
       <NotesPopup
         open={notesPopupOpen}
         onClose={() => {
@@ -551,7 +663,6 @@ const AccountsContainer = () => {
         onRefresh={() => setRefreshFlag((f) => !f)}
       />
 
-      {/*  Pass all required service functions */}
       <AttachmentsPopup
         open={attachmentsPopupOpen}
         onClose={() => {

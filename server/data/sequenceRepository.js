@@ -1758,6 +1758,31 @@ async function createActivityFromSequenceItem(sequenceItemId, accountId, userId)
 }
 
 //======================================
+// Get all activity types
+//======================================
+async function getAllActivityTypes() {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .query(`
+        SELECT 
+          TypeID,
+          TypeName,
+          Description,
+          Active
+        FROM ActivityType
+        WHERE Active = 1
+        ORDER BY TypeName
+      `);
+
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getAllActivityTypes:", err);
+    throw err;
+  }
+}
+
+//======================================
 // Exports
 //======================================
 module.exports = {
@@ -1780,6 +1805,7 @@ module.exports = {
   assignSequenceToAccount,
   unassignSequenceFromAccount,
   getAccountsBySequence,
+  getAllActivityTypes,
   
   // Activity/Work functions
   getActivities,
