@@ -1668,13 +1668,102 @@ function calculateDueDate(accountCreatedAt, daysFromStart) {
 }
 
 //======================================
-// Create activity from sequence item
+// Get all activity types
 //======================================
-async function createActivityFromSequenceItem(sequenceItemId, accountId, userId) {
+async function getAllActivityTypes() {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .query(`
+        SELECT 
+          TypeID,
+          TypeName,
+          Description,
+          Active
+        FROM ActivityType
+        WHERE Active = 1
+        ORDER BY TypeName
+      `);
+
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getAllActivityTypes:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Get activities for work page (due today or overdue)
+//======================================
+const getWorkPageActivities = async (userId) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT  
+            a.ActivityID, 
+            a.AccountID, 
+            acc.AccountName, 
+            a.TypeID, 
+            at.TypeName AS ActivityTypeName, 
+            at.Description AS ActivityTypeDescription, 
+            a.PriorityLevelID, 
+            pl.PriorityLevelName, 
+            pl.PriorityLevelValue, 
+            a.DueToStart, 
+            a.DueToEnd, 
+            a.Completed, 
+            a.SequenceItemID, 
+            seq.SequenceID, 
+            seq.SequenceName, 
+            seq.SequenceDescription,
+            si.SequenceItemDescription, 
+            si.DaysFromStart,
+            a.Active AS ActivityActive,
+            CASE 
+              WHEN a.Completed = 1 THEN 'completed'
+              WHEN a.DueToStart < GETDATE() THEN 'overdue'
+              WHEN CAST(a.DueToStart AS DATE) = CAST(GETDATE() AS DATE) THEN 'today'
+              ELSE 'upcoming'
+            END AS Status,
+            CASE 
+              WHEN a.DueToStart < GETDATE() AND a.Completed = 0 THEN 1
+              ELSE 0
+            END AS IsOverdue
+        FROM Activity a 
+        INNER JOIN AssignedUser au ON a.AccountID = au.AccountID 
+        INNER JOIN Account acc ON a.AccountID = acc.AccountID 
+        LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
+        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1  
+        LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
+        LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
+        WHERE au.UserID = @UserID 
+          AND a.Active = 1 
+          AND au.Active = 1
+          AND a.Completed = 0
+          AND CAST(a.DueToStart AS DATE) <= CAST(GETDATE() AS DATE)
+        ORDER BY 
+          CASE WHEN a.DueToStart < GETDATE() THEN 0 ELSE 1 END,
+          a.DueToStart ASC,
+          ISNULL(pl.PriorityLevelValue, 0) DESC
+      `);
+
+    return result.recordset;
+  } catch (error) {
+    console.error("Error fetching work page activities:", error);
+    throw error;
+  }
+};
+
+//======================================
+// Get account activities grouped view (for workspace tab)
+//======================================
+const getAccountActivitiesGrouped = async (accountId, userId) => {
   try {
     const pool = await sql.connect(dbConfig);
     
-    // Verify user has access
+    // Verify access
     const accessCheck = await pool.request()
       .input("UserID", sql.Int, userId)
       .input("AccountID", sql.Int, accountId)
@@ -1688,74 +1777,201 @@ async function createActivityFromSequenceItem(sequenceItemId, accountId, userId)
       throw new Error("User does not have access to this account");
     }
 
-    // Check if activity already exists
-    const existingActivity = await pool.request()
-      .input("SequenceItemID", sql.Int, sequenceItemId)
-      .input("AccountID", sql.Int, accountId)
-      .query(`
-        SELECT ActivityID
-        FROM Activity
-        WHERE SequenceItemID = @SequenceItemID 
-          AND AccountID = @AccountID
-          AND Active = 1
-      `);
-
-    if (existingActivity.recordset.length > 0) {
-      return { ActivityID: existingActivity.recordset[0].ActivityID, created: false };
-    }
-
-    // Get sequence item info
-    const itemInfo = await pool.request()
-      .input("SequenceItemID", sql.Int, sequenceItemId)
+    // Get account and sequence info
+    const accountInfo = await pool.request()
       .input("AccountID", sql.Int, accountId)
       .query(`
         SELECT 
-          si.ActivityTypeID,
-          si.DaysFromStart,
-          acc.CreatedAt AS AccountCreatedAt
-        FROM SequenceItem si
-        INNER JOIN Sequence seq ON si.SequenceID = seq.SequenceID
-        INNER JOIN Account acc ON seq.SequenceID = acc.SequenceID
-        WHERE si.SequenceItemID = @SequenceItemID
-          AND acc.AccountID = @AccountID
-          AND si.Active = 1
-          AND seq.Active = 1
-          AND acc.Active = 1
+          acc.AccountID,
+          acc.AccountName,
+          acc.PrimaryPhone,
+          acc.CreatedAt AS AccountCreatedAt,
+          seq.SequenceID,
+          seq.SequenceName,
+          seq.SequenceDescription
+        FROM Account acc
+        LEFT JOIN Sequence seq ON acc.SequenceID = seq.SequenceID AND seq.Active = 1
+        WHERE acc.AccountID = @AccountID AND acc.Active = 1
       `);
 
-    if (itemInfo.recordset.length === 0) {
-      throw new Error("Sequence item not found or not associated with account");
+    if (accountInfo.recordset.length === 0) {
+      throw new Error("Account not found");
     }
 
-    const info = itemInfo.recordset[0];
-    const accountCreated = new Date(info.AccountCreatedAt);
-    const dueDate = new Date(accountCreated);
-    dueDate.setDate(dueDate.getDate() + info.DaysFromStart);
+    const account = accountInfo.recordset[0];
 
-    // Create the activity
-    const createResult = await pool.request()
+    // Get all activities for this account
+    const activitiesResult = await pool.request()
       .input("AccountID", sql.Int, accountId)
-      .input("TypeID", sql.Int, info.ActivityTypeID)
-      .input("DueToStart", sql.SmallDateTime, dueDate)
-      .input("SequenceItemID", sql.Int, sequenceItemId)
       .query(`
-        INSERT INTO Activity (
-          AccountID, TypeID, DueToStart, 
-          SequenceItemID, Completed, Active
-        )
-        OUTPUT INSERTED.ActivityID
-        VALUES (
-          @AccountID, @TypeID, @DueToStart,
-          @SequenceItemID, 0, 1
-        )
+        SELECT  
+            a.ActivityID, 
+            a.AccountID, 
+            a.TypeID, 
+            at.TypeName AS ActivityTypeName, 
+            at.Description AS ActivityTypeDescription, 
+            a.PriorityLevelID, 
+            pl.PriorityLevelName, 
+            pl.PriorityLevelValue, 
+            a.DueToStart, 
+            a.DueToEnd, 
+            a.Completed,
+            a.SequenceItemID, 
+            si.SequenceItemDescription, 
+            si.DaysFromStart,
+            a.Active AS ActivityActive,
+            CASE 
+              WHEN a.Completed = 1 THEN 'completed'
+              WHEN a.DueToStart < GETDATE() THEN 'overdue'
+              WHEN CAST(a.DueToStart AS DATE) = CAST(GETDATE() AS DATE) THEN 'today'
+              ELSE 'upcoming'
+            END AS Status
+        FROM Activity a 
+        LEFT JOIN ActivityType at ON a.TypeID = at.TypeID AND at.Active = 1 
+        LEFT JOIN PriorityLevel pl ON a.PriorityLevelID = pl.PriorityLevelID AND pl.Active = 1  
+        LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID AND si.Active = 1
+        WHERE a.AccountID = @AccountID AND a.Active = 1
+        ORDER BY a.DueToStart ASC
       `);
 
-    return { ActivityID: createResult.recordset[0].ActivityID, created: true };
+    const allActivities = activitiesResult.recordset;
+    
+    // Split into three groups
+    const previousActivities = allActivities
+      .filter(a => a.Completed === true)
+      .sort((a, b) => new Date(b.CompletedAt) - new Date(a.CompletedAt));
+    
+    const currentActivities = allActivities
+      .filter(a => !a.Completed && new Date(a.DueToStart) <= new Date());
+    
+    const upcomingActivities = allActivities
+      .filter(a => !a.Completed && new Date(a.DueToStart) > new Date())
+      .sort((a, b) => new Date(a.DueToStart) - new Date(b.DueToStart));
+
+    return {
+      account: {
+        AccountID: account.AccountID,
+        AccountName: account.AccountName,
+        PrimaryPhone: account.PrimaryPhone,
+        AccountCreatedAt: account.AccountCreatedAt
+      },
+      sequence: account.SequenceID ? {
+        SequenceID: account.SequenceID,
+        SequenceName: account.SequenceName,
+        SequenceDescription: account.SequenceDescription
+      } : null,
+      previousActivities,
+      currentActivities,
+      upcomingActivities,
+      totalActivities: allActivities.length,
+      completedCount: previousActivities.length,
+      pendingCount: currentActivities.length + upcomingActivities.length
+    };
   } catch (err) {
-    console.error("Database error in createActivityFromSequenceItem:", err);
+    console.error("Database error in getAccountActivitiesGrouped:", err);
     throw err;
   }
-}
+};
+
+//======================================
+// Update activity due date and cascade to subsequent activities
+//======================================
+const updateActivityDueDateWithCascade = async (activityId, userId, newDueDate) => {
+  const transaction = new sql.Transaction();
+  
+  try {
+    await transaction.begin();
+    
+    // Get the activity details and its sequence context
+    const activityRequest = new sql.Request(transaction);
+    const activityResult = await activityRequest
+      .input("ActivityID", sql.Int, activityId)
+      .input("UserID", sql.Int, userId)
+      .query(`
+        SELECT 
+          a.ActivityID,
+          a.AccountID,
+          a.SequenceItemID,
+          a.DueToStart,
+          si.DaysFromStart,
+          si.SequenceID
+        FROM Activity a
+        INNER JOIN AssignedUser au ON a.AccountID = au.AccountID
+        LEFT JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID
+        WHERE a.ActivityID = @ActivityID 
+          AND au.UserID = @UserID 
+          AND au.Active = 1
+          AND a.Active = 1
+      `);
+
+    if (activityResult.recordset.length === 0) {
+      throw new Error("Activity not found or access denied");
+    }
+
+    const activity = activityResult.recordset[0];
+    
+    // Update the current activity
+    const updateRequest = new sql.Request(transaction);
+    await updateRequest
+      .input("ActivityID", sql.Int, activityId)
+      .input("NewDueDate", sql.SmallDateTime, newDueDate)
+      .query(`
+        UPDATE Activity 
+        SET DueToStart = @NewDueDate, UpdatedAt = GETDATE()
+        WHERE ActivityID = @ActivityID
+      `);
+
+    // If part of a sequence, cascade update to subsequent activities
+    if (activity.SequenceItemID && activity.SequenceID) {
+      const oldDueDate = new Date(activity.DueToStart);
+      const newDueDateObj = new Date(newDueDate);
+      const daysDiff = Math.round((newDueDateObj - oldDueDate) / (1000 * 60 * 60 * 24));
+
+      if (daysDiff !== 0) {
+        // Get all subsequent activities in the sequence for this account
+        const subsequentRequest = new sql.Request(transaction);
+        const subsequentResult = await subsequentRequest
+          .input("AccountID", sql.Int, activity.AccountID)
+          .input("SequenceID", sql.Int, activity.SequenceID)
+          .input("CurrentDaysFromStart", sql.Int, activity.DaysFromStart)
+          .query(`
+            SELECT a.ActivityID, a.DueToStart
+            FROM Activity a
+            INNER JOIN SequenceItem si ON a.SequenceItemID = si.SequenceItemID
+            WHERE a.AccountID = @AccountID
+              AND si.SequenceID = @SequenceID
+              AND si.DaysFromStart > @CurrentDaysFromStart
+              AND a.Active = 1
+              AND a.Completed = 0
+            ORDER BY si.DaysFromStart
+          `);
+
+        // Update each subsequent activity
+        for (const subActivity of subsequentResult.recordset) {
+          const currentDue = new Date(subActivity.DueToStart);
+          currentDue.setDate(currentDue.getDate() + daysDiff);
+          
+          const cascadeRequest = new sql.Request(transaction);
+          await cascadeRequest
+            .input("ActivityID", sql.Int, subActivity.ActivityID)
+            .input("NewDueDate", sql.SmallDateTime, currentDue)
+            .query(`
+              UPDATE Activity 
+              SET DueToStart = @NewDueDate, UpdatedAt = GETDATE()
+              WHERE ActivityID = @ActivityID
+            `);
+        }
+      }
+    }
+
+    await transaction.commit();
+    return { success: true, message: "Activity due date updated successfully" };
+  } catch (err) {
+    await transaction.rollback();
+    console.error("Database error in updateActivityDueDateWithCascade:", err);
+    throw err;
+  }
+};
 
 //======================================
 // Get all activity types
@@ -1824,5 +2040,7 @@ module.exports = {
   updateSequenceItemStatus,
   getSequenceProgress,
   getSmartSequenceView,
-  createActivityFromSequenceItem,
+  getWorkPageActivities,
+  getAccountActivitiesGrouped,
+  updateActivityDueDateWithCascade,
 };
