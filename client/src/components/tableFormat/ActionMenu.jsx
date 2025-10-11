@@ -118,8 +118,12 @@ const ActionMenu = ({
         label: 'Assign Sequence',
         icon: <Timeline sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onAssignSequence),
-        show: !!onAssignSequence && menuRow?.ownerStatus === "owned",
-        tooltip: getTooltip('assignSequence', 'Assign a sequence to this account'),
+        show: !!onAssignSequence && 
+              entityType === 'account' && 
+              menuRow?.Active !== false && 
+              (menuRow?.ownerStatus === "owned" || 
+              menuRow?.ownerStatus === "owned-shared"),
+      tooltip: getTooltip('assignSequence', 'Assign a sequence and automatically create activities'),
       },
       
       // Unclaim Account (for users to remove themselves)

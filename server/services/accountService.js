@@ -63,11 +63,10 @@ async function bulkClaimAccounts(accountIds, userId) {
   if (!Array.isArray(accountIds) || accountIds.length === 0) {
     throw new Error("Account IDs array is required");
   }
-  
   if (!userId) {
     throw new Error("User ID is required");
   } 
-  return await accountRepo.bulkClaimAccounts(claimableIds, userId);
+  return await accountRepo.bulkClaimAccounts(accountIds, userId);
 }
 
 async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {

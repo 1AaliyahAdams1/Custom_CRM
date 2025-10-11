@@ -28,7 +28,7 @@ import FiltersDialog from "../dialogs/FiltersDialog";
 import ActionMenu from "./ActionMenu";
 import AssignUserDialog from "../../components/dialogs/AssignUserDialog"; 
 import UnassignUserDialog from "../dialogs/UnAssignUserDialog";
-
+import AssignSequenceDialog from "../dialogs/AssignSequenceDialog";
 
 const TableView = ({
   data = [],
@@ -49,6 +49,7 @@ const TableView = ({
   
   onAssignUser,
   onUnassignUsers, 
+  onAssignSequence,
   onReactivate, 
   onPermanentDelete, 
   
@@ -481,6 +482,7 @@ const TableView = ({
           onUnclaimAccount={onUnclaimAccount}
           onAssignUser={onAssignUser}
           onUnassignUsers={onUnassignUsers}
+          onAssignSequence={onAssignSequence}
           onReactivate={onReactivate}
           onPermanentDelete={onPermanentDelete}
           menuItems={menuItems}

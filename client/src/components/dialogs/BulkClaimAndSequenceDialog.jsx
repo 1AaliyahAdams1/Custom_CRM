@@ -64,13 +64,13 @@ const BulkClaimAndSequenceDialog = ({
     setAnalyzing(false);
   };
 
-  const handleConfirm = () => {
-    if (claimableAccounts.length === 0 || !selectedSequence) {
-      return;
-    }
-    const accountIds = claimableAccounts.map(acc => acc.AccountID);
-    onConfirm(accountIds, selectedSequence);
-  };
+const handleConfirm = () => {
+  if (claimableAccounts.length === 0 || !selectedSequence) {
+    return;
+  }
+  const accountIds = claimableAccounts.map(acc => acc.AccountID);
+  onConfirm(selectedSequence, accountIds);
+};
 
   const handleClose = () => {
     if (!loading) {
@@ -300,7 +300,7 @@ const BulkClaimAndSequenceDialog = ({
         >
           {loading 
             ? 'Processing...' 
-            : `Claim & Add Sequence (${claimableAccounts.length})`
+            : `Claim & Assign Sequence (${claimableAccounts.length})`
           }
         </Button>
       </DialogActions>

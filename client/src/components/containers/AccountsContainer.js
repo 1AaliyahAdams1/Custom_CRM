@@ -417,41 +417,41 @@ const fetchAccounts = async () => {
     }
   };
 
-  const handleBulkClaim = async () => {
-    setBulkLoading(true);
+const handleBulkClaim = async (accountIds) => {  // FIX: Accept accountIds parameter
+  setBulkLoading(true);
+  
+  try {
+    const result = await bulkClaimAccounts(accountIds);  // Use the filtered accountIds
     
-    try {
-      const result = await bulkClaimAccounts(selected);
-      
-      let message = "";
-      
-      if (result.claimedCount > 0) {
-        message = `Successfully claimed ${result.claimedCount} account(s)`;
-        if (result.failedCount > 0) {
-          message += `. ${result.failedCount} account(s) could not be claimed.`;
-        }
-        setStatusSeverity("success");
-      } else {
-        message = "No accounts were claimed.";
-        if (result.failed && result.failed.length > 0) {
-          const reasons = result.failed.map(f => f.reason).join(", ");
-          message += ` Reasons: ${reasons}`;
-        }
-        setStatusSeverity("warning");
+    let message = "";
+    
+    if (result.claimedCount > 0) {
+      message = `Successfully claimed ${result.claimedCount} account(s)`;
+      if (result.failedCount > 0) {
+        message += `. ${result.failedCount} account(s) could not be claimed.`;
       }
-      
-      setStatusMessage(message);
-      setRefreshFlag((f) => !f);
-      setSelected([]);
-    } catch (err) {
-      console.error("Error in bulk claim:", err);
-      setStatusMessage(err.message || "Bulk claim failed");
-      setStatusSeverity("error");
-    } finally {
-      setBulkLoading(false);
-      setBulkClaimDialogOpen(false);
+      setStatusSeverity("success");
+    } else {
+      message = "No accounts were claimed.";
+      if (result.failed && result.failed.length > 0) {
+        const reasons = result.failed.map(f => f.reason).join(", ");
+        message += ` Reasons: ${reasons}`;
+      }
+      setStatusSeverity("warning");
     }
-  };
+    
+    setStatusMessage(message);
+    setRefreshFlag((f) => !f);
+    setSelected([]);
+  } catch (err) {
+    console.error("Error in bulk claim:", err);
+    setStatusMessage(err.message || "Bulk claim failed");
+    setStatusSeverity("error");
+  } finally {
+    setBulkLoading(false);
+    setBulkClaimDialogOpen(false);
+  }
+};
 
   const handleBulkClaimAndSequence = () => {
     if (!hasAccess("accountClaim")) return;
@@ -465,40 +465,40 @@ const fetchAccounts = async () => {
     setBulkClaimAndSequenceDialogOpen(true);
   };
 
-const confirmBulkClaimAndSequence = async (sequenceId) => {
-    setBulkLoading(true);
+const confirmBulkClaimAndSequence = async (sequenceId, accountIds) => {
+  setBulkLoading(true);
 
-    try {
-      const result = await bulkClaimAccountsAndAddSequence(selected, sequenceId);
+  try {
+    const result = await bulkClaimAccountsAndAddSequence(accountIds, sequenceId);
 
-      let message = "";
+    let message = "";
 
-      if (result.claimedCount > 0) {
-        message = `Successfully claimed ${result.claimedCount} account(s)`;
-        if (result.totalActivitiesCreated > 0) {
-          message += ` and created ${result.totalActivitiesCreated} activities`;
-        }
-        if (result.failedCount > 0) {
-          message += `. ${result.failedCount} account(s) could not be claimed.`;
-        }
-        setStatusSeverity("success");
-      } else {
-        message = "No accounts were claimed.";
-        setStatusSeverity("warning");
+    if (result.claimedCount > 0) {
+      message = `Successfully claimed ${result.claimedCount} account(s)`;
+      if (result.totalActivitiesCreated > 0) {
+        message += ` and created ${result.totalActivitiesCreated} activities`;
       }
-
-      setStatusMessage(message);
-      setRefreshFlag((flag) => !flag);
-      setSelected([]);
-    } catch (err) {
-      console.error("Bulk claim and sequence error:", err);
-      setStatusMessage(err.message || "Failed to claim accounts and assign sequence");
-      setStatusSeverity("error");
-    } finally {
-      setBulkLoading(false);
-      setBulkClaimAndSequenceDialogOpen(false);
+      if (result.failedCount > 0) {
+        message += `. ${result.failedCount} account(s) could not be claimed.`;
+      }
+      setStatusSeverity("success");
+    } else {
+      message = "No accounts were claimed.";
+      setStatusSeverity("warning");
     }
-  };
+
+    setStatusMessage(message);
+    setRefreshFlag((flag) => !flag);
+    setSelected([]);
+  } catch (err) {
+    console.error("Bulk claim and sequence error:", err);
+    setStatusMessage(err.message || "Failed to claim accounts and assign sequence");
+    setStatusSeverity("error");
+  } finally {
+    setBulkLoading(false);
+    setBulkClaimAndSequenceDialogOpen(false);
+  }
+};
 
 
   // ---------------- RENDER ----------------
@@ -510,6 +510,7 @@ const confirmBulkClaimAndSequence = async (sequenceId) => {
         error={error}
         statusMessage={statusMessage}
         statusSeverity={statusSeverity}
+        onCloseStatusMessage={() => setStatusMessage("")}
         selected={selected}
         onSelectClick={handleSelectClick}
         onSelectAllClick={handleSelectAllClick}
@@ -518,6 +519,7 @@ const confirmBulkClaimAndSequence = async (sequenceId) => {
         onRefresh={() => setRefreshFlag((f) => !f)}
         onView={handleView}
         onEdit={handleEdit}
+        onCreate={() => navigate("/accounts/create")}
         onDeactivate={handleDeactivateAccount}
         onReactivate={handleReactivateAccount}
         onAssignUser={handleAssignUserToAccount}
@@ -532,6 +534,9 @@ const confirmBulkClaimAndSequence = async (sequenceId) => {
         onBulkDelete={() => setBulkDeleteDialogOpen(true)}
         selectedAccount={selectedAccount}
         userName={storedUser.name || storedUser.username || "User"}
+        selectedItems={selectedAccountObjects} 
+        onClearSelection={() => setSelected([])}  
+        userRoles={roles} 
       />
 
       {/* DIALOGS */}
