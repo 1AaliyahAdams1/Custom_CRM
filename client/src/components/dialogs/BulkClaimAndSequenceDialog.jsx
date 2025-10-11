@@ -19,7 +19,7 @@ import {
   Chip,
   Divider,
 } from '@mui/material';
-import { Gavel, Timeline, CheckCircle, Info, Cancel } from '@mui/icons-material';
+import {Timeline, CheckCircle, Info, Cancel } from '@mui/icons-material';
 
 const BulkClaimAndSequenceDialog = ({
   open,
@@ -64,13 +64,13 @@ const BulkClaimAndSequenceDialog = ({
     setAnalyzing(false);
   };
 
-  const handleConfirm = () => {
-    if (claimableAccounts.length === 0 || !selectedSequence) {
-      return;
-    }
-    const accountIds = claimableAccounts.map(acc => acc.AccountID);
-    onConfirm(accountIds, selectedSequence);
-  };
+const handleConfirm = () => {
+  if (claimableAccounts.length === 0 || !selectedSequence) {
+    return;
+  }
+  const accountIds = claimableAccounts.map(acc => acc.AccountID);
+  onConfirm(selectedSequence, accountIds);
+};
 
   const handleClose = () => {
     if (!loading) {
@@ -99,7 +99,7 @@ const BulkClaimAndSequenceDialog = ({
         pb: 2
       }}>
         <Timeline sx={{ color: '#079141ff' }} />
-        Bulk Claim & Add Sequence
+        Bulk Claim & Assign Sequence
       </DialogTitle>
 
       <DialogContent sx={{ mt: 2 }}>
@@ -300,7 +300,7 @@ const BulkClaimAndSequenceDialog = ({
         >
           {loading 
             ? 'Processing...' 
-            : `Claim & Add Sequence (${claimableAccounts.length})`
+            : `Claim & Assign Sequence (${claimableAccounts.length})`
           }
         </Button>
       </DialogActions>

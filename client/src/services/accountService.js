@@ -2,7 +2,7 @@ import api from "../utils/api";
 
 const RESOURCE = "/accounts";
 
-// Helper to get current user ID from localStorage
+// Helper to get current user ID
 const getCurrentUserId = () => {
   const user = JSON.parse(localStorage.getItem("user")) || {};
   return user.UserID || user.id || user.userId;
@@ -141,7 +141,6 @@ export async function bulkClaimAccounts(accountIds) {
     throw new Error("Account IDs array is required");
   }
   
-  // Get userId from localStorage
   const userId = getCurrentUserId();
   
   if (!userId) {
@@ -151,7 +150,7 @@ export async function bulkClaimAccounts(accountIds) {
   try {
     const response = await api.post(`${RESOURCE}/bulk-claim`, { 
       accountIds,
-      userId  // 
+      userId  
     });
     return response.data;
   } catch (error) {
@@ -196,6 +195,34 @@ export async function bulkClaimAccountsAndAddSequence(accountIds, sequenceId) {
     return response.data;
   } catch (error) {
     console.error("Error bulk claiming accounts and adding sequence:", error);
+    throw error;
+  }
+}
+
+// Assign sequence to single account
+export async function assignSequenceToAccount(accountId, sequenceId) {
+  if (!accountId) {
+    throw new Error("Account ID is required");
+  }
+  
+  if (!sequenceId) {
+    throw new Error("Sequence ID is required");
+  }
+  
+  const userId = getCurrentUserId();
+  
+  if (!userId) {
+    throw new Error("User not logged in. Please log in and try again.");
+  }
+  
+  try {
+    const response = await api.post(`${RESOURCE}/${accountId}/assign-sequence`, { 
+      sequenceId,
+      userId
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error assigning sequence to account:", error);
     throw error;
   }
 }
