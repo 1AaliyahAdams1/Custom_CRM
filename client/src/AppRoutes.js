@@ -28,7 +28,6 @@ const PriorityLevelContainer = lazy(() => import("./components/containers/Priori
 const ActivityTypePage = lazy(() => import("./pages/Activities/ActivityTypePage"));
 const DealStagePage = lazy(() => import("./pages/Deals/DealStagePage"));
 
-
 const AccountsDetailsPage = lazy(() => import("./pages/Accounts/AccountsDetailsPage"));
 const ContactsDetailsPage = lazy(() => import("./pages/Contacts/ContactsDetailsPage"));
 const DealsDetailsPage = lazy(() => import("./pages/Deals/DealsDetailsPage"));
@@ -51,6 +50,8 @@ const SequencesPage = lazy(() => import("./components/containers/SequencesContai
 const SequencesDetailPage = lazy(() => import("./pages/Sequences/SequencesDetailsPage"));
 const CreateSequencesPage = lazy(() => import("./pages/Sequences/CreateSequencesPage"));
 const EditSequencesPage = lazy(() => import("./pages/Sequences/EditSequencesPage"));
+
+const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
@@ -367,6 +368,16 @@ const AppRoutes = () => {
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.reports}>
             <Reports />
+          </PrivateRoute>
+        }
+      />
+
+      {/* --- Audit Logs Route --- */}
+      <Route
+        path="/audit-logs"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.auditLogs}>
+            <AuditLogPage />
           </PrivateRoute>
         }
       />
