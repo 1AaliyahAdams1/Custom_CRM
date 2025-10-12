@@ -31,12 +31,10 @@ import {
   Power as PowerIcon,
   Delete as DeleteIcon,
   Close as CloseIcon,
+  Add,
 } from "@mui/icons-material";
-
-import { Add } from "@mui/icons-material";
-import { ThemeProvider } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import TableView from '../components/tableFormat/TableView';
-import theme from "../components/Theme";
 import { formatters } from '../utils/formatters';
 
 const PriorityLevelPage = ({
@@ -78,6 +76,8 @@ const PriorityLevelPage = ({
   handleDeleteAttachment,
   handleDownloadAttachment,
 }) => {
+  const theme = useTheme();
+  
   // Add Priority Level Dialog State
   const [addPriorityLevelDialogOpen, setAddPriorityLevelDialogOpen] = useState(false);
   const [newPriorityLevel, setNewPriorityLevel] = useState({
@@ -98,25 +98,25 @@ const PriorityLevelPage = ({
     const baseItems = [
       {
         label: 'View Details',
-        icon: <InfoIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onView && onView(priorityLevel),
         show: !!onView,
       },
       {
         label: 'Edit',
-        icon: <EditIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onEdit && onEdit(priorityLevel),
         show: !!onEdit,
       },
       {
         label: 'Add Notes',
-        icon: <NoteIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <NoteIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onAddNote && onAddNote(priorityLevel),
         show: !!onAddNote,
       },
       {
         label: 'Add Attachments',
-        icon: <AttachFileIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <AttachFileIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onAddAttachment && onAddAttachment(priorityLevel),
         show: !!onAddAttachment,
       },
@@ -174,7 +174,7 @@ const PriorityLevelPage = ({
               width: 20,
               height: 20,
               backgroundColor: value || '#079141ff',
-              border: '1px solid #e0e0e0',
+              border: `1px solid ${theme.palette.divider}`,
               borderRadius: 1
             }}
           />
@@ -190,7 +190,7 @@ const PriorityLevelPage = ({
           variant="body2"
           sx={{
             fontWeight: 500,
-            color: '#050505',
+            color: theme.palette.text.primary,
             textAlign: 'center'
           }}
         >
@@ -272,256 +272,277 @@ const PriorityLevelPage = ({
   ];
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-        {error && (
-          <Alert 
-            severity="error" 
-            sx={{ mb: 2 }}
-            onClose={() => setError && setError('')}
-          >
-            {error}
-          </Alert>
-        )}
+    <Box sx={{ 
+      width: '100%', 
+      backgroundColor: theme.palette.background.default, 
+      minHeight: '100vh', 
+      p: 3 
+    }}>
+      {error && (
+        <Alert 
+          severity="error" 
+          sx={{ mb: 2 }}
+          onClose={() => setError && setError('')}
+        >
+          {error}
+        </Alert>
+      )}
 
-        {successMessage && (
-          <Alert 
-            severity="success" 
-            sx={{ mb: 2 }}
-            onClose={() => setSuccessMessage && setSuccessMessage('')}
-          >
-            {successMessage}
-          </Alert>
-        )}
+      {successMessage && (
+        <Alert 
+          severity="success" 
+          sx={{ mb: 2 }}
+          onClose={() => setSuccessMessage && setSuccessMessage('')}
+        >
+          {successMessage}
+        </Alert>
+      )}
 
-        <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-          <Toolbar sx={{ 
-            backgroundColor: '#fff', 
-            borderBottom: '1px solid #e5e5e5', 
-            justifyContent: 'space-between', 
-            flexWrap: 'wrap', 
-            gap: 2, 
-            py: 2 
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-              <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
-                Priority Levels
-              </Typography>
-              {selected.length > 0 && (
-                <Chip 
-                  label={`${selected.length} selected`} 
-                  size="small" 
-                  sx={{ backgroundColor: '#e0e0e0', color: '#050505' }} 
-                />
-              )}
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={handleOpenAddPriorityLevelDialog}
-              >
-                Add Priority Level
-              </Button>
-              {selected.length > 0 && (
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  onClick={onBulkDeactivate}
-                >
-                  Deactivate Selected
-                </Button>
-              )}
-            </Box>
-          </Toolbar>
-
-          {loading ? (
-            <Box display="flex" justifyContent="center" p={8}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <TableView
-              data={priorityLevels}
-              columns={columns}
-              idField="PriorityLevelID"
-              selected={selected}
-              onSelectClick={onSelectClick}
-              onSelectAllClick={onSelectAllClick}
-              showSelection={true}
-              onView={onView}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onAddNote={onAddNote}
-              onAddAttachment={onAddAttachment}
-              onAssignUser={onAssignUser}
-              formatters={priorityLevelFormatters}
-              entityType="priority level"
-              getMenuItems={getMenuItems}
-            />
-          )}
-
-          <Box sx={{ 
-            p: 2, 
-            borderTop: '1px solid #e5e5e5', 
-            backgroundColor: '#fafafa', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center' 
-          }}>
-            <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {priorityLevels.length} priority levels
+      <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+        <Toolbar sx={{ 
+          backgroundColor: theme.palette.background.paper, 
+          borderBottom: `1px solid ${theme.palette.divider}`, 
+          justifyContent: 'space-between', 
+          flexWrap: 'wrap', 
+          gap: 2, 
+          py: 2 
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+            <Typography variant="h6" component="div" sx={{ 
+              color: theme.palette.text.primary, 
+              fontWeight: 600 
+            }}>
+              Priority Levels
             </Typography>
             {selected.length > 0 && (
-              <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
-                {selected.length} selected
-              </Typography>
+              <Chip 
+                label={`${selected.length} selected`} 
+                size="small" 
+                sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' ? '#333' : '#e0e0e0', 
+                  color: theme.palette.text.primary 
+                }} 
+              />
             )}
           </Box>
-        </Paper>
-
-        {/* Add Priority Level Dialog */}
-        <Dialog 
-          open={addPriorityLevelDialogOpen} 
-          onClose={handleCloseAddPriorityLevelDialog}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            borderBottom: '1px solid #e5e5e5'
-          }}>
-            Add New Priority Level
-            <IconButton onClick={handleCloseAddPriorityLevelDialog} size="small">
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ pt: 3 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField
-                label="Priority Name"
-                value={newPriorityLevel.PriorityName}
-                onChange={(e) => handleInputChange('PriorityName', e.target.value)}
-                fullWidth
-                required
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleOpenAddPriorityLevelDialog}
+            >
+              Add Priority Level
+            </Button>
+            {selected.length > 0 && (
+              <Button
                 variant="outlined"
-                helperText="Enter a descriptive name for the priority level"
-              />
+                color="warning"
+                onClick={onBulkDeactivate}
+              >
+                Deactivate Selected
+              </Button>
+            )}
+          </Box>
+        </Toolbar>
 
+        {loading ? (
+          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+            <CircularProgress />
+            <Typography variant="body2" sx={{ mt: 2, color: theme.palette.text.secondary }}>
+              Loading priority levels...
+            </Typography>
+          </Box>
+        ) : (
+          <TableView
+            data={priorityLevels}
+            columns={columns}
+            idField="PriorityLevelID"
+            selected={selected}
+            onSelectClick={onSelectClick}
+            onSelectAllClick={onSelectAllClick}
+            showSelection={true}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onAddNote={onAddNote}
+            onAddAttachment={onAddAttachment}
+            onAssignUser={onAssignUser}
+            formatters={priorityLevelFormatters}
+            entityType="priority level"
+            getMenuItems={getMenuItems}
+          />
+        )}
+
+        <Box sx={{ 
+          p: 2, 
+          borderTop: `1px solid ${theme.palette.divider}`, 
+          backgroundColor: theme.palette.background.default, 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center' 
+        }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            Showing {priorityLevels.length} priority levels
+          </Typography>
+          {selected.length > 0 && (
+            <Typography variant="body2" sx={{ 
+              color: theme.palette.text.primary, 
+              fontWeight: 500 
+            }}>
+              {selected.length} selected
+            </Typography>
+          )}
+        </Box>
+      </Paper>
+
+      {/* Add Priority Level Dialog */}
+      <Dialog 
+        open={addPriorityLevelDialogOpen} 
+        onClose={handleCloseAddPriorityLevelDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.background.paper
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          color: theme.palette.text.primary
+        }}>
+          Add New Priority Level
+          <IconButton onClick={handleCloseAddPriorityLevelDialog} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              label="Priority Name"
+              value={newPriorityLevel.PriorityName}
+              onChange={(e) => handleInputChange('PriorityName', e.target.value)}
+              fullWidth
+              required
+              variant="outlined"
+              helperText="Enter a descriptive name for the priority level"
+            />
+
+            <TextField
+              label="Description"
+              value={newPriorityLevel.Description}
+              onChange={(e) => handleInputChange('Description', e.target.value)}
+              fullWidth
+              multiline
+              rows={3}
+              variant="outlined"
+              helperText="Optional description explaining when to use this priority level"
+            />
+
+            <TextField
+              label="Priority Order"
+              value={newPriorityLevel.PriorityOrder}
+              onChange={(e) => handleInputChange('PriorityOrder', e.target.value)}
+              fullWidth
+              type="number"
+              variant="outlined"
+              helperText="Lower numbers = higher priority (1 = highest priority)"
+              inputProps={{ min: 1, max: 100 }}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Color</InputLabel>
+              <Select
+                value={newPriorityLevel.Color}
+                onChange={(e) => handleInputChange('Color', e.target.value)}
+                label="Color"
+              >
+                {colorOptions.map((color) => (
+                  <MenuItem key={color.value} value={color.value}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          backgroundColor: color.value,
+                          border: `1px solid ${theme.palette.divider}`,
+                          borderRadius: 1
+                        }}
+                      />
+                      {color.label}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <TextField
-                label="Description"
-                value={newPriorityLevel.Description}
-                onChange={(e) => handleInputChange('Description', e.target.value)}
-                fullWidth
-                multiline
-                rows={3}
+                label="Custom Color"
+                value={newPriorityLevel.Color}
+                onChange={(e) => handleInputChange('Color', e.target.value)}
+                size="small"
                 variant="outlined"
-                helperText="Optional description explaining when to use this priority level"
+                helperText="Or enter custom hex color"
+                sx={{ flex: 1 }}
               />
-
-              <TextField
-                label="Priority Order"
-                value={newPriorityLevel.PriorityOrder}
-                onChange={(e) => handleInputChange('PriorityOrder', e.target.value)}
-                fullWidth
-                type="number"
-                variant="outlined"
-                helperText="Lower numbers = higher priority (1 = highest priority)"
-                inputProps={{ min: 1, max: 100 }}
-              />
-
-              <FormControl fullWidth>
-                <InputLabel>Color</InputLabel>
-                <Select
-                  value={newPriorityLevel.Color}
-                  onChange={(e) => handleInputChange('Color', e.target.value)}
-                  label="Color"
-                >
-                  {colorOptions.map((color) => (
-                    <MenuItem key={color.value} value={color.value}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box
-                          sx={{
-                            width: 20,
-                            height: 20,
-                            backgroundColor: color.value,
-                            border: '1px solid #e0e0e0',
-                            borderRadius: 1
-                          }}
-                        />
-                        {color.label}
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <TextField
-                  label="Custom Color"
-                  value={newPriorityLevel.Color}
-                  onChange={(e) => handleInputChange('Color', e.target.value)}
-                  size="small"
-                  variant="outlined"
-                  helperText="Or enter custom hex color"
-                  sx={{ flex: 1 }}
-                />
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    backgroundColor: newPriorityLevel.Color,
-                    border: '1px solid #e0e0e0',
-                    borderRadius: 1,
-                    flexShrink: 0
-                  }}
-                />
-              </Box>
-
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={newPriorityLevel.IsActive}
-                    onChange={(e) => handleInputChange('IsActive', e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Active"
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  backgroundColor: newPriorityLevel.Color,
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
+                  flexShrink: 0
+                }}
               />
             </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 3, borderTop: '1px solid #e5e5e5' }}>
-            <Button onClick={handleCloseAddPriorityLevelDialog} color="inherit">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddPriorityLevel}
-              variant="contained"
-              disabled={addPriorityLevelLoading || !newPriorityLevel.PriorityName.trim()}
-            >
-              {addPriorityLevelLoading ? <CircularProgress size={20} /> : 'Add Priority Level'}
-            </Button>
-          </DialogActions>
-        </Dialog>
 
-        {/* Status Snackbar */}
-        <Snackbar
-          open={!!statusMessage}
-          autoHideDuration={4000}
-          onClose={() => setStatusMessage && setStatusMessage('')}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          <Alert 
-            onClose={() => setStatusMessage && setStatusMessage('')} 
-            severity={statusSeverity} 
-            sx={{ width: '100%' }}
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={newPriorityLevel.IsActive}
+                  onChange={(e) => handleInputChange('IsActive', e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Active"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: `1px solid ${theme.palette.divider}` }}>
+          <Button onClick={handleCloseAddPriorityLevelDialog} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddPriorityLevel}
+            variant="contained"
+            disabled={addPriorityLevelLoading || !newPriorityLevel.PriorityName.trim()}
           >
-            {statusMessage}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </ThemeProvider>
+            {addPriorityLevelLoading ? <CircularProgress size={20} /> : 'Add Priority Level'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Status Snackbar */}
+      <Snackbar
+        open={!!statusMessage}
+        autoHideDuration={4000}
+        onClose={() => setStatusMessage && setStatusMessage('')}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setStatusMessage && setStatusMessage('')} 
+          severity={statusSeverity} 
+          sx={{ width: '100%' }}
+        >
+          {statusMessage}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 

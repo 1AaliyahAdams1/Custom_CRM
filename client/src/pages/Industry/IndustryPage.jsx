@@ -28,12 +28,10 @@ import {
   Delete as DeleteIcon,
   Close as CloseIcon,
   Business as BusinessIcon,
+  Add,
 } from "@mui/icons-material";
-
-import { Add } from "@mui/icons-material";
-import { ThemeProvider } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import TableView from '../../components/tableFormat/TableView';
-import theme from "../../components/Theme";
 import { formatters } from '../../utils/formatters';
 
 const IndustryPage = ({
@@ -61,6 +59,8 @@ const IndustryPage = ({
   onAssignUser,
   selectedIndustry,
 }) => {
+  const theme = useTheme();
+  
   // Add Industry Dialog State
   const [addIndustryDialogOpen, setAddIndustryDialogOpen] = useState(false);
   const [newIndustry, setNewIndustry] = useState({
@@ -80,25 +80,25 @@ const IndustryPage = ({
     const baseItems = [
       {
         label: 'View Details',
-        icon: <InfoIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onView && onView(industry),
         show: !!onView,
       },
       {
         label: 'Edit',
-        icon: <EditIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onEdit && onEdit(industry),
         show: !!onEdit,
       },
       {
         label: 'Add Notes',
-        icon: <NoteIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <NoteIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onAddNote && onAddNote(industry),
         show: !!onAddNote,
       },
       {
         label: 'Add Attachments',
-        icon: <AttachFileIcon sx={{ mr: 1, color: '#000' }} />,
+        icon: <AttachFileIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
         onClick: () => onAddAttachment && onAddAttachment(industry),
         show: !!onAddAttachment,
       },
@@ -199,209 +199,224 @@ const IndustryPage = ({
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-        {error && (
-          <Alert 
-            severity="error" 
-            sx={{ mb: 2 }}
-            onClose={() => setError && setError('')}
-          >
-            {error}
-          </Alert>
-        )}
+    <Box sx={{ 
+      width: '100%', 
+      backgroundColor: theme.palette.background.default, 
+      minHeight: '100vh', 
+      p: 3 
+    }}>
+      {error && (
+        <Alert 
+          severity="error" 
+          sx={{ mb: 2 }}
+          onClose={() => setError && setError('')}
+        >
+          {error}
+        </Alert>
+      )}
 
-        {successMessage && (
-          <Alert 
-            severity="success" 
-            sx={{ mb: 2 }}
-            onClose={() => setSuccessMessage && setSuccessMessage('')}
-          >
-            {successMessage}
-          </Alert>
-        )}
+      {successMessage && (
+        <Alert 
+          severity="success" 
+          sx={{ mb: 2 }}
+          onClose={() => setSuccessMessage && setSuccessMessage('')}
+        >
+          {successMessage}
+        </Alert>
+      )}
 
-        <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-          <Toolbar sx={{ 
-            backgroundColor: '#fff', 
-            borderBottom: '1px solid #e5e5e5', 
-            justifyContent: 'space-between', 
-            flexWrap: 'wrap', 
-            gap: 2, 
-            py: 2 
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-              <Typography variant="h6" component="div" sx={{ color: '#050505', fontWeight: 600 }}>
-                Industries
-              </Typography>
-              {selected.length > 0 && (
-                <Chip 
-                  label={`${selected.length} selected`} 
-                  size="small" 
-                  sx={{ backgroundColor: '#e0e0e0', color: '#050505' }} 
-                />
-              )}
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={handleOpenAddIndustryDialog}
-                disabled={loading}
-                sx={{
-                  backgroundColor: "#050505",
-                  color: "#ffffff",
-                  "&:hover": { backgroundColor: "#333333" },
-                  "&:disabled": {
-                    backgroundColor: "#cccccc",
-                    color: "#666666",
-                  },
-                }}
-              >
-                Add Industry
-              </Button>
-              {selected.length > 0 && (
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  onClick={onBulkDeactivate}
-                >
-                  Deactivate Selected
-                </Button>
-              )}
-            </Box>
-          </Toolbar>
-
-          {loading ? (
-            <Box display="flex" justifyContent="center" p={8}>
-              <CircularProgress />
-            </Box>
-          ) : industries.length === 0 ? (
-            <Box sx={{ p: 8, textAlign: 'center' }}>
-              <Typography variant="h6" color="textSecondary">
-                No industries found
-              </Typography>
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                Click "Add Industry" to create your first industry
-              </Typography>
-            </Box>
-          ) : (
-            <TableView
-              data={industries}
-              columns={columns}
-              idField="IndustryID"
-              selected={selected}
-              onSelectClick={onSelectClick}
-              onSelectAllClick={onSelectAllClick}
-              showSelection={true}
-              onView={onView}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onAddNote={onAddNote}
-              onAddAttachment={onAddAttachment}
-              onAssignUser={onAssignUser}
-              formatters={industryFormatters}
-              entityType="industry"
-              getMenuItems={getMenuItems}
-            />
-          )}
-
-          <Box sx={{ 
-            p: 2, 
-            borderTop: '1px solid #e5e5e5', 
-            backgroundColor: '#fafafa', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center' 
-          }}>
-            <Typography variant="body2" sx={{ color: '#666666' }}>
-              Showing {industries.length} industries
+      <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+        <Toolbar sx={{ 
+          backgroundColor: theme.palette.background.paper, 
+          borderBottom: `1px solid ${theme.palette.divider}`, 
+          justifyContent: 'space-between', 
+          flexWrap: 'wrap', 
+          gap: 2, 
+          py: 2 
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+            <Typography variant="h6" component="div" sx={{ 
+              color: theme.palette.text.primary, 
+              fontWeight: 600 
+            }}>
+              Industries
             </Typography>
             {selected.length > 0 && (
-              <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500 }}>
-                {selected.length} selected
-              </Typography>
+              <Chip 
+                label={`${selected.length} selected`} 
+                size="small" 
+                sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' ? '#333' : '#e0e0e0', 
+                  color: theme.palette.text.primary 
+                }} 
+              />
             )}
           </Box>
-        </Paper>
-
-        {/* Add Industry Dialog */}
-        <Dialog 
-          open={addIndustryDialogOpen} 
-          onClose={handleCloseAddIndustryDialog}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            borderBottom: '1px solid #e5e5e5'
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <BusinessIcon sx={{ color: '#1976d2' }} />
-              Add New Industry
-            </Box>
-            <IconButton onClick={handleCloseAddIndustryDialog} size="small">
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ pt: 3 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField
-                label="Industry Name"
-                value={newIndustry.IndustryName}
-                onChange={(e) => handleInputChange('IndustryName', e.target.value)}
-                fullWidth
-                required
-                variant="outlined"
-                helperText="Enter the name of the industry (e.g., Technology, Healthcare, Finance)"
-                inputProps={{ maxLength: 255 }}
-              />
-
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={newIndustry.Active}
-                    onChange={(e) => handleInputChange('Active', e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Active"
-              />
-            </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 3, borderTop: '1px solid #e5e5e5' }}>
-            <Button onClick={handleCloseAddIndustryDialog} color="inherit">
-              Cancel
-            </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
             <Button
-              onClick={handleAddIndustry}
               variant="contained"
-              disabled={addIndustryLoading || !newIndustry.IndustryName.trim()}
+              startIcon={<Add />}
+              onClick={handleOpenAddIndustryDialog}
+              disabled={loading}
             >
-              {addIndustryLoading ? <CircularProgress size={20} /> : 'Add Industry'}
+              Add Industry
             </Button>
-          </DialogActions>
-        </Dialog>
+            {selected.length > 0 && (
+              <Button
+                variant="outlined"
+                color="warning"
+                onClick={onBulkDeactivate}
+              >
+                Deactivate Selected
+              </Button>
+            )}
+          </Box>
+        </Toolbar>
 
-        {/* Status Snackbar */}
-        <Snackbar
-          open={!!statusMessage}
-          autoHideDuration={4000}
-          onClose={() => setStatusMessage && setStatusMessage('')}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          <Alert 
-            onClose={() => setStatusMessage && setStatusMessage('')} 
-            severity={statusSeverity} 
-            sx={{ width: '100%' }}
+        {loading ? (
+          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+            <CircularProgress />
+            <Typography variant="body2" sx={{ mt: 2, color: theme.palette.text.secondary }}>
+              Loading industries...
+            </Typography>
+          </Box>
+        ) : industries.length === 0 ? (
+          <Box sx={{ p: 8, textAlign: 'center' }}>
+            <Typography variant="h6" sx={{ color: theme.palette.text.secondary }}>
+              No industries found
+            </Typography>
+            <Typography variant="body2" sx={{ 
+              mt: 1, 
+              color: theme.palette.text.secondary 
+            }}>
+              Click "Add Industry" to create your first industry
+            </Typography>
+          </Box>
+        ) : (
+          <TableView
+            data={industries}
+            columns={columns}
+            idField="IndustryID"
+            selected={selected}
+            onSelectClick={onSelectClick}
+            onSelectAllClick={onSelectAllClick}
+            showSelection={true}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onAddNote={onAddNote}
+            onAddAttachment={onAddAttachment}
+            onAssignUser={onAssignUser}
+            formatters={industryFormatters}
+            entityType="industry"
+            getMenuItems={getMenuItems}
+          />
+        )}
+
+        <Box sx={{ 
+          p: 2, 
+          borderTop: `1px solid ${theme.palette.divider}`, 
+          backgroundColor: theme.palette.background.default, 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center' 
+        }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            Showing {industries.length} industries
+          </Typography>
+          {selected.length > 0 && (
+            <Typography variant="body2" sx={{ 
+              color: theme.palette.text.primary, 
+              fontWeight: 500 
+            }}>
+              {selected.length} selected
+            </Typography>
+          )}
+        </Box>
+      </Paper>
+
+      {/* Add Industry Dialog */}
+      <Dialog 
+        open={addIndustryDialogOpen} 
+        onClose={handleCloseAddIndustryDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.background.paper
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          color: theme.palette.text.primary
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <BusinessIcon sx={{ color: theme.palette.primary.main }} />
+            Add New Industry
+          </Box>
+          <IconButton onClick={handleCloseAddIndustryDialog} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              label="Industry Name"
+              value={newIndustry.IndustryName}
+              onChange={(e) => handleInputChange('IndustryName', e.target.value)}
+              fullWidth
+              required
+              variant="outlined"
+              helperText="Enter the name of the industry (e.g., Technology, Healthcare, Finance)"
+              inputProps={{ maxLength: 255 }}
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={newIndustry.Active}
+                  onChange={(e) => handleInputChange('Active', e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Active"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: `1px solid ${theme.palette.divider}` }}>
+          <Button onClick={handleCloseAddIndustryDialog} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddIndustry}
+            variant="contained"
+            disabled={addIndustryLoading || !newIndustry.IndustryName.trim()}
           >
-            {statusMessage}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </ThemeProvider>
+            {addIndustryLoading ? <CircularProgress size={20} /> : 'Add Industry'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Status Snackbar */}
+      <Snackbar
+        open={!!statusMessage}
+        autoHideDuration={4000}
+        onClose={() => setStatusMessage && setStatusMessage('')}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setStatusMessage && setStatusMessage('')} 
+          severity={statusSeverity} 
+          sx={{ width: '100%' }}
+        >
+          {statusMessage}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 
