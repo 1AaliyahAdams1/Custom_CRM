@@ -1,17 +1,24 @@
-Create a ".env" file in the server folder and copy the fields below and add the credidentials next to it
+- Create a ".env" file in the server folder and copy the fields below and add the credidentials next to it
 
+- Database credidentials
 DB_USER=
 DB_PASS=
 DB_HOST=
 DB_NAME=
 
+- This is usually localhost
 HOST_ALT =
 
+- Backend server URLs, the ALT_SERVER_URL is used for localhost and SERVER_URL is for deployment URL
 SERVER_URL =
 ALT_SERVER_URL =
 
+- JWT Authentication cookie
 JWT_SECRET=
 
+- Entertianment.FM API credidentials
 EFM_API_KEY=
 EFM_BASE_URL=
+
+- Google Gemini API Key, can get one here : https://aistudio.google.com/app/api-keys 
 GEMINI_API_KEY=

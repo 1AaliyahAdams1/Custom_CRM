@@ -1,4 +1,3 @@
-// enhancedChatbotService.js
 const { 
   searchDatabaseEnhanced, 
   getChatHistoryEnhanced, 
@@ -11,10 +10,17 @@ const {
 
 /**
  * Process chat with enhanced context and intelligence
+ * Requires valid userId - no guest access
  */
 async function processChatEnhanced(userId, message) {
   if (!message || typeof message !== "string") {
     throw new Error("Invalid message input.");
+  }
+
+  // Validate userId - must be a valid number
+  const userIdInt = typeof userId === "string" ? parseInt(userId, 10) : userId;
+  if (!userIdInt || isNaN(userIdInt)) {
+    throw new Error("Authentication required. Please log in to use the chatbot.");
   }
 
   // Detect what type of request this is
@@ -23,7 +29,7 @@ async function processChatEnhanced(userId, message) {
   // Get conversation history for context
   let conversationHistory = [];
   try {
-    conversationHistory = await getChatHistoryEnhanced(userId, 5);
+    conversationHistory = await getChatHistoryEnhanced(userIdInt, 5);
   } catch (err) {
     console.warn("⚠️ Could not fetch conversation history:", err.message);
   }
@@ -31,7 +37,7 @@ async function processChatEnhanced(userId, message) {
   // Search database with enhanced intelligence
   let dbResults = {};
   try {
-    dbResults = await searchDatabaseEnhanced(message, userId);
+    dbResults = await searchDatabaseEnhanced(message, userIdInt);
   } catch (dbErr) {
     console.warn("⚠️ Database query failed:", dbErr.message);
     dbResults = { error: dbErr.message };
@@ -40,7 +46,7 @@ async function processChatEnhanced(userId, message) {
   // Build comprehensive context
   const context = {
     dbResults,
-    userId,
+    userId: userIdInt,
     userProfile: dbResults.userProfile || {},
     conversationHistory,
     requestType
@@ -57,7 +63,7 @@ async function processChatEnhanced(userId, message) {
 
   // Save chat history with metadata
   try {
-    await saveChatHistoryEnhanced(userId, message, aiResponse, requestType);
+    await saveChatHistoryEnhanced(userIdInt, message, aiResponse, requestType);
   } catch (saveErr) {
     console.warn("⚠️ Failed to save chat history:", saveErr.message);
   }
@@ -82,7 +88,12 @@ async function processChatEnhanced(userId, message) {
  */
 async function getHistoryEnhanced(userId, limit = 20) {
   try {
-    const history = await getChatHistoryEnhanced(userId, limit);
+    const userIdInt = typeof userId === "string" ? parseInt(userId, 10) : userId;
+    if (isNaN(userIdInt)) {
+      throw new Error("Invalid userId format");
+    }
+
+    const history = await getChatHistoryEnhanced(userIdInt, limit);
     return history;
   } catch (err) {
     console.error("⚠️ Failed to fetch chat history:", err.message);
@@ -95,22 +106,17 @@ async function getHistoryEnhanced(userId, limit = 20) {
  */
 async function getDashboardSummary(userId) {
   try {
-    const dbResults = await searchDatabaseEnhanced("dashboard summary", userId);
-    
-    // Calculate task metrics
-    const overdueTasks = dbResults.myTasks?.filter(t => 
-      t.isOverdue
-    ) || [];
-    
-    const upcomingTasks = dbResults.myTasks?.filter(t => 
-      t.isPending && !t.isOverdue
-    ) || [];
-    
-    const completedTasks = dbResults.myTasks?.filter(t => 
-      t.Status === 1 || t.Completed === true
-    ) || [];
+    const userIdInt = typeof userId === "string" ? parseInt(userId, 10) : userId;
+    if (isNaN(userIdInt)) {
+      throw new Error("Invalid userId format");
+    }
 
-    // Build summary
+    const dbResults = await searchDatabaseEnhanced("dashboard summary", userIdInt);
+    
+    const overdueTasks = dbResults.myTasks?.filter(t => t.isOverdue) || [];
+    const upcomingTasks = dbResults.myTasks?.filter(t => t.isPending && !t.isOverdue) || [];
+    const completedTasks = dbResults.myTasks?.filter(t => t.Status === 1 || t.Completed === true) || [];
+
     const summary = {
       user: dbResults.userProfile,
       tasks: {

@@ -56,6 +56,7 @@ function buildSystemPrompt(userProfile, requestType) {
 - User's personal task list and calendar
 - Historical interaction patterns and business metrics
 - Company products and pricing information
+- ONLY EVER GIVE DETAILS RELATED TO THE USER, do not give information that a user is not assigned
 
 Your capabilities:
 1. **Business Insights**: Analyze trends, identify opportunities, spot risks

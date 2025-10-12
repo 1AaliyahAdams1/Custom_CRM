@@ -15,18 +15,11 @@ import {
   Select,
   MenuItem,
   Tooltip,
-  TextField,
-  IconButton,
 } from "@mui/material";
-import {
-  Add,
-  Info,
-  Clear,
-} from "@mui/icons-material";
-import { ThemeProvider } from "@mui/material/styles";
+import { Add } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 import { formatters } from '../../utils/formatters';
 import TableView from '../../components/tableFormat/TableView';
-import theme from "../../components/Theme";
 
 // Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {
@@ -65,12 +58,13 @@ const DealsPage = ({
   totalCount = 0,
   currentFilter = 'all',
 }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [selected, setSelected] = useState([]);
   const [currentTab, setCurrentTab] = useState(0);
   const [dealFilter, setDealFilter] = useState(currentFilter);
 
-  // Handle account name click
+// Handle account name click
   const handleViewAccount = (deal) => {
     if (!deal?.AccountID) {
       if (setError) {
@@ -171,169 +165,180 @@ const DealsPage = ({
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: "100%", backgroundColor: "#fafafa", minHeight: "100vh", p: 3 }}>
-        <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-          {/* Tabs */}
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs
-              value={currentTab}
-              onChange={(e, v) => setCurrentTab(v)}
-              sx={{
-                backgroundColor: '#fff',
-                '& .MuiTab-root': { textTransform: 'none', fontSize: '1rem', fontWeight: 500 },
-                '& .MuiTabs-indicator': { backgroundColor: '#050505' }
-              }}
-            >
-              {userTabs.map((tab, idx) => (
-                <Tab
-                  key={tab.id}
-                  label={tab.label}
-                  sx={{
-                    color: currentTab === idx ? '#050505' : '#666',
-                    '&.Mui-selected': { color: '#050505', fontWeight: 600 }
-                  }}
-                />
-              ))}
-            </Tabs>
-          </Box>
+    <Box sx={{ 
+      width: "100%", 
+      backgroundColor: theme.palette.background.default, 
+      minHeight: "100vh", 
+      p: 3 
+    }}>
+      <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+        {/* Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: theme.palette.divider }}>
+          <Tabs
+            value={currentTab}
+            onChange={(e, v) => setCurrentTab(v)}
+            sx={{
+              backgroundColor: theme.palette.background.paper,
+              '& .MuiTab-root': { 
+                textTransform: 'none', 
+                fontSize: '1rem', 
+                fontWeight: 500,
+                color: theme.palette.text.secondary 
+              },
+              '& .MuiTabs-indicator': { 
+                backgroundColor: theme.palette.primary.main 
+              }
+            }}
+          >
+            {userTabs.map((tab, idx) => (
+              <Tab
+                key={tab.id}
+                label={tab.label}
+                sx={{
+                  '&.Mui-selected': { 
+                    color: theme.palette.primary.main, 
+                    fontWeight: 600 
+                  }
+                }}
+              />
+            ))}
+          </Tabs>
+        </Box>
 
-          {/* Deals Tab */}
-          <TabPanel value={currentTab} index={0}>
-            {error && <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>}
-            {successMessage && (
-              <Alert severity="success" sx={{ m: 2 }} onClose={() => setSuccessMessage("")}>
-                {successMessage}
-              </Alert>
-            )}
+        {/* Deals Tab */}
+        <TabPanel value={currentTab} index={0}>
+          {error && <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>}
+          {successMessage && (
+            <Alert severity="success" sx={{ m: 2 }} onClose={() => setSuccessMessage("")}>
+              {successMessage}
+            </Alert>
+          )}
 
-            {/* Toolbar */}
-            <Toolbar
-              sx={{
-                backgroundColor: "#fff",
-                borderBottom: "1px solid #e5e5e5",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: 2,
-                py: 2,
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1, flexWrap: "wrap" }}>
-                <Typography variant="h6" sx={{ color: "#050505", fontWeight: 600 }}>
-                  Deals 
-                </Typography>
-                <Tooltip title="Filter deals by ownership" arrow>
-                  <FormControl size="small" sx={{ minWidth: 220 }}>
-                    <Select value={dealFilter} onChange={handleFilterChange}>
-                      {filterOptions.map(opt => (
-                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Tooltip>
-
-                {/* <TextField
-                  size="small"
-                  placeholder="Search deals..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  sx={{ minWidth: 200 }}
-                />
-                <FormControl size="small" sx={{ minWidth: 150 }}>
-                  <Select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    displayEmpty
+          {/* Toolbar */}
+          <Toolbar
+            sx={{
+              backgroundColor: theme.palette.background.paper,
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 2,
+              py: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1, flexWrap: "wrap" }}>
+              <Typography variant="h6" sx={{ 
+                color: theme.palette.text.primary, 
+                fontWeight: 600 
+              }}>
+                Deals 
+              </Typography>
+              <Tooltip title="Filter deals by ownership" arrow>
+                <FormControl size="small" sx={{ minWidth: 220 }}>
+                  <Select 
+                    value={dealFilter} 
+                    onChange={handleFilterChange}
+                    sx={{
+                      backgroundColor: theme.palette.background.paper,
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: theme.palette.divider
+                      },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: theme.palette.text.secondary
+                      },
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: theme.palette.primary.main
+                      },
+                    }}
                   >
-                    <MenuItem value="">All Statuses</MenuItem>
-                    <MenuItem value="Active">Active</MenuItem>
-                    <MenuItem value="Inactive">Inactive</MenuItem>
+                    {filterOptions.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
+              </Tooltip>
 
-                {(searchTerm || statusFilter) && (
-                  <IconButton onClick={clearFilters} size="small">
-                    <Clear />
-                  </IconButton>
-                )}
+              {selected.length > 0 && (
+                <Chip 
+                  label={`${selected.length} selected`} 
+                  size="small"
+                  sx={{ 
+                    backgroundColor: theme.palette.mode === 'dark' ? '#333' : "#e0e0e0", 
+                    color: theme.palette.text.primary 
+                  }}
+                />
+              )}
+            </Box>
 
-                {selected.length > 0 && (
-                  <Chip label={`${selected.length} selected`} size="small" />
-                )} */}
-              </Box>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={onCreate}
+              disabled={loading}
+            >
+              Add Deal
+            </Button>
+          </Toolbar>
 
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={onCreate}
-                disabled={loading}
-                sx={{
-                  backgroundColor: "#050505",
-                  color: "#fff",
-                  "&:hover": { backgroundColor: "#333" },
-                  "&:disabled": { backgroundColor: "#ccc", color: "#666" },
-                }}
-              >
-                Add Deal
-              </Button>
-            </Toolbar>
+          {/* Table */}
+          {loading ? (
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+              <CircularProgress />
+              <Typography variant="body2" sx={{ mt: 2, color: theme.palette.text.secondary }}>
+                Loading deals...
+              </Typography>
+            </Box>
+          ) : (
+            <TableView
+              data={processedDeals}
+              columns={dealsTableConfig.columns}
+              idField={dealsTableConfig.idField}
+              selected={selected}
+              onSelectClick={handleSelectClick}
+              onSelectAllClick={handleSelectAllClick}
+              onViewAccount={handleViewAccount}
+              showSelection
+              onView={onView}
+              onEdit={onEdit}
+              onDelete={onDeactivate}
+              onAddNote={onAddNote}
+              onAddAttachment={onAddAttachment}
+              formatters={formatters}
+              entityType="deal"
+            />
+          )}
+        </TabPanel>
 
-            {/* Table */}
-            {loading ? (
-              <Box display="flex" alignItems="center" justifyContent="center" p={8}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <TableView
-                data={processedDeals}
-                columns={dealsTableConfig.columns}
-                idField={dealsTableConfig.idField}
-                selected={selected}
-                onSelectClick={handleSelectClick}
-                onSelectAllClick={handleSelectAllClick}
-                onViewAccount={handleViewAccount}
-                showSelection
-                onView={onView}
-                onEdit={onEdit}
-                onDelete={onDeactivate}
-                onAddNote={onAddNote}
-                onAddAttachment={onAddAttachment}
-                formatters={formatters}
-                entityType="deal"
-              />
-            )}
-            </TabPanel>
-
-            {/* Footer with counts */}
-           <Box sx={{ p: 2, borderTop: '1px solid #e5e5e5', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Tooltip title="Total number of deals displayed in the table" arrow>
-                        <Typography variant="body2" sx={{ color: '#666666', cursor: 'help' }}>
-                          Showing {deals.length} deals
-                        </Typography>
-                      </Tooltip>
-                      {selected.length > 0 && (
-                        <Tooltip title="Number of deals currently selected for bulk operations" arrow>
-                          <Typography variant="body2" sx={{ color: '#050505', fontWeight: 500, cursor: 'help' }}>
-                            {selected.length} selected
-                          </Typography>
-                        </Tooltip>
-                      )}
-                    </Box>
-                  </Paper>
-          
-                  {/* Status Snackbar with tooltip context
-                  <Snackbar
-                    open={!!statusMessage}
-                    autoHideDuration={4000}
-                    onClose={() => setStatusMessage('')}
-                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                  >
-                    <Alert onClose={() => setStatusMessage('')} severity={statusSeverity} sx={{ width: '100%' }}>
-                      {statusMessage}
-                    </Alert>
-                  </Snackbar> */}
-                </Box>
-              </ThemeProvider>
+        {/* Footer with counts */}
+        <Box sx={{ 
+          p: 2, 
+          borderTop: `1px solid ${theme.palette.divider}`, 
+          backgroundColor: theme.palette.background.default, 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center' 
+        }}>
+          <Tooltip title="Total number of deals displayed in the table" arrow>
+            <Typography variant="body2" sx={{ 
+              color: theme.palette.text.secondary, 
+              cursor: 'help' 
+            }}>
+              Showing {deals.length} deals
+            </Typography>
+          </Tooltip>
+          {selected.length > 0 && (
+            <Tooltip title="Number of deals currently selected for bulk operations" arrow>
+              <Typography variant="body2" sx={{ 
+                color: theme.palette.text.primary, 
+                fontWeight: 500, 
+                cursor: 'help' 
+              }}>
+                {selected.length} selected
+              </Typography>
+            </Tooltip>
+          )}
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 
