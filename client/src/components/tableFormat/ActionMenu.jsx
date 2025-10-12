@@ -12,7 +12,8 @@ import {
   RestoreFromTrash, 
   DeleteForever, 
   Block,
-  PersonOff 
+  PersonOff,
+  Timeline
 } from '@mui/icons-material';
 
 const ActionMenu = ({
@@ -31,16 +32,12 @@ const ActionMenu = ({
   onUnclaimAccount,
   onAssignUser,
   onUnassignUsers, 
+  onAssignSequence,
   onReactivate,
   onPermanentDelete,
   menuItems = [],
   tooltips = {},
 }) => {
-
-  console.log("ActionMenu menuRow:", menuRow);
-  console.log("menuRow.AssignedEmployeeIDs:", menuRow?.AssignedEmployeeIDs);
-  console.log("menuRow.AssignedEmployeeNames:", menuRow?.AssignedEmployeeNames);
-  console.log("onUnassignUsers exists:", !!onUnassignUsers);
 
   // Get current user roles once
   const roles = useMemo(() => {
@@ -116,6 +113,18 @@ const ActionMenu = ({
               (menuRow?.ownerStatus === 'unowned' || menuRow?.ownerStatus === 'n/a'),
         tooltip: getTooltip('claimAccount', 'Claim ownership of this account'),
       },
+
+      {
+        label: 'Assign Sequence',
+        icon: <Timeline sx={{ mr: 1, color: '#000' }} />,
+        onClick: () => handleClick(onAssignSequence),
+        show: !!onAssignSequence && 
+              entityType === 'account' && 
+              menuRow?.Active !== false && 
+              (menuRow?.ownerStatus === "owned" || 
+              menuRow?.ownerStatus === "owned-shared"),
+      tooltip: getTooltip('assignSequence', 'Assign a sequence and automatically create activities'),
+      },
       
       // Unclaim Account (for users to remove themselves)
       {
@@ -187,7 +196,7 @@ const ActionMenu = ({
       {
         label: 'Reactivate',
         icon: <RestoreFromTrash sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => handleClick(() => onReactivate(menuRow[idField])),
+        onClick: () => handleClick(onReactivate),
         show: !!onReactivate && (menuRow?.Active === false || menuRow?.Active === 0),
         tooltip: getTooltip('reactivate', 'Reactivate this record'),
       },
@@ -196,7 +205,7 @@ const ActionMenu = ({
       {
         label: 'Deactivate',
         icon: <Block sx={{ mr: 1, color: '#000' }} />,
-        onClick: () => handleClick(() => onDelete(menuRow[idField])),
+        onClick: () => handleClick(onDelete),
         show: !!onDelete && menuRow?.Active !== false,
         tooltip: getTooltip('delete', 'Deactivate this record'),
       },
@@ -205,7 +214,7 @@ const ActionMenu = ({
       // {
       //   label: 'Delete Permanently',
       //   icon: <DeleteForever sx={{ mr: 1, color: '#d32f2f' }} />,
-      //   onClick: () => handleClick(() => onPermanentDelete(menuRow[idField])),
+      //   onClick: () => handleClick(onPermanentDelete),
       //   show: !!onPermanentDelete && menuRow?.Active === false,
       //   tooltip: getTooltip('permanentDelete', 'Permanently delete this record (cannot be undone)'),
       // },
@@ -226,6 +235,7 @@ const ActionMenu = ({
     onUnclaimAccount,
     onAssignUser,
     onUnassignUsers,
+    onAssignSequence,
     onReactivate,
     onPermanentDelete,
     menuItems,

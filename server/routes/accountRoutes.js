@@ -20,7 +20,7 @@ router.put("/:id", accountController.updateAccount);
 router.patch("/:id/deactivate", accountController.deactivateAccount);
 router.patch("/:id/reactivate", accountController.reactivateAccount);
 router.delete("/:id/delete", accountController.deleteAccount);
-
+router.post("/:id/assign-sequence", accountController.assignSequenceToAccount);
 module.exports = router;
 
 

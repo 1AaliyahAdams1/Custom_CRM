@@ -51,7 +51,7 @@ const AccountsPage = ({
   bulkLoading = false,
   userRoles = [],
   statusMessage,
-  setStatusMessage,
+  onCloseStatusMessage,
   statusSeverity = "success",
   notesPopupOpen,
   setNotesPopupOpen,
@@ -60,6 +60,7 @@ const AccountsPage = ({
   handleEditNote,
   attachmentsPopupOpen,
   setAttachmentsPopupOpen,
+  onAssignSequence,
   userName,
 }) => {
   const theme = useTheme();
@@ -151,7 +152,7 @@ const AccountsPage = ({
           <StatusMessage
             message={statusMessage}
             severity={statusSeverity}
-            onClose={() => setStatusMessage("")}
+            onClose={() => onCloseStatusMessage("")}
             duration={4000}
           />
         </Box>
@@ -270,6 +271,7 @@ const AccountsPage = ({
               onUnclaimAccount={onUnclaimAccount}
               onAssignUser={onAssignUser}
               onUnassignUsers={onUnassignUsers}
+              onAssignSequence={onAssignSequence}
               formatters={formatters}
               entityType="account"
               tooltips={{

@@ -63,25 +63,10 @@ async function bulkClaimAccounts(accountIds, userId) {
   if (!Array.isArray(accountIds) || accountIds.length === 0) {
     throw new Error("Account IDs array is required");
   }
-  
   if (!userId) {
     throw new Error("User ID is required");
-  }
-  
-  // First check claimability
-  const claimabilityCheck = await accountRepo.checkAccountsClaimability(accountIds, userId);
-  
-  const claimableAccounts = claimabilityCheck.filter(acc => 
-    acc.ownerStatus === 'unowned' && acc.Active
-  );
-  
-  if (claimableAccounts.length === 0) {
-    throw new Error("No claimable accounts found in selection");
-  }
-  
-  const claimableIds = claimableAccounts.map(acc => acc.AccountID);
-  
-  return await accountRepo.bulkClaimAccounts(claimableIds, userId);
+  } 
+  return await accountRepo.bulkClaimAccounts(accountIds, userId);
 }
 
 async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
@@ -100,6 +85,22 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
   return await accountRepo.bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId);
 }
 
+async function assignSequenceToAccount(accountId, sequenceId, userId) {
+  if (!accountId) {
+    throw new Error("Account ID is required");
+  }
+  
+  if (!sequenceId) {
+    throw new Error("Sequence ID is required");
+  }
+  
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+  
+  return await accountRepo.bulkClaimAccountsAndAddSequence([accountId], userId, sequenceId);
+}
+
 
 module.exports = {
   getAllAccounts,
@@ -114,4 +115,5 @@ module.exports = {
   checkAccountsClaimability,
   bulkClaimAccounts,
   bulkClaimAccountsAndAddSequence,
+  assignSequenceToAccount,
 };

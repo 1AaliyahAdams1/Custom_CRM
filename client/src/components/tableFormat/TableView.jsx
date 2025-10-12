@@ -28,6 +28,7 @@ import FiltersDialog from "../dialogs/FiltersDialog";
 import ActionMenu from "./ActionMenu";
 import AssignUserDialog from "../../components/dialogs/AssignUserDialog"; 
 import UnassignUserDialog from "../dialogs/UnAssignUserDialog";
+import AssignSequenceDialog from "../dialogs/AssignSequenceDialog";
 
 const TableView = ({
   data = [],
@@ -45,10 +46,13 @@ const TableView = ({
   onAddAttachment,
   onClaimAccount,
   onUnclaimAccount, 
+  
   onAssignUser,
   onUnassignUsers, 
+  onAssignSequence,
   onReactivate, 
   onPermanentDelete, 
+  
   entityType = "records",
   menuItems = [],
   formatters = {},
@@ -187,6 +191,7 @@ const TableView = ({
 
   const handleCellClick = (event, row, column) => {
     if (column.type === "clickable" && column.onClick) {
+      event.preventDefault();
       event.stopPropagation();
       column.onClick(row);
     }
@@ -213,83 +218,81 @@ const TableView = ({
           </Box>
         );
       case "chip":
-  // Handle dynamic chip values
-  let chipLabel = value;
-  let chipColor = "#1976d2"; // default color
-  let chipTooltip = null;
-  
-  if (column.chipLabels) {
-    if (typeof column.chipLabels === 'function') {
-      chipLabel = column.chipLabels(value, row);
-    } else if (column.chipLabels[value]) {
-      chipLabel = column.chipLabels[value];
-    }
-  }
-  
-  if (column.chipColors) {
-    if (typeof column.chipColors === 'function') {
-      chipColor = column.chipColors(value, row);
-    } else if (column.chipColors[value]) {
-      chipColor = column.chipColors[value];
-    }
-  }
-  
-  // Handle special case for ownership with dynamic names and tooltips
-  if (column.field === 'ownerStatus') {
-    if (value === 'owned-shared') {
-      chipLabel = row.ownerDisplayName || 'Shared';
-      chipColor = "#2196f3"; // blue for shared ownership
-      chipTooltip = row.ownerTooltip || null;
-    } else if (value === 'owned-by-multiple') {
-      chipLabel = row.ownerDisplayName || 'Multiple users';
-      chipColor = "#ff9800"; // orange for owned by others
-      chipTooltip = row.ownerTooltip || null;
-    } else if (value && value.startsWith('owned-by-')) {
-      chipLabel = row.ownerDisplayName || value.replace('owned-by-', '');
-      chipColor = "#ff9800"; // orange for owned by others
-      chipTooltip = row.ownerTooltip || null;
-    } else if (value === 'owned') {
-      chipLabel = 'Owned';
-      chipColor = "#079141ff"; // green
-    } else if (value === 'unowned') {
-      chipLabel = 'Unowned';
-      chipColor = "#999999"; // gray
-    } else if (value === 'n/a') {
-      chipLabel = 'N/A';
-      chipColor = "#999999"; // gray
-    }
-  }
-  
-  const chip = (
-    <Chip
-      label={chipLabel}
-      size="small"
-      sx={{
-        backgroundColor: chipColor,
-        color: "#fff",
-        fontWeight: 500,
-      }}
-    />
-  );
-  
-  // Wrap in tooltip if tooltip text exists
-  if (chipTooltip) {
-    return (
-      <Tooltip title={chipTooltip} arrow placement="top">
-        <span>{chip}</span>
-      </Tooltip>
-    );
-  }
-  
-  return chip;
+        // Handle dynamic chip values
+        let chipLabel = value;
+        let chipColor = "#1976d2"; // default color
+        let chipTooltip = null;
+        
+        if (column.chipLabels) {
+          if (typeof column.chipLabels === 'function') {
+            chipLabel = column.chipLabels(value, row);
+          } else if (column.chipLabels[value]) {
+            chipLabel = column.chipLabels[value];
+          }
+        }
+        
+        if (column.chipColors) {
+          if (typeof column.chipColors === 'function') {
+            chipColor = column.chipColors(value, row);
+          } else if (column.chipColors[value]) {
+            chipColor = column.chipColors[value];
+          }
+        }
+        
+        // Handle special case for ownership with dynamic names and tooltips
+        if (column.field === 'ownerStatus') {
+          if (value === 'owned-shared') {
+            chipLabel = row.ownerDisplayName || 'Shared';
+            chipColor = "#2196f3"; // blue for shared ownership
+            chipTooltip = row.ownerTooltip || null;
+          } else if (value === 'owned-by-multiple') {
+            chipLabel = row.ownerDisplayName || 'Multiple users';
+            chipColor = "#ff9800"; // orange for owned by others
+            chipTooltip = row.ownerTooltip || null;
+          } else if (value && value.startsWith('owned-by-')) {
+            chipLabel = row.ownerDisplayName || value.replace('owned-by-', '');
+            chipColor = "#ff9800"; // orange for owned by others
+            chipTooltip = row.ownerTooltip || null;
+          } else if (value === 'owned') {
+            chipLabel = 'Owned';
+            chipColor = "#079141ff"; // green
+          } else if (value === 'unowned') {
+            chipLabel = 'Unowned';
+            chipColor = "#999999"; // gray
+          } else if (value === 'n/a') {
+            chipLabel = 'N/A';
+            chipColor = "#999999"; // gray
+          }
+        }
+        
+        const chip = (
+          <Chip
+            label={chipLabel}
+            size="small"
+            sx={{
+              backgroundColor: chipColor,
+              color: "#fff",
+              fontWeight: 500,
+            }}
+          />
+        );
+        
+        // Wrap in tooltip if tooltip text exists
+        if (chipTooltip) {
+          return (
+            <Tooltip title={chipTooltip} arrow placement="top">
+              <span>{chip}</span>
+            </Tooltip>
+          );
+        }
+        
+        return chip;
       case "boolean":
         return (
           <Chip
             label={value ? "Yes" : "No"}
-            
             size="small"
             sx={{
-              backgroundColor: value ? "#4caf50" : "#f44336",
               backgroundColor: value ? "#4caf50" : "#f44336",
               color: "#fff",
               fontWeight: 500,
@@ -392,21 +395,45 @@ const TableView = ({
                   key={row[idField]}
                   hover
                   selected={isItemSelected}
-                  onClick={showSelection ? () => handleSelectRow(row[idField]) : undefined}
+                  onClick={(e) => {
+                    // Only trigger selection if clicking on the row itself, not on action buttons or clickable cells
+                    if (showSelection && !e.defaultPrevented) {
+                      handleSelectRow(row[idField]);
+                    }
+                  }}
+                  sx={{ cursor: showSelection ? 'pointer' : 'default' }}
                 >
                   {showSelection && (
-                    <TableCell padding="checkbox">
-                      <Checkbox color="primary" checked={isItemSelected} />
+                    <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox 
+                        color="primary" 
+                        checked={isItemSelected}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectRow(row[idField]);
+                        }}
+                      />
                     </TableCell>
                   )}
                   {displayedColumns.map((column) => (
-                    <TableCell key={column.field}>
+                    <TableCell 
+                      key={column.field}
+                      onClick={(e) => {
+                        // Stop propagation for clickable cells
+                        if (column.type === "clickable") {
+                          e.stopPropagation();
+                        }
+                      }}
+                    >
                       {renderCellContent(row, column)}
                     </TableCell>
                   ))}
                   {showActions && (
-                    <TableCell>
-                      <IconButton onClick={(e) => handleMenuClick(e, row)}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <IconButton onClick={(e) => {
+                        e.stopPropagation();
+                        handleMenuClick(e, row);
+                      }}>
                         <MoreVert />
                       </IconButton>
                     </TableCell>
@@ -438,32 +465,31 @@ const TableView = ({
       </Box>
 
       {/* Action Menu */}
-{menuRow && (
-  <ActionMenu
-    anchorEl={anchorEl}
-    open={Boolean(anchorEl)}
-    onClose={handleMenuClose}
-    menuRow={menuRow}
-    idField={idField}
-    entityType={entityType}
-    onView={onView}
-    onEdit={onEdit}
-    onDelete={onDelete}
-    onAddNote={onAddNote}
-    onAddAttachment={onAddAttachment}
-    onClaimAccount={onClaimAccount}
-    onUnclaimAccount={onUnclaimAccount}
-    onAssignUser={(row) => {
-      setCurrentRow(row);
-      setAssignDialogOpen(true);
-    }}
-    onUnassignUsers={onUnassignUsers}
-    onReactivate={onReactivate}
-    onPermanentDelete={onPermanentDelete}
-    menuItems={menuItems}
-    tooltips={tooltips}
-  />
-)}
+      {menuRow && (
+        <ActionMenu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          menuRow={menuRow}
+          idField={idField}
+          entityType={entityType}
+          onView={onView}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onAddNote={onAddNote}
+          onAddAttachment={onAddAttachment}
+          onClaimAccount={onClaimAccount}
+          onUnclaimAccount={onUnclaimAccount}
+          onAssignUser={onAssignUser}
+          onUnassignUsers={onUnassignUsers}
+          onAssignSequence={onAssignSequence}
+          onReactivate={onReactivate}
+          onPermanentDelete={onPermanentDelete}
+          menuItems={menuItems}
+          tooltips={tooltips}
+        />
+      )}
+
       {/* Columns Dialog */}
       <ColumnsDialog
         open={columnsDialogOpen}

@@ -1,17 +1,34 @@
 const sequenceRepo = require("../data/sequenceRepository");
 
 //======================================
-// Get activities with filtering
+// Get work page activities (due today or overdue)
 //======================================
-const getActivities = async (userId, options = {}) => {
-  return await sequenceRepo.getActivities(userId, options);
+const getWorkPageActivities = async (userId, options = {}) => {
+  try {
+    let activities = await sequenceRepo.getWorkPageActivities(userId);
+    
+    // Apply sorting if specified
+    if (options.sortBy) {
+      activities = sortActivities(activities, options.sortBy);
+    }
+    
+    // Apply filtering if specified
+    if (options.filter) {
+      activities = filterActivities(activities, options.filter);
+    }
+    
+    return activities;
+  } catch (err) {
+    console.error("Error in getWorkPageActivities:", err);
+    throw err;
+  }
 };
 
 //======================================
-// Get activities by user
+// Get account activities grouped for workspace tab
 //======================================
-const getActivitiesByUser = async (userId) => {
-  return await sequenceRepo.getActivitiesByUser(userId);
+const getAccountActivitiesGrouped = async (accountId, userId) => {
+  return await sequenceRepo.getAccountActivitiesGrouped(accountId, userId);
 };
 
 //======================================
@@ -22,17 +39,17 @@ const getActivityByID = async (activityId, userId) => {
 };
 
 //======================================
-// Get activity for workspace (detailed view)
-//======================================
-const getActivityForWorkspace = async (activityId, userId) => {
-  return await sequenceRepo.getActivityByID(activityId, userId);
-};
-
-//======================================
 // Update activity
 //======================================
 const updateActivity = async (activityId, userId, activityData) => {
   return await sequenceRepo.updateActivity(activityId, userId, activityData);
+};
+
+//======================================
+// Update activity due date with cascade
+//======================================
+const updateActivityDueDateWithCascade = async (activityId, userId, newDueDate) => {
+  return await sequenceRepo.updateActivityDueDateWithCascade(activityId, userId, newDueDate);
 };
 
 //======================================
@@ -71,225 +88,74 @@ const getActivityMetadata = async () => {
 };
 
 //======================================
-// Helper function to parse filter options
+// Helper: Sort activities
 //======================================
-const parseFilterOptions = (filterString) => {
-  const options = {};
+const sortActivities = (activities, sortBy) => {
+  const sorted = [...activities];
   
-  switch (filterString) {
-    case 'overdue':
-      options.completed = false;
-      break;
-    case 'urgent':
-      options.completed = false;
-      break;
-    case 'high-priority':
-      options.completed = false;
-      options.minPriority = 3;
-      break;
-    case 'completed':
-      options.completed = true;
-      break;
-    case 'pending':
-      options.completed = false;
-      break;
-    case 'today':
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const endOfToday = new Date(today);
-      endOfToday.setHours(23, 59, 59, 999);
-      options.dateFrom = today;
-      options.dateTo = endOfToday;
-      break;
+  switch (sortBy) {
+    case 'priority':
+      return sorted.sort((a, b) => {
+        const priorityDiff = (b.PriorityLevelValue || 0) - (a.PriorityLevelValue || 0);
+        if (priorityDiff !== 0) return priorityDiff;
+        return new Date(a.DueToStart) - new Date(b.DueToStart);
+      });
+    
+    case 'account':
+      return sorted.sort((a, b) => {
+        const nameCompare = a.AccountName.localeCompare(b.AccountName);
+        if (nameCompare !== 0) return nameCompare;
+        return new Date(a.DueToStart) - new Date(b.DueToStart);
+      });
+    
+    case 'type':
+      return sorted.sort((a, b) => {
+        const typeCompare = (a.ActivityTypeName || '').localeCompare(b.ActivityTypeName || '');
+        if (typeCompare !== 0) return typeCompare;
+        return new Date(a.DueToStart) - new Date(b.DueToStart);
+      });
+    
+    case 'dueDate':
     default:
-      // 'all' - no additional filters
-      break;
-  }
-  
-  return options;
-};
-
-//======================================
-// Get account sequence view with activities
-//======================================
-const getAccountSequenceView = async (accountId, userId) => {
-  const rawData = await sequenceRepo.getAccountSequenceWithActivities(accountId, userId);
-  
-  if (!rawData || rawData.length === 0) {
-    return null;
-  }
-
-  const firstRow = rawData[0];
-  
-  // Calculate progress
-  const totalSteps = rawData.length;
-  const completedSteps = rawData.filter(row => row.Status === 'completed').length;
-  const progressPercentage = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-
-  // Transform into structured response
-  const sequenceView = {
-    account: {
-      AccountID: firstRow.AccountID,
-      AccountName: firstRow.AccountName,
-      AccountCreatedAt: firstRow.AccountCreatedAt
-    },
-    sequence: {
-      SequenceID: firstRow.SequenceID,
-      SequenceName: firstRow.SequenceName,
-      SequenceDescription: firstRow.SequenceDescription
-    },
-    progress: {
-      totalSteps,
-      completedSteps,
-      progressPercentage
-    },
-    steps: rawData.map((row, index) => ({
-      stepNumber: index + 1,
-      SequenceItemID: row.SequenceItemID,
-      SequenceItemDescription: row.SequenceItemDescription,
-      DaysFromStart: row.DaysFromStart,
-      ActivityTypeID: row.ActivityTypeID,
-      ActivityTypeName: row.ActivityTypeName,
-      ActivityTypeDescription: row.ActivityTypeDescription,
-      PriorityLevelID: row.PriorityLevelID,
-      PriorityLevelName: row.PriorityLevelName,
-      PriorityLevelValue: row.PriorityLevelValue,
-      ActivityID: row.ActivityID,
-      DueToStart: row.DueToStart,
-      DueToEnd: row.DueToEnd,
-      Completed: row.Completed,
-      Status: row.Status,
-      AccountID: firstRow.AccountID,
-      AccountName: firstRow.AccountName,
-      estimatedDueDate: row.DueToStart || calculateEstimatedDueDate(firstRow.AccountCreatedAt, row.DaysFromStart)
-    }))
-  };
-
-  return sequenceView;
-};
-
-//======================================
-// Helper: Calculate estimated due date from account start
-//======================================
-const calculateEstimatedDueDate = (accountCreatedAt, daysFromStart) => {
-  if (!accountCreatedAt || daysFromStart === null || daysFromStart === undefined) {
-    return null;
-  }
-  
-  const startDate = new Date(accountCreatedAt);
-  const estimatedDate = new Date(startDate);
-  estimatedDate.setDate(estimatedDate.getDate() + daysFromStart);
-  
-  return estimatedDate;
-};
-
-//======================================
-// Get user accounts with sequences
-//======================================
-const getUserAccountsWithSequences = async (userId) => {
-  try {
-    const accounts = await sequenceRepo.getUserSequences(userId);
-    
-    // Group by account and remove duplicates
-    const accountsMap = new Map();
-    
-    accounts.forEach(row => {
-      if (!accountsMap.has(row.AccountID)) {
-        accountsMap.set(row.AccountID, {
-          AccountID: row.AccountID,
-          AccountName: row.AccountName,
-          SequenceID: row.SequenceID,
-          SequenceName: row.SequenceName
-        });
-      }
-    });
-    
-    return Array.from(accountsMap.values());
-  } catch (err) {
-    console.error("Error in getUserAccountsWithSequences:", err);
-    throw err;
+      // Already sorted by due date in the query, but ensure consistency
+      return sorted.sort((a, b) => {
+        const aOverdue = new Date(a.DueToStart) < new Date() ? 0 : 1;
+        const bOverdue = new Date(b.DueToStart) < new Date() ? 0 : 1;
+        if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+        return new Date(a.DueToStart) - new Date(b.DueToStart);
+      });
   }
 };
 
 //======================================
-// Get smart work page data with intelligent sequence visibility
+// Helper: Filter activities
 //======================================
-const getSmartWorkPageData = async (userId, options = {}) => {
-  // If accountId is provided, return smart sequence view
-  if (options.accountId) {
-    const sequenceView = await sequenceRepo.getSmartSequenceView(options.accountId, userId);
+const filterActivities = (activities, filter) => {
+  switch (filter) {
+    case 'overdue':
+      return activities.filter(a => a.Status === 'overdue');
     
-    if (!sequenceView) {
-      throw new Error("Account not found, has no sequence assigned, or user does not have access");
-    }
+    case 'today':
+      return activities.filter(a => a.Status === 'today');
     
-    return {
-      mode: 'sequence',
-      data: sequenceView
-    };
-  }
-  
-  // Otherwise, return regular activity list
-  const filterOptions = parseFilterOptions(options.filter);
-  const sortBy = options.sort || 'dueDate';
-  
-  const activities = await sequenceRepo.getActivities(userId, {
-    ...filterOptions,
-    sortBy: sortBy
-  });
-  
-  return {
-    mode: 'activities',
-    data: {
-      activities,
-      totalActivities: activities.length,
-      appliedFilters: {
-        filter: options.filter || 'all',
-        sort: sortBy
-      }
-    }
-  };
-};
-
-//======================================
-// Create or get activity from sequence item click
-//======================================
-const getOrCreateActivityFromSequenceItem = async (sequenceItemId, accountId, userId) => {
-  try {
-    const result = await sequenceRepo.createActivityFromSequenceItem(
-      sequenceItemId, 
-      accountId, 
-      userId
-    );
+    case 'high-priority':
+      return activities.filter(a => (a.PriorityLevelValue || 0) >= 3);
     
-    // Now fetch the full activity details
-    const activity = await sequenceRepo.getActivityByID(result.ActivityID, userId);
-    
-    return {
-      success: true,
-      activity,
-      created: result.created
-    };
-  } catch (err) {
-    console.error("Error in getOrCreateActivityFromSequenceItem:", err);
-    throw err;
+    case 'all':
+    default:
+      return activities;
   }
 };
 
 module.exports = {
-  getActivities,
-  getActivitiesByUser,
+  getWorkPageActivities,
+  getAccountActivitiesGrouped,
   getActivityByID,
   updateActivity,
+  updateActivityDueDateWithCascade,
   completeActivityAndGetNext,
   deleteActivity,
   getWorkDashboardSummary,
   getNextActivity,
   getActivityMetadata,
-  getSmartWorkPageData,
-  getActivityForWorkspace,
-  parseFilterOptions,
-  getAccountSequenceView,
-  getUserAccountsWithSequences,
-  getOrCreateActivityFromSequenceItem,
 };

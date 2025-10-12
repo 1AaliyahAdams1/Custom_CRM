@@ -28,13 +28,11 @@ import {
   Card,
   CardContent,
   CardActions,
-  Grid,
   Toolbar,
   AppBar,
-  LinearProgress,
-  Checkbox,
-  FormControlLabel,
-  Collapse,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
 import {
   Close,
@@ -48,62 +46,56 @@ import {
   Assignment,
   Today,
   Sort,
-  FilterList,
   Info,
-  Timeline,
   CheckCircleOutline,
   RadioButtonUnchecked,
-  Schedule,
   Note,
   Email,
   Phone,
-  Lock,
   ExpandMore,
-  ExpandLess,
+  Event,
+  History,
+  Schedule,
 } from "@mui/icons-material";
+import { useNavigate } from 'react-router-dom';
 import { ThemeProvider } from "@mui/material/styles";
 import { formatDistanceToNow, format } from "date-fns";
 import theme from "../components/Theme";
-import NotesPopup from "../components/NotesComponent";
 
 const WorkPage = ({
   activities = [],
   loading = false,
   error,
-  successMessage,
   statusMessage,
   statusSeverity = 'info',
-  
-  // Account and sequence
-  userAccounts = [],
-  selectedAccountId = null,
-  sequenceProgress = null,
-  onAccountChange = () => {},
-  onSequenceItemClick = () => {},
   
   // Filters
   currentSort = 'dueDate',
   currentFilter = 'all',
   onSortChange = () => {},
   onFilterChange = () => {},
+  
   // Tabs
   openTabs = [],
   activeTab = 0,
-  currentActivity,
+  currentTabData = null,
   currentTabLoading = false,
   onTabChange = () => {},
   onTabClose = () => {},
-    // Actions
+  
+  // Actions
   onActivityClick = () => {},
   onCompleteActivity = async () => {},
-  onSendEmailClick = () => {}, 
-  showEmailForm = {},
   onUpdateActivity = async () => {},
+  onUpdateDueDateWithCascade = async () => {},
   onDeleteActivity = async () => {},
+  onSendEmailClick = () => {},
+  onAddNoteClick = () => {},
   onDragStart = () => {},
   onDrop = () => {},
   onDragOver = (e) => e.preventDefault(),
   onReorderActivities = () => {},
+  draggedIndex = null,
   
   // Metadata
   activityMetadata = { priorityLevels: [], activityTypes: [] },
@@ -111,53 +103,40 @@ const WorkPage = ({
   // Utility
   onClearMessages = () => {},
   showStatus = () => {},
-  
-  // Notes
-  onAddNote = () => {},
-  handleSaveNote = () => {},
-  handleEditNote = () => {},
 }) => {
   // Local state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editDialogActivity, setEditDialogActivity] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteDialogActivity, setDeleteDialogActivity] = useState(null);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [completeDialogActivity, setCompleteDialogActivity] = useState(null);
   const [completeNotes, setCompleteNotes] = useState("");
-  const [notesPopupOpen, setNotesPopupOpen] = useState(false);
+  const [dueDateDialogOpen, setDueDateDialogOpen] = useState(false);
+  const [dueDateDialogActivity, setDueDateDialogActivity] = useState(null);
+  const [newDueDate, setNewDueDate] = useState("");
   
-  const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
-
-  //Collapsible filter section state
-  const [filterSectionExpanded, setFilterSectionExpanded] = useState(true);
+  
+  const navigate = useNavigate();
 
   const [editFormData, setEditFormData] = useState({
-    dueToStart: "",
-    dueToEnd: "",
     priorityLevelId: ""
   });
 
-  const isSequenceMode = selectedAccountId !== null;
-
-  // Get the current account and sequence name
-  const currentAccount = userAccounts.find(acc => acc.AccountID === selectedAccountId);
-  const currentSequenceName = currentAccount?.SequenceName || '';
-
   // Sort and filter options
   const sortOptions = [
-    { value: 'dueDate', label: 'Due Date', icon: <Today />, tooltip: 'Sort by due date - overdue first' },
-    { value: 'priority', label: 'Priority', icon: <PriorityHigh />, tooltip: 'Sort by priority level' },
-    { value: 'account', label: 'Account', icon: <Business />, tooltip: 'Sort by account name (A-Z)' },
-    { value: 'type', label: 'Type', icon: <Assignment />, tooltip: 'Sort by activity type' },
-    { value: 'sequence', label: 'Sequence', icon: <Sort />, tooltip: 'Sort by sequence order' },
-    { value: 'status', label: 'Status', icon: <AccessTime />, tooltip: 'Sort by urgency status' },
+    { value: 'dueDate', label: 'Due Date', icon: <Today />, tooltip: 'Overdue first, then today' },
+    { value: 'priority', label: 'Priority', icon: <PriorityHigh />, tooltip: 'Highest priority first' },
+    { value: 'account', label: 'Account', icon: <Business />, tooltip: 'Alphabetical by account' },
+    { value: 'type', label: 'Type', icon: <Assignment />, tooltip: 'By activity type' },
   ];
 
   const filterOptions = [
-    { value: 'all', label: 'All Activities', tooltip: 'Show all activities' },
-    { value: 'overdue', label: 'Overdue', tooltip: 'Show overdue activities' },
-    { value: 'high-priority', label: 'High Priority', tooltip: 'Show high priority activities' },
-    { value: 'today', label: 'Due Today', tooltip: 'Show activities due today' },
-    { value: 'completed', label: 'Completed', tooltip: 'Show completed activities' },
+    { value: 'all', label: 'All', tooltip: 'Show all activities' },
+    { value: 'overdue', label: 'Overdue', tooltip: 'Show overdue only' },
+    { value: 'today', label: 'Today', tooltip: 'Show today only' },
+    { value: 'high-priority', label: 'High Priority', tooltip: 'Priority 3+' },
   ];
 
   // Helper functions
@@ -165,14 +144,12 @@ const WorkPage = ({
     switch (status?.toLowerCase()) {
       case 'overdue':
         return '#f44336';
-      case 'urgent':
+      case 'today':
         return '#ff9800';
       case 'completed':
         return '#4caf50';
-      case 'pending':
+      case 'upcoming':
         return '#2196f3';
-      case 'not_started':
-        return '#9e9e9e';
       default:
         return '#757575';
     }
@@ -194,18 +171,17 @@ const WorkPage = ({
   };
 
   const isCallActivity = (activity) => {
-  return activity && (activity.TypeID === 1 || activity.ActivityTypeID === 1);
-};
+    return activity && (activity.TypeID === 1 || activity.ActivityTypeID === 1);
+  };
 
-const hasValidPhone = (activity) => {
-  return activity && activity.AccountPhone && activity.AccountPhone.trim() !== '';
-};
+  const hasValidPhone = (account) => {
+    return account && account.PrimaryPhone && account.PrimaryPhone.trim() !== '';
+  };
 
-const formatPhoneForTel = (phone) => {
-  if (!phone) return '';
-  // Remove any spaces, dashes, or parentheses
-  return phone.replace(/[\s\-\(\)]/g, '');
-};
+  const formatPhoneForTel = (phone) => {
+    if (!phone) return '';
+    return phone.replace(/[\s\-\(\)]/g, '');
+  };
 
   const formatDueDate = (dueDate) => {
     if (!dueDate) return 'No due date';
@@ -226,548 +202,672 @@ const formatPhoneForTel = (phone) => {
   };
 
   // Dialog handlers
-  const handleEditClick = () => {
-    if (currentActivity) {
-      setEditFormData({
-        dueToStart: currentActivity.DueToStart ? 
-          format(new Date(currentActivity.DueToStart), "yyyy-MM-dd'T'HH:mm") : "",
-        dueToEnd: currentActivity.DueToEnd ? 
-          format(new Date(currentActivity.DueToEnd), "yyyy-MM-dd'T'HH:mm") : "",
-        priorityLevelId: currentActivity.PriorityLevelID || ""
-      });
-      setEditDialogOpen(true);
-    }
+  const handleEditClick = (activity) => {
+    setEditDialogActivity(activity);
+    setEditFormData({
+      priorityLevelId: activity.PriorityLevelID || ""
+    });
+    setEditDialogOpen(true);
   };
 
   const handleEditSubmit = async () => {
-    if (!currentActivity) return;
+    if (!editDialogActivity) return;
     
     try {
       const updateData = {};
-      
-      if (editFormData.dueToStart) {
-        updateData.DueToStart = new Date(editFormData.dueToStart).toISOString();
-      }
-      if (editFormData.dueToEnd) {
-        updateData.DueToEnd = new Date(editFormData.dueToEnd).toISOString();
-      }
       
       if (editFormData.priorityLevelId) {
         updateData.PriorityLevelID = parseInt(editFormData.priorityLevelId);
       }
 
-      await onUpdateActivity(currentActivity.ActivityID, updateData);
+      await onUpdateActivity(editDialogActivity.ActivityID, updateData);
       setEditDialogOpen(false);
+      setEditDialogActivity(null);
     } catch (err) {
       console.error("Edit submission error:", err);
     }
   };
 
-  const handleCompleteClick = () => {
+  const handleCompleteClick = (activity) => {
+    setCompleteDialogActivity(activity);
     setCompleteDialogOpen(true);
     setCompleteNotes("");
   };
 
   const handleCompleteSubmit = async () => {
-    if (!currentActivity) return;
+    if (!completeDialogActivity) return;
     
     try {
-      await onCompleteActivity(currentActivity.ActivityID, completeNotes);
+      await onCompleteActivity(completeDialogActivity.ActivityID, completeNotes);
       setCompleteDialogOpen(false);
+      setCompleteDialogActivity(null);
       setCompleteNotes("");
     } catch (err) {
       console.error("Complete submission error:", err);
     }
   };
 
-  const handleDeleteClick = () => {
+  const handleDeleteClick = (activity) => {
+    setDeleteDialogActivity(activity);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!currentActivity) return;
+    if (!deleteDialogActivity) return;
     
     try {
-      await onDeleteActivity(currentActivity.ActivityID);
+      await onDeleteActivity(deleteDialogActivity.ActivityID);
       setDeleteDialogOpen(false);
+      setDeleteDialogActivity(null);
     } catch (err) {
       console.error("Delete error:", err);
     }
   };
 
+  const handleDueDateClick = (activity) => {
+    setDueDateDialogActivity(activity);
+    setNewDueDate(activity.DueToStart ? 
+      format(new Date(activity.DueToStart), "yyyy-MM-dd'T'HH:mm") : "");
+    setDueDateDialogOpen(true);
+  };
+
+  const handleDueDateSubmit = async () => {
+    if (!dueDateDialogActivity || !newDueDate) return;
+    
+    try {
+      await onUpdateDueDateWithCascade(dueDateDialogActivity.ActivityID, newDueDate);
+      setDueDateDialogOpen(false);
+      setDueDateDialogActivity(null);
+      setNewDueDate("");
+    } catch (err) {
+      console.error("Due date update error:", err);
+    }
+  };
+
   // Drag and drop handlers
   const handleListDragStart = (e, index, activity) => {
-    setDraggedIndex(index);
     e.dataTransfer.setData("application/json", JSON.stringify(activity));
     e.dataTransfer.effectAllowed = "copyMove";
+    onDragStart(e, index, activity);
   };
 
   const handleListDragOver = (e, index) => {
-    if (isSequenceMode) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "copy";
-      return;
-    }
-    
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setDragOverIndex(index);
   };
 
-const handleListDragLeave = () => {
-  setDragOverIndex(null);
-};
+  const handleListDragLeave = () => {
+    setDragOverIndex(null);
+  };
 
   const handleListDrop = (e, dropIndex) => {
     e.preventDefault();
     
-    if (isSequenceMode) {
-      setDraggedIndex(null);
-      setDragOverIndex(null);
-      return;
-    }
-    
     if (draggedIndex === null || draggedIndex === dropIndex) {
-      setDraggedIndex(null);
       setDragOverIndex(null);
       return;
     }
 
     onReorderActivities(draggedIndex, dropIndex);
-    
-    setDraggedIndex(null);
     setDragOverIndex(null);
   };
 
-const handleListDragEnd = () => {
-  setDraggedIndex(null);
-  setDragOverIndex(null);
-};
+  const handleListDragEnd = () => {
+    setDragOverIndex(null);
+  };
 
+  // Custom tab panel
   const CustomTabPanel = ({ children, value, index, ...other }) => (
     <div
       role="tabpanel"
       hidden={value !== index}
-      id={`activity-tabpanel-${index}`}
-      aria-labelledby={`activity-tab-${index}`}
+      id={`account-tabpanel-${index}`}
+      aria-labelledby={`account-tab-${index}`}
       {...other}
     >
       {value === index && <Box sx={{ height: '100%', overflow: 'auto' }}>{children}</Box>}
     </div>
   );
 
-
-// Activities List View
-const ActivitiesListView = () => (
-  <List sx={{ p: 0 }}>
-    {loading ? (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4, flexDirection: 'column', alignItems: 'center' }}>
-        <CircularProgress />
-        <Typography variant="body2" sx={{ mt: 2, color: '#666666' }}>
-          Loading {isSequenceMode ? 'sequence items' : 'activities'}...
-        </Typography>
-      </Box>
-    ) : error ? (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="h6" color="error" sx={{ mb: 1 }}>
-          Error Loading {isSequenceMode ? 'Sequence' : 'Activities'}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
-        <Button variant="outlined" onClick={() => window.location.reload()}>
-          Retry
-        </Button>
-      </Box>
-    ) : !Array.isArray(activities) ? (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Assignment sx={{ fontSize: 48, color: '#f44336', mb: 2 }} />
-        <Typography variant="h6" color="error" sx={{ mb: 1 }}>
-          Invalid Data Format
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Data is not in the expected format.
-        </Typography>
-      </Box>
-    ) : activities.length === 0 ? (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Assignment sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-          {isSequenceMode ? 'No sequence items yet' : 'No activities found'}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {isSequenceMode ? 'The first item will appear when it becomes available' : 'Try adjusting your filter or sort options'}
-        </Typography>
-        <Button variant="outlined" onClick={() => selectedAccountId ? onAccountChange(null) : onFilterChange('all')}>
-          {selectedAccountId ? 'Show All Accounts' : 'Show All'}
-        </Button>
-      </Box>
-    ) : (
-      activities.map((activity, index) => (
-        <React.Fragment key={activity.SequenceItemID || activity.ActivityID || index}>
-          <ListItem
-            draggable={true}
-            onDragStart={(e) => handleListDragStart(e, index, activity)}
-            onDragOver={(e) => handleListDragOver(e, index)}
-            onDragLeave={handleListDragLeave}
-            onDrop={(e) => handleListDrop(e, index)}
-            onDragEnd={handleListDragEnd}
-            onClick={() => {
-              if (isSequenceMode && activity.SequenceItemID) {
-                onSequenceItemClick(activity);
-              } else {
-                onActivityClick(activity);
-              }
-            }}
-            sx={{
-              cursor: 'grab', 
-              '&:hover': { backgroundColor: '#f5f5f5' },
-              borderLeft: `4px solid ${getStatusColor(activity.Status)}`,
-              py: 2,
-              px: 2,
-              backgroundColor: dragOverIndex === index ? '#e3f2fd' : 'transparent',
-              borderTop: !isSequenceMode && dragOverIndex === index ? '2px solid #2196f3' : 'none',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            {/*Checkbox for sequence items - activities can only be completed by opening them */}
-            {!isSequenceMode && (
-              <DragIndicator sx={{ mr: 1, color: '#999', cursor: 'grab' }} />
-            )}
-            {isSequenceMode && (
-              <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                {activity.Status === 'completed' ? (
-                  <CheckCircleOutline sx={{ color: '#4caf50', fontSize: 20 }} />
-                ) : (
-                  <RadioButtonUnchecked sx={{ color: '#999', fontSize: 20 }} />
-                )}
-              </Box>
-            )}
-            <ListItemText
-              primary={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                  <Typography variant="subtitle2" noWrap sx={{ flex: 1, fontWeight: 500 }}>
-                    {activity.AccountName || 'Unknown Account'}
-                  </Typography>
-                  <Chip
-                    size="small"
-                    label={activity.Status || 'unknown'}
-                    sx={{
-                      backgroundColor: getStatusColor(activity.Status),
-                      color: 'white',
-                      fontSize: '0.7rem',
-                      height: 20,
-                      textTransform: 'capitalize'
-                    }}
-                  />
-                </Box>
-              }
-              secondary={
-                <Box>
-                  <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0.5 }}>
-                    {activity.ActivityTypeName || 'Unknown Type'}
-                  </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatDueDate(activity.DueToStart || activity.estimatedDueDate)}
-                    </Typography>
-                    {activity.PriorityLevelValue && (
-                      <Chip
-                        size="small"
-                        label={`P${activity.PriorityLevelValue || '?'}`}
-                        sx={{
-                          backgroundColor: getPriorityColor(activity.PriorityLevelValue || 0),
-                          color: 'white',
-                          fontSize: '0.6rem',
-                          height: 16
-                        }}
-                      />
-                    )}
-                  </Box>
-                  {isSequenceMode && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      Day {activity.DaysFromStart || 'N/A'}
-                      {activity.SequenceItemDescription && ` - ${activity.SequenceItemDescription}`}
-                    </Typography>
-                  )}
-                  {!isSequenceMode && activity.SequenceName && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      {activity.SequenceName} - Day {activity.DaysFromStart || 'N/A'}
-                    </Typography>
-                  )}
-                </Box>
-              }
-            />
-          </ListItem>
-          {index < activities.length - 1 && <Divider />}
-        </React.Fragment>
-      ))
-    )}
-  </List>
-);
-
-return (
-  <ThemeProvider theme={theme}>
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fafafa' }}>
-      
-      {/* Page Header */}
-      <AppBar position="static" sx={{ backgroundColor: '#fff', color: '#050505', boxShadow: 1 }}>
-        <Toolbar>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#050505' }}>
-            Work Page
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      
-      {/* Main Content */}
-      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        
-        {/* Left Panel - Activities List */}
-        <Paper sx={{ 
-          width: 400,
-          display: 'flex', 
-          flexDirection: 'column',
-          borderRadius: 0,
-          borderRight: '1px solid #e0e0e0',
-          overflow: 'hidden'
-        }}>
-          {/* Filter Toolbar - Now Collapsible */}
-          <Toolbar sx={{ 
-            backgroundColor: '#fff', 
-            borderBottom: '1px solid #e0e0e0',
-            flexDirection: 'column',
-            alignItems: 'stretch',
-            py: 2,
-            flexShrink: 0
-          }}>
-            {/* Header with collapse button */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, flex: 1 }}>
-                {isSequenceMode ? currentSequenceName || 'Sequence Progress' : 'My Activities'}
-              </Typography>
-              {!isSequenceMode && (
-                <Tooltip title="Drag activities to reorder or drop into workspace" arrow>
-                  <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
-                </Tooltip>
-              )}
-              <IconButton 
-                size="small" 
-                onClick={() => setFilterSectionExpanded(!filterSectionExpanded)}
-                sx={{ ml: 'auto' }}
-              >
-                {filterSectionExpanded ? <ExpandLess /> : <ExpandMore />}
-              </IconButton>
-            </Box>
-            
-            {/* Collapsible Filter Section */}
-            <Collapse in={filterSectionExpanded}>
-              <Box>
-                {/* Account Filter */}
-                <Box sx={{ mb: 2 }}>
-                  <FormControl size="small" fullWidth>
-                    <InputLabel>Account</InputLabel>
-                    <Select
-                      value={selectedAccountId || ''}
-                      onChange={(e) => onAccountChange(e.target.value || null)}
-                      label="Account"
-                    >
-                      <MenuItem value="">All Activities</MenuItem>
-                      {userAccounts.map((account) => (
-                        <MenuItem key={account.AccountID} value={account.AccountID}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Business sx={{ fontSize: 16 }} />
-                            {account.AccountName}
-                          </Box>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
-
-                {/* Sequence Progress */}
-                {isSequenceMode && sequenceProgress && (
-                  <Box sx={{ mb: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        Progress
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {sequenceProgress.completedItems} of {sequenceProgress.totalItems}
-                      </Typography>
-                    </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={sequenceProgress.progress} 
-                      sx={{ 
-                        height: 8, 
-                        borderRadius: 4,
-                        backgroundColor: '#e0e0e0',
-                        '& .MuiLinearProgress-bar': {
-                          backgroundColor: '#4caf50'
-                        }
-                      }}
-                    />
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      {sequenceProgress.progress}% complete
-                    </Typography>
-                  </Box>
-                )}
-                
-                {/* Sort and Filter Controls - Only in All Activities mode */}
-                {!isSequenceMode && (
-                  <>
-                    <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                      <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
-                        <InputLabel>Sort by</InputLabel>
-                        <Select
-                          value={currentSort}
-                          onChange={(e) => onSortChange(e.target.value)}
-                          label="Sort by"
-                        >
-                          {sortOptions.map((option) => (
-                            <MenuItem key={option.value} value={option.value}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                {option.icon}
-                                {option.label}
-                              </Box>
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-
-                      <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
-                        <InputLabel>Filter</InputLabel>
-                        <Select
-                          value={currentFilter}
-                          onChange={(e) => onFilterChange(e.target.value)}
-                          label="Filter"
-                        >
-                          {filterOptions.map((option) => (
-                            <MenuItem key={option.value} value={option.value}>
-                              {option.label}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Box>
-                  </>
-                )}
-              </Box>
-            </Collapse>
-            
-            {/* Activity/Item Count - Always Visible */}
-            <Typography variant="body2" color="text.secondary">
-              {Array.isArray(activities) ? activities.length : 0} {isSequenceMode ? 'visible items' : 'activities'}
+  // Activity card component
+  const ActivityCard = ({ activity, showActions = true, section = 'current' }) => (
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+              {activity.ActivityTypeName}
             </Typography>
-          </Toolbar>
-
-          {/* Activities List (Scrollable) */}
-          <Box sx={{ 
-            flex: 1, 
-            overflow: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: '#f1f1f1',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: '#888',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: '#555',
-              },
-            },
-          }}>
-            <ActivitiesListView />
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+              <Chip
+                label={activity.Status}
+                size="small"
+                sx={{
+                  backgroundColor: getStatusColor(activity.Status),
+                  color: 'white'
+                }}
+              />
+              {activity.PriorityLevelValue && (
+                <Chip
+                  label={`P${activity.PriorityLevelValue} - ${activity.PriorityLevelName}`}
+                  size="small"
+                  sx={{
+                    backgroundColor: getPriorityColor(activity.PriorityLevelValue),
+                    color: 'white'
+                  }}
+                />
+              )}
+              {activity.SequenceItemDescription && (
+                <Chip
+                  label={`Day ${activity.DaysFromStart}`}
+                  size="small"
+                  variant="outlined"
+                />
+              )}
+            </Box>
+            {activity.SequenceItemDescription && (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {activity.SequenceItemDescription}
+              </Typography>
+            )}
+            <Typography variant="body2" color="text.secondary">
+              <strong>Due:</strong> {activity.DueToStart
+                ? format(new Date(activity.DueToStart), "MMM d, yyyy 'at' h:mm a")
+                : 'No due date'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {formatDueDate(activity.DueToStart)}
+            </Typography>
+            {section === 'previous' && activity.CompletedAt && (
+              <Typography variant="body2" color="text.secondary">
+                <strong>Completed:</strong> {format(new Date(activity.CompletedAt), "MMM d, yyyy 'at' h:mm a")}
+              </Typography>
+            )}
           </Box>
-        </Paper>
+        </Box>
+      </CardContent>
 
-        {/* Right Panel - Tabbed Activity Workspace */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          
-          {/* Tab Bar */}
-          {openTabs.length > 0 && (
-            <Paper sx={{ borderRadius: 0, borderBottom: '1px solid #e0e0e0' }}>
-              <Tabs
-                value={activeTab}
-                onChange={(e, newValue) => onTabChange(newValue)}
-                variant="scrollable"
-                scrollButtons="auto"
-                sx={{ minHeight: 48 }}
+      {showActions && (
+        <CardActions sx={{ p: 2, pt: 0, gap: 1, flexWrap: 'wrap' }}>
+          {section === 'current' && (
+            <>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<CheckCircle />}
+                onClick={() => handleCompleteClick(activity)}
+                disabled={activity.Completed}
               >
-                {openTabs.map((tab, index) => (
-                  <Tab
-                    key={`${tab.activityId}-${index}`}
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
-                        <Box sx={{ textAlign: 'left' }}>
-                          <Typography variant="body2" sx={{ fontWeight: 500, display: 'block' }}>
-                            {tab.title}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            {tab.subtitle}
-                          </Typography>
-                        </Box>
-                        <Box
-                          component="span"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onTabClose(index);
-                          }}
-                          sx={{ 
-                            ml: 1, 
-                            p: 0.5,
-                            borderRadius: '50%',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            '&:hover': {
-                              backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                            }
-                          }}
-                        >
-                          <Close fontSize="small" />
-                        </Box>
-                      </Box>
-                    }
-                    sx={{ minHeight: 48, textTransform: 'none' }}
-                  />
-                ))}
-              </Tabs>
-            </Paper>
+                Complete
+              </Button>
+
+              {isCallActivity(activity) && hasValidPhone(currentTabData?.account) && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  component="a"
+                  href={`tel:${formatPhoneForTel(currentTabData.account.PrimaryPhone)}`}
+                  startIcon={<Phone />}
+                >
+                  Call
+                </Button>
+              )}
+
+              {isEmailActivity(activity) && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                  startIcon={<Email />}
+                  onClick={() => onSendEmailClick(activity)}
+                >
+                  Email
+                </Button>
+              )}
+
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Note />}
+                onClick={() => onAddNoteClick(activity)}
+              >
+                Note
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Edit />}
+                onClick={() => handleEditClick(activity)}
+              >
+                Edit
+              </Button>
+
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                startIcon={<Delete />}
+                onClick={() => handleDeleteClick(activity)}
+              >
+                Delete
+              </Button>
+            </>
           )}
 
-          {/* Tab Content */}
-          <Box
-            sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-          >
-            {openTabs.length === 0 ? (
-              <Box
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  p: 4,
-                  textAlign: 'center'
-                }}
-              >
-                <Assignment sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                  No activities open
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  {isSequenceMode
-                    ? 'Click on a sequence item to start'
-                    : 'Click on an activity from the left panel or drag and drop it here'}
-                </Typography>
+          {section === 'upcoming' && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Event />}
+              onClick={() => handleDueDateClick(activity)}
+            >
+              Change Due Date
+            </Button>
+          )}
 
-                {!isSequenceMode && (
+          {section === 'previous' && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Note />}
+              onClick={() => onAddNoteClick(activity)}
+            >
+              View Notes
+            </Button>
+          )}
+        </CardActions>
+      )}
+    </Card>
+  );
+
+  // Activities List View (Left Panel)
+  const ActivitiesListView = () => (
+    <List sx={{ p: 0 }}>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4, flexDirection: 'column', alignItems: 'center' }}>
+          <CircularProgress />
+          <Typography variant="body2" sx={{ mt: 2, color: '#666666' }}>
+            Loading activities...
+          </Typography>
+        </Box>
+      ) : error ? (
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h6" color="error" sx={{ mb: 1 }}>
+            Error Loading Activities
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+          <Button variant="outlined" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </Box>
+      ) : activities.length === 0 ? (
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Assignment sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+            No activities due today or overdue
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Great job staying on top of your work!
+          </Typography>
+        </Box>
+      ) : (
+        activities.map((activity, index) => (
+          <React.Fragment key={activity.ActivityID || index}>
+            <ListItem
+              draggable={true}
+              onDragStart={(e) => handleListDragStart(e, index, activity)}
+              onDragOver={(e) => handleListDragOver(e, index)}
+              onDragLeave={handleListDragLeave}
+              onDrop={(e) => handleListDrop(e, index)}
+              onDragEnd={handleListDragEnd}
+              onClick={() => onActivityClick(activity)}
+              sx={{
+                cursor: 'grab',
+                '&:hover': { backgroundColor: '#f5f5f5' },
+                borderLeft: `4px solid ${getStatusColor(activity.Status)}`,
+                py: 2,
+                px: 2,
+                backgroundColor: dragOverIndex === index ? '#e3f2fd' : 'transparent',
+                borderTop: dragOverIndex === index ? '2px solid #2196f3' : 'none',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <DragIndicator sx={{ mr: 1, color: '#999', cursor: 'grab' }} />
+              <ListItemText
+                primary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Typography variant="subtitle2" noWrap sx={{ flex: 1, fontWeight: 500 }}>
+                      {activity.AccountName || 'Unknown Account'}
+                    </Typography>
+                    <Chip
+                      size="small"
+                      label={activity.Status || 'unknown'}
+                      sx={{
+                        backgroundColor: getStatusColor(activity.Status),
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        height: 20,
+                        textTransform: 'capitalize'
+                      }}
+                    />
+                  </Box>
+                }
+                secondary={
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0.5 }}>
+                      {activity.ActivityTypeName || 'Unknown Type'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDueDate(activity.DueToStart)}
+                      </Typography>
+                      {activity.PriorityLevelValue && (
+                        <Chip
+                          size="small"
+                          label={`P${activity.PriorityLevelValue}`}
+                          sx={{
+                            backgroundColor: getPriorityColor(activity.PriorityLevelValue),
+                            color: 'white',
+                            fontSize: '0.6rem',
+                            height: 16
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </Box>
+                }
+              />
+            </ListItem>
+            {index < activities.length - 1 && <Divider />}
+          </React.Fragment>
+        ))
+      )}
+    </List>
+  );
+
+  // Account Tab Content (Three Sections)
+  const AccountTabContent = () => {
+    if (!currentTabData) return null;
+
+    const { account, previousActivities, currentActivities, upcomingActivities } = currentTabData;
+
+    return (
+      <Box sx={{ p: 3 }}>
+        {/* Account Header */}
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: 600, mb: 1, cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}
+            onClick={() => navigate(`/accounts/${account.AccountID}`)}
+          >
+            {account.AccountName || 'Unknown Account'}
+          </Typography>
+          {account.PrimaryPhone && (
+            <Typography variant="body2" color="text.secondary">
+              <Phone sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
+              {account.PrimaryPhone}
+            </Typography>
+          )}
+        </Box>
+
+        {/* Previous Activities Section */}
+        <Accordion defaultExpanded={false} sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <History />
+              <Typography variant="h6">
+                Activity History ({previousActivities.length})
+              </Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            {previousActivities.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                No completed activities yet
+              </Typography>
+            ) : (
+              previousActivities.map((activity) => (
+                <ActivityCard
+                  key={activity.ActivityID}
+                  activity={activity}
+                  showActions={true}
+                  section="previous"
+                />
+              ))
+            )}
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Current Activities Section */}
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Today />
+            <Typography variant="h6">
+              Current Activities ({currentActivities.length})
+            </Typography>
+          </Box>
+          {currentActivities.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center', backgroundColor: '#f5f5f5' }}>
+              <CheckCircleOutline sx={{ fontSize: 48, color: '#4caf50', mb: 1 }} />
+              <Typography variant="body1" color="text.secondary">
+                All caught up! No current activities.
+              </Typography>
+            </Paper>
+          ) : (
+            currentActivities.map((activity) => (
+              <ActivityCard
+                key={activity.ActivityID}
+                activity={activity}
+                showActions={true}
+                section="current"
+              />
+            ))
+          )}
+        </Box>
+
+        {/* Upcoming Activities Section */}
+        <Accordion defaultExpanded={true} sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Schedule />
+              <Typography variant="h6">
+                Upcoming Activities ({upcomingActivities.length})
+              </Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            {upcomingActivities.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                No upcoming activities scheduled
+              </Typography>
+            ) : (
+              upcomingActivities.map((activity) => (
+                <ActivityCard
+                  key={activity.ActivityID}
+                  activity={activity}
+                  showActions={true}
+                  section="upcoming"
+                />
+              ))
+            )}
+          </AccordionDetails>
+        </Accordion>
+      </Box>
+    );
+  };
+
+  return (
+    <ThemeProvider theme={theme}>
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fafafa' }}>
+        
+        {/* Page Header */}
+        <AppBar position="static" sx={{ backgroundColor: '#fff', color: '#050505', boxShadow: 1 }}>
+          <Toolbar>
+            <Typography variant="h4" sx={{ fontWeight: 700, color: '#050505' }}>
+              Work Page
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        
+        {/* Main Content */}
+        <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}> 
+          {/* Left Panel - Activities List */}
+          <Paper sx={{ 
+            width: 400,
+            display: 'flex', 
+            flexDirection: 'column',
+            borderRadius: 0,
+            borderRight: '1px solid #e0e0e0',
+            overflow: 'hidden'
+          }}>
+            {/* Filter Toolbar */}
+            <Toolbar sx={{ 
+              backgroundColor: '#fff', 
+              borderBottom: '1px solid #e0e0e0',
+              flexDirection: 'column',
+              alignItems: 'stretch',
+              py: 2,
+              flexShrink: 0
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Typography variant="h6" sx={{ color: '#050505', fontWeight: 600, flex: 1 }}>
+                  My Activities
+                </Typography>
+                <Tooltip title="Due today or overdue only. Drag to reorder or drop into workspace" arrow>
+                  <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
+                </Tooltip>
+              </Box>
+
+              {/* Sort and Filter Controls */}
+              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
+                  <InputLabel>Sort by</InputLabel>
+                  <Select
+                    value={currentSort}
+                    onChange={(e) => onSortChange(e.target.value)}
+                    label="Sort by"
+                  >
+                    {sortOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {option.icon}
+                          {option.label}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
+                  <InputLabel>Filter</InputLabel>
+                  <Select
+                    value={currentFilter}
+                    onChange={(e) => onFilterChange(e.target.value)}
+                    label="Filter"
+                  >
+                    {filterOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+              
+              <Typography variant="body2" color="text.secondary">
+                {activities.length} activities
+              </Typography>
+            </Toolbar>
+
+            {/* Activities List (Scrollable) */}
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              <ActivitiesListView />
+            </Box>
+          </Paper>
+
+          {/* Right Panel - Tabbed Workspace */}
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            
+            {/* Tab Bar */}
+            {openTabs.length > 0 && (
+              <Paper sx={{ borderRadius: 0, borderBottom: '1px solid #e0e0e0' }}>
+                <Tabs
+                  value={activeTab}
+                  onChange={(e, newValue) => onTabChange(newValue)}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  sx={{ minHeight: 48 }}
+                >
+                  {openTabs.map((tab, index) => (
+                    <Tab
+                      key={`${tab.accountId}-${index}`}
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
+                          <Business sx={{ fontSize: 18 }} />
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {tab.accountName}
+                          </Typography>
+                          <Box
+                            component="span"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onTabClose(index);
+                            }}
+                            sx={{ 
+                              ml: 1, 
+                              p: 0.5,
+                              borderRadius: '50%',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                              }
+                            }}
+                          >
+                            <Close fontSize="small" />
+                          </Box>
+                        </Box>
+                      }
+                      sx={{ minHeight: 48, textTransform: 'none' }}
+                    />
+                  ))}
+                </Tabs>
+              </Paper>
+            )}
+
+            {/* Tab Content */}
+            <Box
+              sx={{ flex: 1, overflowY: 'auto', p: 2 }}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+            >
+              {openTabs.length === 0 ? (
+                <Box
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    p: 4,
+                    textAlign: 'center'
+                  }}
+                >
+                  <Assignment sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                    No accounts open
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Click on an activity from the left panel or drag and drop it here
+                  </Typography>
+
                   <Box
                     sx={{
                       border: '2px dashed #ddd',
@@ -779,353 +879,162 @@ return (
                   >
                     <DragIndicator sx={{ color: '#ccc', mb: 1 }} />
                     <Typography variant="body2" color="text.secondary">
-                      Drop activities here to open them
+                      Drop activities here to open accounts
                     </Typography>
                   </Box>
-                )}
-              </Box>
-            ) : (
-              openTabs.map((tab, index) => (
-                <CustomTabPanel key={`${tab.activityId}-${index}`} value={activeTab} index={index}>
-                  {currentTabLoading ? (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '100%',
-                        flexDirection: 'column',
-                        gap: 2
-                      }}
-                    >
-                      <CircularProgress />
-                      <Typography variant="body2" color="text.secondary">
-                        Loading activity details...
-                      </Typography>
-                    </Box>
-                  ) : currentActivity ? (
-                    <Box sx={{ p: 3, height: '100%', overflow: 'auto' }}>
-                      <Card sx={{ width: '100%', height: 'fit-content' }}>
-                        <CardContent>
-                          {/* Header */}
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-                                {currentActivity.AccountName}
-                              </Typography>
-                              <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
-                                {currentActivity.ActivityTypeName}
-                              </Typography>
-                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                <Chip
-                                  label={currentActivity.Status}
-                                  sx={{
-                                    backgroundColor: getStatusColor(currentActivity.Status),
-                                    color: 'white'
-                                  }}
-                                />
-                                {currentActivity.PriorityLevelValue && (
-                                  <Chip
-                                    label={`Priority ${currentActivity.PriorityLevelValue} - ${currentActivity.PriorityLevelName}`}
-                                    sx={{
-                                      backgroundColor: getPriorityColor(currentActivity.PriorityLevelValue),
-                                      color: 'white'
-                                    }}
-                                  />
-                                )}
-                                {currentActivity.SequenceName && (
-                                  <Chip
-                                    label={`${currentActivity.SequenceName} (Day ${currentActivity.DaysFromStart})`}
-                                    variant="outlined"
-                                  />
-                                )}
-                              </Box>
-                            </Box>
-                          </Box>
-
-                          {/* Details */}
-                          <Grid container spacing={3}>
-                            <Grid item xs={12} md={6}>
-                              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
-                                Due Date
-                              </Typography>
-                              <Typography variant="body1" sx={{ mb: 2 }}>
-                                {currentActivity.DueToStart
-                                  ? format(new Date(currentActivity.DueToStart), "MMM d, yyyy 'at' h:mm a")
-                                  : 'No due date set'}
-                              </Typography>
-                            </Grid>
-
-                            <Grid item xs={12} md={6}>
-                              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
-                                Time Until Due
-                              </Typography>
-                              <Typography variant="body1" sx={{ mb: 2 }}>
-                                {formatDueDate(currentActivity.DueToStart)}
-                              </Typography>
-                            </Grid>
-
-                            {currentActivity.DueToEnd && (
-                              <Grid item xs={12} md={6}>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
-                                  End Date
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 2 }}>
-                                  {format(new Date(currentActivity.DueToEnd), "MMM d, yyyy 'at' h:mm a")}
-                                </Typography>
-                              </Grid>
-                            )}
-
-                            {currentActivity.SequenceItemDescription && (
-                              <Grid item xs={12}>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
-                                  Sequence Item Description
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 2 }}>
-                                  {currentActivity.SequenceItemDescription}
-                                </Typography>
-                              </Grid>
-                            )}
-                          </Grid>
-                        </CardContent>
-
-                        {/* Actions */}
-                        <CardActions sx={{ p: 3, pt: 0, gap: 1, flexWrap: 'wrap' }}>
-                          <Button
-                            variant="contained"
-                            startIcon={<CheckCircle />}
-                            onClick={handleCompleteClick}
-                            disabled={currentActivity.Completed}
-                          >
-                            {currentActivity.Completed ? 'Completed' : 'Mark Complete'}
-                          </Button>
-
-                          {isCallActivity(currentActivity) && hasValidPhone(currentActivity) && (
-                            <Button
-                              variant="contained"
-                              color="primary"
-                              component="a"
-                              href={`tel:${formatPhoneForTel(currentActivity.AccountPhone)}`}
-                              startIcon={<Phone />}
-                              sx={{ textDecoration: 'none' }}
-                            >
-                              Call
-                            </Button>
-                          )}
-
-                          {isEmailActivity(currentActivity) && (
-                            <Button
-                              variant="outlined"
-                              color="primary"
-                              startIcon={<Email />}
-                              onClick={() => onSendEmailClick(currentActivity.ActivityID)}
-                            >
-                              Send Email
-                            </Button>
-                          )}
-
-                          <Button
-                            variant="outlined"
-                            color="primary"
-                            startIcon={<Note />}
-                            onClick={() => setNotesPopupOpen(true)}
-                          >
-                            Add Note
-                          </Button>
-
-                          <Button
-                            variant="outlined"
-                            startIcon={<Edit />}
-                            onClick={handleEditClick}
-                            disabled={currentActivity.Completed}
-                          >
-                            Edit
-                          </Button>
-
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            startIcon={<Delete />}
-                            onClick={handleDeleteClick}
-                          >
-                            Delete
-                          </Button>
-                        </CardActions>
-                      </Card>
-                    </Box>
-                  ) : (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '100%',
-                        flexDirection: 'column',
-                        gap: 2
-                      }}
-                    >
-                      <Assignment sx={{ fontSize: 48, color: '#ccc' }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Activity not found or failed to load
-                      </Typography>
-                    </Box>
-                  )}
-                </CustomTabPanel>
-              ))
-            )}
+                </Box>
+              ) : (
+                openTabs.map((tab, index) => (
+                  <CustomTabPanel key={`${tab.accountId}-${index}`} value={activeTab} index={index}>
+                    {currentTabLoading ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          height: '100%',
+                          flexDirection: 'column',
+                          gap: 2
+                        }}
+                      >
+                        <CircularProgress />
+                        <Typography variant="body2" color="text.secondary">
+                          Loading account activities...
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <AccountTabContent />
+                    )}
+                  </CustomTabPanel>
+                ))
+              )}
+            </Box>
           </Box>
         </Box>
+
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Edit Activity</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              <FormControl fullWidth>
+                <InputLabel>Priority Level</InputLabel>
+                <Select
+                  value={editFormData.priorityLevelId}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, priorityLevelId: e.target.value }))}
+                  label="Priority Level"
+                >
+                  {activityMetadata.priorityLevels.map((priority) => (
+                    <MenuItem key={priority.id} value={priority.id}>
+                      {priority.name} (Level {priority.value})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditSubmit} variant="contained">Save Changes</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Due Date Dialog */}
+        <Dialog open={dueDateDialogOpen} onClose={() => setDueDateDialogOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Change Due Date</DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 1 }}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Changing this due date will automatically adjust all subsequent activities in the sequence.
+              </Alert>
+              <TextField
+                label="New Due Date"
+                type="datetime-local"
+                value={newDueDate}
+                onChange={(e) => setNewDueDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDueDateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleDueDateSubmit} variant="contained">Update & Cascade</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Complete Dialog */}
+        <Dialog open={completeDialogOpen} onClose={() => setCompleteDialogOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Complete Activity</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Completion Notes (Optional)"
+              multiline
+              rows={4}
+              value={completeNotes}
+              onChange={(e) => setCompleteNotes(e.target.value)}
+              fullWidth
+              variant="outlined"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setCompleteDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCompleteSubmit} variant="contained">Mark Complete</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Dialog */}
+        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="sm">
+          <DialogTitle>Delete Activity</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to delete this activity?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleDeleteConfirm} variant="contained" color="error">Delete</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Status Snackbar */}
+        <Snackbar
+          open={!!statusMessage}
+          autoHideDuration={4000}
+          onClose={() => showStatus('')}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={() => showStatus('')} 
+            severity={statusSeverity} 
+            sx={{ width: '100%' }}
+          >
+            {statusMessage}
+          </Alert>
+        </Snackbar>
+
+        {/* Error Alert */}
+        {error && (
+          <Alert 
+            severity="error" 
+            sx={{ 
+              position: 'fixed', 
+              top: 16, 
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1300,
+              minWidth: '400px',
+            }}
+            onClose={onClearMessages}
+          >
+            {error}
+          </Alert>
+        )}
       </Box>
-
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Activity</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField
-              label="Due Start Date"
-              type="datetime-local"
-              value={editFormData.dueToStart}
-              onChange={(e) => setEditFormData(prev => ({ ...prev, dueToStart: e.target.value }))}
-              InputLabelProps={{ shrink: true }}
-              fullWidth
-            />
-            <TextField
-              label="Due End Date"
-              type="datetime-local"
-              value={editFormData.dueToEnd}
-              onChange={(e) => setEditFormData(prev => ({ ...prev, dueToEnd: e.target.value }))}
-              InputLabelProps={{ shrink: true }}
-              fullWidth
-            />
-            <FormControl fullWidth>
-              <InputLabel>Priority Level</InputLabel>
-              <Select
-                value={editFormData.priorityLevelId}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, priorityLevelId: e.target.value }))}
-                label="Priority Level"
-              >
-                {activityMetadata.priorityLevels.map((priority) => (
-                  <MenuItem key={priority.id} value={priority.id}>
-                    {priority.name} (Level {priority.value})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleEditSubmit} variant="contained">Save Changes</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Complete Dialog */}
-      <Dialog open={completeDialogOpen} onClose={() => setCompleteDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Complete Activity</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Completion Notes (Optional)"
-            multiline
-            rows={4}
-            value={completeNotes}
-            onChange={(e) => setCompleteNotes(e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCompleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleCompleteSubmit} variant="contained">Mark Complete</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="sm">
-        <DialogTitle>Delete Activity</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete this activity?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} variant="contained" color="error">Delete</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Notes Popup */}
-      {notesPopupOpen && currentActivity && (
-        <NotesPopup
-          open={notesPopupOpen}
-          onClose={() => setNotesPopupOpen(false)}
-          onSave={handleSaveNote}
-          onEdit={handleEditNote}
-          entityType="Activity"
-          entityId={currentActivity.ActivityID}
-          entityName={`${currentActivity.AccountName} - ${currentActivity.ActivityTypeName}`}
-          showExistingNotes={true}
-          maxLength={255}
-          required={false}
-        />
-      )} 
-     
-      {/* Status Snackbar */}
-      <Snackbar
-        open={!!statusMessage}
-        autoHideDuration={4000}
-        onClose={() => showStatus('')}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        sx={{
-          '& .MuiSnackbarContent-root': {
-            fontSize: '1.1rem',
-            minWidth: '400px',
-          },
-        }} 
-      >
-        <Alert 
-          onClose={() => showStatus('')} 
-          severity={statusSeverity} 
-          sx={{ 
-            width: '100%',
-            fontSize: '1.1rem',
-            '& .MuiAlert-message': {
-              fontSize: '1.1rem',
-              fontWeight: 500,
-            },
-          }}
-        >
-          {statusMessage}
-        </Alert>
-      </Snackbar>
-
-      {/* Error Alert */}
-      {error && (
-        <Alert 
-          severity="error" 
-          sx={{ 
-            position: 'fixed', 
-            top: 16, 
-            transform: 'translateX(-50%)',
-            left: '50%',
-            zIndex: 1300,
-            fontSize: '1.1rem',
-            minWidth: '400px',
-            '& .MuiAlert-message': {
-              fontSize: '1.1rem',
-              fontWeight: 500,
-            }
-          }}
-          onClose={onClearMessages}
-        >
-          {error}
-        </Alert>
-      )}
-    </Box>
-  </ThemeProvider>
-);
+    </ThemeProvider>
+  );
 };
 
 export default WorkPage;

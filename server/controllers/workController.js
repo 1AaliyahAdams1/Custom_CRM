@@ -1,67 +1,51 @@
 const workService = require("../services/workService");
 
 //======================================
-// Get activities (main work page)
+// Get work page activities (due today or overdue)
 //======================================
-const getActivities = async (req, res) => {
+const getWorkPageActivities = async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     const sortBy = req.query.sort || 'dueDate';
     const filter = req.query.filter || 'all';
-    const accountId = req.query.accountId ? parseInt(req.query.accountId, 10) : null;
 
     if (!userId || isNaN(userId)) {
       return res.status(400).json({ error: "Valid User ID is required" });
     }
 
-    if (accountId && isNaN(accountId)) {
-      return res.status(400).json({ error: "Valid Account ID is required" });
-    }
-
-    const data = await workService.getSmartWorkPageData(userId, {
-      sort: sortBy,
-      filter: filter,
-      accountId: accountId
+    const activities = await workService.getWorkPageActivities(userId, {
+      sortBy,
+      filter
     });
     
-    res.status(200).json(data);
+    res.status(200).json({
+      success: true,
+      activities,
+      totalCount: activities.length,
+      appliedFilters: { sort: sortBy, filter }
+    });
   } catch (err) {
+    console.error("Error in getWorkPageActivities:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
 //======================================
-// Get user accounts with sequences
+// Get account activities grouped (for workspace tab)
 //======================================
-const getUserAccounts = async (req, res) => {
+const getAccountActivitiesGrouped = async (req, res) => {
   try {
+    const accountId = parseInt(req.params.accountId, 10);
     const userId = parseInt(req.params.userId, 10);
 
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ error: "Valid User ID is required" });
+    if (!accountId || !userId || isNaN(accountId) || isNaN(userId)) {
+      return res.status(400).json({ error: "Valid Account ID and User ID are required" });
     }
 
-    const data = await workService.getUserAccountsWithSequences(userId);
-    res.status(200).json(data);
+    const data = await workService.getAccountActivitiesGrouped(accountId, userId);
+    res.status(200).json({ success: true, data });
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-//======================================
-// Get activities by user 
-//======================================
-const getActivitiesByUser = async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId, 10);
-    
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ error: "Valid User ID is required" });
-    }
-
-    const data = await workService.getActivitiesByUser(userId);
-    res.status(200).json(data);
-  } catch (err) {
+    console.error("Error in getAccountActivitiesGrouped:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -69,7 +53,7 @@ const getActivitiesByUser = async (req, res) => {
 //======================================
 // Get activity by ID for workspace
 //======================================
-const getActivityForWorkspace = async (req, res) => {
+const getActivityByID = async (req, res) => {
   try {
     const activityId = parseInt(req.params.activityId, 10);
     const userId = parseInt(req.params.userId, 10);
@@ -84,8 +68,9 @@ const getActivityForWorkspace = async (req, res) => {
       return res.status(404).json({ error: "Activity not found" });
     }
 
-    res.status(200).json(activity);
+    res.status(200).json({ success: true, data: activity });
   } catch (err) {
+    console.error("Error in getActivityByID:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -103,8 +88,34 @@ const updateActivity = async (req, res) => {
     }
 
     await workService.updateActivity(activityId, userId, req.body);
-    res.status(200).json({ message: "Activity updated successfully" });
+    res.status(200).json({ success: true, message: "Activity updated successfully" });
   } catch (err) {
+    console.error("Error in updateActivity:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Update activity due date with cascade
+//======================================
+const updateActivityDueDateWithCascade = async (req, res) => {
+  try {
+    const activityId = parseInt(req.params.activityId, 10);
+    const userId = parseInt(req.params.userId, 10);
+    const { dueDate } = req.body;
+
+    if (!activityId || !userId || isNaN(activityId) || isNaN(userId)) {
+      return res.status(400).json({ error: "Valid Activity ID and User ID are required" });
+    }
+
+    if (!dueDate) {
+      return res.status(400).json({ error: "Due date is required" });
+    }
+
+    const result = await workService.updateActivityDueDateWithCascade(activityId, userId, dueDate);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in updateActivityDueDateWithCascade:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -122,14 +133,15 @@ const completeActivity = async (req, res) => {
     }
 
     const result = await workService.completeActivityAndGetNext(activityId, userId);
-    res.status(200).json(result);
+    res.status(200).json({ success: true, data: result });
   } catch (err) {
+    console.error("Error in completeActivity:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
 //======================================
-// Mark activity as complete
+// Mark activity as complete (simple)
 //======================================
 const markComplete = async (req, res) => {
   try {
@@ -141,8 +153,9 @@ const markComplete = async (req, res) => {
     }
 
     await workService.updateActivity(activityId, userId, { Completed: 1 });
-    res.status(200).json({ message: "Activity marked as complete" });
+    res.status(200).json({ success: true, message: "Activity marked as complete" });
   } catch (err) {
+    console.error("Error in markComplete:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -160,8 +173,9 @@ const deleteActivity = async (req, res) => {
     }
 
     await workService.deleteActivity(activityId, userId);
-    res.status(200).json({ message: "Activity deleted successfully" });
+    res.status(200).json({ success: true, message: "Activity deleted successfully" });
   } catch (err) {
+    console.error("Error in deleteActivity:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -178,8 +192,9 @@ const getWorkDashboard = async (req, res) => {
     }
 
     const data = await workService.getWorkDashboardSummary(userId);
-    res.status(200).json(data);
+    res.status(200).json({ success: true, data });
   } catch (err) {
+    console.error("Error in getWorkDashboard:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -197,66 +212,9 @@ const getNextActivity = async (req, res) => {
     }
 
     const data = await workService.getNextActivity(userId, currentActivityId);
-    res.status(200).json(data);
+    res.status(200).json({ success: true, data });
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-//======================================
-// Get activities by status filter
-//======================================
-const getActivitiesByStatus = async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId, 10);
-    const status = req.params.status;
-
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ error: "Valid User ID is required" });
-    }
-
-    const filterOptions = workService.parseFilterOptions(status);
-    const data = await workService.getActivities(userId, filterOptions);
-    res.status(200).json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-//======================================
-// Get day view activities
-//======================================
-const getDayView = async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId, 10);
-    const date = req.query.date ? new Date(req.query.date) : new Date();
-
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ error: "Valid User ID is required" });
-    }
-
-    if (req.query.date && isNaN(date.getTime())) {
-      return res.status(400).json({ error: "Invalid date format" });
-    }
-
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const data = await workService.getActivities(userId, {
-      dateFrom: startOfDay,
-      dateTo: endOfDay,
-      sortBy: 'dueDate'
-    });
-    
-    res.status(200).json({
-      date: date.toDateString(),
-      activities: data,
-      totalCount: data.length
-    });
-  } catch (err) {
+    console.error("Error in getNextActivity:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -267,104 +225,23 @@ const getDayView = async (req, res) => {
 const getActivityMetadata = async (req, res) => {
   try {
     const data = await workService.getActivityMetadata();
-    res.status(200).json(data);
+    res.status(200).json({ success: true, data });
   } catch (err) {
+    console.error("Error in getActivityMetadata:", err);
     res.status(500).json({ error: err.message });
   }
 };
-
-//======================================
-// Update sequence item status
-//======================================
-const updateSequenceItemStatus = async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId, 10);
-    const sequenceItemId = parseInt(req.params.sequenceItemId, 10);
-    const accountId = parseInt(req.params.accountId, 10);
-    const { completed } = req.body;
-
-    if (!userId || !sequenceItemId || !accountId || isNaN(userId) || isNaN(sequenceItemId) || isNaN(accountId)) {
-      return res.status(400).json({ error: "Valid User ID, Sequence Item ID, and Account ID are required" });
-    }
-
-    if (typeof completed !== 'boolean') {
-      return res.status(400).json({ error: "Completed status must be a boolean" });
-    }
-
-    const sequenceRepo = require("../data/sequenceRepository");
-    const result = await sequenceRepo.updateSequenceItemStatus(sequenceItemId, accountId, userId, completed);
-    
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-//======================================
-// Get sequence progress
-//======================================
-const getSequenceProgress = async (req, res) => {
-  try {
-    const accountId = parseInt(req.params.accountId, 10);
-    const sequenceId = parseInt(req.params.sequenceId, 10);
-
-    if (!accountId || !sequenceId || isNaN(accountId) || isNaN(sequenceId)) {
-      return res.status(400).json({ error: "Valid Account ID and Sequence ID are required" });
-    }
-
-    const sequenceRepo = require("../data/sequenceRepository");
-    const result = await sequenceRepo.getSequenceProgress(accountId, sequenceId);
-    
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-//======================================
-// Get or create activity from sequence item
-//======================================
-const getOrCreateActivityFromSequenceItem = async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId, 10);
-    const sequenceItemId = parseInt(req.params.sequenceItemId, 10);
-    const accountId = parseInt(req.params.accountId, 10);
-
-    if (!userId || !sequenceItemId || !accountId || 
-        isNaN(userId) || isNaN(sequenceItemId) || isNaN(accountId)) {
-      return res.status(400).json({ 
-        error: "Valid User ID, Sequence Item ID, and Account ID are required" 
-      });
-    }
-
-    const result = await workService.getOrCreateActivityFromSequenceItem(
-      sequenceItemId,
-      accountId,
-      userId
-    );
-    
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
 
 module.exports = {
-  getActivities,
-  getActivitiesByUser,
-  getActivityForWorkspace,
+  getWorkPageActivities,
+  getAccountActivitiesGrouped,
+  getActivityByID,
   updateActivity,
+  updateActivityDueDateWithCascade,
   completeActivity,
   markComplete,
   deleteActivity,
   getWorkDashboard,
   getNextActivity,
-  getActivitiesByStatus,
-  getDayView,
   getActivityMetadata,
-  getUserAccounts,
-  updateSequenceItemStatus,
-  getSequenceProgress,  
-  getOrCreateActivityFromSequenceItem,
 };
