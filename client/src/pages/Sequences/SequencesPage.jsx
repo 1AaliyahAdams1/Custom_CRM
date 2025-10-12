@@ -14,10 +14,9 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Add, Info } from "@mui/icons-material";
-import { ThemeProvider } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import { formatters } from '../../utils/formatters';
 import TableView from '../../components/tableFormat/TableView';
-import theme from "../../components/Theme";
 
 // Status configuration for active/inactive sequences
 const statusConfig = {
@@ -68,6 +67,8 @@ const SequencesPage = ({
   onBulkDeactivate,
   onBulkReactivate,
 }) => {
+  const theme = useTheme();
+  
   // Local state for filter
   const [sequenceFilter, setSequenceFilter] = useState(currentFilter);
 
@@ -127,204 +128,214 @@ const SequencesPage = ({
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box
-        sx={{
-          width: "100%",
-          backgroundColor: "#fafafa",
-          minHeight: "100vh",
-          p: 3,
-        }}
-      >
-        <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-          {/* Error and Success Messages */}
-          {error && (
-            <Alert severity="error" sx={{ m: 2 }}>
-              {error}
-            </Alert>
-          )}
+    <Box
+      sx={{
+        width: "100%",
+        backgroundColor: theme.palette.background.default,
+        minHeight: "100vh",
+        p: 3,
+      }}
+    >
+      <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+        {/* Error and Success Messages */}
+        {error && (
+          <Alert severity="error" sx={{ m: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-          {successMessage && (
-            <Alert
-              severity="success"
-              sx={{ m: 2 }}
-              onClose={() => setSuccessMessage("")}
-            >
-              {successMessage}
-            </Alert>
-          )}
-
-          {/* Sequences Toolbar */}
-          <Toolbar
-            sx={{
-              backgroundColor: "#ffffff",
-              borderBottom: "1px solid #e5e5e5",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: 2,
-              py: 2,
-            }}
+        {successMessage && (
+          <Alert
+            severity="success"
+            sx={{ m: 2 }}
+            onClose={() => setSuccessMessage("")}
           >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                flex: 1,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography
-                  variant="h6"
-                  component="div"
-                  sx={{ color: "#050505", fontWeight: 600 }}
-                >
-                  Sequences
-                </Typography>
-                <Tooltip title="Manage activity sequences and their workflow steps" arrow>
-                  <Info sx={{ fontSize: 18, color: '#666666', cursor: 'help' }} />
-                </Tooltip>
-              </Box>
+            {successMessage}
+          </Alert>
+        )}
 
-              {/* Sequence Filter Dropdown */}
-              <FormControl size="small" sx={{ minWidth: 200 }}>
-                <Select
-                  value={sequenceFilter}
-                  onChange={handleFilterChange}
-                  displayEmpty
-                  sx={{ 
-                    backgroundColor: '#fff',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#e0e0e0',
-                    },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#c0c0c0',
-                    },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                  }}
-                >
-                  {filterOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {selected.length > 0 && (
-                <Tooltip title={`${selected.length} sequence${selected.length === 1 ? '' : 's'} selected for operations`} arrow>
-                  <Chip
-                    label={`${selected.length} selected`}
-                    size="small"
-                    sx={{ backgroundColor: "#e0e0e0", color: "#050505" }}
-                  />
-                </Tooltip>
-              )}
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                flexWrap: "wrap",
-              }}
-            >
-              <Tooltip title="Create a new sequence workflow" arrow>
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={onCreate}
-                  disabled={loading}
-                  sx={{
-                    backgroundColor: "#050505",
-                    color: "#ffffff",
-                    "&:hover": { backgroundColor: "#333333" },
-                    "&:disabled": {
-                      backgroundColor: "#cccccc",
-                      color: "#666666",
-                    },
-                  }}
-                >
-                  Add Sequence
-                </Button>
-              </Tooltip>
-            </Box>
-          </Toolbar>
-
-          {/* Sequences Table */}
-          {loading ? (
-            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
-              <CircularProgress />
-              <Tooltip title="Loading sequence data from the database" arrow>
-                <Typography variant="body2" sx={{ mt: 2, color: '#666666' }}>
-                  Loading sequences...
-                </Typography>
-              </Tooltip>
-            </Box>
-          ) : (
-            <TableView
-              data={sequences}
-              columns={sequencesTableConfig.columns}
-              idField={sequencesTableConfig.idField}
-              selected={selected}
-              onSelectClick={onSelectClick}
-              onSelectAllClick={onSelectAllClick}
-              showSelection={true}
-              onView={onView}
-              onEdit={onEdit}
-              onDelete={onDeactivate}
-              onAddNote={onAddNote}
-              onAddAttachment={onAddAttachment}
-              formatters={enhancedFormatters}
-              entityType="sequence"
-              tooltips={{
-                search: "Search sequences by name or description",
-                filter: "Show/hide advanced filtering options",
-                columns: "Customize which columns are visible in the table",
-                actionMenu: {
-                  view: "View detailed information for this sequence",
-                  edit: "Edit this sequence's information",
-                  delete: "Deactivate or reactivate this sequence",
-                  addNote: "Add internal notes or comments",
-                  addAttachment: "Attach files or documents"
-                }
-              }}
-            />
-          )}
-
-          {/* Sequences Results Footer */}
+        {/* Sequences Toolbar */}
+        <Toolbar
+          sx={{
+            backgroundColor: theme.palette.background.paper,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 2,
+            py: 2,
+          }}
+        >
           <Box
             sx={{
-              p: 2,
-              borderTop: "1px solid #e5e5e5",
-              backgroundColor: "#fafafa",
               display: "flex",
-              justifyContent: "space-between",
               alignItems: "center",
+              gap: 2,
+              flex: 1,
             }}
           >
-            <Tooltip title="Total number of sequences currently displayed in the table" arrow>
-              <Typography variant="body2" sx={{ color: "#666666", cursor: 'help' }}>
-                Showing {sequences.length} of {totalCount || sequences.length} sequences
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{ 
+                  color: theme.palette.text.primary, 
+                  fontWeight: 600 
+                }}
+              >
+                Sequences
               </Typography>
-            </Tooltip>
+              <Tooltip title="Manage activity sequences and their workflow steps" arrow>
+                <Info sx={{ 
+                  fontSize: 18, 
+                  color: theme.palette.text.secondary, 
+                  cursor: 'help' 
+                }} />
+              </Tooltip>
+            </Box>
+
+            {/* Sequence Filter Dropdown */}
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <Select
+                value={sequenceFilter}
+                onChange={handleFilterChange}
+                displayEmpty
+                sx={{ 
+                  backgroundColor: theme.palette.background.paper,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: theme.palette.divider,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: theme.palette.text.secondary,
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: theme.palette.primary.main,
+                  },
+                }}
+              >
+                {filterOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             {selected.length > 0 && (
-              <Tooltip title="Number of sequences currently selected for operations" arrow>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "#050505", fontWeight: 500, cursor: 'help' }}
-                >
-                  {selected.length} selected
-                </Typography>
+              <Tooltip title={`${selected.length} sequence${selected.length === 1 ? '' : 's'} selected for operations`} arrow>
+                <Chip
+                  label={`${selected.length} selected`}
+                  size="small"
+                  sx={{ 
+                    backgroundColor: theme.palette.mode === 'dark' ? '#333' : '#e0e0e0', 
+                    color: theme.palette.text.primary 
+                  }}
+                />
               </Tooltip>
             )}
           </Box>
-        </Paper>
-      </Box>
-    </ThemeProvider>
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
+            <Tooltip title="Create a new sequence workflow" arrow>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={onCreate}
+                disabled={loading}
+              >
+                Add Sequence
+              </Button>
+            </Tooltip>
+          </Box>
+        </Toolbar>
+
+        {/* Sequences Table */}
+        {loading ? (
+          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+            <CircularProgress />
+            <Tooltip title="Loading sequence data from the database" arrow>
+              <Typography variant="body2" sx={{ 
+                mt: 2, 
+                color: theme.palette.text.secondary,
+                cursor: 'help' 
+              }}>
+                Loading sequences...
+              </Typography>
+            </Tooltip>
+          </Box>
+        ) : (
+          <TableView
+            data={sequences}
+            columns={sequencesTableConfig.columns}
+            idField={sequencesTableConfig.idField}
+            selected={selected}
+            onSelectClick={onSelectClick}
+            onSelectAllClick={onSelectAllClick}
+            showSelection={true}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDeactivate}
+            onAddNote={onAddNote}
+            onAddAttachment={onAddAttachment}
+            formatters={enhancedFormatters}
+            entityType="sequence"
+            tooltips={{
+              search: "Search sequences by name or description",
+              filter: "Show/hide advanced filtering options",
+              columns: "Customize which columns are visible in the table",
+              actionMenu: {
+                view: "View detailed information for this sequence",
+                edit: "Edit this sequence's information",
+                delete: "Deactivate or reactivate this sequence",
+                addNote: "Add internal notes or comments",
+                addAttachment: "Attach files or documents"
+              }
+            }}
+          />
+        )}
+
+        {/* Sequences Results Footer */}
+        <Box
+          sx={{
+            p: 2,
+            borderTop: `1px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.background.default,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Tooltip title="Total number of sequences currently displayed in the table" arrow>
+            <Typography variant="body2" sx={{ 
+              color: theme.palette.text.secondary, 
+              cursor: 'help' 
+            }}>
+              Showing {sequences.length} of {totalCount || sequences.length} sequences
+            </Typography>
+          </Tooltip>
+          {selected.length > 0 && (
+            <Tooltip title="Number of sequences currently selected for operations" arrow>
+              <Typography
+                variant="body2"
+                sx={{ 
+                  color: theme.palette.text.primary, 
+                  fontWeight: 500, 
+                  cursor: 'help' 
+                }}
+              >
+                {selected.length} selected
+              </Typography>
+            </Tooltip>
+          )}
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 
