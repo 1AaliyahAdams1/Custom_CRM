@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Alert, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
 import { fetchDealById, deleteDeal } from "../../services/dealService";
 import { getAllAccounts } from "../../services/accountService";
@@ -10,6 +11,7 @@ import { getAllNotes } from "../../services/noteService";
 import { getAllAttachments } from "../../services/attachmentService";
 
 export default function DealDetailsPage() {
+  const theme = useTheme();
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -225,46 +227,46 @@ export default function DealDetailsPage() {
         dataService: createContactDataService()
       },
       {
-  key: 'activities',
-  label: 'Activities',
-  entityType: 'activity',
-  tableConfig: {
-    idField: 'ActivityID',
-    columns: [
-      { field: 'ActivityType', headerName: 'Activity Type', type: 'text', defaultVisible: true },
-      { field: 'AccountName', headerName: 'Account', type: 'text', defaultVisible: true },
-      { field: 'PriorityLevelName', headerName: 'Priority', type: 'text', defaultVisible: true },
-      { field: 'DueToStart', headerName: 'Due Start', type: 'date', defaultVisible: true },
-      { field: 'DueToEnd', headerName: 'Due End', type: 'date', defaultVisible: true },
-      { field: 'Completed', headerName: 'Completed', type: 'boolean', defaultVisible: true },
-    ]
-  },
-  dataService: async () => {
-    try {
-      // For deals, filter activities by the deal's AccountID
-      if (!deal?.AccountID) return { data: [] };
-      
-      const response = await getAllActivities();
-      const allData = response?.data || response;
-      
-      // Filter by AccountName since activities don't have AccountID
-      const accountResponse = await getAllAccounts();
-      const accounts = accountResponse?.data || accountResponse;
-      const dealAccount = accounts.find(acc => acc.AccountID === deal.AccountID);
-      
-      if (!dealAccount) return { data: [] };
-      
-      const filteredData = allData.filter(item => 
-        item.AccountName === dealAccount.AccountName
-      );
-      
-      return { data: filteredData };
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-      return { data: [] };
-    }
-  }
-},
+        key: 'activities',
+        label: 'Activities',
+        entityType: 'activity',
+        tableConfig: {
+          idField: 'ActivityID',
+          columns: [
+            { field: 'ActivityType', headerName: 'Activity Type', type: 'text', defaultVisible: true },
+            { field: 'AccountName', headerName: 'Account', type: 'text', defaultVisible: true },
+            { field: 'PriorityLevelName', headerName: 'Priority', type: 'text', defaultVisible: true },
+            { field: 'DueToStart', headerName: 'Due Start', type: 'date', defaultVisible: true },
+            { field: 'DueToEnd', headerName: 'Due End', type: 'date', defaultVisible: true },
+            { field: 'Completed', headerName: 'Completed', type: 'boolean', defaultVisible: true },
+          ]
+        },
+        dataService: async () => {
+          try {
+            // For deals, filter activities by the deal's AccountID
+            if (!deal?.AccountID) return { data: [] };
+            
+            const response = await getAllActivities();
+            const allData = response?.data || response;
+            
+            // Filter by AccountName since activities don't have AccountID
+            const accountResponse = await getAllAccounts();
+            const accounts = accountResponse?.data || accountResponse;
+            const dealAccount = accounts.find(acc => acc.AccountID === deal.AccountID);
+            
+            if (!dealAccount) return { data: [] };
+            
+            const filteredData = allData.filter(item => 
+              item.AccountName === dealAccount.AccountName
+            );
+            
+            return { data: filteredData };
+          } catch (error) {
+            console.error('Error fetching activities:', error);
+            return { data: [] };
+          }
+        }
+      },
       {
         key: 'notes',
         label: 'Notes',
@@ -298,7 +300,7 @@ export default function DealDetailsPage() {
       }
     ];
     return tabs;
-  }, [createAccountDataService, createContactDataService, createFilteredDataService, createAttachmentDataService]);
+  }, [deal, createAccountDataService, createContactDataService, createFilteredDataService, createAttachmentDataService]);
 
   // Action handlers
   const relatedDataActions = useMemo(() => {
@@ -442,7 +444,12 @@ export default function DealDetailsPage() {
   if (!deal) return <Alert severity="warning">Deal not found.</Alert>;
 
   return (
-    <Box sx={{ width: "100%", p: 2, backgroundColor: "#fafafa", minHeight: "100vh" }}>
+    <Box sx={{ 
+      width: "100%", 
+      p: 2, 
+      backgroundColor: theme.palette.background.default, 
+      minHeight: "100vh" 
+    }}>
       {successMessage && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
           {successMessage}

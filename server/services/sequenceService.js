@@ -44,13 +44,10 @@ const getSequenceWithItems = async (sequenceId) => {
     if (row.SequenceItemID) {
       sequence.Items.push({
         SequenceItemID: row.SequenceItemID,
-        TypeID: row.TypeID,
+        ActivityTypeID: row.ActivityTypeID,
         ActivityTypeName: row.ActivityTypeName,
         SequenceItemDescription: row.SequenceItemDescription,
         DaysFromStart: row.DaysFromStart,
-        PriorityLevelID: row.PriorityLevelID,
-        PriorityLevelName: row.PriorityLevelName,
-        PriorityLevelValue: row.PriorityLevelValue,
         CreatedAt: row.ItemCreatedAt,
         UpdatedAt: row.ItemUpdatedAt,
         Active: row.ItemActive
@@ -71,6 +68,18 @@ const createSequence = async (sequenceData) => {
     throw new Error("Sequence name is required");
   }
 
+  if (SequenceName.trim().length < 3) {
+    throw new Error("Sequence name must be at least 3 characters long");
+  }
+
+  if (SequenceName.length > 255) {
+    throw new Error("Sequence name cannot exceed 255 characters");
+  }
+
+  if (SequenceDescription && SequenceDescription.length > 4000) {
+    throw new Error("Sequence description cannot exceed 4000 characters");
+  }
+
   return await sequenceRepo.createSequence(sequenceData, null);
 };
 
@@ -78,6 +87,24 @@ const createSequence = async (sequenceData) => {
 // Update sequence
 //======================================
 const updateSequence = async (sequenceId, sequenceData) => {
+  const { SequenceName, SequenceDescription } = sequenceData;
+
+  if (SequenceName !== undefined) {
+    if (!SequenceName || SequenceName.trim().length === 0) {
+      throw new Error("Sequence name is required");
+    }
+    if (SequenceName.trim().length < 3) {
+      throw new Error("Sequence name must be at least 3 characters long");
+    }
+    if (SequenceName.length > 255) {
+      throw new Error("Sequence name cannot exceed 255 characters");
+    }
+  }
+
+  if (SequenceDescription && SequenceDescription.length > 4000) {
+    throw new Error("Sequence description cannot exceed 4000 characters");
+  }
+
   return await sequenceRepo.updateSequence(sequenceId, sequenceData, null);
 };
 
@@ -113,10 +140,34 @@ const getSequenceItemByID = async (itemId) => {
 // Create sequence item
 //======================================
 const createSequenceItem = async (itemData) => {
-  const { SequenceID, TypeID, SequenceItemDescription, DaysFromStart, PriorityLevelID } = itemData;
+  const { SequenceID, ActivityTypeID, SequenceItemDescription, DaysFromStart } = itemData;
 
-  if (!SequenceID || !TypeID || !SequenceItemDescription || DaysFromStart === undefined || !PriorityLevelID) {
-    throw new Error("Missing required sequence item fields");
+  if (!SequenceID) {
+    throw new Error("Sequence ID is required");
+  }
+
+  if (!ActivityTypeID) {
+    throw new Error("Activity Type is required");
+  }
+
+  if (!SequenceItemDescription || SequenceItemDescription.trim().length === 0) {
+    throw new Error("Sequence item description is required");
+  }
+
+  if (SequenceItemDescription.length > 255) {
+    throw new Error("Sequence item description cannot exceed 255 characters");
+  }
+
+  if (DaysFromStart === undefined || DaysFromStart === null) {
+    throw new Error("Days from start is required");
+  }
+
+  if (DaysFromStart < 0) {
+    throw new Error("Days from start cannot be negative");
+  }
+
+  if (DaysFromStart > 32767) {
+    throw new Error("Days from start cannot exceed 32767");
   }
 
   return await sequenceRepo.createSequenceItem(itemData, null);
@@ -126,6 +177,30 @@ const createSequenceItem = async (itemData) => {
 // Update sequence item
 //======================================
 const updateSequenceItem = async (itemId, itemData) => {
+  const { ActivityTypeID, SequenceItemDescription, DaysFromStart } = itemData;
+
+  if (ActivityTypeID !== undefined && !ActivityTypeID) {
+    throw new Error("Activity Type is required");
+  }
+
+  if (SequenceItemDescription !== undefined) {
+    if (!SequenceItemDescription || SequenceItemDescription.trim().length === 0) {
+      throw new Error("Sequence item description is required");
+    }
+    if (SequenceItemDescription.length > 255) {
+      throw new Error("Sequence item description cannot exceed 255 characters");
+    }
+  }
+
+  if (DaysFromStart !== undefined) {
+    if (DaysFromStart < 0) {
+      throw new Error("Days from start cannot be negative");
+    }
+    if (DaysFromStart > 32767) {
+      throw new Error("Days from start cannot exceed 32767");
+    }
+  }
+
   return await sequenceRepo.updateSequenceItem(itemId, itemData, null);
 };
 
@@ -142,19 +217,62 @@ const deleteSequenceItem = async (itemId) => {
 const createSequenceWithItems = async (sequenceData, items) => {
   const { SequenceName, SequenceDescription } = sequenceData;
 
-  if (!SequenceName) {
+  // Validate sequence
+  if (!SequenceName || SequenceName.trim().length === 0) {
     throw new Error("Sequence name is required");
   }
 
+  if (SequenceName.trim().length < 3) {
+    throw new Error("Sequence name must be at least 3 characters long");
+  }
+
+  if (SequenceName.length > 255) {
+    throw new Error("Sequence name cannot exceed 255 characters");
+  }
+
+  if (SequenceDescription && SequenceDescription.length > 4000) {
+    throw new Error("Sequence description cannot exceed 4000 characters");
+  }
+
+  // Validate items
   if (!items || items.length === 0) {
     throw new Error("At least one sequence item is required");
   }
 
-  // Validate all items have required fields
-  for (const item of items) {
-    if (!item.TypeID || !item.SequenceItemDescription || item.DaysFromStart === undefined || !item.PriorityLevelID) {
-      throw new Error("Each sequence item must have TypeID, Description, DaysFromStart, and PriorityLevelID");
+  // Validate each item
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    
+    if (!item.ActivityTypeID) {
+      throw new Error(`Item ${i + 1}: Activity Type is required`);
     }
+
+    if (!item.SequenceItemDescription || item.SequenceItemDescription.trim().length === 0) {
+      throw new Error(`Item ${i + 1}: Description is required`);
+    }
+
+    if (item.SequenceItemDescription.length > 255) {
+      throw new Error(`Item ${i + 1}: Description cannot exceed 255 characters`);
+    }
+
+    if (item.DaysFromStart === undefined || item.DaysFromStart === null) {
+      throw new Error(`Item ${i + 1}: Days from start is required`);
+    }
+
+    if (item.DaysFromStart < 0) {
+      throw new Error(`Item ${i + 1}: Days from start cannot be negative`);
+    }
+
+    if (item.DaysFromStart > 32767) {
+      throw new Error(`Item ${i + 1}: Days from start cannot exceed 32767`);
+    }
+  }
+
+  // Check for duplicate DaysFromStart values
+  const daysValues = items.map(item => item.DaysFromStart);
+  const duplicates = daysValues.filter((day, index) => daysValues.indexOf(day) !== index);
+  if (duplicates.length > 0) {
+    throw new Error(`Duplicate days found: ${duplicates.join(', ')}. Each item must have a unique day value.`);
   }
 
   return await sequenceRepo.createSequenceWithItems(sequenceData, items, null);
@@ -189,6 +307,13 @@ const getAccountsBySequence = async (sequenceId) => {
   return await sequenceRepo.getAccountsBySequence(sequenceId);
 };
 
+//======================================
+// Get all activity types (for dropdown)
+//======================================
+const getAllActivityTypes = async () => {
+  return await sequenceRepo.getAllActivityTypes();
+};
+
 module.exports = {
   getAllSequences,
   getSequenceByID,
@@ -206,4 +331,5 @@ module.exports = {
   assignSequenceToAccount,
   unassignSequenceFromAccount,
   getAccountsBySequence,
+  getAllActivityTypes,
 };

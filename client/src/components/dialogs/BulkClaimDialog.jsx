@@ -59,13 +59,13 @@ const BulkClaimDialog = ({
     setAnalyzing(false);
   };
 
-  const handleConfirm = () => {
-    if (claimableAccounts.length === 0) {
-      return;
-    }
-    const accountIds = claimableAccounts.map(acc => acc.AccountID);
-    onConfirm(accountIds);
-  };
+ const handleConfirm = () => {
+  if (claimableAccounts.length === 0) {
+    return;
+  }
+  const accountIds = claimableAccounts.map(acc => acc.AccountID);
+  onConfirm(accountIds);
+};
 
   const handleClose = () => {
     if (!loading) {

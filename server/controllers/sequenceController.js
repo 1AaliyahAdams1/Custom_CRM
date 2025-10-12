@@ -1,4 +1,4 @@
-const sequenceRepo = require("../data/sequenceRepository");
+const sequenceService = require("../services/sequenceService");
 
 //======================================
 // Get all sequences
@@ -6,13 +6,8 @@ const sequenceRepo = require("../data/sequenceRepository");
 const getAllSequences = async (req, res) => {
   try {
     const onlyActive = req.query.onlyActive === 'true';
-    const sequences = await sequenceRepo.getAllSequences();
-    
-    const filteredSequences = onlyActive 
-      ? sequences.filter(s => s.Active)
-      : sequences;
-    
-    res.status(200).json(filteredSequences);
+    const sequences = await sequenceService.getAllSequences(onlyActive);
+    res.status(200).json(sequences);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -29,7 +24,7 @@ const getSequenceByID = async (req, res) => {
       return res.status(400).json({ error: "Valid Sequence ID is required" });
     }
 
-    const sequence = await sequenceRepo.getSequenceDetails(sequenceId);
+    const sequence = await sequenceService.getSequenceByID(sequenceId);
     
     if (!sequence) {
       return res.status(404).json({ error: "Sequence not found" });
@@ -52,8 +47,13 @@ const getSequenceWithItems = async (req, res) => {
       return res.status(400).json({ error: "Valid Sequence ID is required" });
     }
 
-    const data = await sequenceRepo.getSequenceWithItems(sequenceId);
-    res.status(200).json(data);
+    const sequence = await sequenceService.getSequenceWithItems(sequenceId);
+    
+    if (!sequence) {
+      return res.status(404).json({ error: "Sequence not found" });
+    }
+
+    res.status(200).json(sequence);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -64,10 +64,14 @@ const getSequenceWithItems = async (req, res) => {
 //======================================
 const createSequence = async (req, res) => {
   try {
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.createSequence(req.body, changedBy);
+    const result = await sequenceService.createSequence(req.body);
     res.status(201).json(result);
   } catch (err) {
+    if (err.message.includes('required') || 
+        err.message.includes('must be') || 
+        err.message.includes('cannot exceed')) {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };
@@ -83,12 +87,16 @@ const updateSequence = async (req, res) => {
       return res.status(400).json({ error: "Valid Sequence ID is required" });
     }
 
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.updateSequence(sequenceId, req.body, changedBy);
+    const result = await sequenceService.updateSequence(sequenceId, req.body);
     res.status(200).json(result);
   } catch (err) {
     if (err.message === "Sequence not found") {
       return res.status(404).json({ error: err.message });
+    }
+    if (err.message.includes('required') || 
+        err.message.includes('must be') || 
+        err.message.includes('cannot exceed')) {
+      return res.status(400).json({ error: err.message });
     }
     res.status(500).json({ error: err.message });
   }
@@ -105,8 +113,7 @@ const deactivateSequence = async (req, res) => {
       return res.status(400).json({ error: "Valid Sequence ID is required" });
     }
 
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.deactivateSequence(sequenceId, changedBy);
+    const result = await sequenceService.deactivateSequence(sequenceId);
     res.status(200).json(result);
   } catch (err) {
     if (err.message === "Sequence not found" || err.message === "Sequence is already deactivated") {
@@ -127,8 +134,7 @@ const reactivateSequence = async (req, res) => {
       return res.status(400).json({ error: "Valid Sequence ID is required" });
     }
 
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.reactivateSequence(sequenceId, changedBy);
+    const result = await sequenceService.reactivateSequence(sequenceId);
     res.status(200).json(result);
   } catch (err) {
     if (err.message === "Sequence not found" || err.message === "Sequence is already active") {
@@ -149,8 +155,7 @@ const deleteSequence = async (req, res) => {
       return res.status(400).json({ error: "Valid Sequence ID is required" });
     }
 
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.deleteSequence(sequenceId, changedBy);
+    const result = await sequenceService.deleteSequence(sequenceId);
     res.status(200).json(result);
   } catch (err) {
     if (err.message === "Sequence not found" || err.message === "Sequence must be deactivated before permanent deletion") {
@@ -171,7 +176,7 @@ const getSequenceItemByID = async (req, res) => {
       return res.status(400).json({ error: "Valid Sequence Item ID is required" });
     }
 
-    const item = await sequenceRepo.getSequenceItemDetails(itemId);
+    const item = await sequenceService.getSequenceItemByID(itemId);
     
     if (!item) {
       return res.status(404).json({ error: "Sequence item not found" });
@@ -188,10 +193,14 @@ const getSequenceItemByID = async (req, res) => {
 //======================================
 const createSequenceItem = async (req, res) => {
   try {
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.createSequenceItem(req.body, changedBy);
+    const result = await sequenceService.createSequenceItem(req.body);
     res.status(201).json(result);
   } catch (err) {
+    if (err.message.includes('required') || 
+        err.message.includes('cannot be') || 
+        err.message.includes('cannot exceed')) {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };
@@ -207,12 +216,16 @@ const updateSequenceItem = async (req, res) => {
       return res.status(400).json({ error: "Valid Sequence Item ID is required" });
     }
 
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.updateSequenceItem(itemId, req.body, changedBy);
+    const result = await sequenceService.updateSequenceItem(itemId, req.body);
     res.status(200).json(result);
   } catch (err) {
     if (err.message === "Sequence item not found") {
       return res.status(404).json({ error: err.message });
+    }
+    if (err.message.includes('required') || 
+        err.message.includes('cannot be') || 
+        err.message.includes('cannot exceed')) {
+      return res.status(400).json({ error: err.message });
     }
     res.status(500).json({ error: err.message });
   }
@@ -229,8 +242,7 @@ const deleteSequenceItem = async (req, res) => {
       return res.status(400).json({ error: "Valid Sequence Item ID is required" });
     }
 
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.deleteSequenceItem(itemId, changedBy);
+    const result = await sequenceService.deleteSequenceItem(itemId);
     res.status(200).json(result);
   } catch (err) {
     if (err.message === "Sequence item not found") {
@@ -251,10 +263,15 @@ const createSequenceWithItems = async (req, res) => {
       return res.status(400).json({ error: "Both sequence and items are required" });
     }
 
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.createSequenceWithItems(sequence, items, changedBy);
+    const result = await sequenceService.createSequenceWithItems(sequence, items);
     res.status(201).json(result);
   } catch (err) {
+    if (err.message.includes('required') || 
+        err.message.includes('must be') || 
+        err.message.includes('cannot') || 
+        err.message.includes('Duplicate')) {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };
@@ -270,8 +287,7 @@ const assignSequenceToAccount = async (req, res) => {
       return res.status(400).json({ error: "Both accountId and sequenceId are required" });
     }
 
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.assignSequenceToAccount(accountId, sequenceId, changedBy);
+    const result = await sequenceService.assignSequenceToAccount(accountId, sequenceId);
     res.status(200).json(result);
   } catch (err) {
     if (err.message.includes("not found") || err.message.includes("inactive")) {
@@ -292,8 +308,7 @@ const unassignSequenceFromAccount = async (req, res) => {
       return res.status(400).json({ error: "Valid Account ID is required" });
     }
 
-    const changedBy = req.user?.UserID || req.body.changedBy || 1;
-    const result = await sequenceRepo.unassignSequenceFromAccount(accountId, changedBy);
+    const result = await sequenceService.unassignSequenceFromAccount(accountId);
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -311,8 +326,20 @@ const getAccountsBySequence = async (req, res) => {
       return res.status(400).json({ error: "Valid Sequence ID is required" });
     }
 
-    const accounts = await sequenceRepo.getAccountsBySequence(sequenceId);
+    const accounts = await sequenceService.getAccountsBySequence(sequenceId);
     res.status(200).json(accounts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get all activity types
+//======================================
+const getAllActivityTypes = async (req, res) => {
+  try {
+    const activityTypes = await sequenceService.getAllActivityTypes();
+    res.status(200).json(activityTypes);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -335,4 +362,5 @@ module.exports = {
   assignSequenceToAccount,
   unassignSequenceFromAccount,
   getAccountsBySequence,
+  getAllActivityTypes,
 };

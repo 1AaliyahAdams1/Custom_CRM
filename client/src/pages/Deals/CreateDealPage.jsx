@@ -10,14 +10,14 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
-import { ThemeProvider } from '@mui/material/styles';
-import theme from '../../components/Theme';
+import { useTheme } from '@mui/material/styles';
 import SmartDropdown from '../../components/SmartDropdown';
 import { createDeal } from '../../services/dealService';
 import { getAllAccounts } from '../../services/accountService';
 import { dealStageService } from '../../services/dropdownServices';
 
 const CreateDealPage = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     AccountID: '',
@@ -142,125 +142,134 @@ const CreateDealPage = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', minHeight: '100vh', p: 3, backgroundColor: '#fafafa' }}>
-        <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h4" sx={{ fontWeight: 600 }}>Create New Deal</Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>Back</Button>
-              <Button variant="outlined" startIcon={<Clear />} onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
-              <Button
-                variant="contained"
-                startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                sx={{ backgroundColor: '#050505', '&:hover': { backgroundColor: '#333' } }}
-              >
-                {isSubmitting ? 'Saving...' : 'Save Deal'}
-              </Button>
-            </Box>
+    <Box sx={{ 
+      width: '100%', 
+      minHeight: '100vh', 
+      p: 3, 
+      backgroundColor: theme.palette.background.default 
+    }}>
+      <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" sx={{ 
+            fontWeight: 600,
+            color: theme.palette.text.primary 
+          }}>
+            Create New Deal
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>Back</Button>
+            <Button variant="outlined" startIcon={<Clear />} onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
+            <Button
+              variant="contained"
+              startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : 'Save Deal'}
+            </Button>
           </Box>
-
-          {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>{error}</Alert>}
-          {successMessage && <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>{successMessage}</Alert>}
-
-          <Paper elevation={0} sx={{ p: 3 }}>
-            <form onSubmit={handleSubmit}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3 }}>
-                <SmartDropdown
-                  label="Account"
-                  name="AccountID"
-                  value={formData.AccountID}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  service={accountService}
-                  displayField="AccountName"
-                  valueField="AccountID"
-                  disabled={isSubmitting}
-                  error={isFieldInvalid('AccountID')}
-                  helperText={getFieldError('AccountID')}
-                />
-
-                <SmartDropdown
-                  label="Deal Stage"
-                  name="DealStageID"
-                  value={formData.DealStageID}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  service={dealStageService}
-                  displayField="StageName"
-                  valueField="DealStageID"
-                  disabled={isSubmitting}
-                  error={isFieldInvalid('DealStageID')}
-                  helperText={getFieldError('DealStageID')}
-                />
-
-                <TextField
-                  label="Deal Name"
-                  name="DealName"
-                  value={formData.DealName}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  fullWidth
-                  error={isFieldInvalid('DealName')}
-                  helperText={getFieldError('DealName')}
-                />
-
-                <TextField
-                  label="Value"
-                  name="Value"
-                  type="number"
-                  value={formData.Value}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  fullWidth
-                  error={isFieldInvalid('Value')}
-                  helperText={getFieldError('Value')}
-                />
-
-                <TextField
-                  label="Close Date"
-                  name="CloseDate"
-                  type="date"
-                  value={formData.CloseDate}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  error={isFieldInvalid('CloseDate')}
-                  helperText={getFieldError('CloseDate')}
-                />
-
-                <TextField
-                  label="Probability (%)"
-                  name="Probability"
-                  type="number"
-                  value={formData.Probability}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  fullWidth
-                  error={isFieldInvalid('Probability')}
-                  helperText={getFieldError('Probability')}
-                />
-
-                <TextField
-                  label="Currency ID"
-                  name="CurrencyID"
-                  value={formData.CurrencyID}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  fullWidth
-                  error={isFieldInvalid('CurrencyID')}
-                  helperText={getFieldError('CurrencyID')}
-                />
-              </Box>
-            </form>
-          </Paper>
-
         </Box>
+
+        {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>{error}</Alert>}
+        {successMessage && <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>{successMessage}</Alert>}
+
+        <Paper elevation={0} sx={{ 
+          p: 3,
+          backgroundColor: theme.palette.background.paper 
+        }}>
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3 }}>
+              <SmartDropdown
+                label="Account"
+                name="AccountID"
+                value={formData.AccountID}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                service={accountService}
+                displayField="AccountName"
+                valueField="AccountID"
+                disabled={isSubmitting}
+                error={isFieldInvalid('AccountID')}
+                helperText={getFieldError('AccountID')}
+              />
+
+              <SmartDropdown
+                label="Deal Stage"
+                name="DealStageID"
+                value={formData.DealStageID}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                service={dealStageService}
+                displayField="StageName"
+                valueField="DealStageID"
+                disabled={isSubmitting}
+                error={isFieldInvalid('DealStageID')}
+                helperText={getFieldError('DealStageID')}
+              />
+
+              <TextField
+                label="Deal Name"
+                name="DealName"
+                value={formData.DealName}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                fullWidth
+                error={isFieldInvalid('DealName')}
+                helperText={getFieldError('DealName')}
+              />
+
+              <TextField
+                label="Value"
+                name="Value"
+                type="number"
+                value={formData.Value}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                fullWidth
+                error={isFieldInvalid('Value')}
+                helperText={getFieldError('Value')}
+              />
+
+              <TextField
+                label="Close Date"
+                name="CloseDate"
+                type="date"
+                value={formData.CloseDate}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                error={isFieldInvalid('CloseDate')}
+                helperText={getFieldError('CloseDate')}
+              />
+
+              <TextField
+                label="Probability (%)"
+                name="Probability"
+                type="number"
+                value={formData.Probability}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                fullWidth
+                error={isFieldInvalid('Probability')}
+                helperText={getFieldError('Probability')}
+              />
+
+              <TextField
+                label="Currency ID"
+                name="CurrencyID"
+                value={formData.CurrencyID}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                fullWidth
+                error={isFieldInvalid('CurrencyID')}
+                helperText={getFieldError('CurrencyID')}
+              />
+            </Box>
+          </form>
+        </Paper>
       </Box>
-    </ThemeProvider>
+    </Box>
   );
 };
 

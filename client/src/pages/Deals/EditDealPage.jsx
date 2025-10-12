@@ -11,14 +11,14 @@ import {
   Skeleton
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
-import { ThemeProvider } from '@mui/material/styles';
-import theme from "../../components/Theme";
+import { useTheme } from '@mui/material/styles';
 import SmartDropdown from '../../components/SmartDropdown';
 import { fetchDealById, updateDeal } from "../../services/dealService";
 import { dealStageService } from '../../services/dropdownServices';
 import { getAllAccounts } from '../../services/accountService';
 
 const EditDealPage = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -31,7 +31,7 @@ const EditDealPage = () => {
     CloseDate: "",
     Probability: "",
   });
-  const [accounts, setAccounts] = useState([]); // Add accounts state
+  const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -65,7 +65,7 @@ const EditDealPage = () => {
           CloseDate: dealData.CloseDate || "",
           Probability: dealData.Probability || "",
         });
-        
+
         setAccounts(accountsResponse.data);
       } catch {
         setError("Failed to load deal data");
@@ -97,110 +97,130 @@ const EditDealPage = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', minHeight: '100vh', p: 3, backgroundColor: '#fafafa' }}>
-        <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-          {loading ? (
-            <Box sx={{ p: 3 }}>
-              <Skeleton variant="rectangular" width="100%" height={400} />
-            </Box>
-          ) : (
-            <>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h4">Edit Deal</Typography>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>Back</Button>
-                  <Button variant="outlined" startIcon={<Clear />} onClick={() => navigate("/deals")} disabled={saving}>Cancel</Button>
-                  <Button variant="contained" startIcon={saving ? <CircularProgress size={20} /> : <Save />} onClick={handleSubmit} disabled={saving}>
-                    {saving ? 'Updating...' : 'Update Deal'}
-                  </Button>
-                </Box>
+    <Box sx={{
+      width: '100%',
+      minHeight: '100vh',
+      p: 3,
+      backgroundColor: theme.palette.background.default
+    }}>
+      <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+        {loading ? (
+          <Box sx={{ p: 3 }}>
+            <Skeleton variant="rectangular" width="100%" height={400} />
+          </Box>
+        ) : (
+          <>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+              <Typography variant="h4" sx={{
+                fontWeight: 600,
+                color: theme.palette.text.primary
+              }}>
+                Edit Deal
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>Back</Button>
+                <Button variant="outlined" startIcon={<Clear />} onClick={() => navigate("/deals")} disabled={saving}>Cancel</Button>
+                <Button
+                  variant="contained"
+                  startIcon={saving ? <CircularProgress size={20} /> : <Save />}
+                  onClick={handleSubmit}
+                  disabled={saving}
+                >
+                  {saving ? 'Updating...' : 'Update Deal'}
+                </Button>
               </Box>
+            </Box>
 
-              {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-              {successMessage && <Alert severity="success" sx={{ mb: 3 }}>{successMessage}</Alert>}
+            {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+            {successMessage && <Alert severity="success" sx={{ mb: 3 }}>{successMessage}</Alert>}
 
-              <Paper elevation={0} sx={{ p: 3 }}>
-                <form onSubmit={handleSubmit}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {/* Read-only fields  */}
-                    <Box sx={{ mb: 2, p: 2, backgroundColor: '#f8f9fa', borderRadius: 1, border: '1px solid #e0e0e0' }}>
-                      {/* <Box sx={{ mb: 1 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                          Deal ID 
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                          {formData.DealID}
-                        </Typography>
-                      </Box> */}
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                          Account
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                          {accountName}
-                        </Typography>
-                      </Box>
+            <Paper elevation={0} sx={{
+              p: 3,
+              backgroundColor: theme.palette.background.paper
+            }}>
+              <form onSubmit={handleSubmit}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {/* Read-only fields  */}
+                  <Box sx={{
+                    mb: 2,
+                    p: 2,
+                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f8f9fa',
+                    borderRadius: 1,
+                    border: `1px solid ${theme.palette.divider}`
+                  }}>
+                    <Box>
+                      <Typography variant="caption" sx={{
+                        color: theme.palette.text.secondary,
+                        fontWeight: 'medium'
+                      }}>
+                        Account
+                      </Typography>
+                      <Typography variant="body1" sx={{
+                        fontWeight: 'medium',
+                        color: theme.palette.text.primary
+                      }}>
+                        {accountName}
+                      </Typography>
                     </Box>
-
-                    <SmartDropdown
-                      label="Deal Stage"
-                      name="DealStageID"
-                      value={formData.DealStageID}
-                      onChange={handleInputChange}
-                      service={dealStageService}
-                      displayField="StageName"
-                      valueField="DealStageID"
-                      disabled={saving}
-                    />
-
-                    <TextField
-                      fullWidth
-                      label="Deal Name"
-                      name="DealName"
-                      value={formData.DealName}
-                      onChange={handleInputChange}
-                      disabled={saving}
-                    />
-
-                    <TextField
-                      fullWidth
-                      label="Value"
-                      name="Value"
-                      type="number"
-                      value={formData.Value}
-                      onChange={handleInputChange}
-                      disabled={saving}
-                    />
-
-                    <TextField
-                      fullWidth
-                      label="Close Date"
-                      name="CloseDate"
-                      type="date"
-                      InputLabelProps={{ shrink: true }}
-                      value={formData.CloseDate}
-                      onChange={handleInputChange}
-                      disabled={saving}
-                    />
-
-                    <TextField
-                      fullWidth
-                      label="Probability (%)"
-                      name="Probability"
-                      type="number"
-                      value={formData.Probability}
-                      onChange={handleInputChange}
-                      disabled={saving}
-                    />
                   </Box>
-                </form>
-              </Paper>
-            </>
-          )}
-        </Box>
+
+                  <SmartDropdown
+                    label="Deal Stage"
+                    name="DealStageID"
+                    value={formData.DealStageID}
+                    onChange={handleInputChange}
+                    service={dealStageService}
+                    displayField="StageName"
+                    valueField="DealStageID"
+                    disabled={saving}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Deal Name"
+                    name="DealName"
+                    value={formData.DealName}
+                    onChange={handleInputChange}
+                    disabled={saving}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Value"
+                    name="Value"
+                    type="number"
+                    value={formData.Value}
+                    onChange={handleInputChange}
+                    disabled={saving}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Close Date"
+                    name="CloseDate"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={formData.CloseDate}
+                    onChange={handleInputChange}
+                    disabled={saving}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Probability (%)"
+                    name="Probability"
+                    type="number"
+                    value={formData.Probability}
+                    onChange={handleInputChange}
+                    disabled={saving}
+                  />
+                </Box>
+              </form>
+            </Paper>
+          </>
+        )}
       </Box>
-    </ThemeProvider>
+    </Box>
   );
 };
 

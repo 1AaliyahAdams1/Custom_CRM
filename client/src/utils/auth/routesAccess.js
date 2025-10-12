@@ -97,6 +97,9 @@ export const ROUTE_ACCESS = {
 
   //DealRooom
   dealRoom: ALL,
+
+  //AuditLog
+  auditLog: MANAGEMENT,
 };
 
 export const CLAIM_RULES = {

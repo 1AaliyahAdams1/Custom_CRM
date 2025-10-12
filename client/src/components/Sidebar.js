@@ -26,6 +26,7 @@ import {
   AdminPanelSettings as AdminPanelSettingsIcon,
   Inventory as InventoryIcon,
   Flag as FlagIcon,
+  History as HistoryIcon,
 } from "@mui/icons-material";
 import PriorityHighIcon from "@mui/icons-material/PriorityHigh";
 import WorkspacesOutlineIcon from "@mui/icons-material/WorkspacesOutline";
@@ -50,6 +51,7 @@ const NAV_ITEMS = [
 
   // Admin
   { name: "Role Management", href: "/rolemanagement", icon: AdminPanelSettingsIcon, accessKey: "roles", section: "Admin" },
+  { name: "Audit Log", href: "/audit-logs", icon: HistoryIcon, accessKey: "auditLog", section: "Admin" },
 
   // CRM
   { name: "Accounts", href: "/accounts", icon: BusinessIcon, accessKey: "accounts", section: "CRM Management" },

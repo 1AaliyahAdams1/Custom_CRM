@@ -1,12 +1,23 @@
-import React, { useState, useRef, useEffect } from "react";
-import { sendMessageToAI } from "../services/chatService";
+import React, { useState, useRef, useEffect, useContext } from "react";
+import { sendMessageToAI, parseAIResponse } from "../services/chatService";
 import { useTheme } from "@mui/material/styles";
+import { AuthContext } from "../context/auth/authContext";
 
 export default function Chatbot() {
+  const { user } = useContext(AuthContext);
+  const userId = user?.UserID || "guest";
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
+
+  // ✅ Start closed by default
+  const [isMinimized, setIsMinimized] = useState(true);
+
+  // ✅ Added enlarge toggle
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const [lastRequestType, setLastRequestType] = useState(null);
+  const [isGuest, setIsGuest] = useState(userId === "guest");
   const messagesEndRef = useRef(null);
   const theme = useTheme();
 
@@ -14,22 +25,115 @@ export default function Chatbot() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
+  // Initial greeting
+  useEffect(() => {
+    if (messages.length === 0) {
+      const greetingText = isGuest
+        ? "👋 Hi! I'm your AI CRM Assistant.\n\n⚠️ You're currently in guest mode with limited access. Please log in to access:\n\n• Your tasks and activities\n• Deal pipeline and insights\n• Contact and account information\n• Personalized analytics\n\nI can still answer general questions about CRM features!"
+        : "👋 Hi! I'm your AI CRM Assistant. I can help you with:\n\n• Managing your tasks and activities\n• Drafting emails\n• Finding contacts and accounts\n• Analyzing your pipeline\n• Providing business insights\n\nWhat can I help you with today?";
+
+      setMessages([
+        {
+          sender: "bot",
+          text: greetingText,
+          type: "greeting"
+        }
+      ]);
+    }
+  }, []);
+
   const sendMessage = async () => {
     if (!input.trim() || isTyping) return;
 
-    const newMessages = [...messages, { sender: "user", text: input }];
+    const userMessage = { sender: "user", text: input };
+    const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput("");
     setIsTyping(true);
 
     try {
-      const aiReply = await sendMessageToAI(input, "guest");
-      setMessages([...newMessages, { sender: "bot", text: aiReply }]);
+      const data = await sendMessageToAI(input, userId);
+      const parsed = parseAIResponse(data);
+      setLastRequestType(parsed.type);
+
+      const botMessage = {
+        sender: "bot",
+        text: parsed.text,
+        type: parsed.type,
+        metadata: {
+          isEmailDraft: parsed.isEmailDraft,
+          isTaskQuery: parsed.isTaskQuery,
+          isInsights: parsed.isInsights,
+          contextCounts: parsed.contextCounts
+        }
+      };
+
+      setMessages([...newMessages, botMessage]);
+      if (parsed.metadata?.isGuest) setIsGuest(true);
     } catch (error) {
-      setMessages([...newMessages, { sender: "bot", text: "Sorry, I'm having trouble responding right now." }]);
+      console.error("Chat error:", error);
+      setMessages([
+        ...newMessages,
+        {
+          sender: "bot",
+          text: "Sorry, I'm having trouble responding right now. Please try again.",
+          type: "error"
+        }
+      ]);
     } finally {
       setIsTyping(false);
     }
+  };
+
+  const getMessageBadge = (message) => {
+    if (message.sender !== "bot" || !message.metadata) return null;
+
+    if (message.metadata.isEmailDraft) {
+      return <span style={{
+        fontSize: 10,
+        background: theme.palette.success.main,
+        color: "white",
+        padding: "2px 6px",
+        borderRadius: 8,
+        marginLeft: 6,
+        fontWeight: "bold"
+      }}>✉️ EMAIL DRAFT</span>;
+    }
+
+    if (message.metadata.isInsights) {
+      return <span style={{
+        fontSize: 10,
+        background: theme.palette.info.main,
+        color: "white",
+        padding: "2px 6px",
+        borderRadius: 8,
+        marginLeft: 6,
+        fontWeight: "bold"
+      }}>📊 INSIGHTS</span>;
+    }
+
+    if (message.metadata.isTaskQuery) {
+      return <span style={{
+        fontSize: 10,
+        background: theme.palette.warning.main,
+        color: "white",
+        padding: "2px 6px",
+        borderRadius: 8,
+        marginLeft: 6,
+        fontWeight: "bold"
+      }}>✓ TASKS</span>;
+    }
+
+    return null;
+  };
+
+  const formatMessageText = (text) => {
+    return text.split('\n').map((line, i) => (
+      <React.Fragment key={i}>
+        {line}
+        {i < text.split('\n').length - 1 && <br />}
+      </React.Fragment>
+    ));
   };
 
   if (isMinimized) {
@@ -63,8 +167,9 @@ export default function Chatbot() {
       position: "fixed",
       bottom: 20,
       right: 20,
-      width: 350,
-      height: 500,
+      // ✅ Width and height adjust dynamically
+      width: isExpanded ? 550 : 350,
+      height: isExpanded ? 700 : 500,
       borderRadius: 12,
       boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
       background: theme.palette.background.paper,
@@ -86,9 +191,14 @@ export default function Chatbot() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 20 }}>🤖</span>
-          <span style={{ fontWeight: "bold" }}>AI Assistant</span>
+          <div>
+            <div style={{ fontWeight: "bold" }}>AI Assistant</div>
+            <div style={{ fontSize: 10, opacity: 0.9 }}>Enhanced CRM Helper</div>
+          </div>
         </div>
+
         <div style={{ display: "flex", gap: 8 }}>
+
           <button
             onClick={() => setIsMinimized(true)}
             style={{
@@ -103,8 +213,28 @@ export default function Chatbot() {
           >
             −
           </button>
+
           <button
-            onClick={() => setMessages([])}
+            onClick={() => setIsExpanded(prev => !prev)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: theme.palette.primary.contrastText,
+              cursor: "pointer",
+              fontSize: 18,
+              padding: 4
+            }}
+            title={isExpanded ? "Shrink" : "Enlarge"}
+          >
+            {isExpanded ? "▼" : "▲"}
+          </button>
+
+          <button
+            onClick={() => setMessages([{
+              sender: "bot",
+              text: "👋 Hello! How can I help you?",
+              type: "greeting"
+            }])}
             style={{
               background: "transparent",
               border: "none",
@@ -130,17 +260,6 @@ export default function Chatbot() {
         flexDirection: "column",
         gap: 12
       }}>
-        {messages.length === 0 && (
-          <div style={{
-            textAlign: "center",
-            color: theme.palette.text.secondary,
-            marginTop: 40,
-            fontSize: 14
-          }}>
-            👋 Hi! How can I help you today?
-          </div>
-        )}
-        
         {messages.map((m, i) => (
           <div
             key={i}
@@ -151,18 +270,44 @@ export default function Chatbot() {
             }}
           >
             <div style={{
-              background: m.sender === "user" ? theme.palette.primary.main : theme.palette.background.paper,
-              color: m.sender === "user" ? theme.palette.primary.contrastText : theme.palette.text.primary,
-              padding: "10px 14px",
-              borderRadius: m.sender === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+              display: "flex",
+              flexDirection: "column",
               maxWidth: "75%",
-              wordBreak: "break-word",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              border: m.sender === "bot" ? `1px solid ${theme.palette.divider}` : "none",
-              fontSize: 14,
-              lineHeight: 1.4
+              gap: 4
             }}>
-              {m.text}
+              {/* Message badge (for bot messages with metadata) */}
+              {m.sender === "bot" && getMessageBadge(m)}
+
+              {/* Message bubble */}
+              <div style={{
+                background: m.sender === "user" ? theme.palette.primary.main : theme.palette.background.paper,
+                color: m.sender === "user" ? theme.palette.primary.contrastText : theme.palette.text.primary,
+                padding: "10px 14px",
+                borderRadius: m.sender === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                wordBreak: "break-word",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                border: m.sender === "bot" ? `1px solid ${theme.palette.divider}` : "none",
+                fontSize: 14,
+                lineHeight: 1.5
+              }}>
+                {formatMessageText(m.text)}
+              </div>
+
+              {/* Context info (optional, for debugging) */}
+              {m.sender === "bot" && m.metadata && m.metadata.contextCounts && (
+                Object.values(m.metadata.contextCounts).some(count => count > 0) && (
+                  <div style={{
+                    fontSize: 10,
+                    color: theme.palette.text.secondary,
+                    paddingLeft: 8
+                  }}>
+                    {m.metadata.contextCounts.tasks > 0 && `${m.metadata.contextCounts.tasks} tasks • `}
+                    {m.metadata.contextCounts.deals > 0 && `${m.metadata.contextCounts.deals} deals • `}
+                    {m.metadata.contextCounts.accounts > 0 && `${m.metadata.contextCounts.accounts} accounts • `}
+                    {m.metadata.contextCounts.contacts > 0 && `${m.metadata.contextCounts.contacts} contacts`}
+                  </div>
+                )
+              )}
             </div>
           </div>
         ))}
@@ -207,7 +352,7 @@ export default function Chatbot() {
             </div>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -231,7 +376,7 @@ export default function Chatbot() {
             fontSize: 14,
             transition: "border 0.2s ease"
           }}
-          placeholder="Type a message..."
+          placeholder="Ask about tasks, deals, contacts..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
