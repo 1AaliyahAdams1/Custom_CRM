@@ -61,6 +61,7 @@ import { useNavigate } from 'react-router-dom';
 import { ThemeProvider } from "@mui/material/styles";
 import { formatDistanceToNow, format } from "date-fns";
 import theme from "../components/Theme";
+import NoteDetailsForm from "../components/NotesComponent";
 
 const WorkPage = ({
   activities = [],
@@ -103,6 +104,9 @@ const WorkPage = ({
   // Utility
   onClearMessages = () => {},
   showStatus = () => {},
+
+   userId,
+  refreshCurrentTabData = async () => {},
 }) => {
   // Local state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -115,7 +119,9 @@ const WorkPage = ({
   const [dueDateDialogOpen, setDueDateDialogOpen] = useState(false);
   const [dueDateDialogActivity, setDueDateDialogActivity] = useState(null);
   const [newDueDate, setNewDueDate] = useState("");
-  
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const [notesDialogActivity, setNotesDialogActivity] = useState(null);
+
   const [dragOverIndex, setDragOverIndex] = useState(null);
   
   const navigate = useNavigate();
@@ -284,6 +290,16 @@ const WorkPage = ({
     }
   };
 
+    const handleNotesDialogOpen = (activity) => {
+    setNotesDialogActivity(activity);
+    setNotesDialogOpen(true);
+  };
+  
+  const handleNotesDialogClose = () => {
+    setNotesDialogOpen(false);
+    setNotesDialogActivity(null);
+  };
+
   // Drag and drop handlers
   const handleListDragStart = (e, index, activity) => {
     e.dataTransfer.setData("application/json", JSON.stringify(activity));
@@ -331,7 +347,20 @@ const WorkPage = ({
   );
 
   // Activity card component
-  const ActivityCard = ({ activity, showActions = true, section = 'current' }) => (
+const ActivityCard = ({ activity, showActions = true, section = 'current' }) => {
+  // Helper to format date properly
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown date';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Unknown date';
+      return format(date, "MMM d, yyyy 'at' h:mm a");
+    } catch {
+      return 'Unknown date';
+    }
+  };
+
+  return (
     <Card sx={{ mb: 2 }}>
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
@@ -373,7 +402,7 @@ const WorkPage = ({
             )}
             <Typography variant="body2" color="text.secondary">
               <strong>Due:</strong> {activity.DueToStart
-                ? format(new Date(activity.DueToStart), "MMM d, yyyy 'at' h:mm a")
+                ? formatDate(activity.DueToStart)
                 : 'No due date'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -381,7 +410,7 @@ const WorkPage = ({
             </Typography>
             {section === 'previous' && activity.CompletedAt && (
               <Typography variant="body2" color="text.secondary">
-                <strong>Completed:</strong> {format(new Date(activity.CompletedAt), "MMM d, yyyy 'at' h:mm a")}
+                <strong>Completed:</strong> {formatDate(activity.CompletedAt)}
               </Typography>
             )}
           </Box>
@@ -433,7 +462,7 @@ const WorkPage = ({
                 startIcon={<Note />}
                 onClick={() => onAddNoteClick(activity)}
               >
-                Note
+                Add Note
               </Button>
 
               <Button
@@ -467,21 +496,11 @@ const WorkPage = ({
               Change Due Date
             </Button>
           )}
-
-          {section === 'previous' && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Note />}
-              onClick={() => onAddNoteClick(activity)}
-            >
-              View Notes
-            </Button>
-          )}
         </CardActions>
       )}
     </Card>
   );
+};
 
   // Activities List View (Left Panel)
   const ActivitiesListView = () => (
@@ -590,7 +609,7 @@ const WorkPage = ({
     </List>
   );
 
-  // Account Tab Content (Three Sections)
+  // Account Tab Content 
   const AccountTabContent = () => {
     if (!currentTabData) return null;
 
@@ -615,87 +634,153 @@ const WorkPage = ({
           )}
         </Box>
 
-        {/* Previous Activities Section */}
-        <Accordion defaultExpanded={false} sx={{ mb: 2 }}>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <History />
-              <Typography variant="h6">
-                Activity History ({previousActivities.length})
-              </Typography>
-            </Box>
-          </AccordionSummary>
-          <AccordionDetails>
-            {previousActivities.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                No completed activities yet
-              </Typography>
-            ) : (
-              previousActivities.map((activity) => (
-                <ActivityCard
-                  key={activity.ActivityID}
-                  activity={activity}
-                  showActions={true}
-                  section="previous"
-                />
-              ))
-            )}
-          </AccordionDetails>
-        </Accordion>
+{/* Previous Activities Section */}
+<Accordion defaultExpanded={false} sx={{ mb: 2 }}>
+<AccordionSummary expandIcon={<ExpandMore />}>
+<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+<History />
+<Typography variant="h6">
+Activity History ({previousActivities.length})
+</Typography>
+</Box>
+</AccordionSummary>
+<AccordionDetails>
+<Box sx={{ maxHeight: '400px', overflowY: 'auto', pr: 1 }}>
+{previousActivities.length === 0 ? (
+<Typography variant="body2" color="text.secondary">
+No completed activities yet
+</Typography>
+) : (
+previousActivities.map((activity, idx) => {
+const formatDate = (dateString) => {
+if (!dateString) return 'Unknown date';
+try {
+const date = new Date(dateString);
+if (isNaN(date.getTime())) return 'Unknown date';
+return format(date, "MMM d, yyyy");
+} catch {
+return 'Unknown date';
+}
+};
 
-        {/* Current Activities Section */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Today />
-            <Typography variant="h6">
-              Current Activities ({currentActivities.length})
-            </Typography>
-          </Box>
-          {currentActivities.length === 0 ? (
-            <Paper sx={{ p: 3, textAlign: 'center', backgroundColor: '#f5f5f5' }}>
-              <CheckCircleOutline sx={{ fontSize: 48, color: '#4caf50', mb: 1 }} />
-              <Typography variant="body1" color="text.secondary">
-                All caught up! No current activities.
-              </Typography>
-            </Paper>
-          ) : (
-            currentActivities.map((activity) => (
-              <ActivityCard
-                key={activity.ActivityID}
-                activity={activity}
-                showActions={true}
-                section="current"
-              />
-            ))
-          )}
-        </Box>
+return (
+<Box key={activity.ActivityID} sx={{ mb: 2 }}>
+{/* Activity details in one line */}
+<Typography variant="body2" sx={{ mb: 0.5, color: '#333', fontWeight: 500 }}>
+<strong>{activity.ActivityTypeName}</strong>
+{activity.SequenceItemDescription && ` - ${activity.SequenceItemDescription}`}
+{' • completed on '}
+{formatDate(activity.CompletedAt)}
+</Typography>
 
+{/* Notes directly below activity */}
+{activity.Notes && activity.Notes.length > 0 && (
+<Box sx={{ pl: 2, mt: 1, mb: 1 }}>
+{activity.Notes.map((note, noteIdx) => (
+<Box key={noteIdx} sx={{ mb: 0.5 }}>
+<Typography
+variant="body2"
+color="text.secondary"
+sx={{
+fontStyle: 'italic',
+backgroundColor: '#f5f5f5',
+p: 1,
+borderRadius: 1,
+borderLeft: '3px solid #2196f3'
+}}
+>
+{note.Content}
+</Typography>
+{note.CreatedAt && (
+<Typography variant="caption" color="text.secondary" sx={{ pl: 1, display: 'block', mt: 0.5 }}>
+Added {formatDate(note.CreatedAt)}
+{note.CreatedBy && ` by User ${note.CreatedBy}`}
+</Typography>
+)}
+</Box>
+))}
+</Box>
+)}
+
+{idx < previousActivities.length - 1 && <Divider sx={{ mt: 2 }} />}
+</Box>
+);
+})
+)}
+</Box>
+</AccordionDetails>
+</Accordion>
+
+{/* Current Activities Section */}
+<Box sx={{ mb: 3 }}>
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+    <Today />
+    <Typography variant="h6">
+      Current Activities ({currentActivities.length})
+    </Typography>
+  </Box>
+  {currentActivities.length === 0 ? (
+    <Paper sx={{ p: 3, textAlign: 'center', backgroundColor: '#f5f5f5' }}>
+      {/* ... existing content ... */}
+    </Paper>
+  ) : (
+    <Box sx={{ maxHeight: '500px', overflowY: 'auto', pr: 1 }}>
+      {currentActivities.map((activity) => (
+        <ActivityCard
+          key={activity.ActivityID}
+          activity={activity}
+          showActions={true}
+          section="current"
+        />
+      ))}
+    </Box>
+  )}
+</Box> 
         {/* Upcoming Activities Section */}
         <Accordion defaultExpanded={true} sx={{ mb: 2 }}>
           <AccordionSummary expandIcon={<ExpandMore />}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Schedule />
-              <Typography variant="h6">
-                Upcoming Activities ({upcomingActivities.length})
-              </Typography>
-            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center',       justifyContent: 'space-between', width: '100%', pr: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Schedule />
+        <Typography variant="h6">
+          Upcoming Activities ({upcomingActivities.length})
+        </Typography>
+      </Box>
+      {upcomingActivities.length > 0 && (
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<Event />}
+          onClick={(e) => {
+            e.stopPropagation();
+            // Use the FIRST upcoming activity as the reference point
+            handleDueDateClick(upcomingActivities[0]);
+          }}
+          sx={{ mr: 1 }}
+        >
+          Change Due Date
+        </Button>
+      )}
+    </Box>
           </AccordionSummary>
-          <AccordionDetails>
-            {upcomingActivities.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                No upcoming activities scheduled
-              </Typography>
-            ) : (
-              upcomingActivities.map((activity) => (
-                <ActivityCard
-                  key={activity.ActivityID}
-                  activity={activity}
-                  showActions={true}
-                  section="upcoming"
-                />
-              ))
-            )}
-          </AccordionDetails>
+   <AccordionDetails>
+  <Box sx={{ maxHeight: '400px', overflowY: 'auto', pr: 1 }}>
+    {upcomingActivities.length === 0 ? (
+      <Typography variant="body2" color="text.secondary">
+        No upcoming activities scheduled
+      </Typography>
+    ) : (
+      upcomingActivities.map((activity) => (
+        <ActivityCard
+          key={activity.ActivityID}
+          activity={activity}
+          showActions={false}
+          section="upcoming"
+        />
+      ))
+    )}
+  </Box>
+</AccordionDetails>
         </Accordion>
       </Box>
     );
@@ -941,27 +1026,36 @@ const WorkPage = ({
 
         {/* Due Date Dialog */}
         <Dialog open={dueDateDialogOpen} onClose={() => setDueDateDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Change Due Date</DialogTitle>
-          <DialogContent>
-            <Box sx={{ pt: 1 }}>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                Changing this due date will automatically adjust all subsequent activities in the sequence.
-              </Alert>
-              <TextField
-                label="New Due Date"
-                type="datetime-local"
-                value={newDueDate}
-                onChange={(e) => setNewDueDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-              />
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDueDateDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleDueDateSubmit} variant="contained">Update & Cascade</Button>
-          </DialogActions>
-        </Dialog>
+  <DialogTitle>Change Due Date for Sequence</DialogTitle>
+  <DialogContent>
+    <Box sx={{ pt: 1 }}>
+      <Alert severity="warning" sx={{ mb: 2 }}>
+        This will adjust ALL upcoming activities in the sequence. All activities will maintain 
+        their relative timing (Day 1, Day 3, etc.) from the new start date.
+      </Alert>
+      {dueDateDialogActivity && (
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Adjusting start date for: <strong>{dueDateDialogActivity.ActivityTypeName}</strong> 
+          {dueDateDialogActivity.DaysFromStart && ` (Day ${dueDateDialogActivity.DaysFromStart})`}
+        </Typography>
+      )}
+      <TextField
+        label="New Due Date"
+        type="datetime-local"
+        value={newDueDate}
+        onChange={(e) => setNewDueDate(e.target.value)}
+        InputLabelProps={{ shrink: true }}
+        fullWidth
+      />
+    </Box>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setDueDateDialogOpen(false)}>Cancel</Button>
+    <Button onClick={handleDueDateSubmit} variant="contained" color="primary">
+      Update All Activities
+    </Button>
+  </DialogActions>
+</Dialog>
 
         {/* Complete Dialog */}
         <Dialog open={completeDialogOpen} onClose={() => setCompleteDialogOpen(false)} maxWidth="sm" fullWidth>
@@ -999,6 +1093,39 @@ const WorkPage = ({
           </DialogActions>
         </Dialog>
 
+{/* Notes Dialog */}
+<Dialog 
+  open={notesDialogOpen} 
+  onClose={handleNotesDialogClose} 
+  maxWidth="md" 
+  fullWidth
+>
+  <DialogTitle>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Typography variant="h6">
+        Activity Notes - {notesDialogActivity?.ActivityTypeName}
+      </Typography>
+      <IconButton onClick={handleNotesDialogClose} size="small">
+        <Close />
+      </IconButton>
+    </Box>
+  </DialogTitle>
+  <DialogContent>
+    {notesDialogActivity && (
+      <NoteDetailsForm
+        entityType="Activity"
+        entityId={notesDialogActivity.ActivityID}
+        onUpdated={async () => {
+          showStatus('Note saved successfully', 'success');
+          // Refresh current tab data
+          if (refreshCurrentTabData) {
+            await refreshCurrentTabData();
+          }
+        }}
+      />
+    )}
+  </DialogContent>
+</Dialog>
         {/* Status Snackbar */}
         <Snackbar
           open={!!statusMessage}

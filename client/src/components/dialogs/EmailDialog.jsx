@@ -142,7 +142,7 @@ const EmailDialog = ({ open, onClose, activity }) => {
             fullWidth
             required
             sx={{ mb: 2 }}
-            defaultValue={activity ? `Re: ${activity.AccountName}` : ""}
+            defaultValue={activity?.AccountName ? `Re: ${activity.AccountName}` : ""}
           />
 
           <Divider sx={{ mb: 2 }} />

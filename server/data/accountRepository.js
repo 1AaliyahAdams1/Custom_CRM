@@ -702,7 +702,7 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
           .input('SequenceID', sql.Int, sequenceId)
           .query(`
             UPDATE Account 
-            SET SequenceID = @SequenceID, UpdatedAt = GETDATE()
+            SET SequenceID = @SequenceID
             WHERE AccountID = @AccountID
           `);
         let activitiesCreated = 0;

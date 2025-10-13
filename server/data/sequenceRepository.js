@@ -1179,14 +1179,14 @@ const updateActivityDueDateWithCascade = async (activityId, userId, newDueDate) 
 
     const activity = activityResult.recordset[0];
     
-    // Update the current activity
+    // Update the current activity (removed UpdatedAt)
     const updateRequest = new sql.Request(transaction);
     await updateRequest
       .input("ActivityID", sql.Int, activityId)
       .input("NewDueDate", sql.SmallDateTime, newDueDate)
       .query(`
         UPDATE Activity 
-        SET DueToStart = @NewDueDate, UpdatedAt = GETDATE()
+        SET DueToStart = @NewDueDate
         WHERE ActivityID = @ActivityID
       `);
 
@@ -1226,7 +1226,7 @@ const updateActivityDueDateWithCascade = async (activityId, userId, newDueDate) 
             .input("NewDueDate", sql.SmallDateTime, currentDue)
             .query(`
               UPDATE Activity 
-              SET DueToStart = @NewDueDate, UpdatedAt = GETDATE()
+              SET DueToStart = @NewDueDate
               WHERE ActivityID = @ActivityID
             `);
         }
