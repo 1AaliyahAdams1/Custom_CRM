@@ -12,8 +12,11 @@ import {
 import {
   createNote,
   updateNote,
+  deactivateNote,
+  reactivateNote,
 } from "../../services/noteService";
-import EmailDialog from "../../components/EmailDialog";
+import EmailDialog from "../../components/dialogs/EmailDialog";
+import NotesPopup from "../../components/NotesComponent";
 
 const WorkPageContainer = () => {
   // User data
@@ -30,7 +33,7 @@ const WorkPageContainer = () => {
   // Tab management
   const [openTabs, setOpenTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
-  const [tabData, setTabData] = useState({}); // accountId -> grouped data
+  const [tabData, setTabData] = useState({});
   const [tabLoading, setTabLoading] = useState({});
 
   // Activity metadata
@@ -130,7 +133,6 @@ const WorkPageContainer = () => {
     try {
       const accountId = activity.AccountID;
       
-      // Check if tab already open
       const existingTabIndex = openTabs.findIndex(tab => tab.accountId === accountId);
       
       if (existingTabIndex !== -1) {
@@ -138,7 +140,6 @@ const WorkPageContainer = () => {
         return;
       }
 
-      // Create new tab
       const newTab = {
         accountId: accountId,
         accountName: activity.AccountName,
@@ -151,15 +152,26 @@ const WorkPageContainer = () => {
       setOpenTabs(newTabs);
       setActiveTab(newTabIndex);
       
-      // Load account data
       setTabLoading(prev => ({ ...prev, [accountId]: true }));
 
       const response = await getAccountActivitiesGrouped(userId, accountId);
       
       if (response.success && response.data) {
+        const dataWithNotes = {
+          ...response.data,
+          previousActivities: (response.data.previousActivities || []).map(act => ({
+            ...act,
+            Notes: act.Notes || []
+          })),
+          currentActivities: (response.data.currentActivities || []).map(act => ({
+            ...act,
+            Notes: act.Notes || []
+          }))
+        };
+        
         setTabData(prev => ({
           ...prev,
-          [accountId]: response.data
+          [accountId]: dataWithNotes
         }));
       } else {
         throw new Error("Failed to load account activities");
@@ -168,7 +180,6 @@ const WorkPageContainer = () => {
       console.error("Error opening account tab:", err);
       showStatus(err.message || "Failed to open account", 'error');
       
-      // Remove tab if failed to load
       const tabIndex = openTabs.findIndex(tab => tab.accountId === activity.AccountID);
       if (tabIndex !== -1) {
         handleTabClose(tabIndex);
@@ -222,17 +233,27 @@ const WorkPageContainer = () => {
       if (response.success) {
         showStatus('Activity completed successfully!', 'success');
         
-        // Refresh activities list
         await fetchActivities();
         
-        // Refresh current tab data
         if (activeTab !== null && openTabs[activeTab]) {
           const accountId = openTabs[activeTab].accountId;
           const tabResponse = await getAccountActivitiesGrouped(userId, accountId);
           if (tabResponse.success) {
+            const dataWithNotes = {
+              ...tabResponse.data,
+              previousActivities: (tabResponse.data.previousActivities || []).map(act => ({
+                ...act,
+                Notes: act.Notes || []
+              })),
+              currentActivities: (tabResponse.data.currentActivities || []).map(act => ({
+                ...act,
+                Notes: act.Notes || []
+              }))
+            };
+            
             setTabData(prev => ({
               ...prev,
-              [accountId]: tabResponse.data
+              [accountId]: dataWithNotes
             }));
           }
         }
@@ -252,14 +273,25 @@ const WorkPageContainer = () => {
         
         await fetchActivities();
         
-        // Refresh current tab
         if (activeTab !== null && openTabs[activeTab]) {
           const accountId = openTabs[activeTab].accountId;
           const tabResponse = await getAccountActivitiesGrouped(userId, accountId);
           if (tabResponse.success) {
+            const dataWithNotes = {
+              ...tabResponse.data,
+              previousActivities: (tabResponse.data.previousActivities || []).map(act => ({
+                ...act,
+                Notes: act.Notes || []
+              })),
+              currentActivities: (tabResponse.data.currentActivities || []).map(act => ({
+                ...act,
+                Notes: act.Notes || []
+              }))
+            };
+            
             setTabData(prev => ({
               ...prev,
-              [accountId]: tabResponse.data
+              [accountId]: dataWithNotes
             }));
           }
         }
@@ -279,14 +311,25 @@ const WorkPageContainer = () => {
         
         await fetchActivities();
         
-        // Refresh current tab
         if (activeTab !== null && openTabs[activeTab]) {
           const accountId = openTabs[activeTab].accountId;
           const tabResponse = await getAccountActivitiesGrouped(userId, accountId);
           if (tabResponse.success) {
+            const dataWithNotes = {
+              ...tabResponse.data,
+              previousActivities: (tabResponse.data.previousActivities || []).map(act => ({
+                ...act,
+                Notes: act.Notes || []
+              })),
+              currentActivities: (tabResponse.data.currentActivities || []).map(act => ({
+                ...act,
+                Notes: act.Notes || []
+              }))
+            };
+            
             setTabData(prev => ({
               ...prev,
-              [accountId]: tabResponse.data
+              [accountId]: dataWithNotes
             }));
           }
         }
@@ -306,14 +349,25 @@ const WorkPageContainer = () => {
         
         await fetchActivities();
         
-        // Refresh current tab
         if (activeTab !== null && openTabs[activeTab]) {
           const accountId = openTabs[activeTab].accountId;
           const tabResponse = await getAccountActivitiesGrouped(userId, accountId);
           if (tabResponse.success) {
+            const dataWithNotes = {
+              ...tabResponse.data,
+              previousActivities: (tabResponse.data.previousActivities || []).map(act => ({
+                ...act,
+                Notes: act.Notes || []
+              })),
+              currentActivities: (tabResponse.data.currentActivities || []).map(act => ({
+                ...act,
+                Notes: act.Notes || []
+              }))
+            };
+            
             setTabData(prev => ({
               ...prev,
-              [accountId]: tabResponse.data
+              [accountId]: dataWithNotes
             }));
           }
         }
@@ -344,10 +398,43 @@ const WorkPageContainer = () => {
     try {
       await createNote(noteData);
       showStatus('Note added successfully!', 'success');
-      setNotesPopupOpen(false);
-      setNotesPopupActivity(null);
+      await refreshCurrentTabData();
     } catch (err) {
       showStatus(err.message || 'Failed to add note', 'error');
+      throw err;
+    }
+  };
+
+  const handleEditNote = async (noteId, noteData) => {
+    try {
+      await updateNote(noteId, noteData);
+      showStatus('Note updated successfully!', 'success');
+      await refreshCurrentTabData();
+    } catch (err) {
+      showStatus(err.message || 'Failed to update note', 'error');
+      throw err;
+    }
+  };
+
+  const handleDeactivateNote = async (noteId) => {
+    try {
+      await deactivateNote(noteId);
+      showStatus('Note deactivated successfully!', 'success');
+      await refreshCurrentTabData();
+    } catch (err) {
+      showStatus(err.message || 'Failed to deactivate note', 'error');
+      throw err;
+    }
+  };
+
+  const handleReactivateNote = async (noteId) => {
+    try {
+      await reactivateNote(noteId);
+      showStatus('Note reactivated successfully!', 'success');
+      await refreshCurrentTabData();
+    } catch (err) {
+      showStatus(err.message || 'Failed to reactivate note', 'error');
+      throw err;
     }
   };
 
@@ -400,23 +487,50 @@ const WorkPageContainer = () => {
     return tabLoading[currentTab.accountId] || false;
   };
 
+  // ---------------- REFRESH CURRENT TAB DATA ----------------
+  const refreshCurrentTabData = async () => {
+    if (activeTab !== null && openTabs[activeTab]) {
+      const accountId = openTabs[activeTab].accountId;
+      try {
+        const tabResponse = await getAccountActivitiesGrouped(userId, accountId);
+        if (tabResponse.success) {
+          const dataWithNotes = {
+            ...tabResponse.data,
+            previousActivities: (tabResponse.data.previousActivities || []).map(act => ({
+              ...act,
+              Notes: act.Notes || []
+            })),
+            currentActivities: (tabResponse.data.currentActivities || []).map(act => ({
+              ...act,
+              Notes: act.Notes || []
+            }))
+          };
+          
+          setTabData(prev => ({
+            ...prev,
+            [accountId]: dataWithNotes
+          }));
+        }
+      } catch (err) {
+        console.error('Error refreshing tab data:', err);
+      }
+    }
+  };
+
   return (
     <>
       <WorkPage
-        // Activity data
         activities={activities}
         loading={loading}
         error={error}
         statusMessage={statusMessage}
         statusSeverity={statusSeverity}
         
-        // Filter and sort
         currentSort={currentSort}
         currentFilter={currentFilter}
         onSortChange={handleSortChange}
         onFilterChange={handleFilterChange}
         
-        // Tab management
         openTabs={openTabs}
         activeTab={activeTab}
         currentTabData={getCurrentTabData()}
@@ -424,7 +538,6 @@ const WorkPageContainer = () => {
         onTabChange={handleTabChange}
         onTabClose={handleTabClose}
         
-        // Activity actions
         onActivityClick={handleActivityClick}
         onCompleteActivity={handleCompleteActivity}
         onUpdateActivity={handleUpdateActivity}
@@ -433,27 +546,46 @@ const WorkPageContainer = () => {
         onSendEmailClick={handleSendEmailClick}
         onAddNoteClick={handleAddNoteClick}
         
-        // Drag and drop
+        userId={userId}
+        refreshCurrentTabData={refreshCurrentTabData}
+        
         onDragStart={handleDragStart}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onReorderActivities={handleReorderActivities}
         draggedIndex={draggedIndex}
         
-        // Metadata
         activityMetadata={activityMetadata}
         
-        // Utility
         onClearMessages={clearMessages}
         showStatus={showStatus}
       />
       
-      {/* Email Dialog */}
       {emailDialogOpen && emailDialogActivity && (
         <EmailDialog
           open={emailDialogOpen}
           onClose={handleCloseEmailDialog}
           activity={emailDialogActivity}
+        />
+      )}
+
+      {notesPopupOpen && notesPopupActivity && (
+        <NotesPopup
+          open={notesPopupOpen}
+          onClose={() => {
+            setNotesPopupOpen(false);
+            setNotesPopupActivity(null);
+          }}
+          entityType="Activity"
+          entityId={notesPopupActivity.ActivityID}
+          entityName={notesPopupActivity.ActivityTypeName}
+          onSave={handleSaveNote}
+          onEdit={handleEditNote}
+          onDeactivate={handleDeactivateNote}
+          onReactivate={handleReactivateNote}
+          showExistingNotes={true}
+          maxLength={255}
+          required={false}
         />
       )}
     </>

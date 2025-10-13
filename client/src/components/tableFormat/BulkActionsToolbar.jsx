@@ -147,7 +147,7 @@ const BulkActionsToolbar = ({
                     },
                   }}
                 >
-                  Claim & Add Sequence
+                  Claim & Assign Sequence
                 </Button>
               </span>
             </Tooltip>
