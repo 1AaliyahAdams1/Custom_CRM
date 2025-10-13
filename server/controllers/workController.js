@@ -172,7 +172,6 @@ const deleteActivity = async (req, res) => {
     await workService.deleteActivity(activityId, userId);
     res.status(200).json({ success: true, message: "Activity deleted successfully" });
   } catch (err) {
-    console.error("Error in deleteActivity:", err);
     res.status(500).json({ error: err.message });
   }
 };

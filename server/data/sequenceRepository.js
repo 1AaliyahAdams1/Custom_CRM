@@ -1267,6 +1267,7 @@ module.exports = {
   assignSequenceToAccount,
   unassignSequenceFromAccount,
   getAccountsBySequence,
+  getAllActivityTypes,
   
   // Activity Types
   getAllActivityTypes,

@@ -50,6 +50,7 @@ const employeeRoutes = require("./routes/employeeRoutes");
 const currencyRoutes = require("./routes/currencyRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const chatbotRoutes = require("./routes/chatbotRoutes");
+const auditLogRoutes = require("./routes/auditLogRoutes");
 
 //API ROUTES
 const efmvenuesRoute = require('./routes/efm/efmVenueRoute');
@@ -92,6 +93,7 @@ app.use("/employees", employeeRoutes);
 app.use("/notes", noteRoutes);
 app.use("/currencies", currencyRoutes);
 app.use("/chatbot", chatbotRoutes);
+app.use("/audit-logs", auditLogRoutes);
 
 //API Mounting
 app.use('/api/cities', efmcitiesRoute);

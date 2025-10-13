@@ -177,6 +177,11 @@ const updateSequenceItem = async (req, res) => {
     if (err.message === "Sequence item not found") {
       return res.status(404).json({ error: err.message });
     }
+    if (err.message.includes('required') || 
+        err.message.includes('cannot be') || 
+        err.message.includes('cannot exceed')) {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };

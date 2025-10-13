@@ -644,7 +644,6 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
     
     for (const accountId of accountIds) {
       try {
-       
         const checkResult = await new sql.Request(transaction)
           .input('AccountID', sql.Int, accountId)
           .query(`
@@ -688,7 +687,6 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
           continue;
         }
         
-  
         if (!account.CurrentOwnerID) {
           await new sql.Request(transaction)
             .input('AccountID', sql.Int, accountId)
@@ -698,8 +696,7 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
               INSERT INTO AssignedUser (AccountID, UserID, Active)
               VALUES (@AccountID, @UserID, @Active)
             `);
-        }
-       
+        }       
         await new sql.Request(transaction)
           .input('AccountID', sql.Int, accountId)
           .input('SequenceID', sql.Int, sequenceId)
@@ -708,12 +705,11 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
             SET SequenceID = @SequenceID, UpdatedAt = GETDATE()
             WHERE AccountID = @AccountID
           `);
-     
         let activitiesCreated = 0;
         
         for (const item of sequenceItems) {
           const dueDate = new Date(assignmentDate);
-          dueDate.setDate(dueDate.getDate() + item.DaysFromStart);
+          dueDate.setDate(dueDate.getDate() + item.DaysFromStart - 1);
           
           await new sql.Request(transaction)
             .input('AccountID', sql.Int, accountId)
