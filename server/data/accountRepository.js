@@ -31,7 +31,7 @@ async function createAccount(accountData, changedBy) {
     const pool = await sql.connect(dbConfig);
     const {
       AccountName,
-      CityID,
+      CityID = null,
       street_address1 = null,
       street_address2 = null,
       street_address3 = null,
@@ -48,65 +48,69 @@ async function createAccount(accountData, changedBy) {
       number_of_events_anually = null,
       ParentAccount = null,
       Active = true,
-      StateProvinceID,
-      CountryID,
-      sequenceID = 1,
+      StateProvinceID = null,
+      CountryID = null,
+      sequenceID = null,
     } = accountData;
 
-    // Validate foreign keys
-    async function validateFK(table, column, value) {
-      if (!value) return null;
-      const result = await pool.request()
-        .input("val", sql.Int, value)
-        .query(`SELECT 1 FROM ${table} WHERE ${column} = @val`);
-      return result.recordset.length > 0 ? value : null;
+    // Validate required fields
+    if (!AccountName || AccountName.trim().length === 0) {
+      throw new Error("Account name is required");
     }
 
-    const validCityID = await validateFK("City", "CityID", CityID);
-    const validStateProvinceID = await validateFK("StateProvince", "StateProvinceID", StateProvinceID);
-    const validCountryID = await validateFK("Country", "CountryID", CountryID);
-    const annualRevenueValue = annual_revenue != null ? Number(annual_revenue) : null;
-
-    if (annualRevenueValue !== null && isNaN(annualRevenueValue)) {
-      throw new Error("Invalid annual_revenue: not a number");
-    }
-
+    // Execute the stored procedure
     const result = await pool.request()
-      .input("AccountName", sql.NVarChar(255), AccountName)
-      .input("CityID", sql.Int, validCityID)
-      .input("street_address1", sql.NVarChar(255), street_address1)
-      .input("street_address2", sql.NVarChar(255), street_address2)
-      .input("street_address3", sql.NVarChar(255), street_address3)
-      .input("postal_code", sql.NVarChar(31), postal_code)
-      .input("PrimaryPhone", sql.NVarChar(63), PrimaryPhone)
-      .input("IndustryID", sql.Int, IndustryID)
-      .input("Website", sql.NVarChar(255), Website)
-      .input("fax", sql.NVarChar(63), fax)
-      .input("email", sql.VarChar(255), email)
-      .input("number_of_employees", sql.Int, number_of_employees)
-      .input("annual_revenue", sql.Decimal(18, 0), annualRevenueValue)
-      .input("number_of_venues", sql.SmallInt, number_of_venues)
-      .input("number_of_releases", sql.SmallInt, number_of_releases)
-      .input("number_of_events_anually", sql.SmallInt, number_of_events_anually)
-      .input("ParentAccount", sql.Int, ParentAccount)
+      .input("AccountName", sql.NVarChar(255), AccountName.trim())
+      .input("CityID", sql.Int, CityID || null)
+      .input("street_address1", sql.NVarChar(255), street_address1 || null)
+      .input("street_address2", sql.NVarChar(255), street_address2 || null)
+      .input("street_address3", sql.NVarChar(255), street_address3 || null)
+      .input("postal_code", sql.NVarChar(31), postal_code || null)
+      .input("PrimaryPhone", sql.NVarChar(63), PrimaryPhone || null)
+      .input("IndustryID", sql.Int, IndustryID || null)
+      .input("Website", sql.NVarChar(255), Website || null)
+      .input("fax", sql.NVarChar(63), fax || null)
+      .input("email", sql.VarChar(255), email || null)
+      .input("number_of_employees", sql.Int, number_of_employees || null)
+      .input("annual_revenue", sql.Decimal(18, 0), annual_revenue || null)
+      .input("number_of_venues", sql.SmallInt, number_of_venues || null)
+      .input("number_of_releases", sql.SmallInt, number_of_releases || null)
+      .input("number_of_events_anually", sql.SmallInt, number_of_events_anually || null)
+      .input("ParentAccount", sql.Int, ParentAccount || null)
       .input("Active", sql.Bit, Active)
-      .input("ChangedBy", sql.Int, changedBy)
-      .input("StateProvinceID", sql.Int, validStateProvinceID)
-      .input("CountryID", sql.Int, validCountryID)
+      .input("StateProvinceID", sql.Int, StateProvinceID || null)
+      .input("CountryID", sql.Int, CountryID || null)
+      .input("ChangedBy", sql.Int, changedBy || 1)
       .input("ActionTypeID", sql.Int, 1)
-      .input("sequenceID", sql.Int, sequenceID)
+      .input("sequenceID", sql.Int, sequenceID || null)
       .execute("CreateAccount");
 
     const newAccountID = result.recordset?.[0]?.AccountID;
-    if (!newAccountID) throw new Error("Failed to create account");
+    
+    if (!newAccountID) {
+      throw new Error("Failed to create account - no ID returned");
+    }
 
-    return { AccountID: newAccountID };
+    return { 
+      success: true,
+      AccountID: newAccountID,
+      message: "Account created successfully"
+    };
+    
   } catch (err) {
     console.error("Database error in createAccount:", err);
+    
+    if (err.message.includes("FOREIGN KEY")) {
+      throw new Error("Invalid reference: One of the selected values doesn't exist");
+    } else if (err.message.includes("duplicate")) {
+      throw new Error("An account with this information already exists");
+    } else if (err.message.includes("NULL")) {
+      throw new Error("Required field is missing");
+    }
+    
     throw err;
   }
 }
-
 //======================================
 // Update account
 //======================================
@@ -710,7 +714,8 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
         for (const item of sequenceItems) {
           const dueDate = new Date(assignmentDate);
           dueDate.setDate(dueDate.getDate() + item.DaysFromStart - 1);
-          
+          dueDate.setHours(23, 59, 0, 0);
+
           await new sql.Request(transaction)
             .input('AccountID', sql.Int, accountId)
             .input('TypeID', sql.Int, item.ActivityTypeID)
