@@ -117,7 +117,6 @@ const sortActivities = (activities, sortBy) => {
     
     case 'dueDate':
     default:
-      // Already sorted by due date in the query, but ensure consistency
       return sorted.sort((a, b) => {
         const aOverdue = new Date(a.DueToStart) < new Date() ? 0 : 1;
         const bOverdue = new Date(b.DueToStart) < new Date() ? 0 : 1;

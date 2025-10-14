@@ -1,7 +1,7 @@
 const sequenceService = require("../services/sequenceService");
 
 //======================================
-// Get all sequences
+// SEQUENCE CRUD
 //======================================
 const getAllSequences = async (req, res) => {
   try {
@@ -13,9 +13,6 @@ const getAllSequences = async (req, res) => {
   }
 };
 
-//======================================
-// Get sequence by ID
-//======================================
 const getSequenceByID = async (req, res) => {
   try {
     const sequenceId = parseInt(req.params.id, 10);
@@ -36,9 +33,6 @@ const getSequenceByID = async (req, res) => {
   }
 };
 
-//======================================
-// Get sequence with items
-//======================================
 const getSequenceWithItems = async (req, res) => {
   try {
     const sequenceId = parseInt(req.params.id, 10);
@@ -59,26 +53,16 @@ const getSequenceWithItems = async (req, res) => {
   }
 };
 
-//======================================
-// Create sequence
-//======================================
 const createSequence = async (req, res) => {
   try {
     const result = await sequenceService.createSequence(req.body);
     res.status(201).json(result);
   } catch (err) {
-    if (err.message.includes('required') || 
-        err.message.includes('must be') || 
-        err.message.includes('cannot exceed')) {
-      return res.status(400).json({ error: err.message });
-    }
-    res.status(500).json({ error: err.message });
+    const statusCode = err.message.includes('required') ? 400 : 500;
+    res.status(statusCode).json({ error: err.message });
   }
 };
 
-//======================================
-// Update sequence
-//======================================
 const updateSequence = async (req, res) => {
   try {
     const sequenceId = parseInt(req.params.id, 10);
@@ -93,18 +77,11 @@ const updateSequence = async (req, res) => {
     if (err.message === "Sequence not found") {
       return res.status(404).json({ error: err.message });
     }
-    if (err.message.includes('required') || 
-        err.message.includes('must be') || 
-        err.message.includes('cannot exceed')) {
-      return res.status(400).json({ error: err.message });
-    }
-    res.status(500).json({ error: err.message });
+    const statusCode = err.message.includes('required') ? 400 : 500;
+    res.status(statusCode).json({ error: err.message });
   }
 };
 
-//======================================
-// Deactivate sequence
-//======================================
 const deactivateSequence = async (req, res) => {
   try {
     const sequenceId = parseInt(req.params.id, 10);
@@ -116,16 +93,11 @@ const deactivateSequence = async (req, res) => {
     const result = await sequenceService.deactivateSequence(sequenceId);
     res.status(200).json(result);
   } catch (err) {
-    if (err.message === "Sequence not found" || err.message === "Sequence is already deactivated") {
-      return res.status(400).json({ error: err.message });
-    }
-    res.status(500).json({ error: err.message });
+    const statusCode = err.message.includes("not found") || err.message.includes("already") ? 400 : 500;
+    res.status(statusCode).json({ error: err.message });
   }
 };
 
-//======================================
-// Reactivate sequence
-//======================================
 const reactivateSequence = async (req, res) => {
   try {
     const sequenceId = parseInt(req.params.id, 10);
@@ -137,16 +109,11 @@ const reactivateSequence = async (req, res) => {
     const result = await sequenceService.reactivateSequence(sequenceId);
     res.status(200).json(result);
   } catch (err) {
-    if (err.message === "Sequence not found" || err.message === "Sequence is already active") {
-      return res.status(400).json({ error: err.message });
-    }
-    res.status(500).json({ error: err.message });
+    const statusCode = err.message.includes("not found") || err.message.includes("already") ? 400 : 500;
+    res.status(statusCode).json({ error: err.message });
   }
 };
 
-//======================================
-// Delete sequence
-//======================================
 const deleteSequence = async (req, res) => {
   try {
     const sequenceId = parseInt(req.params.id, 10);
@@ -158,15 +125,13 @@ const deleteSequence = async (req, res) => {
     const result = await sequenceService.deleteSequence(sequenceId);
     res.status(200).json(result);
   } catch (err) {
-    if (err.message === "Sequence not found" || err.message === "Sequence must be deactivated before permanent deletion") {
-      return res.status(400).json({ error: err.message });
-    }
-    res.status(500).json({ error: err.message });
+    const statusCode = err.message.includes("not found") || err.message.includes("must be") ? 400 : 500;
+    res.status(statusCode).json({ error: err.message });
   }
 };
 
 //======================================
-// Get sequence item by ID
+// SEQUENCE ITEM CRUD
 //======================================
 const getSequenceItemByID = async (req, res) => {
   try {
@@ -188,26 +153,16 @@ const getSequenceItemByID = async (req, res) => {
   }
 };
 
-//======================================
-// Create sequence item
-//======================================
 const createSequenceItem = async (req, res) => {
   try {
     const result = await sequenceService.createSequenceItem(req.body);
     res.status(201).json(result);
   } catch (err) {
-    if (err.message.includes('required') || 
-        err.message.includes('cannot be') || 
-        err.message.includes('cannot exceed')) {
-      return res.status(400).json({ error: err.message });
-    }
-    res.status(500).json({ error: err.message });
+    const statusCode = err.message.includes('required') ? 400 : 500;
+    res.status(statusCode).json({ error: err.message });
   }
 };
 
-//======================================
-// Update sequence item
-//======================================
 const updateSequenceItem = async (req, res) => {
   try {
     const itemId = parseInt(req.params.itemId, 10);
@@ -231,9 +186,6 @@ const updateSequenceItem = async (req, res) => {
   }
 };
 
-//======================================
-// Delete sequence item
-//======================================
 const deleteSequenceItem = async (req, res) => {
   try {
     const itemId = parseInt(req.params.itemId, 10);
@@ -252,9 +204,6 @@ const deleteSequenceItem = async (req, res) => {
   }
 };
 
-//======================================
-// Create sequence with items
-//======================================
 const createSequenceWithItems = async (req, res) => {
   try {
     const { sequence, items } = req.body;
@@ -266,18 +215,13 @@ const createSequenceWithItems = async (req, res) => {
     const result = await sequenceService.createSequenceWithItems(sequence, items);
     res.status(201).json(result);
   } catch (err) {
-    if (err.message.includes('required') || 
-        err.message.includes('must be') || 
-        err.message.includes('cannot') || 
-        err.message.includes('Duplicate')) {
-      return res.status(400).json({ error: err.message });
-    }
-    res.status(500).json({ error: err.message });
+    const statusCode = err.message.includes('required') || err.message.includes('Duplicate') ? 400 : 500;
+    res.status(statusCode).json({ error: err.message });
   }
 };
 
 //======================================
-// Assign sequence to account
+// SEQUENCE-ACCOUNT RELATIONSHIP
 //======================================
 const assignSequenceToAccount = async (req, res) => {
   try {
@@ -290,16 +234,11 @@ const assignSequenceToAccount = async (req, res) => {
     const result = await sequenceService.assignSequenceToAccount(accountId, sequenceId);
     res.status(200).json(result);
   } catch (err) {
-    if (err.message.includes("not found") || err.message.includes("inactive")) {
-      return res.status(404).json({ error: err.message });
-    }
-    res.status(500).json({ error: err.message });
+    const statusCode = err.message.includes("not found") || err.message.includes("inactive") ? 404 : 500;
+    res.status(statusCode).json({ error: err.message });
   }
 };
 
-//======================================
-// Unassign sequence from account
-//======================================
 const unassignSequenceFromAccount = async (req, res) => {
   try {
     const accountId = parseInt(req.params.accountId, 10);
@@ -315,9 +254,6 @@ const unassignSequenceFromAccount = async (req, res) => {
   }
 };
 
-//======================================
-// Get accounts by sequence
-//======================================
 const getAccountsBySequence = async (req, res) => {
   try {
     const sequenceId = parseInt(req.params.id, 10);
@@ -334,7 +270,7 @@ const getAccountsBySequence = async (req, res) => {
 };
 
 //======================================
-// Get all activity types
+// ACTIVITY TYPES
 //======================================
 const getAllActivityTypes = async (req, res) => {
   try {

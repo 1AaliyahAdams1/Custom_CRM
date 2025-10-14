@@ -640,9 +640,10 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
       throw new Error('Sequence has no active items');
     }
     
+    const assignmentDate = new Date();
+    
     for (const accountId of accountIds) {
       try {
-       
         const checkResult = await new sql.Request(transaction)
           .input('AccountID', sql.Int, accountId)
           .query(`
@@ -686,7 +687,6 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
           continue;
         }
         
-  
         if (!account.CurrentOwnerID) {
           await new sql.Request(transaction)
             .input('AccountID', sql.Int, accountId)
@@ -696,23 +696,20 @@ async function bulkClaimAccountsAndAddSequence(accountIds, userId, sequenceId) {
               INSERT INTO AssignedUser (AccountID, UserID, Active)
               VALUES (@AccountID, @UserID, @Active)
             `);
-        }
-       
+        }       
         await new sql.Request(transaction)
           .input('AccountID', sql.Int, accountId)
           .input('SequenceID', sql.Int, sequenceId)
           .query(`
             UPDATE Account 
-            SET SequenceID = @SequenceID, UpdatedAt = GETDATE()
+            SET SequenceID = @SequenceID
             WHERE AccountID = @AccountID
           `);
-     
         let activitiesCreated = 0;
-        const accountCreated = new Date(account.CreatedAt);
         
         for (const item of sequenceItems) {
-          const dueDate = new Date(accountCreated);
-          dueDate.setDate(dueDate.getDate() + item.DaysFromStart);
+          const dueDate = new Date(assignmentDate);
+          dueDate.setDate(dueDate.getDate() + item.DaysFromStart - 1);
           
           await new sql.Request(transaction)
             .input('AccountID', sql.Int, accountId)

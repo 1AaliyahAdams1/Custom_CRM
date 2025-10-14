@@ -13,10 +13,7 @@ const getWorkPageActivities = async (req, res) => {
       return res.status(400).json({ error: "Valid User ID is required" });
     }
 
-    const activities = await workService.getWorkPageActivities(userId, {
-      sortBy,
-      filter
-    });
+    const activities = await workService.getWorkPageActivities(userId, { sortBy, filter });
     
     res.status(200).json({
       success: true,
@@ -51,7 +48,7 @@ const getAccountActivitiesGrouped = async (req, res) => {
 };
 
 //======================================
-// Get activity by ID for workspace
+// Get activity by ID
 //======================================
 const getActivityByID = async (req, res) => {
   try {
@@ -175,7 +172,6 @@ const deleteActivity = async (req, res) => {
     await workService.deleteActivity(activityId, userId);
     res.status(200).json({ success: true, message: "Activity deleted successfully" });
   } catch (err) {
-    console.error("Error in deleteActivity:", err);
     res.status(500).json({ error: err.message });
   }
 };

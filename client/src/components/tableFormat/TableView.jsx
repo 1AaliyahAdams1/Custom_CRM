@@ -505,11 +505,7 @@ const TableView = ({
         onClose={() => setAssignDialogOpen(false)}
         menuRow={currentRow}
         onAssign={onAssignUser}
-      />
-
-      
-
-      
+      />     
     </>
   );
 };
