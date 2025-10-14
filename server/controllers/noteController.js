@@ -38,14 +38,9 @@ async function createNote(req, res) {
   try {
     const noteData = req.body;
     
-    // Fix: Access the correct property from your auth middleware
-    const userId = req.user?.userId || req.body.CreatedBy;
-    
-    console.log('Creating note - userId:', userId);
-    console.log('Creating note - req.user:', req.user);
-    
+    const userId = req.body.CreatedBy;
     if (!userId) {
-      return res.status(401).json({ message: "User authentication required" });
+      return res.status(400).json({ message: "User authentication required" });
     }
     
     const updatedNotes = await noteService.createNote(noteData, userId);
@@ -67,10 +62,9 @@ async function updateNote(req, res) {
   try {
     const noteId = parseInt(req.params.id);
     const noteData = req.body;
-    const userId = req.user?.userId || req.body.UserId;
-    
+    const userId = req.body.UserId;
     if (!userId) {
-      return res.status(401).json({ message: "User authentication required" });
+      return res.status(400).json({ message: "User authentication required" });
     }
     
     const updatedNotes = await noteService.updateNote(noteId, noteData, userId);
@@ -92,10 +86,10 @@ async function updateNote(req, res) {
 async function deactivateNote(req, res) {
   try {
     const noteId = parseInt(req.params.id);
-    const userId = req.user?.userId || req.body.UserId;
+    const userId = req.body.UserId || 1;
     
     if (!userId) {
-      return res.status(401).json({ message: "User authentication required" });
+      return res.status(400).json({ message: "User authentication required" });
     }
     
     const result = await noteService.deactivateNote(noteId, userId);
@@ -112,10 +106,10 @@ async function deactivateNote(req, res) {
 async function reactivateNote(req, res) {
   try {
     const noteId = parseInt(req.params.id);
-    const userId = req.user?.userId || req.body.UserId;
+    const userId = req.body.UserId || 1;
     
     if (!userId) {
-      return res.status(401).json({ message: "User authentication required" });
+      return res.status(400).json({ message: "User authentication required" });
     }
     
     const result = await noteService.reactivateNote(noteId, userId);

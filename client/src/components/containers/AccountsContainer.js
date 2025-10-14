@@ -36,7 +36,7 @@ import { getAllEmployees } from "../../services/employeeService";
 
 // Components
 import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
-import NotesPopup from "../../components/NotesComponent";
+import NotesPopup from "../NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import BulkAssignDialog from "../../components/dialogs/BulkAssignDialog";
 import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
