@@ -104,59 +104,6 @@ const CityPage = ({
     },
   ];
 
-  const getMenuItems = (city) => {
-    const baseItems = [
-      {
-        label: 'View Details',
-        icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onView && onView(city),
-        show: !!onView,
-      },
-      {
-        label: 'Edit',
-        icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onEdit && onEdit(city),
-        show: !!onEdit,
-      },
-      {
-        label: 'Add Notes',
-        icon: <NoteIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onAddNote && onAddNote(city),
-        show: !!onAddNote,
-      },
-      {
-        label: 'Add Attachments',
-        icon: <AttachFileIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onAddAttachment && onAddAttachment(city),
-        show: !!onAddAttachment,
-      },
-    ];
-
-    if (city.Active) {
-      baseItems.push({
-        label: 'Deactivate',
-        icon: <PowerOffIcon sx={{ mr: 1, color: '#ff9800' }} />,
-        onClick: () => onDeactivate && onDeactivate(city.CityID),
-        show: !!onDeactivate,
-      });
-    } else {
-      baseItems.push({
-        label: 'Reactivate',
-        icon: <PowerIcon sx={{ mr: 1, color: '#4caf50' }} />,
-        onClick: () => onReactivate && onReactivate(city.CityID),
-        show: !!onReactivate,
-      });
-    }
-
-    baseItems.push({
-      label: 'Delete',
-      icon: <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />,
-      onClick: () => onDelete && onDelete(city.CityID),
-      show: !!onDelete,
-    });
-
-    return baseItems;
-  };
 
   const cityFormatters = {
     ...formatters,
@@ -312,15 +259,9 @@ const CityPage = ({
             onSelectClick={onSelectClick}
             onSelectAllClick={onSelectAllClick}
             showSelection={true}
-            onView={onView}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onAddNote={onAddNote}
-            onAddAttachment={onAddAttachment}
-            onAssignUser={onAssignUser}
             formatters={cityFormatters}
             entityType="city"
-            getMenuItems={getMenuItems}
+            showActions={false}
           />
         )}
 

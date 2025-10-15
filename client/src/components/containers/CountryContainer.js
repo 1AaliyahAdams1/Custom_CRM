@@ -53,9 +53,8 @@ const CountryContainer = () => {
   // Determine initial tab based on URL
   const getInitialTab = () => {
     const path = location.pathname;
-    if (path.includes('states')) return 1;
-    if (path.includes('cities')) return 2;
-    if (path.includes('currencies')) return 3;
+    if (path.includes('cities')) return 1;
+    if (path.includes('currencies')) return 2;
     return 0; // default to countries
   };
 
@@ -101,12 +100,9 @@ const CountryContainer = () => {
         navigate('/countries', { replace: true });
         break;
       case 1:
-        navigate('/countries/states', { replace: true });
-        break;
-      case 2:
         navigate('/countries/cities', { replace: true });
         break;
-      case 3:
+      case 2:
         navigate('/countries/currencies', { replace: true });
         break;
       default:

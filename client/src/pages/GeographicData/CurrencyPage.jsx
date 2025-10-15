@@ -89,28 +89,6 @@ const CurrencyPage = ({
     { field: 'LastUpdated', headerName: 'Last Updated', type: 'date', defaultVisible: false },
   ];
 
-  const getMenuItems = (currency) => {
-    const currencyId = currency.CurrencyID;
-    const isActive = currency.Active === true || currency.Active === 1;
-
-    const baseItems = [
-      { label: 'View Details', icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onView && onView(currency), show: !!onView },
-      { label: 'Edit', icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onEdit && onEdit(currency), show: !!onEdit },
-      { label: 'Add Notes', icon: <NoteIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onAddNote && onAddNote(currency), show: !!onAddNote },
-      { label: 'Add Attachments', icon: <AttachFileIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onAddAttachment && onAddAttachment(currency), show: !!onAddAttachment },
-    ];
-
-    if (isActive) {
-      baseItems.push({ label: 'Deactivate', icon: <PowerOffIcon sx={{ mr: 1, color: theme.palette.warning.main }} />, onClick: () => onDeactivate && onDeactivate(currencyId), show: !!onDeactivate });
-    } else {
-      baseItems.push({ label: 'Reactivate', icon: <PowerIcon sx={{ mr: 1, color: theme.palette.success.main }} />, onClick: () => onReactivate && onReactivate(currencyId), show: !!onReactivate });
-    }
-
-    baseItems.push({ label: 'Delete', icon: <DeleteIcon sx={{ mr: 1, color: theme.palette.error.main }} />, onClick: () => onDelete && onDelete(currencyId), show: !!onDelete });
-
-    return baseItems;
-  };
-
   const currencyFormatters = {
     ...formatters,
     Active: (value) => {
@@ -205,15 +183,9 @@ const CurrencyPage = ({
           onSelectClick={onSelectClick}
           onSelectAllClick={onSelectAllClick}
           showSelection
-          onView={onView}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onAddNote={onAddNote}
-          onAddAttachment={onAddAttachment}
-          onAssignUser={onAssignUser}
           formatters={currencyFormatters}
           entityType="currency"
-          getMenuItems={getMenuItems}
+          showActions={false}
         />
       )}
 

@@ -31,8 +31,8 @@ import {
   Category as CategoryIcon,
 } from "@mui/icons-material";
 
-import TableView from '../components/tableFormat/TableView';
-import { formatters } from '../utils/formatters';
+import TableView from '../../components/tableFormat/TableView';
+import { formatters } from '../../utils/formatters';
 
 const CategoryPage = ({
   categories = [],
@@ -69,31 +69,8 @@ const CategoryPage = ({
 
   const columns = [
     { field: 'CategoryID', headerName: 'ID', defaultVisible: true },
-    { field: 'CategoryName', headerName: 'Category Name', type: 'tooltip', defaultVisible: true },
-    { field: 'LastUpdated', headerName: 'Last Updated', type: 'date', defaultVisible: false },
+    { field: 'CategoryName', headerName: 'Category Name', type: 'tooltip', defaultVisible: true }
   ];
-
-  const getMenuItems = (category) => {
-    const categoryId = category.CategoryID;
-    const isActive = category.Active === true || category.Active === 1;
-
-    const baseItems = [
-      { label: 'View Details', icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onView && onView(category), show: !!onView },
-      { label: 'Edit', icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onEdit && onEdit(category), show: !!onEdit },
-      { label: 'Add Notes', icon: <NoteIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onAddNote && onAddNote(category), show: !!onAddNote },
-      { label: 'Add Attachments', icon: <AttachFileIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onAddAttachment && onAddAttachment(category), show: !!onAddAttachment },
-    ];
-
-    if (isActive) {
-      baseItems.push({ label: 'Deactivate', icon: <PowerOffIcon sx={{ mr: 1, color: theme.palette.warning.main }} />, onClick: () => onDeactivate && onDeactivate(categoryId), show: !!onDeactivate });
-    } else {
-      baseItems.push({ label: 'Reactivate', icon: <PowerIcon sx={{ mr: 1, color: theme.palette.success.main }} />, onClick: () => onReactivate && onReactivate(categoryId), show: !!onReactivate });
-    }
-
-    baseItems.push({ label: 'Delete', icon: <DeleteIcon sx={{ mr: 1, color: theme.palette.error.main }} />, onClick: () => onDelete && onDelete(categoryId), show: !!onDelete });
-
-    return baseItems;
-  };
 
   const categoryFormatters = {
     ...formatters,
@@ -161,15 +138,9 @@ const CategoryPage = ({
           onSelectClick={onSelectClick}
           onSelectAllClick={onSelectAllClick}
           showSelection
-          onView={onView}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onAddNote={onAddNote}
-          onAddAttachment={onAddAttachment}
-          onAssignUser={onAssignUser}
           formatters={categoryFormatters}
           entityType="category"
-          getMenuItems={getMenuItems}
+          showActions={false}
         />
       )}
 

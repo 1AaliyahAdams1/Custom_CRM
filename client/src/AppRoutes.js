@@ -56,12 +56,10 @@ const CreateEmployeePage = lazy(() => import("./pages/Employees/CreateEmployeePa
 const EditEmployeePage = lazy(() => import("./pages/Employees/EditEmployeePage"));
 const EmployeeDetailsPage = lazy(() => import("./pages/Employees/EmployeeDetailsPage"));
 
-const CategoryPage = lazy(() => import("./pages/CategoryPage"));
-const DepartmentPage = lazy(() => import("./pages/DepartmentPage"));
+const CategoryPage = lazy(() => import("./pages/Classifications/CategoryPage"));
+const DepartmentPage = lazy(() => import("./pages//Classifications/DepartmentPage"));
 
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
-
-
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));

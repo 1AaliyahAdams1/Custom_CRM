@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../utils/api';
-import PriorityLevelPage from '../../pages/PriorityLevelsPage';
+import PriorityLevelPage from '../../pages/Classifications/PriorityLevelsPage';
 import {
   getAllCategories,
       getCategoryById,

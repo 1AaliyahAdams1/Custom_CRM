@@ -36,8 +36,8 @@ import {
   Add,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import TableView from '../components/tableFormat/TableView';
-import { formatters } from '../utils/formatters';
+import TableView from '../../components/tableFormat/TableView';
+import { formatters } from '../../utils/formatters';
 import CategoryPage from  './CategoryPage'
 import DepartmentPage from './DepartmentPage';
 
@@ -118,59 +118,7 @@ const PriorityLevelPage = ({
     { field: 'Color', headerName: 'Color', defaultVisible: true },
   ];
 
-  const getMenuItems = (priorityLevel) => {
-    const baseItems = [
-      {
-        label: 'View Details',
-        icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onView && onView(priorityLevel),
-        show: !!onView,
-      },
-      {
-        label: 'Edit',
-        icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onEdit && onEdit(priorityLevel),
-        show: !!onEdit,
-      },
-      {
-        label: 'Add Notes',
-        icon: <NoteIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onAddNote && onAddNote(priorityLevel),
-        show: !!onAddNote,
-      },
-      {
-        label: 'Add Attachments',
-        icon: <AttachFileIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onAddAttachment && onAddAttachment(priorityLevel),
-        show: !!onAddAttachment,
-      },
-    ];
 
-    if (priorityLevel.IsActive) {
-      baseItems.push({
-        label: 'Deactivate',
-        icon: <PowerOffIcon sx={{ mr: 1, color: theme.palette.warning.main }} />,
-        onClick: () => onDeactivate && onDeactivate(priorityLevel.PriorityLevelID),
-        show: !!onDeactivate,
-      });
-    } else {
-      baseItems.push({
-        label: 'Reactivate',
-        icon: <PowerIcon sx={{ mr: 1, color: theme.palette.success.main }} />,
-        onClick: () => onReactivate && onReactivate(priorityLevel.PriorityLevelID),
-        show: !!onReactivate,
-      });
-    }
-
-    baseItems.push({
-      label: 'Delete',
-      icon: <DeleteIcon sx={{ mr: 1, color: theme.palette.error.main }} />,
-      onClick: () => onDelete && onDelete(priorityLevel.PriorityLevelID),
-      show: !!onDelete,
-    });
-
-    return baseItems;
-  };
 
   const priorityLevelFormatters = {
     ...formatters,
@@ -430,15 +378,9 @@ const PriorityLevelPage = ({
                     onSelectClick={onSelectClick}
                     onSelectAllClick={onSelectAllClick}
                     showSelection={true}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onAddNote={onAddNote}
-                    onAddAttachment={onAddAttachment}
-                    onAssignUser={onAssignUser}
                     formatters={priorityLevelFormatters}
                     entityType="priority level"
-                    getMenuItems={getMenuItems}
+                    showActions={false}
                   />
                 )}
 

@@ -26,8 +26,8 @@ import {
   Add,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import TableView from '../components/tableFormat/TableView';
-import { formatters } from '../utils/formatters';
+import TableView from '../../components/tableFormat/TableView';
+import { formatters } from '../../utils/formatters';
 
 const DepartmentPage = ({
   departments = [],
@@ -53,12 +53,6 @@ const DepartmentPage = ({
 }) => {
   const theme = useTheme();
 
-  console.log('🔍 DepartmentPage received:');
-  console.log('  - departments:', departments);
-  console.log('  - Type:', typeof departments);
-  console.log('  - Is Array:', Array.isArray(departments));
-  console.log('  - Length:', departments?.length);
-  
   // Add Department Dialog State
   const [addDepartmentDialogOpen, setAddDepartmentDialogOpen] = useState(false);
   const [newDepartment, setNewDepartment] = useState({
@@ -83,48 +77,6 @@ const DepartmentPage = ({
     { field: 'DepartmentName', headerName: 'Department Name', type: 'tooltip', defaultVisible: true },
     { field: 'Active', headerName: 'Status', defaultVisible: true },
   ];
-
-  const getMenuItems = (department) => {
-    const baseItems = [
-      {
-        label: 'View Details',
-        icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onView && onView(department),
-        show: !!onView,
-      },
-      {
-        label: 'Edit',
-        icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => handleEditClick(department),
-        show: true,
-      },
-    ];
-
-    if (department.Active) {
-      baseItems.push({
-        label: 'Deactivate',
-        icon: <PowerOffIcon sx={{ mr: 1, color: theme.palette.warning.main }} />,
-        onClick: () => onDeactivate && onDeactivate(department.DepartmentID),
-        show: !!onDeactivate,
-      });
-    } else {
-      baseItems.push({
-        label: 'Reactivate',
-        icon: <PowerIcon sx={{ mr: 1, color: theme.palette.success.main }} />,
-        onClick: () => onReactivate && onReactivate(department.DepartmentID),
-        show: !!onReactivate,
-      });
-    }
-
-    baseItems.push({
-      label: 'Delete',
-      icon: <DeleteIcon sx={{ mr: 1, color: theme.palette.error.main }} />,
-      onClick: () => onDelete && onDelete(department.DepartmentID),
-      show: !!onDelete,
-    });
-
-    return baseItems;
-  };
 
   const departmentFormatters = {
     ...formatters,
@@ -327,7 +279,7 @@ const DepartmentPage = ({
           onDelete={onDelete}
           formatters={departmentFormatters}
           entityType="department"
-          getMenuItems={getMenuItems}
+          showActions={false}
         />
       )}
 
