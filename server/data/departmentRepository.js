@@ -7,8 +7,14 @@ const { dbConfig } = require("../dbConfig");
 async function getAllDepartments() {
   try {
     const pool = await sql.connect(dbConfig);
-    const result = await pool.request().execute("GetDepartment");
-    return result.recordset.filter(dept => dept.Active === 1);
+    const result = await pool.request()
+      .query(
+        `SELECT DepartmentID, DepartmentName, Active
+         FROM dbo.Department
+         WHERE Active = 1
+         ORDER BY DepartmentName`
+      );
+    return result.recordset;
   } catch (error) {
     console.error("DepartmentRepo Error [getAllDepartments]:", error);
     throw error;

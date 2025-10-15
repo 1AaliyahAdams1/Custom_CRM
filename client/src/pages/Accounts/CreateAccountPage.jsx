@@ -20,6 +20,7 @@ import {
   stateProvinceService
 } from '../../services/dropdownServices';
 import SmartDropdown from '../../components/SmartDropdown';
+import { buildAccountFieldErrors, isFormValid, trimString } from '../../utils/validation/accountValidation';
 
 const CreateAccount = () => {
   const navigate = useNavigate();
@@ -57,6 +58,7 @@ const CreateAccount = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
+    const cleanedValue = typeof value === 'string' ? value : value;
     setFormData(prev => {
       const newData = { ...prev, [name]: value };
       
@@ -70,6 +72,14 @@ const CreateAccount = () => {
       return newData;
     });
 
+    // Live validation for the changed field
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const nextErrors = { ...fieldErrors };
+    const computed = buildAccountFieldErrors({ ...formData, [name]: cleanedValue });
+    // Keep only the changed field's error for responsiveness
+    if (computed[name]) nextErrors[name] = computed[name]; else delete nextErrors[name];
+    setFieldErrors(nextErrors);
+
     if (error) {
       setError(null);
     }
@@ -82,22 +92,40 @@ const CreateAccount = () => {
       ...prev,
       [name]: true
     }));
+
+    const computed = buildAccountFieldErrors({ ...formData, [name]: value });
+    setFieldErrors(prev => ({ ...prev, [name]: computed[name] }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Touch all fields and build full error map
     const allTouched = {};
-    Object.keys(formData).forEach(key => {
-      allTouched[key] = true;
-    });
+    Object.keys(formData).forEach(key => { allTouched[key] = true; });
     setTouched(allTouched);
+
+    const computed = buildAccountFieldErrors(formData);
+    setFieldErrors(computed);
+
+    if (!isFormValid(computed)) {
+      setError('Please fix the validation errors');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
 
     try {
-      await createAccount(formData);
+      const payload = {
+        ...formData,
+        AccountName: trimString(formData.AccountName),
+        email: trimString(formData.email)?.toLowerCase(),
+        Website: trimString(formData.Website),
+      };
+      console.log('[CreateAccountPage] Submitting:', payload);
+      const result = await createAccount(payload);
+      console.log('[CreateAccountPage] Create result:', result);
       
       setSuccessMessage("Account created successfully!");
       setTimeout(() => {
@@ -105,19 +133,23 @@ const CreateAccount = () => {
       }, 1500);
 
     } catch (error) {
-      console.error('Error creating account:', error);
-      
+      console.error('[CreateAccountPage] Error creating account:', error);
+      console.error('[CreateAccountPage] Error response data:', error.response?.data);
+
+      const status = error.response?.status;
+      const serverMessage = error.response?.data?.message || error.response?.data?.error;
+
       if (error.response?.data?.errors) {
         setFieldErrors(error.response.data.errors);
         setError('Please fix the validation errors');
-      } else if (error.response?.status === 409) {
-        setError('Account with this information already exists');
-      } else if (error.response?.status === 400) {
-        setError(error.response.data?.error || 'Invalid data provided');
-      } else if (error.response?.status >= 500) {
-        setError('Server error. Please try again later');
+      } else if (status === 409) {
+        setError(serverMessage || 'Account with this information already exists');
+      } else if (status === 400) {
+        setError(serverMessage || 'Invalid data provided');
+      } else if (status >= 500) {
+        setError(serverMessage || 'Server error. Please try again later');
       } else {
-        setError('Failed to create account. Please try again.');
+        setError(serverMessage || 'Failed to create account. Please try again.');
       }
     } finally {
       setIsSubmitting(false);

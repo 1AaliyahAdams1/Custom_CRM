@@ -68,6 +68,10 @@ const IndustryPage = ({
     Active: true
   });
   const [addIndustryLoading, setAddIndustryLoading] = useState(false);
+  
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
 
   const columns = [
     { field: 'IndustryName', headerName: 'Industry Name', type: 'tooltip', defaultVisible: true }
@@ -154,6 +158,35 @@ const IndustryPage = ({
     }
   };
 
+  // Validation functions
+  const validateField = (field, value) => {
+    const errors = {};
+    
+    switch (field) {
+      case 'IndustryName':
+        if (!value || value.trim() === '') {
+          errors.IndustryName = 'Industry name is required';
+        } else if (value.length > 255) {
+          errors.IndustryName = 'Industry name must be 255 characters or less';
+        }
+        break;
+      default:
+        break;
+    }
+    
+    return errors;
+  };
+
+  const validateForm = (industryData) => {
+    const errors = {};
+    
+    // Validate IndustryName
+    const nameErrors = validateField('IndustryName', industryData.IndustryName);
+    Object.assign(errors, nameErrors);
+    
+    return errors;
+  };
+
   // Handle Add Industry Dialog
   const handleOpenAddIndustryDialog = () => {
     setAddIndustryDialogOpen(true);
@@ -161,6 +194,8 @@ const IndustryPage = ({
       IndustryName: '',
       Active: true
     });
+    setValidationErrors({});
+    setTouchedFields({});
   };
 
   const handleCloseAddIndustryDialog = () => {
@@ -169,11 +204,39 @@ const IndustryPage = ({
       IndustryName: '',
       Active: true
     });
+    setValidationErrors({});
+    setTouchedFields({});
+  };
+
+  // Handle field blur event
+  const handleFieldBlur = (field) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [field]: true
+    }));
+    
+    // Validate the field that just lost focus
+    const fieldErrors = validateField(field, newIndustry[field]);
+    setValidationErrors(prev => ({
+      ...prev,
+      [field]: fieldErrors[field]
+    }));
   };
 
   const handleAddIndustry = async () => {
-    if (!newIndustry.IndustryName.trim()) {
-      setError && setError('Industry name is required');
+    // Mark all fields as touched on submit
+    const allTouched = {
+      IndustryName: true
+    };
+    setTouchedFields(allTouched);
+    
+    // Validate entire form
+    const errors = validateForm(newIndustry);
+    setValidationErrors(errors);
+    
+    // Check if form is valid
+    if (Object.keys(errors).length > 0) {
+      setError && setError('Please fix validation errors before submitting');
       return;
     }
 
@@ -196,6 +259,20 @@ const IndustryPage = ({
       ...prev,
       [field]: value
     }));
+    
+    // Clear validation error for this field when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: null
+      }));
+    }
+  };
+
+  // Check if form is valid for enabling submit button
+  const isFormValid = () => {
+    const errors = validateForm(newIndustry);
+    return Object.keys(errors).length === 0;
   };
 
   return (
@@ -368,11 +445,20 @@ const IndustryPage = ({
               label="Industry Name"
               value={newIndustry.IndustryName}
               onChange={(e) => handleInputChange('IndustryName', e.target.value)}
+              onBlur={() => handleFieldBlur('IndustryName')}
               fullWidth
               required
               variant="outlined"
-              helperText="Enter the name of the industry (e.g., Technology, Healthcare, Finance)"
+              helperText={validationErrors.IndustryName || "Enter the name of the industry (e.g., Technology, Healthcare, Finance)"}
               inputProps={{ maxLength: 255 }}
+              error={!!validationErrors.IndustryName && touchedFields.IndustryName}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&.Mui-error fieldset': {
+                    borderColor: '#f44336',
+                  },
+                },
+              }}
             />
 
             <FormControlLabel
@@ -394,7 +480,7 @@ const IndustryPage = ({
           <Button
             onClick={handleAddIndustry}
             variant="contained"
-            disabled={addIndustryLoading || !newIndustry.IndustryName.trim()}
+            disabled={addIndustryLoading || !isFormValid()}
           >
             {addIndustryLoading ? <CircularProgress size={20} /> : 'Add Industry'}
           </Button>

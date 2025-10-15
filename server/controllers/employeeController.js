@@ -32,10 +32,12 @@ class EmployeeController {
 
   static async update(req, res) {
     try {
-      const { updates, changedBy, actionTypeId } = req.body;
-      await EmployeeService.updateEmployee(req.params.id, updates, changedBy, actionTypeId);
-      res.json({ message: "Employee updated" });
+      console.log("EmployeeController.update called with:", req.body);
+      const { changedBy, actionTypeId, ...employeeData } = req.body;
+      await EmployeeService.updateEmployee(req.params.id, employeeData, changedBy, actionTypeId);
+      res.json({ message: "Employee updated successfully" });
     } catch (err) {
+      console.error("EmployeeController.update error:", err);
       res.status(500).json({ error: err.message });
     }
   }

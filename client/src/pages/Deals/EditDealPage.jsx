@@ -39,8 +39,9 @@ const EditDealPage = () => {
 
   // Memoized function to get account name from AccountID
   const accountName = useMemo(() => {
-    if (!accounts.length || !formData.AccountID) return 'No account selected';
-    const account = accounts.find(acc => acc.AccountID === formData.AccountID);
+    const list = accounts || []; // fallback to empty array
+    if (!list.length || !formData.AccountID) return 'No account selected';
+    const account = list.find(acc => acc.AccountID === formData.AccountID);
     return account ? account.AccountName : 'Unknown Account';
   }, [accounts, formData.AccountID]);
 

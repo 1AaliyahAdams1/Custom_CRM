@@ -25,12 +25,62 @@ async function getAccountDetails(req, res) {
 
 // Create account
 async function createAccount(req, res) {
+  // Detailed request logging for troubleshooting
+  const userId = req.user?.id || req.user?.userId || req.user?.UserID || 1;
+  console.log("[AccountController.createAccount] Incoming body:", req.body);
+  console.log("[AccountController.createAccount] Resolved userId:", userId);
+
   try {
-    const userId = req.user?.id || req.user?.userId || req.user?.UserID || 1;
-    const newAccount = await accountService.createAccount(req.body, userId);
-    res.status(201).json(newAccount);
+    const created = await accountService.createAccount(req.body, userId);
+
+    return res.status(201).json({
+      success: true,
+      message: "Account created successfully",
+      data: created,
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    // Normalize known SQL Server error numbers
+    const sqlNumber = error?.number || error?.originalError?.info?.number;
+    const sqlCode = error?.code || error?.originalError?.code;
+    const sqlMessage = error?.originalError?.message || error?.message;
+
+    // Map SQL error numbers to HTTP status and messages
+    let status = 400;
+    let message = sqlMessage || "Bad request";
+
+    if (sqlNumber === 2627) {
+      // Unique constraint violation
+      status = 409;
+      message = "Duplicate record. An account with similar unique fields already exists.";
+    } else if (sqlNumber === 547) {
+      // Foreign key violation
+      status = 400;
+      message = "Invalid reference value. Please check linked Country/State/City/Industry/Parent Account.";
+    } else if (sqlNumber === 2812) {
+      // Stored procedure not found
+      status = 500;
+      message = "Configuration error: required stored procedure not found (CreateAccount).";
+    } else if (sqlNumber === 8114) {
+      // Error converting data type
+      status = 400;
+      message = "Invalid data type provided. Please verify numeric and date fields.";
+    }
+
+    // Detailed error logging
+    console.error("[AccountController.createAccount] Error while creating account:", {
+      message: error?.message,
+      sqlNumber,
+      sqlCode,
+      stack: error?.stack,
+      original: error?.originalError,
+      body: req.body,
+      userId,
+    });
+
+    return res.status(status).json({
+      error: sqlCode || "CREATE_ACCOUNT_ERROR",
+      message,
+    });
   }
 }
 

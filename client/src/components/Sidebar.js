@@ -52,6 +52,7 @@ const NAV_ITEMS = [
   // Admin
   { name: "Role Management", href: "/rolemanagement", icon: AdminPanelSettingsIcon, accessKey: "roles", section: "Admin" },
   { name: "Audit Log", href: "/audit-logs", icon: HistoryIcon, accessKey: "auditLog", section: "Admin" },
+  { name: "Employees", href: "/employees", icon: CorporateFareIcon, accessKey: "employees", section: "Admin" },
 
   // CRM
   { name: "Accounts", href: "/accounts", icon: BusinessIcon, accessKey: "accounts", section: "CRM Management" },

@@ -16,6 +16,8 @@ import {
   Button,
   TableSortLabel,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { 
   MoreVert, 
   Search as SearchIcon, 
@@ -58,6 +60,10 @@ const TableView = ({
   formatters = {},
   tooltips = {},
 }) => {
+  const theme = useTheme();
+  const isSmDown = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMdDown = useMediaQuery(theme.breakpoints.down('md'));
+
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuRow, setMenuRow] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -187,7 +193,15 @@ const TableView = ({
     currentPage * rowsPerPage
   );
 
-  const displayedColumns = columns.filter(col => visibleColumns[col.field]);
+  const displayedColumns = columns
+    .filter(col => visibleColumns[col.field])
+    .filter(col => {
+      // Responsive visibility: hide less important columns on smaller screens
+      if (!col.hideBelow) return true;
+      if (col.hideBelow === 'md') return !isMdDown;
+      if (col.hideBelow === 'sm') return !isSmDown;
+      return true;
+    });
 
   const handleCellClick = (event, row, column) => {
     if (column.type === "clickable" && column.onClick) {
@@ -358,12 +372,12 @@ const TableView = ({
       )}
 
       {/* Table */}
-      <TableContainer>
-        <Table stickyHeader>
+      <TableContainer sx={{ width: '100%', maxWidth: '100%' }}>
+        <Table stickyHeader sx={{ tableLayout: 'fixed', width: '100%' }}>
           <TableHead>
             <TableRow>
               {showSelection && (
-                <TableCell padding="checkbox">
+                <TableCell padding="checkbox" sx={{ width: 48 }}>
                   <Checkbox
                     color="primary"
                     indeterminate={selected.length > 0 && selected.length < filteredData.length}
@@ -373,7 +387,17 @@ const TableView = ({
                 </TableCell>
               )}
               {displayedColumns.map((column, index) => (
-                <TableCell key={column.field}>
+                <TableCell
+                  key={column.field}
+                  sx={{
+                    // Prefer explicit width or maxWidth from column definition
+                    width: column.width || undefined,
+                    maxWidth: column.maxWidth || (displayedColumns.length > 0 ? `${Math.max(100, Math.floor(1000 / displayedColumns.length))}px` : '160px'),
+                    whiteSpace: column.wrap ? 'normal' : 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
                   <TableSortLabel
                     active={orderBy === column.field}
                     direction={orderBy === column.field ? order : 'asc'}
@@ -383,7 +407,9 @@ const TableView = ({
                   </TableSortLabel>
                 </TableCell>
               ))}
-              {showActions && <TableCell>Actions</TableCell>}
+              {showActions && (
+                <TableCell sx={{ width: 64, maxWidth: 64 }}>Actions</TableCell>
+              )}
             </TableRow>
           </TableHead>
 
@@ -404,7 +430,7 @@ const TableView = ({
                   sx={{ cursor: showSelection ? 'pointer' : 'default' }}
                 >
                   {showSelection && (
-                    <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
+                    <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()} sx={{ width: 48 }}>
                       <Checkbox 
                         color="primary" 
                         checked={isItemSelected}
@@ -424,12 +450,21 @@ const TableView = ({
                           e.stopPropagation();
                         }
                       }}
+                      sx={{
+                        width: column.width || undefined,
+                        maxWidth: column.maxWidth || (displayedColumns.length > 0 ? `${Math.max(100, Math.floor(1000 / displayedColumns.length))}px` : '160px'),
+                        whiteSpace: column.wrap ? 'normal' : 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        wordBreak: column.wrap ? 'break-word' : 'normal',
+                        verticalAlign: 'top',
+                      }}
                     >
                       {renderCellContent(row, column)}
                     </TableCell>
                   ))}
                   {showActions && (
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell onClick={(e) => e.stopPropagation()} sx={{ width: 64, maxWidth: 64 }}>
                       <IconButton onClick={(e) => {
                         e.stopPropagation();
                         handleMenuClick(e, row);

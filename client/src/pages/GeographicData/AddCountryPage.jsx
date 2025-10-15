@@ -20,6 +20,7 @@ import {
   InputAdornment,
   Tooltip,
   IconButton,
+  FormHelperText,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -43,8 +44,8 @@ const AddCountryPage = ({
 }) => {
   const navigate = useNavigate();
   const theme = useTheme();
-  
-  // Form state
+
+  // ✅ Form state
   const [formData, setFormData] = useState({
     CountryName: '',
     CountryCode: '',
@@ -54,7 +55,7 @@ const AddCountryPage = ({
     Notes: '',
   });
 
-  // UI state
+  // ✅ UI state
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -62,27 +63,21 @@ const AddCountryPage = ({
   const [submitError, setSubmitError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Load initial data
+  // ✅ Load initial data
   useEffect(() => {
-    if (onLoadCurrencies) {
-      onLoadCurrencies();
-    }
-    if (onLoadRegions) {
-      onLoadRegions();
-    }
+    if (onLoadCurrencies) onLoadCurrencies();
+    if (onLoadRegions) onLoadRegions();
   }, [onLoadCurrencies, onLoadRegions]);
 
-  // Clear success message after a delay
+  // ✅ Clear success message after a delay
   useEffect(() => {
     if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage('');
-      }, 5000);
+      const timer = setTimeout(() => setSuccessMessage(''), 5000);
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
 
-  // Default regions if not provided
+  // ✅ Default regions if not provided
   const defaultRegions = [
     'Africa',
     'Asia',
@@ -90,199 +85,118 @@ const AddCountryPage = ({
     'North America',
     'South America',
     'Oceania',
-    'Antarctica'
+    'Antarctica',
   ];
-
   const availableRegions = regions.length > 0 ? regions : defaultRegions;
 
-  // Validation rules
+  // ✅ Validation logic
   const validateField = (name, value) => {
-    const fieldErrors = {};
+    let message = '';
 
     switch (name) {
       case 'CountryName':
-        if (!value.trim()) {
-          fieldErrors.CountryName = 'Country name is required';
-        } else if (value.length > 100) {
-          fieldErrors.CountryName = 'Country name must be 100 characters or less';
-        }
+        if (!value.trim()) message = 'Country name is required';
+        else if (value.length > 100) message = 'Country name must be under 100 characters';
         break;
-      
+
       case 'CountryCode':
-        if (!value.trim()) {
-          fieldErrors.CountryCode = 'Country code is required';
-        } else if (value.length > 5) {
-          fieldErrors.CountryCode = 'Country code must be 5 characters or less';
-        } else if (!/^[A-Z]{2,3}$/.test(value.toUpperCase())) {
-          fieldErrors.CountryCode = 'Country code must be 2-3 uppercase letters (e.g., US, USA)';
-        }
+        if (!value.trim()) message = 'Country code is required';
+        else if (!/^[A-Z]{2,3}$/.test(value.toUpperCase()))
+          message = 'Country code must be 2–3 uppercase letters (e.g., US, PAK)';
         break;
-      
+
       case 'Region':
-        if (!value.trim()) {
-          fieldErrors.Region = 'Region is required';
-        }
+        if (!value.trim()) message = 'Region is required';
         break;
-      
+
+      case 'CurrencyID':
+        if (!value) message = 'Currency selection is required';
+        break;
+
       default:
         break;
     }
 
-    return fieldErrors;
+    return message;
   };
 
-  // Handle input changes
-  const handleChange = (event) => {
-    const { name, value, type, checked } = event.target;
-    const fieldValue = type === 'checkbox' ? checked : value;
-    
-    // Special handling for CountryCode - auto-uppercase
-    const finalValue = name === 'CountryCode' ? fieldValue.toUpperCase() : fieldValue;
-
-    setFormData(prev => ({
-      ...prev,
-      [name]: finalValue
-    }));
-
-    // Clear field error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-
-    // Clear submit error when user makes changes
-    if (submitError) {
-      setSubmitError(null);
-    }
-
-    // Mark field as touched
-    setTouched(prev => ({
-      ...prev,
-      [name]: true
-    }));
-  };
-
-  // Handle autocomplete changes
-  const handleAutocompleteChange = (name, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value || ''
-    }));
-
-    // Clear field error when user makes selection
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-
-    // Clear submit error when user makes changes
-    if (submitError) {
-      setSubmitError(null);
-    }
-
-    setTouched(prev => ({
-      ...prev,
-      [name]: true
-    }));
-  };
-
-  // Handle field blur for validation
-  const handleBlur = (event) => {
-    const { name, value } = event.target;
-    const fieldErrors = validateField(name, value);
-    
-    setErrors(prev => ({
-      ...prev,
-      ...fieldErrors
-    }));
-  };
-
-  // Validate entire form
   const validateForm = () => {
-    const allErrors = {};
-    
-    Object.keys(formData).forEach(key => {
-      const fieldErrors = validateField(key, formData[key]);
-      Object.assign(allErrors, fieldErrors);
+    const newErrors = {};
+    Object.keys(formData).forEach((field) => {
+      const errorMsg = validateField(field, formData[field]);
+      if (errorMsg) newErrors[field] = errorMsg;
     });
-
-    setErrors(allErrors);
-    return Object.keys(allErrors).length === 0;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
+  // ✅ Handle input changes (live validation)
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : name === 'CountryCode' ? value.toUpperCase() : value;
+
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
+
+    // Validate while typing
+    const errorMsg = validateField(name, newValue);
+    setErrors((prev) => ({ ...prev, [name]: errorMsg }));
+  };
+
+  // ✅ Handle autocomplete (for Region)
+  const handleAutocompleteChange = (event, value) => {
+    setFormData((prev) => ({ ...prev, Region: value || '' }));
+    const errorMsg = validateField('Region', value || '');
+    setErrors((prev) => ({ ...prev, Region: errorMsg }));
+  };
+
+  // ✅ Validate onBlur
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const errorMsg = validateField(name, value);
+    setErrors((prev) => ({ ...prev, [name]: errorMsg }));
+    setTouched((prev) => ({ ...prev, [name]: true }));
+  };
+
+  // ✅ Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Mark all fields as touched to show validation errors
-    const allTouched = {};
-    Object.keys(formData).forEach(key => {
-      allTouched[key] = true;
+    setTouched({
+      CountryName: true,
+      CountryCode: true,
+      CurrencyID: true,
+      Region: true,
     });
-    setTouched(allTouched);
-    
-    // Validate the form before submission
+
     if (!validateForm()) {
-      setSubmitError("Please fix the errors below before submitting");
+      setSubmitError('Please fix validation errors before submitting.');
       return;
     }
-    
+
     setIsSubmitting(true);
     setSubmitError(null);
-    
+
     try {
-      // Prepare the data for submission
       const submitData = {
         ...formData,
-        // Convert CurrencyID to integer if it exists
         CurrencyID: formData.CurrencyID ? parseInt(formData.CurrencyID) : null,
-        // Ensure CountryCode is uppercase
         CountryCode: formData.CountryCode.toUpperCase().trim(),
-        // Trim whitespace from text fields
         CountryName: formData.CountryName.trim(),
         Region: formData.Region.trim(),
         Notes: formData.Notes?.trim() || null,
       };
-      
-      // Call the onSave function passed from parent
+
       await onSave(submitData);
-      
-      // Show success message
-      setSuccessMessage("Country added successfully!");
-      
-      // Navigate back after a short delay (if using router)
-      setTimeout(() => {
-        if (onCancel) {
-          onCancel(); // This could navigate back or close the form
-        }
-      }, 1500);
-      
+      setSuccessMessage('✅ Country added successfully!');
+      setTimeout(() => onCancel && onCancel(), 1500);
     } catch (error) {
-      console.error('Error creating country:', error);
-      
-      // Handle different types of errors
-      if (error.isValidation) {
-        setSubmitError(error.message);
-      } else if (error.response?.status === 409) {
-        setSubmitError('Country with this code already exists');
-      } else if (error.response?.status === 400) {
-        setSubmitError(error.response.data?.error || 'Invalid data provided');
-      } else if (error.response?.status >= 500) {
-        setSubmitError('Server error. Please try again later');
-      } else {
-        setSubmitError('Failed to add country. Please try again.');
-      }
+      console.error('Error:', error);
+      setSubmitError('❌ Failed to add country. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle clear form
+  // ✅ Clear form
   const handleClear = () => {
     setFormData({
       CountryName: '',
@@ -295,81 +209,57 @@ const AddCountryPage = ({
     setErrors({});
     setTouched({});
     setSubmitError(null);
-    setSuccessMessage('');
   };
 
-  const handleCancel = () => {
-    navigate('/country');
-  };
+  const handleCancel = () => navigate('/country');
 
-  // Get field props for consistent styling
   const getFieldProps = (name) => ({
-    error: touched[name] && !!errors[name],
-    helperText: touched[name] && errors[name] ? errors[name] : '',
+    error: !!errors[name],
+    helperText: errors[name] || '',
   });
 
-  // Determine which loading state to use
   const isLoading = externalLoading || isSubmitting;
-  // Determine which error to show
   const displayError = externalError || submitError;
 
   return (
     <ThemeProvider theme={defaultTheme}>
-      <Box sx={{ 
-        width: '100%', 
-        backgroundColor: theme.palette.background.default,
-        minHeight: '100vh', 
-        p: 3, 
-        display:'flex', 
-        flexDirection:'column', 
-        alignItems:'center' 
-      }}>
+      <Box
+        sx={{
+          width: '100%',
+          backgroundColor: theme.palette.background.default,
+          minHeight: '100vh',
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
         {/* Header */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             <IconButton onClick={handleCancel} sx={{ color: 'primary.main' }}>
               <ArrowBackIcon />
             </IconButton>
-            
-            <Typography variant="h4" component="h1" sx={{ 
-              color: theme.palette.text.primary,
-              fontWeight: 600 
-            }}>
+            <Typography variant="h4" fontWeight={600}>
               Add New Country
             </Typography>
           </Box>
-          <Typography variant="body1" sx={{ 
-            ml: 7,
-            color: theme.palette.text.secondary
-          }}>
+          <Typography variant="body1" sx={{ ml: 7, color: theme.palette.text.secondary }}>
             Add a new country to expand client base
           </Typography>
         </Box>
 
-        {/* Success Alert */}
-        {successMessage && (
-          <Alert severity="success" sx={{ mb: 3 }}>
-            {successMessage}
-          </Alert>
-        )}
+        {successMessage && <Alert severity="success" sx={{ mb: 3 }}>{successMessage}</Alert>}
+        {displayError && <Alert severity="error" sx={{ mb: 3 }}>{displayError}</Alert>}
 
-        {/* Error Alert */}
-        {displayError && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {displayError}
-          </Alert>
-        )}
-
-        {/* Form */}
         <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 800 }}>
           <form onSubmit={handleSubmit}>
-            {/* Basic Information Section */}
             <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                Fill in the following details to add a new country:
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Country Details
               </Typography>
               <Divider sx={{ mb: 3 }} />
-              
+
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <TextField
@@ -379,7 +269,6 @@ const AddCountryPage = ({
                     value={formData.CountryName}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    required
                     placeholder="e.g., South Africa"
                     disabled={isLoading}
                     InputProps={{
@@ -389,12 +278,12 @@ const AddCountryPage = ({
                             <InfoIcon color="action" fontSize="small" />
                           </Tooltip>
                         </InputAdornment>
-                      )
+                      ),
                     }}
                     {...getFieldProps('CountryName')}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
@@ -403,32 +292,17 @@ const AddCountryPage = ({
                     value={formData.CountryCode}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    required
-                    placeholder="e.g., ZA"
+                    placeholder="e.g., PAK"
+                    inputProps={{ style: { textTransform: 'uppercase' }, maxLength: 3 }}
                     disabled={isLoading}
-                    inputProps={{ 
-                      style: { textTransform: 'uppercase' },
-                      maxLength: 3
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <Tooltip title="ISO 3166-1 alpha-2 or alpha-3 code">
-                            <InfoIcon color="action" fontSize="small" />
-                          </Tooltip>
-                        </InputAdornment>
-                      )
-                    }}
                     {...getFieldProps('CountryCode')}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth {...getFieldProps('CurrencyID')}>
+                  <FormControl fullWidth error={!!errors.CurrencyID}>
                     <InputLabel>Currency</InputLabel>
                     <Select
-                      fullWidth
-                      labelId="currency-label"
                       name="CurrencyID"
                       value={formData.CurrencyID}
                       onChange={handleChange}
@@ -448,6 +322,9 @@ const AddCountryPage = ({
                         </MenuItem>
                       ))}
                     </Select>
+                    {errors.CurrencyID && (
+                      <FormHelperText>{errors.CurrencyID}</FormHelperText>
+                    )}
                   </FormControl>
                 </Grid>
 
@@ -455,30 +332,28 @@ const AddCountryPage = ({
                   <Autocomplete
                     options={availableRegions}
                     value={formData.Region}
-                    onChange={(event, value) => handleAutocompleteChange('Region', value)}
-                    disabled={isLoading}
+                    onChange={(e, v) => handleAutocompleteChange(e, v)}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         label="Region"
-                        required
-                        placeholder="Select or type region"
+                        onBlur={(e) => handleBlur({ target: { name: 'Region', value: formData.Region } })}
                         {...getFieldProps('Region')}
                       />
                     )}
                     freeSolo
+                    disabled={isLoading}
                   />
                 </Grid>
               </Grid>
             </Box>
 
-            {/* Status Section */}
+            {/* Status */}
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Status
               </Typography>
               <Divider sx={{ mb: 3 }} />
-              
               <FormControlLabel
                 control={
                   <Switch
@@ -486,25 +361,10 @@ const AddCountryPage = ({
                     checked={formData.Active}
                     onChange={handleChange}
                     color="primary"
-                    disabled={isLoading}
                   />
                 }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Active</Typography>
-                  </Box>
-                }
+                label="Active"
               />
-              <Typography variant="body2" sx={{ 
-                mt: 1, 
-                ml: 4,
-                color: theme.palette.text.secondary
-              }}>
-                {formData.Active 
-                  ? 'Entertainment.FM has active clients in this country' 
-                  : 'Country will be inactive'
-                }
-              </Typography>
             </Box>
 
             {/* Advanced Section */}
@@ -512,63 +372,42 @@ const AddCountryPage = ({
               <Button
                 variant="text"
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                sx={{ mb: 2 }}
                 disabled={isLoading}
               >
-                {showAdvanced ? 'Hide' : 'Show'} Additional Information
+                {showAdvanced ? 'Hide' : 'Show'} Additional Info
               </Button>
-              
               {showAdvanced && (
                 <Box>
                   <Divider sx={{ mb: 3 }} />
                   <TextField
                     fullWidth
+                    multiline
+                    rows={4}
                     label="Notes"
                     name="Notes"
                     value={formData.Notes}
                     onChange={handleChange}
-                    multiline
-                    rows={4}
-                    placeholder="Add any additional notes about this country..."
                     disabled={isLoading}
                   />
                 </Box>
               )}
             </Box>
 
-            {/* Form Actions */}
-            <Box sx={{ 
-              display: 'flex', 
-              gap: 2, 
-              justifyContent: 'flex-end', 
-              pt: 2, 
-              borderTop: `1px solid ${theme.palette.divider}`
-            }}>
-              <Button
-                variant="outlined"
-                startIcon={<ClearIcon />}
-                onClick={handleClear}
-                disabled={isLoading}
-              >
-                Clear Form
+            {/* Buttons */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+              <Button variant="outlined" startIcon={<ClearIcon />} onClick={handleClear}>
+                Clear
               </Button>
-              
-              <Button
-                variant="outlined"
-                startIcon={<ClearIcon />}
-                onClick={handleCancel}
-                disabled={isLoading}
-              >
+              <Button variant="outlined" onClick={handleCancel}>
                 Cancel
               </Button>
-              
               <Button
                 type="submit"
                 variant="contained"
                 startIcon={isLoading ? <CircularProgress size={20} /> : <SaveIcon />}
                 disabled={isLoading}
               >
-                {isLoading ? 'Adding Country...' : 'Add Country'}
+                {isLoading ? 'Adding...' : 'Add Country'}
               </Button>
             </Box>
           </form>

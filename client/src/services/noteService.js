@@ -112,3 +112,14 @@ export const getAllNotes = async () => {
     throw error;
   } 
 };
+
+export const deleteNote = async (noteId) => {
+  if (!noteId) throw new Error("Note ID is required");
+  try {
+    const response = await api.delete(`/api/notes/${noteId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting note ${noteId}:`, error?.response || error);
+    throw error;
+  }
+};

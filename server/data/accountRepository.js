@@ -29,6 +29,11 @@ async function getAllAccounts() {
 async function createAccount(accountData, changedBy) {
   try {
     const pool = await sql.connect(dbConfig);
+
+    // Log incoming data and user
+    console.log("[AccountRepository.createAccount] Incoming data:", accountData);
+    console.log("[AccountRepository.createAccount] changedBy:", changedBy);
+
     const {
       AccountName,
       CityID,
@@ -53,7 +58,15 @@ async function createAccount(accountData, changedBy) {
       sequenceID = 1,
     } = accountData;
 
-    // Validate foreign keys
+    // Normalize optional numeric foreign keys
+    const normalizedCityId = CityID ? Number(CityID) : null;
+    const normalizedStateId = StateProvinceID ? Number(StateProvinceID) : null;
+    const normalizedCountryId = CountryID ? Number(CountryID) : null;
+    const normalizedIndustryId = IndustryID ? Number(IndustryID) : null;
+    const normalizedParentAccount = ParentAccount ? Number(ParentAccount) : null;
+    const normalizedSequenceId = sequenceID ? Number(sequenceID) : null;
+
+    // Validate foreign keys actually exist
     async function validateFK(table, column, value) {
       if (!value) return null;
       const result = await pool.request()
@@ -62,47 +75,167 @@ async function createAccount(accountData, changedBy) {
       return result.recordset.length > 0 ? value : null;
     }
 
-    const validCityID = await validateFK("City", "CityID", CityID);
-    const validStateProvinceID = await validateFK("StateProvince", "StateProvinceID", StateProvinceID);
-    const validCountryID = await validateFK("Country", "CountryID", CountryID);
-    const annualRevenueValue = annual_revenue != null ? Number(annual_revenue) : null;
+    const validCityID = await validateFK("City", "CityID", normalizedCityId);
+    const validStateProvinceID = await validateFK("StateProvince", "StateProvinceID", normalizedStateId);
+    const validCountryID = await validateFK("Country", "CountryID", normalizedCountryId);
+    const validIndustryID = await validateFK("Industry", "IndustryID", normalizedIndustryId);
+    const validParentAccount = await validateFK("Account", "AccountID", normalizedParentAccount);
+
+    // Numeric conversions
+    const annualRevenueValue = annual_revenue != null && annual_revenue !== ""
+      ? Number(annual_revenue)
+      : null;
+    const numEmployeesValue = number_of_employees != null && number_of_employees !== ""
+      ? Number(number_of_employees)
+      : null;
+    const numVenuesValue = number_of_venues != null && number_of_venues !== ""
+      ? Number(number_of_venues)
+      : null;
+    const numReleasesValue = number_of_releases != null && number_of_releases !== ""
+      ? Number(number_of_releases)
+      : null;
+    const numEventsAnnuallyValue = number_of_events_anually != null && number_of_events_anually !== ""
+      ? Number(number_of_events_anually)
+      : null;
 
     if (annualRevenueValue !== null && isNaN(annualRevenueValue)) {
       throw new Error("Invalid annual_revenue: not a number");
     }
 
-    const result = await pool.request()
-      .input("AccountName", sql.NVarChar(255), AccountName)
-      .input("CityID", sql.Int, validCityID)
-      .input("street_address1", sql.NVarChar(255), street_address1)
-      .input("street_address2", sql.NVarChar(255), street_address2)
-      .input("street_address3", sql.NVarChar(255), street_address3)
-      .input("postal_code", sql.NVarChar(31), postal_code)
-      .input("PrimaryPhone", sql.NVarChar(63), PrimaryPhone)
-      .input("IndustryID", sql.Int, IndustryID)
-      .input("Website", sql.NVarChar(255), Website)
-      .input("fax", sql.NVarChar(63), fax)
-      .input("email", sql.VarChar(255), email)
-      .input("number_of_employees", sql.Int, number_of_employees)
-      .input("annual_revenue", sql.Decimal(18, 0), annualRevenueValue)
-      .input("number_of_venues", sql.SmallInt, number_of_venues)
-      .input("number_of_releases", sql.SmallInt, number_of_releases)
-      .input("number_of_events_anually", sql.SmallInt, number_of_events_anually)
-      .input("ParentAccount", sql.Int, ParentAccount)
-      .input("Active", sql.Bit, Active)
-      .input("ChangedBy", sql.Int, changedBy)
-      .input("StateProvinceID", sql.Int, validStateProvinceID)
-      .input("CountryID", sql.Int, validCountryID)
-      .input("ActionTypeID", sql.Int, 1)
-      .input("sequenceID", sql.Int, sequenceID)
-      .execute("CreateAccount");
+    // Log parameters before SP call (with value and typeof for each)
+    console.log("=== PARAMETERS BEING SENT TO SP ===");
+    console.log("AccountName:", AccountName, "Type:", typeof AccountName);
+    console.log("CityID:", validCityID, "Type:", typeof validCityID);
+    console.log("StateProvinceID:", validStateProvinceID, "Type:", typeof validStateProvinceID);
+    console.log("CountryID:", validCountryID, "Type:", typeof validCountryID);
+    console.log("PrimaryPhone:", PrimaryPhone, "Type:", typeof PrimaryPhone);
+    console.log("IndustryID:", validIndustryID, "Type:", typeof validIndustryID);
+    console.log("email:", email, "Type:", typeof email);
+    console.log("ParentAccount:", validParentAccount, "Type:", typeof validParentAccount);
+    console.log("SequenceID:", normalizedSequenceId, "Type:", typeof normalizedSequenceId);
+    console.log("ChangedBy:", changedBy, "Type:", typeof changedBy);
 
-    const newAccountID = result.recordset?.[0]?.AccountID;
-    if (!newAccountID) throw new Error("Failed to create account");
+    let result;
+    try {
+      result = await pool.request()
+        .input("AccountName", sql.NVarChar(255), AccountName)
+        .input("CityID", sql.Int, validCityID)
+        .input("street_address1", sql.NVarChar(255), street_address1)
+        .input("street_address2", sql.NVarChar(255), street_address2)
+        .input("street_address3", sql.NVarChar(255), street_address3)
+        .input("postal_code", sql.NVarChar(31), postal_code)
+        .input("PrimaryPhone", sql.NVarChar(63), PrimaryPhone)
+        .input("IndustryID", sql.Int, validIndustryID)
+        .input("Website", sql.NVarChar(255), Website)
+        .input("fax", sql.NVarChar(63), fax)
+        .input("email", sql.VarChar(255), email)
+        .input("number_of_employees", sql.Int, numEmployeesValue)
+        .input("annual_revenue", sql.Decimal(18, 0), annualRevenueValue)
+        .input("number_of_venues", sql.SmallInt, numVenuesValue)
+        .input("number_of_releases", sql.SmallInt, numReleasesValue)
+        .input("number_of_events_anually", sql.SmallInt, numEventsAnnuallyValue)
+        .input("ParentAccount", sql.Int, validParentAccount)
+        .input("Active", sql.Bit, Active)
+        .input("ChangedBy", sql.Int, changedBy)
+        .input("StateProvinceID", sql.Int, validStateProvinceID)
+        .input("CountryID", sql.Int, validCountryID)
+        .input("ActionTypeID", sql.Int, 1)
+        // Align with typical SP param naming (capital S). If your SP expects sequenceID lowercase, revert this.
+        .input("SequenceID", sql.Int, normalizedSequenceId)
+        .execute("CreateAccount");
+    } catch (spError) {
+      console.log("=== SP EXECUTION ERROR ===");
+      console.log("Error:", spError?.message);
+      console.log("Error Number:", spError?.number || spError?.originalError?.info?.number);
+      console.log("Error State:", spError?.state || spError?.originalError?.info?.state);
+      console.log("Procedure:", spError?.procName || spError?.procedure);
+      console.log("Code:", spError?.code);
+      throw spError;
+    }
 
-    return { AccountID: newAccountID };
+    // Deep result logging to understand the SP response shape
+    try {
+      console.log("[AccountRepository.createAccount] Raw SP result keys:", Object.keys(result || {}));
+      console.log("[AccountRepository.createAccount] rowsAffected:", result?.rowsAffected);
+      console.log("[AccountRepository.createAccount] returnValue:", result?.returnValue);
+      console.log("[AccountRepository.createAccount] output:", result?.output);
+      console.log("[AccountRepository.createAccount] recordsetTop:", result?.recordset?.[0]);
+      console.log("[AccountRepository.createAccount] recordsets count:", Array.isArray(result?.recordsets) ? result.recordsets.length : undefined);
+      if (Array.isArray(result?.recordsets)) {
+        result.recordsets.forEach((rs, idx) => {
+          console.log(`[AccountRepository.createAccount] recordsets[${idx}] top:`, rs?.[0]);
+        });
+      }
+    } catch (logErr) {
+      console.log("[AccountRepository.createAccount] Error while logging SP result:", logErr?.message);
+    }
+
+    // Flexible extraction of AccountID from possible shapes
+    const tryCandidates = () => {
+      if (result?.recordset?.[0]) {
+        return (
+          result.recordset[0].AccountID ||
+          result.recordset[0].AccountId ||
+          result.recordset[0].accountId
+        );
+      }
+      return undefined;
+    };
+
+    let extractedAccountId = tryCandidates();
+
+    if (!extractedAccountId && result?.output) {
+      extractedAccountId = result.output.AccountID || result.output.AccountId || result.output.accountId;
+      if (extractedAccountId) {
+        console.log("[AccountRepository.createAccount] AccountID found in result.output");
+      }
+    }
+
+    if (!extractedAccountId && Array.isArray(result?.recordsets)) {
+      for (let i = 0; i < result.recordsets.length; i++) {
+        const top = result.recordsets[i]?.[0];
+        if (top) {
+          const candidate = top.AccountID || top.AccountId || top.accountId;
+          if (candidate) {
+            extractedAccountId = candidate;
+            console.log(`[AccountRepository.createAccount] AccountID found in recordsets[${i}][0]`);
+            break;
+          }
+        }
+      }
+    }
+
+    if (!extractedAccountId) {
+      // Exhaustive scan: find any key that looks like account id in any recordset row
+      if (Array.isArray(result?.recordsets)) {
+        outer: for (let i = 0; i < result.recordsets.length; i++) {
+          const rs = result.recordsets[i];
+          for (let j = 0; j < rs.length; j++) {
+            const row = rs[j];
+            for (const key of Object.keys(row)) {
+              if (/account.*id/i.test(key)) {
+                extractedAccountId = row[key];
+                console.log(`[AccountRepository.createAccount] AccountID-like key '${key}' found at recordsets[${i}][${j}]`);
+                break outer;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (!extractedAccountId) {
+      throw new Error("CreateAccount did not return AccountID");
+    }
+
+    return { AccountID: extractedAccountId };
   } catch (err) {
-    console.error("Database error in createAccount:", err);
+    console.error("[AccountRepository.createAccount] Error:", {
+      message: err?.message,
+      number: err?.number || err?.originalError?.info?.number,
+      code: err?.code || err?.originalError?.code,
+      stack: err?.stack,
+    });
     throw err;
   }
 }

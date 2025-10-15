@@ -142,7 +142,6 @@ const CreateContactsPage = () => {
   });
 
   const getFieldError = (fieldName, isPersonField = false) => {
-    const data = isPersonField ? personData : contactData;
     const touchedKey = `${isPersonField ? 'person' : 'contact'}_${fieldName}`;
     
     return touched[touchedKey] && fieldErrors[touchedKey] ? (
@@ -229,13 +228,11 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
-    if (touched[touchedKey]) {
-      const error = validateContactField(name, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [touchedKey]: error || undefined
-      }));
-    }
+    const error = validateContactField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [touchedKey]: error || undefined
+    }));
 
     if (error) setError(null);
   };
@@ -269,13 +266,11 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
-    if (touched[touchedKey]) {
-      const error = validateContactField(name, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [touchedKey]: error || undefined
-      }));
-    }
+    const error = validateContactField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [touchedKey]: error || undefined
+    }));
 
     if (error) setError(null);
   };

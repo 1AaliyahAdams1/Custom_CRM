@@ -41,9 +41,23 @@ export const fetchAccountById = async (id) => {
 export const createAccount = async (data) => {
   if (!data.AccountName) throw new Error("Account name is required");
   try {
-    return await api.post(RESOURCE, data);
+    console.log("[accountService.createAccount] Payload:", data);
+    const response = await api.post(RESOURCE, data);
+    console.log("[accountService.createAccount] Response:", {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+    });
+    return response.data;
   } catch (error) {
-    console.error("Error creating account:", error);
+    console.error("[accountService.createAccount] Error:", error);
+    console.error("[accountService.createAccount] Error details:", {
+      data: error.response?.data,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      method: error.config?.method,
+    });
     throw error;
   }
 };

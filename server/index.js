@@ -34,6 +34,7 @@ const contactRoutes = require("./routes/contactRoutes");
 const dealRoutes = require("./routes/dealRoutes");
 const dealStageRoutes = require("./routes/dealStageRoutes");
 const industryRoutes = require("./routes/industryRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 const jobTitleRoutes = require("./routes/jobTitleRoutes");
 const priorityLevelRoutes = require("./routes/priorityLevelRoutes");
 const stateProvinceRoutes = require("./routes/stateProvinceRoutes");
@@ -51,6 +52,7 @@ const currencyRoutes = require("./routes/currencyRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const chatbotRoutes = require("./routes/chatbotRoutes");
 const auditLogRoutes = require("./routes/auditLogRoutes");
+const departmentRoutes = require("./routes/departmentRoutes");
 
 //API ROUTES
 const efmvenuesRoute = require('./routes/efm/efmVenueRoute');
@@ -81,6 +83,7 @@ app.use("/jobTitles", jobTitleRoutes);
 app.use("/prioritylevels", priorityLevelRoutes);
 app.use("/states", stateProvinceRoutes);
 app.use("/products", productRoutes);
+app.use("/categories", categoryRoutes);
 app.use('/persons', personRoutes);
 app.use("/reports", reportRoutes);
 app.use("/countries", countryRoutes)
@@ -94,10 +97,14 @@ app.use("/notes", noteRoutes);
 app.use("/currencies", currencyRoutes);
 app.use("/chatbot", chatbotRoutes);
 app.use("/audit-logs", auditLogRoutes);
+app.use("/departments", departmentRoutes);
+// Also expose with /api prefix for clients expecting /api/departments
+app.use("/api/departments", departmentRoutes);
 
 //API Mounting
 app.use('/api/cities', efmcitiesRoute);
 app.use('/api/countries', efmcountriesRoute);
+app.use('/api/categories', categoryRoutes);
 app.use('/api/events', efmeventsRoute);
 app.use('/api/venues', efmvenuesRoute);
 app.use('/api/companies', efmcompaniesRoute);

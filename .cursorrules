@@ -1,0 +1,39 @@
+# Project Context
+This is a CRM application with:
+- Frontend: React 18, Material-UI, React Router
+- Backend: Node.js, Express, MS SQL Server
+- Database: SQL Server with stored procedures
+
+# Code Style
+- Use async/await, not callbacks
+- Always add error handling with try-catch
+- Add console.log for debugging
+- Use descriptive variable names
+- Add comments for complex logic
+
+# File Structure
+- Frontend services: client/src/services/
+- Frontend pages: client/src/pages/
+- Backend routes: server/routes/
+- Backend controllers: server/controllers/
+- Backend services: server/services/
+- Backend data layer: server/data/
+
+# Best Practices
+- Always validate data before sending to backend
+- Handle null/undefined values properly
+- Return consistent response formats
+- Log errors with details
+- Use proper HTTP status codes
+
+# MS SQL Server Specifics
+- Use stored procedures, not raw queries
+- Handle SQL Server error numbers
+- Validate foreign keys before insert
+- Use transactions for complex operations
+
+# When Making Changes
+1. Add detailed logging first
+2. Test with simple data first
+3. Keep existing functionality intact
+4. Explain what and why you changed
