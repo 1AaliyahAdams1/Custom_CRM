@@ -7,7 +7,7 @@ const dbConfig = require("../dbConfig");
 async function getAllCategories() {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
-    .execute("GetAllCategories");
+    .query("SELECT * FROM Category WHERE Active = 1 ORDER BY CategoryName");
   return result.recordset;
 }
 
@@ -18,7 +18,7 @@ async function getCategoryById(categoryId) {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
     .input("CategoryID", sql.Int, categoryId)
-    .execute("GetCategoryByID");
+    .query("SELECT * FROM Category WHERE CategoryID = @CategoryID");
   return result.recordset[0];
 }
 
@@ -29,7 +29,11 @@ async function createCategory(categoryName) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CategoryName", sql.VarChar(255), categoryName)
-    .execute("CreateCategory");
+    .query(`
+  INSERT INTO Category (CategoryName, Active) 
+  VALUES (@CategoryName, 1);
+  SELECT * FROM Category WHERE CategoryID = SCOPE_IDENTITY();
+`);
 }
 
 // =======================
@@ -40,7 +44,12 @@ async function updateCategory(categoryId, categoryName) {
   await pool.request()
     .input("CategoryID", sql.Int, categoryId)
     .input("CategoryName", sql.VarChar(255), categoryName)
-    .execute("UpdateCategory");
+    .query(`
+  UPDATE Category
+  SET CategoryName = @CategoryName 
+  WHERE CategoryID = @CategoryID;
+  SELECT * FROM Category WHERE CategoryID = @CategoryID;
+`);
 }
 
 // =======================
@@ -50,8 +59,12 @@ async function deactivateCategory(categoryId) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CategoryID", sql.Int, categoryId)
-    .execute("DeactivateCategory");
-}
+   .query(`
+  UPDATE Category
+  SET Active = 0 
+  WHERE CategoryID = @CategoryID AND Active = 1;
+  SELECT @@ROWCOUNT AS RowsAffected;
+`);}
 
 // =======================
 // Reactivate a category
@@ -60,7 +73,12 @@ async function reactivateCategory(categoryId) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CategoryID", sql.Int, categoryId)
-    .execute("ReactivateCategory");
+    .query(`
+  UPDATE Category
+  SET Active = 1 
+  WHERE CategoryID = @CategoryID AND Active = 0;
+  SELECT @@ROWCOUNT AS RowsAffected;
+`);
 }
 
 // =======================
@@ -70,7 +88,11 @@ async function deleteCategory(categoryId) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CategoryID", sql.Int, categoryId)
-    .execute("DeleteCategory");
+    .query(`
+  DELETE FROM Category
+  WHERE CategoryID = @CategoryID;
+  SELECT @@ROWCOUNT AS RowsAffected;
+`);
 }
 
 // =======================

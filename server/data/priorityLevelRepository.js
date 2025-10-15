@@ -25,15 +25,55 @@ async function getPriorityLevelById(id) {
 // Create a new priority level
 // =======================
 async function createPriorityLevel(data) {
-  const { PriorityLevelName, PriorityLevelValue } = data;
-  const pool = await sql.connect(dbConfig);
-  await pool.request()
-    .input("PriorityLevelName", sql.VarChar(100), PriorityLevelName)
-    .input("PriorityLevelValue", sql.TinyInt, PriorityLevelValue)
-    .execute("createPriorityLevel");
-  return { message: "Priority level created" };
+  let pool;
+  try {
+    const { PriorityLevelName, PriorityLevelValue } = data;
+    
+    // Validate required fields
+    if (!PriorityLevelName || PriorityLevelName.trim() === '') {
+      throw new Error('PriorityLevelName is required');
+    }
+    
+    if (PriorityLevelValue === undefined || PriorityLevelValue === null) {
+      throw new Error('PriorityLevelValue is required');
+    }
+    
+    console.log('Creating priority level with data:', { PriorityLevelName, PriorityLevelValue });
+    
+    // Get or create connection pool
+    pool = await sql.connect(dbConfig);
+    
+    const result = await pool.request()
+      .input("PriorityLevelName", sql.VarChar(100), PriorityLevelName)
+      .input("PriorityLevelValue", sql.TinyInt, PriorityLevelValue)
+      .query(`
+        INSERT INTO PriorityLevel (PriorityLevelName, PriorityLevelValue)
+        VALUES (@PriorityLevelName, @PriorityLevelValue);
+        
+        SELECT SCOPE_IDENTITY() AS PriorityLevelID;
+      `);
+    
+    console.log('Priority level created successfully:', result.recordset);
+    
+    return { 
+      message: "Priority level created",
+      priorityLevelId: result.recordset[0].PriorityLevelID
+    };
+  } catch (error) {
+    console.error('Error creating priority level:', error);
+    
+    // If connection error, try to close and reconnect
+    if (error.code === 'ETIMEOUT' || error.code === 'ECONNRESET') {
+      try {
+        await sql.close();
+      } catch (closeError) {
+        console.error('Error closing connection:', closeError);
+      }
+    }
+    
+    throw error;
+  }
 }
-
 // =======================
 // Update an existing priority level
 // =======================
