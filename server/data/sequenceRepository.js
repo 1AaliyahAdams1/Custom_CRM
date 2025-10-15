@@ -1109,14 +1109,29 @@ const getAccountActivitiesGrouped = async (accountId, userId) => {
     const previousActivities = allActivities
       .filter(a => a.Completed === true)
       .sort((a, b) => new Date(b.CompletedAt) - new Date(a.CompletedAt));
-    
-    const currentActivities = allActivities
-      .filter(a => !a.Completed && new Date(a.DueToStart) <= new Date());
-    
-    const upcomingActivities = allActivities
-      .filter(a => !a.Completed && new Date(a.DueToStart) > new Date())
-      .sort((a, b) => new Date(a.DueToStart) - new Date(b.DueToStart));
+const today = new Date();
+today.setHours(0, 0, 0, 0); // Start of today
 
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
+
+// Current = due today or earlier (not completed)
+const currentActivities = allActivities
+  .filter(a => {
+    if (a.Completed) return false;
+    const dueDate = new Date(a.DueToStart);
+    dueDate.setHours(0, 0, 0, 0); // Compare dates only
+    return dueDate < tomorrow; // Due today or earlier
+  });
+
+// Upcoming = due after today (not completed)
+const upcomingActivities = allActivities
+  .filter(a => {
+    if (a.Completed) return false;
+    const dueDate = new Date(a.DueToStart);
+    dueDate.setHours(0, 0, 0, 0); // Compare dates only
+    return dueDate >= tomorrow; // Due tomorrow or later
+  });
     return {
       account: {
         AccountID: account.AccountID,

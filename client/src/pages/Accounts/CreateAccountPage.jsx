@@ -54,6 +54,53 @@ const CreateAccount = () => {
     ParentAccount: "",
   });
 
+const validateField = (name, value) => {
+    const errors = {};
+    
+    switch(name) {
+      case 'AccountName':
+        if (!value || value.trim().length === 0) {
+          errors.AccountName = 'Account name is required';
+        }
+        break;
+        
+      case 'email':
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors.email = 'Please enter a valid email address';
+        }
+        break;
+        
+      case 'Website':
+        if (value && value.trim() && !/^https?:\/\/.+/.test(value)) {
+          errors.Website = 'Website must start with http:// or https://';
+        }
+        break;
+        
+      case 'PrimaryPhone':
+      case 'fax':
+        if (value && !/^[\d\s\-\(\)\+]+$/.test(value)) {
+          errors[name] = 'Invalid format';
+        }
+        break;
+        
+      case 'number_of_employees':
+      case 'number_of_venues':
+      case 'number_of_releases':
+      case 'number_of_events_anually':
+      case 'annual_revenue':
+        // Only validate if there's a value
+        if (value && value.trim() !== '') {
+          if (isNaN(value) || Number(value) < 0) {
+            errors[name] = 'Must be a positive number';
+          }
+        }
+        break;
+    }
+    
+    return errors;
+  };
+
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
@@ -70,55 +117,82 @@ const CreateAccount = () => {
       return newData;
     });
 
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+
     if (error) {
       setError(null);
     }
   };
 
-  const handleBlur = (e) => {
+const handleBlur = (e) => {
     const { name, value } = e.target;
     
     setTouched(prev => ({
       ...prev,
       [name]: true
     }));
+
+    // Run validation
+    const errors = validateField(name, value);
+    
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(prev => ({
+        ...prev,
+        ...errors
+      }));
+    } else {
+      // Clear error if validation passes
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const allTouched = {};
+    // Validate required field
+    if (!formData.AccountName || formData.AccountName.trim().length === 0) {
+      setError('Account name is required');
+      return;
+    }
+
+    // Validate all fields before submit
+    const allErrors = {};
     Object.keys(formData).forEach(key => {
-      allTouched[key] = true;
+      const errors = validateField(key, formData[key]);
+      Object.assign(allErrors, errors);
     });
-    setTouched(allTouched);
+
+    if (Object.keys(allErrors).length > 0) {
+      setFieldErrors(allErrors);
+      setError('Please fix validation errors before submitting');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
 
     try {
-      await createAccount(formData);
+      const response = await createAccount(formData);
       
       setSuccessMessage("Account created successfully!");
+      
       setTimeout(() => {
         navigate('/accounts');
       }, 1500);
 
     } catch (error) {
       console.error('Error creating account:', error);
-      
-      if (error.response?.data?.errors) {
-        setFieldErrors(error.response.data.errors);
-        setError('Please fix the validation errors');
-      } else if (error.response?.status === 409) {
-        setError('Account with this information already exists');
-      } else if (error.response?.status === 400) {
-        setError(error.response.data?.error || 'Invalid data provided');
-      } else if (error.response?.status >= 500) {
-        setError('Server error. Please try again later');
-      } else {
-        setError('Failed to create account. Please try again.');
-      }
+      setError(error.message || 'Failed to create account. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -440,7 +514,7 @@ const CreateAccount = () => {
                   fullWidth
                   label="Number of Employees"
                   name="number_of_employees"
-                  type="number"
+                  type="text"
                   value={formData.number_of_employees}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -448,7 +522,7 @@ const CreateAccount = () => {
                   error={isFieldInvalid('number_of_employees')}
                   helperText={getFieldError('number_of_employees')}
                   size={settings.general.compactView ? "small" : "medium"}
-                  inputProps={{ min: 0 }}
+                  placeholder="e.g., 50"
                 />
               </Box>
 
@@ -457,7 +531,7 @@ const CreateAccount = () => {
                   fullWidth
                   label="Annual Revenue"
                   name="annual_revenue"
-                  type="number"
+                  type="text"
                   value={formData.annual_revenue}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -465,7 +539,7 @@ const CreateAccount = () => {
                   error={isFieldInvalid('annual_revenue')}
                   helperText={getFieldError('annual_revenue')}
                   size={settings.general.compactView ? "small" : "medium"}
-                  inputProps={{ min: 0, step: "1" }}
+                  placeholder="e.g., 1000000"
                 />
               </Box>
 
@@ -474,7 +548,7 @@ const CreateAccount = () => {
                   fullWidth
                   label="Number of Venues"
                   name="number_of_venues"
-                  type="number"
+                  type="text"
                   value={formData.number_of_venues}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -482,7 +556,7 @@ const CreateAccount = () => {
                   error={isFieldInvalid('number_of_venues')}
                   helperText={getFieldError('number_of_venues')}
                   size={settings.general.compactView ? "small" : "medium"}
-                  inputProps={{ min: 0 }}
+                  placeholder="e.g., 10"
                 />
               </Box>
 
@@ -491,7 +565,7 @@ const CreateAccount = () => {
                   fullWidth
                   label="Number of Releases"
                   name="number_of_releases"
-                  type="number"
+                  type="text"
                   value={formData.number_of_releases}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -499,7 +573,7 @@ const CreateAccount = () => {
                   error={isFieldInvalid('number_of_releases')}
                   helperText={getFieldError('number_of_releases')}
                   size={settings.general.compactView ? "small" : "medium"}
-                  inputProps={{ min: 0 }}
+                  placeholder="e.g., 10"
                 />
               </Box>
 
@@ -508,7 +582,7 @@ const CreateAccount = () => {
                   fullWidth
                   label="Number of Events Annually"
                   name="number_of_events_anually"
-                  type="number"
+                  type="text"
                   value={formData.number_of_events_anually}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -516,7 +590,7 @@ const CreateAccount = () => {
                   error={isFieldInvalid('number_of_events_anually')}
                   helperText={getFieldError('number_of_events_anually')}
                   size={settings.general.compactView ? "small" : "medium"}
-                  inputProps={{ min: 0 }}
+                  placeholder="e.g., 20"
                 />
               </Box>
             </Box>

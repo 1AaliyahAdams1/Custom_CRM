@@ -40,6 +40,7 @@ import NotesPopup from "../NotesComponent";
 import AttachmentsPopup from "../../components/AttachmentsComponent";
 import BulkAssignDialog from "../../components/dialogs/BulkAssignDialog";
 import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
+
 import BulkClaimAndSequenceDialog from "../../components/dialogs/BulkClaimAndSequenceDialog";
 import AssignSequenceDialog from "../../components/dialogs/AssignSequenceDialog";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
@@ -116,7 +117,17 @@ const fetchAccounts = async () => {
           const rawData = await getAllAccounts();
           accountsData = Array.isArray(rawData) ? rawData : [];
 
+
           accountsData.forEach((acc) => {
+            const idsStr = acc.AssignedEmployeeIDs;
+            const namesStr = acc.AssignedEmployeeNames;
+
+            if (idsStr && namesStr) {
+              const ids = idsStr.split(",").map((id) => id.trim());
+              const names = namesStr.split(",").map((n) => n.trim());
+              const isOwnedByMe = ids.includes(String(userId));
+
+              if (isOwnedByMe && ids.length === 1) {
             const idsStr = acc.AssignedEmployeeIDs;
             const namesStr = acc.AssignedEmployeeNames;
 
@@ -128,7 +139,13 @@ const fetchAccounts = async () => {
               if (isOwnedByMe && ids.length === 1) {
                 acc.ownerStatus = "owned";
               } else if (isOwnedByMe && ids.length > 1) {
+              } else if (isOwnedByMe && ids.length > 1) {
                 acc.ownerStatus = "owned-shared";
+                acc.ownerDisplayName = `You + ${ids.length - 1} other${ids.length - 1 > 1 ? "s" : ""}`;
+                acc.ownerTooltip = names.join(", ");
+              } else if (ids.length === 1) {
+                acc.ownerStatus = `owned-by-${names[0]}`;
+                acc.ownerDisplayName = names[0];
                 acc.ownerDisplayName = `You + ${ids.length - 1} other${ids.length - 1 > 1 ? "s" : ""}`;
                 acc.ownerTooltip = names.join(", ");
               } else if (ids.length === 1) {
@@ -138,11 +155,13 @@ const fetchAccounts = async () => {
                 acc.ownerStatus = "owned-by-multiple";
                 acc.ownerDisplayName = `${ids.length} users`;
                 acc.ownerTooltip = names.join(", ");
+                acc.ownerDisplayName = `${ids.length} users`;
+                acc.ownerTooltip = names.join(", ");
               }
             } else {
               acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
             }
-          });
+          }}});
         } else {
           const assignedRes = await fetchActiveAccountsByUser(userId);
           const unassignedRes = await fetchActiveUnassignedAccounts();
@@ -157,6 +176,7 @@ const fetchAccounts = async () => {
           unassigned.forEach((a) => (a.ownerStatus = "unowned"));
 
           const map = new Map();
+          [...assigned, ...unassigned].forEach((a) => map.set(a.AccountID, a));
           [...assigned, ...unassigned].forEach((a) => map.set(a.AccountID, a));
           accountsData = Array.from(map.values());
         }
@@ -668,6 +688,7 @@ const confirmBulkClaimAndSequence = async (sequenceId, accountIds) => {
         onRefresh={() => setRefreshFlag((f) => !f)}
       />
 
+      {/*  Pass all required service functions */}
       <AttachmentsPopup
         open={attachmentsPopupOpen}
         onClose={() => {

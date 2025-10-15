@@ -21,6 +21,8 @@ import {
   FormControlLabel,
   Switch,
   IconButton,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import {
   Info as InfoIcon,
@@ -36,8 +38,26 @@ import {
 import { useTheme } from "@mui/material/styles";
 import TableView from '../components/tableFormat/TableView';
 import { formatters } from '../utils/formatters';
+import CategoryPage from  './CategoryPage'
+import DepartmentPage from './DepartmentPage';
+
+// Tab Panel Component
+function TabPanel({ children, value, index, ...other }) {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`priority-tabpanel-${index}`}
+      aria-labelledby={`priority-tab-${index}`}
+      {...other}
+    >
+      {value === index && children}
+    </div>
+  );
+}
 
 const PriorityLevelPage = ({
+  // Priority Level props
   priorityLevels = [],
   loading = false,
   error,
@@ -60,23 +80,15 @@ const PriorityLevelPage = ({
   onAddNote,
   onAddAttachment,
   onAssignUser,
-  showStatus,
-  // Popup props
-  notesPopupOpen,
-  setNotesPopupOpen,
-  attachmentsPopupOpen,
-  setAttachmentsPopupOpen,
-  selectedPriorityLevel,
-  popupLoading,
-  popupError,
-  handleSaveNote,
-  handleDeleteNote,
-  handleEditNote,
-  handleUploadAttachment,
-  handleDeleteAttachment,
-  handleDownloadAttachment,
+  
+  // Category props
+  categoryProps,
+  
+  // Department props
+  departmentProps,
 }) => {
   const theme = useTheme();
+  const [currentTab, setCurrentTab] = useState(0);
   
   // Add Priority Level Dialog State
   const [addPriorityLevelDialogOpen, setAddPriorityLevelDialogOpen] = useState(false);
@@ -89,11 +101,23 @@ const PriorityLevelPage = ({
   });
   const [addPriorityLevelLoading, setAddPriorityLevelLoading] = useState(false);
 
-  const columns = [
-    { field: 'PriorityLevelName', headerName: 'Priority Name', type: 'tooltip', defaultVisible: true },
+  const handleTabChange = (event, newValue) => {
+    setCurrentTab(newValue);
+  };
+
+  const availableTabs = [
+    { id: 'priority-levels', label: 'Priority Levels', component: 'priority-levels' },
+    { id: 'categories', label: 'Categories', component: 'categories' },
+    { id: 'departments', label: 'Departments', component: 'departments' },
   ];
 
-  // Enhanced menu items for priority levels
+  const columns = [
+    { field: 'PriorityLevelName', headerName: 'Priority Name', type: 'tooltip', defaultVisible: true },
+    { field: 'Description', headerName: 'Description', type: 'tooltip', defaultVisible: true },
+    { field: 'PriorityOrder', headerName: 'Order', defaultVisible: true },
+    { field: 'Color', headerName: 'Color', defaultVisible: true },
+  ];
+
   const getMenuItems = (priorityLevel) => {
     const baseItems = [
       {
@@ -122,27 +146,25 @@ const PriorityLevelPage = ({
       },
     ];
 
-    // Add reactivate/deactivate based on current status
     if (priorityLevel.IsActive) {
       baseItems.push({
         label: 'Deactivate',
-        icon: <PowerOffIcon sx={{ mr: 1, color: '#ff9800' }} />,
+        icon: <PowerOffIcon sx={{ mr: 1, color: theme.palette.warning.main }} />,
         onClick: () => onDeactivate && onDeactivate(priorityLevel.PriorityLevelID),
         show: !!onDeactivate,
       });
     } else {
       baseItems.push({
         label: 'Reactivate',
-        icon: <PowerIcon sx={{ mr: 1, color: '#4caf50' }} />,
+        icon: <PowerIcon sx={{ mr: 1, color: theme.palette.success.main }} />,
         onClick: () => onReactivate && onReactivate(priorityLevel.PriorityLevelID),
         show: !!onReactivate,
       });
     }
 
-    // Add delete option
     baseItems.push({
       label: 'Delete',
-      icon: <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />,
+      icon: <DeleteIcon sx={{ mr: 1, color: theme.palette.error.main }} />,
       onClick: () => onDelete && onDelete(priorityLevel.PriorityLevelID),
       show: !!onDelete,
     });
@@ -150,17 +172,17 @@ const PriorityLevelPage = ({
     return baseItems;
   };
 
-  // Custom formatters for priority level-specific fields
   const priorityLevelFormatters = {
     ...formatters,
     IsActive: (value) => {
+      const isActive = value === true || value === 1;
       return (
         <Chip
-          label={value ? 'Active' : 'Inactive'}
+          label={isActive ? 'Active' : 'Inactive'}
           size="small"
           sx={{
-            backgroundColor: value ? '#079141ff' : '#999999',
-            color: '#fff',
+            backgroundColor: isActive ? theme.palette.success.main : theme.palette.grey[500],
+            color: theme.palette.getContrastText(isActive ? theme.palette.success.main : theme.palette.grey[500]),
             fontWeight: 500,
           }}
         />
@@ -186,16 +208,15 @@ const PriorityLevelPage = ({
     },
     PriorityOrder: (value) => {
       return (
-        <Typography
-          variant="body2"
+        <Chip
+          label={value || 'N/A'}
+          size="small"
+          variant="outlined"
           sx={{
             fontWeight: 500,
-            color: theme.palette.text.primary,
-            textAlign: 'center'
+            fontFamily: 'monospace',
           }}
-        >
-          {value || 'N/A'}
-        </Typography>
+        />
       );
     },
     Description: (value) => {
@@ -203,7 +224,6 @@ const PriorityLevelPage = ({
     }
   };
 
-  // Handle Add Priority Level Dialog
   const handleOpenAddPriorityLevelDialog = () => {
     setAddPriorityLevelDialogOpen(true);
     setNewPriorityLevel({
@@ -227,31 +247,41 @@ const PriorityLevelPage = ({
   };
 
   const handleAddPriorityLevel = async () => {
-    if (!newPriorityLevel.PriorityName.trim()) {
-      setError && setError('Priority name is required');
-      return;
-    }
+  if (!newPriorityLevel.PriorityName.trim()) {
+    setError && setError('Priority name is required');
+    return;
+  }
 
-    setAddPriorityLevelLoading(true);
-    try {
-      if (onCreate) {
-        // Convert PriorityOrder to number if provided
-        const priorityLevelData = {
-          ...newPriorityLevel,
-          PriorityOrder: newPriorityLevel.PriorityOrder ? parseInt(newPriorityLevel.PriorityOrder) : undefined
-        };
-        
-        await onCreate(priorityLevelData);
-        handleCloseAddPriorityLevelDialog();
-        setSuccessMessage && setSuccessMessage('Priority level added successfully');
-      }
-    } catch (error) {
-      setError && setError('Failed to add priority level');
-    } finally {
-      setAddPriorityLevelLoading(false);
-    }
-  };
+  // Validate PriorityOrder
+  if (!newPriorityLevel.PriorityOrder || newPriorityLevel.PriorityOrder === '') {
+    setError && setError('Priority order is required');
+    return;
+  }
 
+  setAddPriorityLevelLoading(true);
+  try {
+    if (onCreate) {
+      const priorityLevelData = {
+        PriorityName: newPriorityLevel.PriorityName.trim(),
+        Description: newPriorityLevel.Description,
+        PriorityOrder: parseInt(newPriorityLevel.PriorityOrder, 10),
+        Color: newPriorityLevel.Color,
+        IsActive: newPriorityLevel.IsActive
+      };
+      
+      console.log('Submitting priority level:', priorityLevelData);
+      
+      await onCreate(priorityLevelData);
+      handleCloseAddPriorityLevelDialog();
+      setSuccessMessage && setSuccessMessage('Priority level added successfully');
+    }
+  } catch (error) {
+    console.error('Error in handleAddPriorityLevel:', error);
+    setError && setError(error.message || 'Failed to add priority level');
+  } finally {
+    setAddPriorityLevelLoading(false);
+  }
+};
   const handleInputChange = (field, value) => {
     setNewPriorityLevel(prev => ({
       ...prev,
@@ -259,7 +289,6 @@ const PriorityLevelPage = ({
     }));
   };
 
-  // Predefined color options
   const colorOptions = [
     { value: '#f44336', label: 'High Priority (Red)' },
     { value: '#ff9800', label: 'Medium Priority (Orange)' },
@@ -271,6 +300,13 @@ const PriorityLevelPage = ({
     { value: '#079141ff', label: 'Default (Brand Green)' },
   ];
 
+  const handleColorChange = (event) => {
+  setNewPriorityLevel(prev => ({
+    ...prev,
+    Color: event.target.value
+  }));
+};
+
   return (
     <Box sx={{ 
       width: '100%', 
@@ -278,121 +314,166 @@ const PriorityLevelPage = ({
       minHeight: '100vh', 
       p: 3 
     }}>
-      {error && (
-        <Alert 
-          severity="error" 
-          sx={{ mb: 2 }}
-          onClose={() => setError && setError('')}
-        >
-          {error}
-        </Alert>
-      )}
-
-      {successMessage && (
-        <Alert 
-          severity="success" 
-          sx={{ mb: 2 }}
-          onClose={() => setSuccessMessage && setSuccessMessage('')}
-        >
-          {successMessage}
-        </Alert>
-      )}
-
       <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-        <Toolbar sx={{ 
-          backgroundColor: theme.palette.background.paper, 
-          borderBottom: `1px solid ${theme.palette.divider}`, 
-          justifyContent: 'space-between', 
-          flexWrap: 'wrap', 
-          gap: 2, 
-          py: 2 
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-            <Typography variant="h6" component="div" sx={{ 
-              color: theme.palette.text.primary, 
-              fontWeight: 600 
-            }}>
-              Priority Levels
-            </Typography>
-            {selected.length > 0 && (
-              <Chip 
-                label={`${selected.length} selected`} 
-                size="small" 
-                sx={{ 
-                  backgroundColor: theme.palette.mode === 'dark' ? '#333' : '#e0e0e0', 
-                  color: theme.palette.text.primary 
-                }} 
+        {/* Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs 
+            value={currentTab} 
+            onChange={handleTabChange} 
+            sx={{ backgroundColor: theme.palette.background.paper }}
+          >
+            {availableTabs.map((tab, index) => (
+              <Tab
+                key={tab.id}
+                label={tab.label}
+                sx={{
+                  color: currentTab === index ? theme.palette.text.primary : theme.palette.text.secondary,
+                  '&.Mui-selected': { color: theme.palette.text.primary, fontWeight: 600 },
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  minHeight: 56
+                }}
               />
-            )}
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleOpenAddPriorityLevelDialog}
-            >
-              Add Priority Level
-            </Button>
-            {selected.length > 0 && (
-              <Button
-                variant="outlined"
-                color="warning"
-                onClick={onBulkDeactivate}
-              >
-                Deactivate Selected
-              </Button>
-            )}
-          </Box>
-        </Toolbar>
-
-        {loading ? (
-          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
-            <CircularProgress />
-            <Typography variant="body2" sx={{ mt: 2, color: theme.palette.text.secondary }}>
-              Loading priority levels...
-            </Typography>
-          </Box>
-        ) : (
-          <TableView
-            data={priorityLevels}
-            columns={columns}
-            idField="PriorityLevelID"
-            selected={selected}
-            onSelectClick={onSelectClick}
-            onSelectAllClick={onSelectAllClick}
-            showSelection={true}
-            onView={onView}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onAddNote={onAddNote}
-            onAddAttachment={onAddAttachment}
-            onAssignUser={onAssignUser}
-            formatters={priorityLevelFormatters}
-            entityType="priority level"
-            getMenuItems={getMenuItems}
-          />
-        )}
-
-        <Box sx={{ 
-          p: 2, 
-          borderTop: `1px solid ${theme.palette.divider}`, 
-          backgroundColor: theme.palette.background.default, 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center' 
-        }}>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-            Showing {priorityLevels.length} priority levels
-          </Typography>
-          {selected.length > 0 && (
-            <Typography variant="body2" sx={{ 
-              color: theme.palette.text.primary, 
-              fontWeight: 500 
-            }}>
-              {selected.length} selected
-            </Typography>
-          )}
+            ))}
+          </Tabs>
         </Box>
+
+        {/* Tab Panels */}
+        {availableTabs.map((tab, index) => (
+          <TabPanel key={tab.id} value={currentTab} index={index}>
+            {tab.component === 'priority-levels' && (
+              <>
+                {error && (
+                  <Alert 
+                    severity="error" 
+                    sx={{ m: 2 }}
+                    onClose={() => setError && setError('')}
+                  >
+                    {error}
+                  </Alert>
+                )}
+
+                {successMessage && (
+                  <Alert 
+                    severity="success" 
+                    sx={{ m: 2 }}
+                    onClose={() => setSuccessMessage && setSuccessMessage('')}
+                  >
+                    {successMessage}
+                  </Alert>
+                )}
+
+                <Toolbar sx={{ 
+                  backgroundColor: theme.palette.background.paper, 
+                  borderBottom: `1px solid ${theme.palette.divider}`, 
+                  justifyContent: 'space-between', 
+                  flexWrap: 'wrap', 
+                  gap: 2, 
+                  py: 2 
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+                    <Typography variant="h6" component="div" sx={{ 
+                      color: theme.palette.text.primary, 
+                      fontWeight: 600 
+                    }}>
+                      Priority Levels
+                    </Typography>
+                    {selected.length > 0 && (
+                      <Chip 
+                        label={`${selected.length} selected`} 
+                        size="small" 
+                        sx={{ 
+                          backgroundColor: theme.palette.action.selected,
+                          color: theme.palette.text.primary 
+                        }} 
+                      />
+                    )}
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<Add />}
+                      onClick={handleOpenAddPriorityLevelDialog}
+                      sx={{
+                        backgroundColor: theme.palette.text.primary,
+                        color: theme.palette.getContrastText(theme.palette.text.primary),
+                        "&:hover": { backgroundColor: theme.palette.grey[800] }
+                      }}
+                    >
+                      Add Priority Level
+                    </Button>
+                    {selected.length > 0 && (
+                      <Button
+                        variant="outlined"
+                        color="warning"
+                        onClick={onBulkDeactivate}
+                      >
+                        Deactivate Selected
+                      </Button>
+                    )}
+                  </Box>
+                </Toolbar>
+
+                {loading ? (
+                  <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+                    <CircularProgress />
+                    <Typography variant="body2" sx={{ mt: 2, color: theme.palette.text.secondary }}>
+                      Loading priority levels...
+                    </Typography>
+                  </Box>
+                ) : (
+                  <TableView
+                    data={priorityLevels}
+                    columns={columns}
+                    idField="PriorityLevelID"
+                    selected={selected}
+                    onSelectClick={onSelectClick}
+                    onSelectAllClick={onSelectAllClick}
+                    showSelection={true}
+                    onView={onView}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onAddNote={onAddNote}
+                    onAddAttachment={onAddAttachment}
+                    onAssignUser={onAssignUser}
+                    formatters={priorityLevelFormatters}
+                    entityType="priority level"
+                    getMenuItems={getMenuItems}
+                  />
+                )}
+
+                <Box sx={{ 
+                  p: 2, 
+                  borderTop: `1px solid ${theme.palette.divider}`, 
+                  backgroundColor: theme.palette.background.default, 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center' 
+                }}>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                    Showing {priorityLevels.length} priority levels
+                  </Typography>
+                  {selected.length > 0 && (
+                    <Typography variant="body2" sx={{ 
+                      color: theme.palette.text.primary, 
+                      fontWeight: 500 
+                    }}>
+                      {selected.length} selected
+                    </Typography>
+                  )}
+                </Box>
+              </>
+            )}
+
+            {tab.component === 'categories' && categoryProps && (
+              <CategoryPage {...categoryProps} />
+            )}
+
+            {tab.component === 'departments' && departmentProps && (
+              <DepartmentPage {...departmentProps} />
+            )}
+          </TabPanel>
+        ))}
       </Paper>
 
       {/* Add Priority Level Dialog */}
@@ -401,18 +482,12 @@ const PriorityLevelPage = ({
         onClose={handleCloseAddPriorityLevelDialog}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: theme.palette.background.paper
-          }
-        }}
       >
         <DialogTitle sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
           borderBottom: `1px solid ${theme.palette.divider}`,
-          color: theme.palette.text.primary
         }}>
           Add New Priority Level
           <IconButton onClick={handleCloseAddPriorityLevelDialog} size="small">
@@ -447,6 +522,7 @@ const PriorityLevelPage = ({
               value={newPriorityLevel.PriorityOrder}
               onChange={(e) => handleInputChange('PriorityOrder', e.target.value)}
               fullWidth
+              required 
               type="number"
               variant="outlined"
               helperText="Lower numbers = higher priority (1 = highest priority)"
@@ -454,52 +530,52 @@ const PriorityLevelPage = ({
             />
 
             <FormControl fullWidth>
-              <InputLabel>Color</InputLabel>
-              <Select
-                value={newPriorityLevel.Color}
-                onChange={(e) => handleInputChange('Color', e.target.value)}
-                label="Color"
-              >
-                {colorOptions.map((color) => (
-                  <MenuItem key={color.value} value={color.value}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Box
-                        sx={{
-                          width: 20,
-                          height: 20,
-                          backgroundColor: color.value,
-                          border: `1px solid ${theme.palette.divider}`,
-                          borderRadius: 1
-                        }}
-                      />
-                      {color.label}
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+  <InputLabel>Color</InputLabel>
+  <Select
+    value={newPriorityLevel.Color}
+    onChange={handleColorChange}
+    fullWidth
+  >
+    {colorOptions.map((color) => (
+      <MenuItem key={color.value} value={color.value}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              width: 20,
+              height: 20,
+              backgroundColor: color.value,
+              borderRadius: '4px',
+              border: '1px solid #ddd'
+            }}
+          />
+          {color.label}
+        </Box>
+      </MenuItem>
+    ))}
+  </Select>
+</FormControl>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <TextField
-                label="Custom Color"
-                value={newPriorityLevel.Color}
-                onChange={(e) => handleInputChange('Color', e.target.value)}
-                size="small"
-                variant="outlined"
-                helperText="Or enter custom hex color"
-                sx={{ flex: 1 }}
-              />
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  backgroundColor: newPriorityLevel.Color,
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 1,
-                  flexShrink: 0
-                }}
-              />
-            </Box>
+<Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+  <TextField
+    label="Custom Color"
+    value={newPriorityLevel.Color}
+    onChange={(e) => handleInputChange('Color', e.target.value)}
+    size="small"
+    variant="outlined"
+    helperText="Or enter custom hex color"
+    sx={{ flex: 1 }}
+  />
+  <Box
+    sx={{
+      width: 40,
+      height: 40,
+      backgroundColor: newPriorityLevel.Color,
+      border: `1px solid ${theme.palette.divider}`,
+      borderRadius: 1,
+      flexShrink: 0
+    }}
+  />
+</Box>
 
             <FormControlLabel
               control={

@@ -51,7 +51,17 @@ const SequencesDetailPage = lazy(() => import("./pages/Sequences/SequencesDetail
 const CreateSequencesPage = lazy(() => import("./pages/Sequences/CreateSequencesPage"));
 const EditSequencesPage = lazy(() => import("./pages/Sequences/EditSequencesPage"));
 
+const EmployeePage = lazy(() => import("./components/containers/EmployeeContainer"));
+const CreateEmployeePage = lazy(() => import("./pages/Employees/CreateEmployeePage"));
+const EditEmployeePage = lazy(() => import("./pages/Employees/EditEmployeePage"));
+const EmployeeDetailsPage = lazy(() => import("./pages/Employees/EmployeeDetailsPage"));
+
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const DepartmentPage = lazy(() => import("./pages/DepartmentPage"));
+
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
+
+
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
@@ -401,6 +411,24 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/categories"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.category}>
+            <CategoryPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/departments"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.department}>
+            <DepartmentPage />
+          </PrivateRoute>
+        }
+      />
+        
+      {/* --- Settings Route --- */}
+      <Route
         path="/settings"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.settings}>
@@ -408,6 +436,31 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/employees"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.employees}>
+            <EmployeePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/employees/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.employeesCreate}>
+            <CreateEmployeePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/employees/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.employeesEdit}>
+            <EditEmployeePage />
+          </PrivateRoute>
+        }
+      />
+      
 
       {/* Catch all */}
       <Route path="*" element={<NotFoundPage />} />
