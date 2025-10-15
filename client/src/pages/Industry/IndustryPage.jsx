@@ -73,65 +73,6 @@ const IndustryPage = ({
     { field: 'IndustryName', headerName: 'Industry Name', type: 'tooltip', defaultVisible: true }
   ];
 
-  // Enhanced menu items for industries
-  const getMenuItems = (industry) => {
-    const isActive = industry.Active === true || industry.Active === 1;
-    
-    const baseItems = [
-      {
-        label: 'View Details',
-        icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onView && onView(industry),
-        show: !!onView,
-      },
-      {
-        label: 'Edit',
-        icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onEdit && onEdit(industry),
-        show: !!onEdit,
-      },
-      {
-        label: 'Add Notes',
-        icon: <NoteIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onAddNote && onAddNote(industry),
-        show: !!onAddNote,
-      },
-      {
-        label: 'Add Attachments',
-        icon: <AttachFileIcon sx={{ mr: 1, color: theme.palette.text.primary }} />,
-        onClick: () => onAddAttachment && onAddAttachment(industry),
-        show: !!onAddAttachment,
-      },
-    ];
-
-    // Add reactivate/deactivate based on current status
-    if (isActive) {
-      baseItems.push({
-        label: 'Deactivate',
-        icon: <PowerOffIcon sx={{ mr: 1, color: '#ff9800' }} />,
-        onClick: () => onDeactivate && onDeactivate(industry.IndustryID),
-        show: !!onDeactivate,
-      });
-    } else {
-      baseItems.push({
-        label: 'Reactivate',
-        icon: <PowerIcon sx={{ mr: 1, color: '#4caf50' }} />,
-        onClick: () => onReactivate && onReactivate(industry.IndustryID),
-        show: !!onReactivate,
-      });
-    }
-
-    // Add delete option
-    baseItems.push({
-      label: 'Delete',
-      icon: <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />,
-      onClick: () => onDelete && onDelete(industry.IndustryID),
-      show: !!onDelete,
-    });
-
-    return baseItems;
-  };
-
   // Custom formatters for industry-specific fields
   const industryFormatters = {
     ...formatters,
@@ -301,15 +242,9 @@ const IndustryPage = ({
             onSelectClick={onSelectClick}
             onSelectAllClick={onSelectAllClick}
             showSelection={true}
-            onView={onView}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onAddNote={onAddNote}
-            onAddAttachment={onAddAttachment}
-            onAssignUser={onAssignUser}
             formatters={industryFormatters}
             entityType="industry"
-            getMenuItems={getMenuItems}
+            showActions={false}
           />
         )}
 

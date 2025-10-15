@@ -65,7 +65,7 @@ const NAV_ITEMS = [
   // Misc
   { name: "Geographic Data", href: "/countries", icon: FlagIcon, accessKey: "country", section: "Misc" },
   { name: "Industry", href: "/industries", icon: BusinessIcon, accessKey: "industry", section: "Misc" },
-  { name: "Priority Levels", href: "/priority-levels", icon: PriorityHighIcon, accessKey: "priority", section: "Misc" },
+  { name: "Classifications", href: "/priority-levels", icon: PriorityHighIcon, accessKey: "priority", section: "Misc" },
 
 
 ];

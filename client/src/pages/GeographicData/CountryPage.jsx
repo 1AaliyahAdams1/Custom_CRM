@@ -82,20 +82,6 @@ const CountryPage = ({
   onAddNote,
   onAddAttachment,
   onAssignUser,
-  showStatus,
-  notesPopupOpen,
-  setNotesPopupOpen,
-  attachmentsPopupOpen,
-  setAttachmentsPopupOpen,
-  selectedCountry,
-  popupLoading,
-  popupError,
-  handleSaveNote,
-  handleDeleteNote,
-  handleEditNote,
-  handleUploadAttachment,
-  handleDeleteAttachment,
-  handleDownloadAttachment,
   cityProps = {},
   currencyProps = {},
   currentTab = 0,
@@ -161,21 +147,6 @@ const CountryPage = ({
     { field: 'CurrencyName', headerName: 'Currency', defaultVisible: true },
     { field: 'Active', headerName: 'Status', defaultVisible: true },
   ];
-
-  const getMenuItems = (country) => {
-    const countryId = getCountryId(country);
-    const isActive = country.Active === true || country.Active === 1;
-    const baseItems = [
-      { label: 'View Details', icon: <InfoIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onView && onView(country), show: !!onView },
-      { label: 'Edit', icon: <EditIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onEdit && onEdit(country), show: !!onEdit },
-      { label: 'Add Notes', icon: <NoteIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onAddNote && onAddNote(country), show: !!onAddNote },
-      { label: 'Add Attachments', icon: <AttachFileIcon sx={{ mr: 1, color: theme.palette.text.primary }} />, onClick: () => onAddAttachment && onAddAttachment(country), show: !!onAddAttachment },
-    ];
-    if (isActive) baseItems.push({ label: 'Deactivate', icon: <PowerOffIcon sx={{ mr: 1, color: theme.palette.warning.main }} />, onClick: () => onDeactivate && onDeactivate(countryId), show: !!onDeactivate });
-    else baseItems.push({ label: 'Reactivate', icon: <PowerIcon sx={{ mr: 1, color: theme.palette.success.main }} />, onClick: () => onReactivate && onReactivate(countryId), show: !!onReactivate });
-    baseItems.push({ label: 'Delete', icon: <DeleteIcon sx={{ mr: 1, color: theme.palette.error.main }} />, onClick: () => onDelete && onDelete(countryId), show: !!onDelete });
-    return baseItems;
-  };
 
   const countryFormatters = {
     ...formatters,
@@ -268,7 +239,9 @@ const CountryPage = ({
                 </Toolbar>
 
                 {loading ? (
-                  <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>
+                  <Box display="flex" justifyContent="center" p={8}>
+                    <CircularProgress />
+                  </Box>
                 ) : (
                   <TableView
                     data={enhancedCountries}
@@ -278,17 +251,12 @@ const CountryPage = ({
                     onSelectClick={onSelectClick}
                     onSelectAllClick={onSelectAllClick}
                     showSelection
-                    onView={onView}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onAddNote={onAddNote}
-                    onAddAttachment={onAddAttachment}
-                    onAssignUser={onAssignUser}
                     formatters={countryFormatters}
                     entityType="country"
-                    getMenuItems={getMenuItems}
+                    showActions={false}
                   />
                 )}
+
 
                 <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}`, backgroundColor: theme.palette.background.default, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>Showing {enhancedCountries.length} countries</Typography>

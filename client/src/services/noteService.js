@@ -3,31 +3,36 @@ import api from "../utils/api";
 const RESOURCE = "/notes";
 
 export const createNote = async (noteData) => {
-  if (!noteData?.EntityID) throw new Error("EntityID is required");
-  if (!noteData?.EntityType) throw new Error("EntityType is required");
-  if (!noteData?.Content) throw new Error("Note content is required");
-  
-  // Get userId from localStorage
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const userId = storedUser.UserID || storedUser.id;
-  
+
   if (!userId) {
     throw new Error("User authentication required. Please log in again.");
   }
-  
+
+  // Build payload dynamically
+  const payload = {
+    Content: noteData.Content,
+    CreatedBy: userId,
+  };
+
+  if (noteData.EntityID) payload.EntityID = noteData.EntityID;
+  if (noteData.EntityType) payload.EntityTypeName = noteData.EntityType;
+
   try {
-    const response = await api.post(RESOURCE, {
-      EntityID: noteData.EntityID,
-      EntityTypeName: noteData.EntityType,
-      Content: noteData.Content,
-      CreatedBy: userId
-    });
+    const response = await api.post("/notes", payload);
     return response.data;
   } catch (error) {
+    // Check if backend actually saved the note
+    if (error.response?.status === 400 && error.response?.data?.saved) {
+      console.warn("Note saved but server returned 400:", error.response.data);
+      return error.response.data;
+    }
     console.error("Error creating note:", error?.response || error);
     throw error;
   }
 };
+
 
 export const updateNote = async (noteId, noteData) => {
   if (!noteId) throw new Error("Note ID is required");

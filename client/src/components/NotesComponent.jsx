@@ -90,15 +90,23 @@ const NotesPopup = ({
     setSuccessMessage('');
   };
 
-  // Fetch existing notes (including inactive)
+  // Fetch existing notes
   const fetchExistingNotes = async () => {
-    if (!entityId || !entityType) return;
+    // Add validation before attempting to fetch
+    if (!entityId || !entityType) {
+      console.warn('Cannot fetch notes: missing entityId or entityType', {
+        entityId,
+        entityType
+      });
+      return;
+    }
 
     try {
       setFetchingNotes(true);
       setNotesError('');
 
-      const notes = await getNotesByEntity(entityType, entityId, showInactive);
+      // Remove showInactive parameter - backend doesn't support it
+      const notes = await getNotesByEntity(entityType, entityId);
       setExistingNotes(Array.isArray(notes) ? notes : []);
 
       if (onNotesChange) {
