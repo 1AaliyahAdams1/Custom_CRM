@@ -16,7 +16,7 @@ import {
   reactivateNote,
 } from "../../services/noteService";
 import EmailDialog from "../../components/dialogs/EmailDialog";
-import NotesPopup from "../../components/NotesComponent";
+import NotesPopup from "../../components/dialogs/NotesComponent";
 
 const WorkPageContainer = () => {
   // User data

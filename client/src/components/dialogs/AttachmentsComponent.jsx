@@ -39,7 +39,7 @@ import {
   getAttachmentsByEntity,
   downloadAttachment,
   deleteAttachment,
-} from '../services/attachmentService';
+} from '../../services/attachmentService';
 
 const AttachmentsPopup = ({
   open,

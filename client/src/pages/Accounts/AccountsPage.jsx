@@ -17,8 +17,8 @@ import { Add, Info } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles"; 
 import TableView from "../../components/tableFormat/TableView";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
-import NotesPopup from "../../components/NotesComponent";
-import AttachmentsPopup from "../../components/AttachmentsComponent";
+import NotesPopup from "../../components/dialogs/NotesComponent";
+import AttachmentsPopup from "../../components/dialogs/AttachmentsComponent";
 import { formatters } from "../../utils/formatters";
 import StatusMessage from "../../components/tableFormat/StatusMessage";
 
