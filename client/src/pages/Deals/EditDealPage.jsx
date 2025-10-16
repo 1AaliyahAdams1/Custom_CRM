@@ -16,6 +16,7 @@ import SmartDropdown from '../../components/SmartDropdown';
 import { fetchDealById, updateDeal } from "../../services/dealService";
 import { dealStageService } from '../../services/dropdownServices';
 import { getAllAccounts } from '../../services/accountService';
+import { getAllCurrencies } from '../../services/currencyService';
 
 const EditDealPage = () => {
   const theme = useTheme();
@@ -30,8 +31,9 @@ const EditDealPage = () => {
     Value: "",
     CloseDate: "",
     Probability: "",
+    CurrencyID: "",
   });
-  const [accounts, setAccounts] = useState([]);
+  const [accounts, setAccounts] = useState([]); // Initialize as empty array
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -39,14 +41,33 @@ const EditDealPage = () => {
 
   // Memoized function to get account name from AccountID
   const accountName = useMemo(() => {
-    if (!accounts.length || !formData.AccountID) return 'No account selected';
+    // Add null checks and ensure accounts is an array
+    if (!Array.isArray(accounts) || accounts.length === 0 || !formData.AccountID) {
+      return 'No account selected';
+    }
     const account = accounts.find(acc => acc.AccountID === formData.AccountID);
     return account ? account.AccountName : 'Unknown Account';
   }, [accounts, formData.AccountID]);
 
+  // Service wrapper for currency dropdown
+  const currencyService = {
+    getAll: async () => {
+      try {
+        const response = await getAllCurrencies();
+        return response.data || response;
+      } catch {
+        return [];
+      }
+    },
+  };
+
   useEffect(() => {
     const loadDealAndAccounts = async () => {
-      if (!id) return setError("No deal ID provided");
+      if (!id) {
+        setError("No deal ID provided");
+        setLoading(false);
+        return;
+      }
 
       try {
         // Fetch both deal data and accounts data
@@ -56,18 +77,41 @@ const EditDealPage = () => {
         ]);
 
         const dealData = dealResponse.data;
+        
+        // Debug: Log the deal data to see what's being returned
+        console.log('Deal Data from API:', dealData);
+        console.log('DealName:', dealData.DealName);
+        console.log('Probability:', dealData.Probability);
+        console.log('CurrencyID:', dealData.CurrencyID);
+        
+        // Format the CloseDate to YYYY-MM-DD for the date input
+        let formattedCloseDate = dealData.CloseDate || "";
+        if (formattedCloseDate) {
+          formattedCloseDate = formattedCloseDate.split('T')[0];
+        }
+
         setFormData({
           DealID: dealData.DealID || "",
           AccountID: dealData.AccountID || "",
           DealStageID: dealData.DealStageID || "",
           DealName: dealData.DealName || "",
           Value: dealData.Value || "",
-          CloseDate: dealData.CloseDate || "",
+          CloseDate: formattedCloseDate,
           Probability: dealData.Probability || "",
+          CurrencyID: dealData.CurrencyID || "",
         });
 
-        setAccounts(accountsResponse.data);
-      } catch {
+        console.log('Form Data after setting:', {
+          DealName: dealData.DealName,
+          Probability: dealData.Probability,
+          CurrencyID: dealData.CurrencyID
+        });
+
+        // Ensure we set accounts as an array
+        const accountsData = accountsResponse?.data || accountsResponse || [];
+        setAccounts(Array.isArray(accountsData) ? accountsData : []);
+      } catch (err) {
+        console.error("Error loading deal:", err);
         setError("Failed to load deal data");
       } finally {
         setLoading(false);
@@ -89,7 +133,8 @@ const EditDealPage = () => {
       await updateDeal(id, formData);
       setSuccessMessage("Deal updated successfully!");
       setTimeout(() => navigate("/deals"), 1500);
-    } catch {
+    } catch (err) {
+      console.error("Error updating deal:", err);
       setError("Failed to update deal");
     } finally {
       setSaving(false);
@@ -106,11 +151,12 @@ const EditDealPage = () => {
       <Box sx={{ maxWidth: 800, mx: 'auto' }}>
         {loading ? (
           <Box sx={{ p: 3 }}>
+            <Skeleton variant="rectangular" width="100%" height={60} sx={{ mb: 2 }} />
             <Skeleton variant="rectangular" width="100%" height={400} />
           </Box>
         ) : (
           <>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h4" sx={{
                 fontWeight: 600,
                 color: theme.palette.text.primary
@@ -131,38 +177,46 @@ const EditDealPage = () => {
               </Box>
             </Box>
 
-            {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-            {successMessage && <Alert severity="success" sx={{ mb: 3 }}>{successMessage}</Alert>}
+            {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>{error}</Alert>}
+            {successMessage && <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>{successMessage}</Alert>}
 
             <Paper elevation={0} sx={{
               p: 3,
               backgroundColor: theme.palette.background.paper
             }}>
               <form onSubmit={handleSubmit}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {/* Read-only fields  */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {/* Read-only Account field */}
                   <Box sx={{
-                    mb: 2,
                     p: 2,
                     backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f8f9fa',
                     borderRadius: 1,
                     border: `1px solid ${theme.palette.divider}`
                   }}>
-                    <Box>
-                      <Typography variant="caption" sx={{
-                        color: theme.palette.text.secondary,
-                        fontWeight: 'medium'
-                      }}>
-                        Account
-                      </Typography>
-                      <Typography variant="body1" sx={{
-                        fontWeight: 'medium',
-                        color: theme.palette.text.primary
-                      }}>
-                        {accountName}
-                      </Typography>
-                    </Box>
+                    <Typography variant="caption" sx={{
+                      color: theme.palette.text.secondary,
+                      fontWeight: 500,
+                      display: 'block',
+                      mb: 0.5
+                    }}>
+                      Account
+                    </Typography>
+                    <Typography variant="body1" sx={{
+                      fontWeight: 500,
+                      color: theme.palette.text.primary
+                    }}>
+                      {accountName}
+                    </Typography>
                   </Box>
+
+                  <TextField
+                    fullWidth
+                    label="Deal Name"
+                    name="DealName"
+                    value={formData.DealName}
+                    onChange={handleInputChange}
+                    disabled={saving}
+                  />
 
                   <SmartDropdown
                     label="Deal Stage"
@@ -177,20 +231,22 @@ const EditDealPage = () => {
 
                   <TextField
                     fullWidth
-                    label="Deal Name"
-                    name="DealName"
-                    value={formData.DealName}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
-
-                  <TextField
-                    fullWidth
                     label="Value"
                     name="Value"
                     type="number"
                     value={formData.Value}
                     onChange={handleInputChange}
+                    disabled={saving}
+                  />
+
+                  <SmartDropdown
+                    label="Currency"
+                    name="CurrencyID"
+                    value={formData.CurrencyID}
+                    onChange={handleInputChange}
+                    service={currencyService}
+                    displayField="LocalName"
+                    valueField="CurrencyID"
                     disabled={saving}
                   />
 
