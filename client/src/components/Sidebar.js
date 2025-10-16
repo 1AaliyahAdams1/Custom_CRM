@@ -52,6 +52,7 @@ const NAV_ITEMS = [
   // Admin
   { name: "Role Management", href: "/rolemanagement", icon: AdminPanelSettingsIcon, accessKey: "roles", section: "Admin" },
   { name: "Audit Log", href: "/audit-logs", icon: HistoryIcon, accessKey: "auditLog", section: "Admin" },
+  { name: "Employees", href: "/employees", icon: CorporateFareIcon, accessKey: "employees", section: "Admin" },
 
   // CRM
   { name: "Accounts", href: "/accounts", icon: BusinessIcon, accessKey: "accounts", section: "CRM Management" },
@@ -64,7 +65,7 @@ const NAV_ITEMS = [
   // Misc
   { name: "Geographic Data", href: "/countries", icon: FlagIcon, accessKey: "country", section: "Misc" },
   { name: "Industry", href: "/industries", icon: BusinessIcon, accessKey: "industry", section: "Misc" },
-  { name: "Priority Levels", href: "/priority-levels", icon: PriorityHighIcon, accessKey: "priority", section: "Misc" },
+  { name: "Classifications", href: "/priority-levels", icon: PriorityHighIcon, accessKey: "priority", section: "Misc" },
 
 
 ];

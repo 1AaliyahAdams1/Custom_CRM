@@ -38,22 +38,37 @@ async function createNote(req, res) {
   try {
     const noteData = req.body;
     
-    const userId = req.body.CreatedBy;
+    const userId = noteData.CreatedBy;
     if (!userId) {
       return res.status(400).json({ message: "User authentication required" });
     }
+
+    // Remove null or undefined fields before sending to service
+    const sanitizedNote = {};
+    if (noteData.EntityID) sanitizedNote.EntityID = noteData.EntityID;
+    if (noteData.EntityTypeName) sanitizedNote.EntityTypeName = noteData.EntityTypeName;
+    sanitizedNote.Content = noteData.Content;
     
-    const updatedNotes = await noteService.createNote(noteData, userId);
-    res.status(201).json(updatedNotes);
+    const createdNote = await noteService.createNote(sanitizedNote, userId);
+
+    res.status(201).json(createdNote);
   } catch (error) {
     console.error('Error in createNote controller:', error);
-    if (error.message.includes("required") || error.message.includes("empty") || error.message.includes("characters")) {
-      res.status(400).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: error.message });
+
+    // Only return 400 if truly a validation error
+    if (
+      error.message.includes("required") ||
+      error.message.includes("empty") ||
+      error.message.includes("characters")
+    ) {
+      return res.status(400).json({ message: error.message });
     }
+
+    // Otherwise, 500
+    res.status(500).json({ message: error.message });
   }
 }
+
 
 // =======================
 // Update note

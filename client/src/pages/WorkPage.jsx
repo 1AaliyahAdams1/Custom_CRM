@@ -61,7 +61,7 @@ import { useNavigate } from 'react-router-dom';
 import { ThemeProvider } from "@mui/material/styles";
 import { formatDistanceToNow, format } from "date-fns";
 import theme from "../components/Theme";
-import NoteDetailsForm from "../components/NotesComponent";
+import NotesPopup from "../components/NotesComponent";
 
 const WorkPage = ({
   activities = [],
@@ -69,44 +69,44 @@ const WorkPage = ({
   error,
   statusMessage,
   statusSeverity = 'info',
-  
+
   // Filters
   currentSort = 'dueDate',
   currentFilter = 'all',
-  onSortChange = () => {},
-  onFilterChange = () => {},
-  
+  onSortChange = () => { },
+  onFilterChange = () => { },
+
   // Tabs
   openTabs = [],
   activeTab = 0,
   currentTabData = null,
   currentTabLoading = false,
-  onTabChange = () => {},
-  onTabClose = () => {},
-  
+  onTabChange = () => { },
+  onTabClose = () => { },
+
   // Actions
-  onActivityClick = () => {},
-  onCompleteActivity = async () => {},
-  onUpdateActivity = async () => {},
-  onUpdateDueDateWithCascade = async () => {},
-  onDeleteActivity = async () => {},
-  onSendEmailClick = () => {},
-  onAddNoteClick = () => {},
-  onDragStart = () => {},
-  onDrop = () => {},
+  onActivityClick = () => { },
+  onCompleteActivity = async () => { },
+  onUpdateActivity = async () => { },
+  onUpdateDueDateWithCascade = async () => { },
+  onDeleteActivity = async () => { },
+  onSendEmailClick = () => { },
+  onAddNoteClick = () => { },
+  onDragStart = () => { },
+  onDrop = () => { },
   onDragOver = (e) => e.preventDefault(),
-  onReorderActivities = () => {},
+  onReorderActivities = () => { },
   draggedIndex = null,
-  
+
   // Metadata
   activityMetadata = { priorityLevels: [], activityTypes: [] },
-  
-  // Utility
-  onClearMessages = () => {},
-  showStatus = () => {},
 
-   userId,
-  refreshCurrentTabData = async () => {},
+  // Utility
+  onClearMessages = () => { },
+  showStatus = () => { },
+
+  userId,
+  refreshCurrentTabData = async () => { },
 }) => {
   // Local state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -119,11 +119,13 @@ const WorkPage = ({
   const [dueDateDialogOpen, setDueDateDialogOpen] = useState(false);
   const [dueDateDialogActivity, setDueDateDialogActivity] = useState(null);
   const [newDueDate, setNewDueDate] = useState("");
+
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [notesDialogActivity, setNotesDialogActivity] = useState(null);
 
+
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  
+
   const navigate = useNavigate();
 
   const [editFormData, setEditFormData] = useState({
@@ -163,7 +165,7 @@ const WorkPage = ({
 
   const getPriorityColor = (priorityValue) => {
     const priority = parseInt(priorityValue) || 1;
-    switch(priority) {
+    switch (priority) {
       case 4:
         return '#d32f2f';
       case 3:
@@ -193,13 +195,13 @@ const WorkPage = ({
     if (!dueDate) return 'No due date';
     const date = new Date(dueDate);
     const now = new Date();
-    
+
     if (isNaN(date.getTime())) return 'Invalid date';
-    
+
     if (date < now) {
       return `${formatDistanceToNow(date)} overdue`;
     }
-    
+
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
@@ -218,10 +220,10 @@ const WorkPage = ({
 
   const handleEditSubmit = async () => {
     if (!editDialogActivity) return;
-    
+
     try {
       const updateData = {};
-      
+
       if (editFormData.priorityLevelId) {
         updateData.PriorityLevelID = parseInt(editFormData.priorityLevelId);
       }
@@ -242,7 +244,7 @@ const WorkPage = ({
 
   const handleCompleteSubmit = async () => {
     if (!completeDialogActivity) return;
-    
+
     try {
       await onCompleteActivity(completeDialogActivity.ActivityID, completeNotes);
       setCompleteDialogOpen(false);
@@ -260,7 +262,7 @@ const WorkPage = ({
 
   const handleDeleteConfirm = async () => {
     if (!deleteDialogActivity) return;
-    
+
     try {
       await onDeleteActivity(deleteDialogActivity.ActivityID);
       setDeleteDialogOpen(false);
@@ -272,14 +274,14 @@ const WorkPage = ({
 
   const handleDueDateClick = (activity) => {
     setDueDateDialogActivity(activity);
-    setNewDueDate(activity.DueToStart ? 
+    setNewDueDate(activity.DueToStart ?
       format(new Date(activity.DueToStart), "yyyy-MM-dd'T'HH:mm") : "");
     setDueDateDialogOpen(true);
   };
 
   const handleDueDateSubmit = async () => {
     if (!dueDateDialogActivity || !newDueDate) return;
-    
+
     try {
       await onUpdateDueDateWithCascade(dueDateDialogActivity.ActivityID, newDueDate);
       setDueDateDialogOpen(false);
@@ -290,15 +292,16 @@ const WorkPage = ({
     }
   };
 
-    const handleNotesDialogOpen = (activity) => {
+  const handleNotesDialogOpen = (activity) => {
     setNotesDialogActivity(activity);
     setNotesDialogOpen(true);
   };
-  
+
   const handleNotesDialogClose = () => {
     setNotesDialogOpen(false);
     setNotesDialogActivity(null);
   };
+
 
   // Drag and drop handlers
   const handleListDragStart = (e, index, activity) => {
@@ -319,7 +322,7 @@ const WorkPage = ({
 
   const handleListDrop = (e, dropIndex) => {
     e.preventDefault();
-    
+
     if (draggedIndex === null || draggedIndex === dropIndex) {
       setDragOverIndex(null);
       return;
@@ -347,160 +350,161 @@ const WorkPage = ({
   );
 
   // Activity card component
-const ActivityCard = ({ activity, showActions = true, section = 'current' }) => {
-  // Helper to format date properly
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown date';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Unknown date';
-      return format(date, "MMM d, yyyy 'at' h:mm a");
-    } catch {
-      return 'Unknown date';
-    }
-  };
+  const ActivityCard = ({ activity, showActions = true, section = 'current' }) => {
+    // Helper to format date properly
+    const formatDate = (dateString) => {
+      if (!dateString) return 'Unknown date';
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Unknown date';
+        return format(date, "MMM d, yyyy 'at' h:mm a");
+      } catch {
+        return 'Unknown date';
+      }
+    };
 
-  return (
-    <Card sx={{ mb: 2 }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-              {activity.ActivityTypeName}
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
-              <Chip
-                label={activity.Status}
-                size="small"
-                sx={{
-                  backgroundColor: getStatusColor(activity.Status),
-                  color: 'white'
-                }}
-              />
-              {activity.PriorityLevelValue && (
+    return (
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                {activity.ActivityTypeName}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
                 <Chip
-                  label={`P${activity.PriorityLevelValue} - ${activity.PriorityLevelName}`}
+                  label={activity.Status}
                   size="small"
                   sx={{
-                    backgroundColor: getPriorityColor(activity.PriorityLevelValue),
+                    backgroundColor: getStatusColor(activity.Status),
                     color: 'white'
                   }}
                 />
-              )}
+                {activity.PriorityLevelValue && (
+                  <Chip
+                    label={`P${activity.PriorityLevelValue} - ${activity.PriorityLevelName}`}
+                    size="small"
+                    sx={{
+                      backgroundColor: getPriorityColor(activity.PriorityLevelValue),
+                      color: 'white'
+                    }}
+                  />
+                )}
+                {activity.SequenceItemDescription && (
+                  <Chip
+                    label={`Day ${activity.DaysFromStart}`}
+                    size="small"
+                    variant="outlined"
+                  />
+                )}
+              </Box>
               {activity.SequenceItemDescription && (
-                <Chip
-                  label={`Day ${activity.DaysFromStart}`}
-                  size="small"
-                  variant="outlined"
-                />
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {activity.SequenceItemDescription}
+                </Typography>
+              )}
+              <Typography variant="body2" color="text.secondary">
+                <strong>Due:</strong> {activity.DueToStart
+                  ? formatDate(activity.DueToStart)
+                  : 'No due date'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {formatDueDate(activity.DueToStart)}
+              </Typography>
+              {section === 'previous' && activity.CompletedAt && (
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Completed:</strong> {formatDate(activity.CompletedAt)}
+                </Typography>
               )}
             </Box>
-            {activity.SequenceItemDescription && (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {activity.SequenceItemDescription}
-              </Typography>
-            )}
-            <Typography variant="body2" color="text.secondary">
-              <strong>Due:</strong> {activity.DueToStart
-                ? formatDate(activity.DueToStart)
-                : 'No due date'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {formatDueDate(activity.DueToStart)}
-            </Typography>
-            {section === 'previous' && activity.CompletedAt && (
-              <Typography variant="body2" color="text.secondary">
-                <strong>Completed:</strong> {formatDate(activity.CompletedAt)}
-              </Typography>
-            )}
           </Box>
-        </Box>
-      </CardContent>
+        </CardContent>
 
-      {showActions && (
-        <CardActions sx={{ p: 2, pt: 0, gap: 1, flexWrap: 'wrap' }}>
-          {section === 'current' && (
-            <>
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<CheckCircle />}
-                onClick={() => handleCompleteClick(activity)}
-                disabled={activity.Completed}
-              >
-                Complete
-              </Button>
-
-              {isCallActivity(activity) && hasValidPhone(currentTabData?.account) && (
+        {showActions && (
+          <CardActions sx={{ p: 2, pt: 0, gap: 1, flexWrap: 'wrap' }}>
+            {section === 'current' && (
+              <>
                 <Button
                   variant="contained"
-                  color="primary"
                   size="small"
-                  component="a"
-                  href={`tel:${formatPhoneForTel(currentTabData.account.PrimaryPhone)}`}
-                  startIcon={<Phone />}
+                  startIcon={<CheckCircle />}
+                  onClick={() => handleCompleteClick(activity)}
+                  disabled={activity.Completed}
                 >
-                  Call
+                  Complete
                 </Button>
-              )}
 
-              {isEmailActivity(activity) && (
+                {isCallActivity(activity) && hasValidPhone(currentTabData?.account) && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    component="a"
+                    href={`tel:${formatPhoneForTel(currentTabData.account.PrimaryPhone)}`}
+                    startIcon={<Phone />}
+                  >
+                    Call
+                  </Button>
+                )}
+
+                {isEmailActivity(activity) && (
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    startIcon={<Email />}
+                    onClick={() => onSendEmailClick(activity)}
+                  >
+                    Email
+                  </Button>
+                )}
+
                 <Button
                   variant="outlined"
-                  color="primary"
                   size="small"
-                  startIcon={<Email />}
-                  onClick={() => onSendEmailClick(activity)}
+                  startIcon={<Note />}
+                  onClick={() => handleNotesDialogOpen(activity)}
                 >
-                  Email
+                  Add Note
                 </Button>
-              )}
 
+
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Edit />}
+                  onClick={() => handleEditClick(activity)}
+                >
+                  Edit
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  startIcon={<Delete />}
+                  onClick={() => handleDeleteClick(activity)}
+                >
+                  Delete
+                </Button>
+              </>
+            )}
+
+            {section === 'upcoming' && (
               <Button
                 variant="outlined"
                 size="small"
-                startIcon={<Note />}
-                onClick={() => onAddNoteClick(activity)}
+                startIcon={<Event />}
+                onClick={() => handleDueDateClick(activity)}
               >
-                Add Note
+                Change Due Date
               </Button>
-
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Edit />}
-                onClick={() => handleEditClick(activity)}
-              >
-                Edit
-              </Button>
-
-              <Button
-                variant="outlined"
-                color="error"
-                size="small"
-                startIcon={<Delete />}
-                onClick={() => handleDeleteClick(activity)}
-              >
-                Delete
-              </Button>
-            </>
-          )}
-
-          {section === 'upcoming' && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Event />}
-              onClick={() => handleDueDateClick(activity)}
-            >
-              Change Due Date
-            </Button>
-          )}
-        </CardActions>
-      )}
-    </Card>
-  );
-};
+            )}
+          </CardActions>
+        )}
+      </Card>
+    );
+  };
 
   // Activities List View (Left Panel)
   const ActivitiesListView = () => (
@@ -634,153 +638,162 @@ const ActivityCard = ({ activity, showActions = true, section = 'current' }) => 
           )}
         </Box>
 
-{/* Previous Activities Section */}
+        {/* Previous Activities Section */}
 <Accordion defaultExpanded={false} sx={{ mb: 2 }}>
-<AccordionSummary expandIcon={<ExpandMore />}>
-<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-<History />
-<Typography variant="h6">
-Activity History ({previousActivities.length})
-</Typography>
-</Box>
-</AccordionSummary>
-<AccordionDetails>
-<Box sx={{ maxHeight: '400px', overflowY: 'auto', pr: 1 }}>
-{previousActivities.length === 0 ? (
-<Typography variant="body2" color="text.secondary">
-No completed activities yet
-</Typography>
-) : (
-previousActivities.map((activity, idx) => {
-const formatDate = (dateString) => {
-if (!dateString) return 'Unknown date';
-try {
-const date = new Date(dateString);
-if (isNaN(date.getTime())) return 'Unknown date';
-return format(date, "MMM d, yyyy");
-} catch {
-return 'Unknown date';
-}
-};
+  <AccordionSummary expandIcon={<ExpandMore />}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <History />
+      <Typography variant="h6">
+        Activity History ({previousActivities.length})
+      </Typography>
+    </Box>
+  </AccordionSummary>
+  <AccordionDetails>
+    <Box sx={{ maxHeight: '400px', overflowY: 'auto', pr: 1 }}>
+      {previousActivities.length === 0 ? (
+        <Typography variant="body2" color="text.secondary">
+          No completed activities yet
+        </Typography>
+      ) : (
+        previousActivities.map((activity, idx) => {
+          const formatDate = (dateString) => {
+            if (!dateString) return 'Unknown date';
+            try {
+              const date = new Date(dateString);
+              if (isNaN(date.getTime())) return 'Unknown date';
+              return format(date, "MMM d, yyyy");
+            } catch {
+              return 'Unknown date';
+            }
+          };
 
-return (
-<Box key={activity.ActivityID} sx={{ mb: 2 }}>
-{/* Activity details in one line */}
-<Typography variant="body2" sx={{ mb: 0.5, color: '#333', fontWeight: 500 }}>
-<strong>{activity.ActivityTypeName}</strong>
-{activity.SequenceItemDescription && ` - ${activity.SequenceItemDescription}`}
-{' • completed on '}
-{formatDate(activity.CompletedAt)}
-</Typography>
+          const notes = activity.Notes || []; // ensure Notes is an array
 
-{/* Notes directly below activity */}
-{activity.Notes && activity.Notes.length > 0 && (
-<Box sx={{ pl: 2, mt: 1, mb: 1 }}>
-{activity.Notes.map((note, noteIdx) => (
-<Box key={noteIdx} sx={{ mb: 0.5 }}>
-<Typography
-variant="body2"
-color="text.secondary"
-sx={{
-fontStyle: 'italic',
-backgroundColor: '#f5f5f5',
-p: 1,
-borderRadius: 1,
-borderLeft: '3px solid #2196f3'
-}}
->
-{note.Content}
-</Typography>
-{note.CreatedAt && (
-<Typography variant="caption" color="text.secondary" sx={{ pl: 1, display: 'block', mt: 0.5 }}>
-Added {formatDate(note.CreatedAt)}
-{note.CreatedBy && ` by User ${note.CreatedBy}`}
-</Typography>
-)}
-</Box>
-))}
-</Box>
-)}
+          return (
+            <Box key={activity.ActivityID} sx={{ mb: 2 }}>
+              {/* Activity summary line */}
+              <Typography variant="body2" sx={{ mb: 0.5, color: '#333', fontWeight: 500 }}>
+                <strong>{activity.ActivityTypeName}</strong>
+                {activity.SequenceItemDescription && ` - ${activity.SequenceItemDescription}`}
+                {' • Completed on '}
+                {formatDate(activity.CompletedAt)}
+                {notes.length > 0 && ` • Notes: ${notes.map(n => n.Content).join('; ')}`}
+              </Typography>
 
-{idx < previousActivities.length - 1 && <Divider sx={{ mt: 2 }} />}
-</Box>
-);
-})
-)}
-</Box>
-</AccordionDetails>
+              {/* Notes detailed below */}
+              {notes.length > 0 && (
+                <Box sx={{ pl: 2, mt: 1, mb: 1 }}>
+                  {notes.map((note, noteIdx) => (
+                    <Box key={noteIdx} sx={{ mb: 0.5 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          fontStyle: 'italic',
+                          backgroundColor: '#f5f5f5',
+                          p: 1,
+                          borderRadius: 1,
+                          borderLeft: '3px solid #2196f3'
+                        }}
+                      >
+                        {note.Content}
+                      </Typography>
+                      {note.CreatedAt && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ pl: 1, display: 'block', mt: 0.5 }}
+                        >
+                          Added {formatDate(note.CreatedAt)}
+                          {note.CreatedBy && ` by User ${note.CreatedBy}`}
+                        </Typography>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              )}
+
+              {idx < previousActivities.length - 1 && <Divider sx={{ mt: 2 }} />}
+            </Box>
+          );
+        })
+      )}
+    </Box>
+  </AccordionDetails>
 </Accordion>
 
-{/* Current Activities Section */}
-<Box sx={{ mb: 3 }}>
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-    <Today />
-    <Typography variant="h6">
-      Current Activities ({currentActivities.length})
-    </Typography>
-  </Box>
-  {currentActivities.length === 0 ? (
-    <Paper sx={{ p: 3, textAlign: 'center', backgroundColor: '#f5f5f5' }}>
-      {/* ... existing content ... */}
-    </Paper>
-  ) : (
-    <Box sx={{ maxHeight: '500px', overflowY: 'auto', pr: 1 }}>
-      {currentActivities.map((activity) => (
-        <ActivityCard
-          key={activity.ActivityID}
-          activity={activity}
-          showActions={true}
-          section="current"
-        />
-      ))}
-    </Box>
-  )}
-</Box> 
+
+
+        {/* Current Activities Section */}
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Today />
+            <Typography variant="h6">
+              Current Activities ({currentActivities.length})
+            </Typography>
+          </Box>
+          {currentActivities.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center', backgroundColor: '#f5f5f5' }}>
+              {/* ... existing content ... */}
+            </Paper>
+          ) : (
+            <Box sx={{ maxHeight: '500px', overflowY: 'auto', pr: 1 }}>
+              {currentActivities.map((activity) => (
+                <ActivityCard
+                  key={activity.ActivityID}
+                  activity={activity}
+                  showActions={true}
+                  section="current"
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
         {/* Upcoming Activities Section */}
         <Accordion defaultExpanded={true} sx={{ mb: 2 }}>
           <AccordionSummary expandIcon={<ExpandMore />}>
-            <Box sx={{ display: 'flex', alignItems: 'center',       justifyContent: 'space-between', width: '100%', pr: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Schedule />
-        <Typography variant="h6">
-          Upcoming Activities ({upcomingActivities.length})
-        </Typography>
-      </Box>
-      {upcomingActivities.length > 0 && (
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<Event />}
-          onClick={(e) => {
-            e.stopPropagation();
-            // Use the FIRST upcoming activity as the reference point
-            handleDueDateClick(upcomingActivities[0]);
-          }}
-          sx={{ mr: 1 }}
-        >
-          Change Due Date
-        </Button>
-      )}
-    </Box>
+                <Schedule />
+                <Typography variant="h6">
+                  Upcoming Activities ({upcomingActivities.length})
+                </Typography>
+              </Box>
+              {upcomingActivities.length > 0 && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Event />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Use the FIRST upcoming activity as the reference point
+                    handleDueDateClick(upcomingActivities[0]);
+                  }}
+                  sx={{ mr: 1 }}
+                >
+                  Change Due Date
+                </Button>
+              )}
+            </Box>
           </AccordionSummary>
-   <AccordionDetails>
-  <Box sx={{ maxHeight: '400px', overflowY: 'auto', pr: 1 }}>
-    {upcomingActivities.length === 0 ? (
-      <Typography variant="body2" color="text.secondary">
-        No upcoming activities scheduled
-      </Typography>
-    ) : (
-      upcomingActivities.map((activity) => (
-        <ActivityCard
-          key={activity.ActivityID}
-          activity={activity}
-          showActions={false}
-          section="upcoming"
-        />
-      ))
-    )}
-  </Box>
-</AccordionDetails>
+          <AccordionDetails>
+            <Box sx={{ maxHeight: '400px', overflowY: 'auto', pr: 1 }}>
+              {upcomingActivities.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No upcoming activities scheduled
+                </Typography>
+              ) : (
+                upcomingActivities.map((activity) => (
+                  <ActivityCard
+                    key={activity.ActivityID}
+                    activity={activity}
+                    showActions={false}
+                    section="upcoming"
+                  />
+                ))
+              )}
+            </Box>
+          </AccordionDetails>
         </Accordion>
       </Box>
     );
@@ -789,7 +802,7 @@ Added {formatDate(note.CreatedAt)}
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fafafa' }}>
-        
+
         {/* Page Header */}
         <AppBar position="static" sx={{ backgroundColor: '#fff', color: '#050505', boxShadow: 1 }}>
           <Toolbar>
@@ -798,21 +811,21 @@ Added {formatDate(note.CreatedAt)}
             </Typography>
           </Toolbar>
         </AppBar>
-        
+
         {/* Main Content */}
-        <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}> 
+        <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           {/* Left Panel - Activities List */}
-          <Paper sx={{ 
+          <Paper sx={{
             width: 400,
-            display: 'flex', 
+            display: 'flex',
             flexDirection: 'column',
             borderRadius: 0,
             borderRight: '1px solid #e0e0e0',
             overflow: 'hidden'
           }}>
             {/* Filter Toolbar */}
-            <Toolbar sx={{ 
-              backgroundColor: '#fff', 
+            <Toolbar sx={{
+              backgroundColor: '#fff',
               borderBottom: '1px solid #e0e0e0',
               flexDirection: 'column',
               alignItems: 'stretch',
@@ -863,7 +876,7 @@ Added {formatDate(note.CreatedAt)}
                   </Select>
                 </FormControl>
               </Box>
-              
+
               <Typography variant="body2" color="text.secondary">
                 {activities.length} activities
               </Typography>
@@ -877,7 +890,7 @@ Added {formatDate(note.CreatedAt)}
 
           {/* Right Panel - Tabbed Workspace */}
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            
+
             {/* Tab Bar */}
             {openTabs.length > 0 && (
               <Paper sx={{ borderRadius: 0, borderBottom: '1px solid #e0e0e0' }}>
@@ -903,8 +916,8 @@ Added {formatDate(note.CreatedAt)}
                               e.stopPropagation();
                               onTabClose(index);
                             }}
-                            sx={{ 
-                              ml: 1, 
+                            sx={{
+                              ml: 1,
                               p: 0.5,
                               borderRadius: '50%',
                               cursor: 'pointer',
@@ -1026,36 +1039,36 @@ Added {formatDate(note.CreatedAt)}
 
         {/* Due Date Dialog */}
         <Dialog open={dueDateDialogOpen} onClose={() => setDueDateDialogOpen(false)} maxWidth="sm" fullWidth>
-  <DialogTitle>Change Due Date for Sequence</DialogTitle>
-  <DialogContent>
-    <Box sx={{ pt: 1 }}>
-      <Alert severity="warning" sx={{ mb: 2 }}>
-        This will adjust ALL upcoming activities in the sequence. All activities will maintain 
-        their relative timing (Day 1, Day 3, etc.) from the new start date.
-      </Alert>
-      {dueDateDialogActivity && (
-        <Typography variant="body2" sx={{ mb: 2 }}>
-          Adjusting start date for: <strong>{dueDateDialogActivity.ActivityTypeName}</strong> 
-          {dueDateDialogActivity.DaysFromStart && ` (Day ${dueDateDialogActivity.DaysFromStart})`}
-        </Typography>
-      )}
-      <TextField
-        label="New Due Date"
-        type="datetime-local"
-        value={newDueDate}
-        onChange={(e) => setNewDueDate(e.target.value)}
-        InputLabelProps={{ shrink: true }}
-        fullWidth
-      />
-    </Box>
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={() => setDueDateDialogOpen(false)}>Cancel</Button>
-    <Button onClick={handleDueDateSubmit} variant="contained" color="primary">
-      Update All Activities
-    </Button>
-  </DialogActions>
-</Dialog>
+          <DialogTitle>Change Due Date for Sequence</DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 1 }}>
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                This will adjust ALL upcoming activities in the sequence. All activities will maintain
+                their relative timing (Day 1, Day 3, etc.) from the new start date.
+              </Alert>
+              {dueDateDialogActivity && (
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Adjusting start date for: <strong>{dueDateDialogActivity.ActivityTypeName}</strong>
+                  {dueDateDialogActivity.DaysFromStart && ` (Day ${dueDateDialogActivity.DaysFromStart})`}
+                </Typography>
+              )}
+              <TextField
+                label="New Due Date"
+                type="datetime-local"
+                value={newDueDate}
+                onChange={(e) => setNewDueDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDueDateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleDueDateSubmit} variant="contained" color="primary">
+              Update All Activities
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Complete Dialog */}
         <Dialog open={completeDialogOpen} onClose={() => setCompleteDialogOpen(false)} maxWidth="sm" fullWidth>
@@ -1093,39 +1106,29 @@ Added {formatDate(note.CreatedAt)}
           </DialogActions>
         </Dialog>
 
-{/* Notes Dialog */}
-<Dialog 
-  open={notesDialogOpen} 
-  onClose={handleNotesDialogClose} 
-  maxWidth="md" 
-  fullWidth
->
-  <DialogTitle>
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Typography variant="h6">
-        Activity Notes - {notesDialogActivity?.ActivityTypeName}
-      </Typography>
-      <IconButton onClick={handleNotesDialogClose} size="small">
-        <Close />
-      </IconButton>
-    </Box>
-  </DialogTitle>
-  <DialogContent>
-    {notesDialogActivity && (
-      <NoteDetailsForm
-        entityType="Activity"
-        entityId={notesDialogActivity.ActivityID}
-        onUpdated={async () => {
-          showStatus('Note saved successfully', 'success');
-          // Refresh current tab data
-          if (refreshCurrentTabData) {
-            await refreshCurrentTabData();
-          }
-        }}
-      />
-    )}
-  </DialogContent>
-</Dialog>
+        {/* Notes Dialog */}
+
+        {notesDialogActivity && (
+          <NotesPopup
+            open={notesDialogOpen}
+            onClose={handleNotesDialogClose}
+            entityType="Activity"
+            entityId={notesDialogActivity.ActivityID}
+            entityName={notesDialogActivity.ActivityTypeName}
+            mode="create"
+            showExistingNotes={true}
+            maxLength={255}
+            required={false}
+            onSave={async (newNote) => {
+              showStatus('Note saved successfully', 'success');
+              if (refreshCurrentTabData) {
+                await refreshCurrentTabData();
+              }
+            }}
+          />
+        )}
+
+
         {/* Status Snackbar */}
         <Snackbar
           open={!!statusMessage}
@@ -1133,9 +1136,9 @@ Added {formatDate(note.CreatedAt)}
           onClose={() => showStatus('')}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
-          <Alert 
-            onClose={() => showStatus('')} 
-            severity={statusSeverity} 
+          <Alert
+            onClose={() => showStatus('')}
+            severity={statusSeverity}
             sx={{ width: '100%' }}
           >
             {statusMessage}
@@ -1144,11 +1147,11 @@ Added {formatDate(note.CreatedAt)}
 
         {/* Error Alert */}
         {error && (
-          <Alert 
-            severity="error" 
-            sx={{ 
-              position: 'fixed', 
-              top: 16, 
+          <Alert
+            severity="error"
+            sx={{
+              position: 'fixed',
+              top: 16,
               left: '50%',
               transform: 'translateX(-50%)',
               zIndex: 1300,
@@ -1160,7 +1163,7 @@ Added {formatDate(note.CreatedAt)}
           </Alert>
         )}
       </Box>
-    </ThemeProvider>
+    </ThemeProvider >
   );
 };
 

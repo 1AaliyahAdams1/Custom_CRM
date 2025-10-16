@@ -100,6 +100,23 @@ export const ROUTE_ACCESS = {
 
   //AuditLog
   auditLog: MANAGEMENT,
+
+  //Employees
+  employees: MANAGEMENT,
+  employeesCreate: MANAGEMENT,
+  employeesEdit: MANAGEMENT,
+  employeesDetails: MANAGEMENT,
+
+  //Category
+  category: MANAGEMENT,
+  categoryCreate: MANAGEMENT,
+  categoryEdit: MANAGEMENT,
+
+  //Department
+  department: MANAGEMENT,
+  departmentCreate: MANAGEMENT,
+  departmentEdit: MANAGEMENT,
+  
 };
 
 export const CLAIM_RULES = {

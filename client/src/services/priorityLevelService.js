@@ -2,7 +2,7 @@ import api from "../utils/api";
 
 class PriorityLevelService {
   constructor() {
-    this.baseURL = `${API_BASE_URL}/prioritylevels`;
+    this.baseURL = '/prioritylevels';
   }
 
   // -----------------------
@@ -87,22 +87,45 @@ class PriorityLevelService {
 
   validatePriorityLevelData(priorityLevelData) {
     const errors = [];
-    if (!priorityLevelData.PriorityName || priorityLevelData.PriorityName.trim() === "") errors.push("Priority name is required");
-    if (priorityLevelData.PriorityName && priorityLevelData.PriorityName.length > 50) errors.push("Priority name must be less than 50 characters");
-    if (priorityLevelData.Description && priorityLevelData.Description.length > 255) errors.push("Description must be less than 255 characters");
-    if (priorityLevelData.PriorityOrder !== undefined &&
-        (typeof priorityLevelData.PriorityOrder !== "number" || priorityLevelData.PriorityOrder < 1 || priorityLevelData.PriorityOrder > 100))
-      errors.push("Priority order must be a number between 1 and 100");
-    if (priorityLevelData.Color && !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(priorityLevelData.Color))
+    
+    // Check for PriorityLevelName (required)
+    if (!priorityLevelData.PriorityLevelName || priorityLevelData.PriorityLevelName.trim() === "") {
+      errors.push("Priority level name is required");
+    }
+    
+    if (priorityLevelData.PriorityLevelName && priorityLevelData.PriorityLevelName.length > 100) {
+      errors.push("Priority level name must be less than 100 characters");
+    }
+    
+    // Check for PriorityLevelValue (required)
+    if (priorityLevelData.PriorityLevelValue === undefined || priorityLevelData.PriorityLevelValue === null) {
+      errors.push("Priority level value is required");
+    }
+    
+    if (priorityLevelData.PriorityLevelValue !== undefined &&
+        (typeof priorityLevelData.PriorityLevelValue !== "number" || 
+         priorityLevelData.PriorityLevelValue < 0 || 
+         priorityLevelData.PriorityLevelValue > 255)) {
+      errors.push("Priority level value must be a number between 0 and 255");
+    }
+    
+    // Optional fields
+    if (priorityLevelData.Description && priorityLevelData.Description.length > 255) {
+      errors.push("Description must be less than 255 characters");
+    }
+    
+    if (priorityLevelData.Color && !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(priorityLevelData.Color)) {
       errors.push("Color must be a valid hex color code");
+    }
+    
     return { isValid: errors.length === 0, errors };
   }
 
   formatPriorityLevelForDisplay(priorityLevel) {
     if (!priorityLevel) return "";
     const parts = [];
-    if (priorityLevel.PriorityName) parts.push(priorityLevel.PriorityName);
-    if (priorityLevel.PriorityOrder) parts.push(`(${priorityLevel.PriorityOrder})`);
+    if (priorityLevel.PriorityLevelName) parts.push(priorityLevel.PriorityLevelName);
+    if (priorityLevel.PriorityLevelValue !== undefined) parts.push(`(${priorityLevel.PriorityLevelValue})`);
     return parts.join(" ");
   }
 
@@ -128,8 +151,8 @@ class PriorityLevelService {
   async getPriorityLevelsSorted() {
     const response = await this.getAllPriorityLevels();
     if (!response.success) return response;
-    const sorted = [...response.data].sort((a, b) => (a.PriorityOrder || 999) - (b.PriorityOrder || 999));
-    return { success: true, data: sorted, message: "Priority levels sorted by order" };
+    const sorted = [...response.data].sort((a, b) => (a.PriorityLevelValue || 999) - (b.PriorityLevelValue || 999));
+    return { success: true, data: sorted, message: "Priority levels sorted by value" };
   }
 
   async searchPriorityLevels(searchTerm) {
@@ -137,7 +160,7 @@ class PriorityLevelService {
     const response = await this.getAllPriorityLevels();
     if (!response.success) return response;
     const filtered = response.data.filter(pl =>
-      (pl.PriorityName?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (pl.PriorityLevelName?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (pl.Description?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     return { success: true, data: filtered, message: `Found ${filtered.length} matching priority levels` };
@@ -147,7 +170,7 @@ class PriorityLevelService {
     if (!priorityName || priorityName.trim() === "") return { success: false, data: null, message: "Priority name is required" };
     const response = await this.getAllPriorityLevels();
     if (!response.success) return response;
-    const level = response.data.find(pl => pl.PriorityName?.toLowerCase() === priorityName.toLowerCase());
+    const level = response.data.find(pl => pl.PriorityLevelName?.toLowerCase() === priorityName.toLowerCase());
     if (!level) return { success: false, data: null, message: `Priority level "${priorityName}" not found` };
     return { success: true, data: level, message: "Priority level found successfully" };
   }
@@ -155,14 +178,14 @@ class PriorityLevelService {
   async getHighestPriorityLevel() {
     const response = await this.getActivePriorityLevels();
     if (!response.success || response.data.length === 0) return { success: false, data: null, message: "No active priority levels found" };
-    const highest = response.data.reduce((prev, curr) => (curr.PriorityOrder || 999) < (prev.PriorityOrder || 999) ? curr : prev);
+    const highest = response.data.reduce((prev, curr) => (curr.PriorityLevelValue || 999) < (prev.PriorityLevelValue || 999) ? curr : prev);
     return { success: true, data: highest, message: "Highest priority level retrieved successfully" };
   }
 
   async getLowestPriorityLevel() {
     const response = await this.getActivePriorityLevels();
     if (!response.success || response.data.length === 0) return { success: false, data: null, message: "No active priority levels found" };
-    const lowest = response.data.reduce((prev, curr) => (curr.PriorityOrder || 0) > (prev.PriorityOrder || 0) ? curr : prev);
+    const lowest = response.data.reduce((prev, curr) => (curr.PriorityLevelValue || 0) > (prev.PriorityLevelValue || 0) ? curr : prev);
     return { success: true, data: lowest, message: "Lowest priority level retrieved successfully" };
   }
 
@@ -190,24 +213,24 @@ class PriorityLevelService {
 
   async reorderPriorityLevels(priorityLevelOrders) {
     if (!Array.isArray(priorityLevelOrders) || priorityLevelOrders.length === 0) return { success: false, data: null, message: "Array of order objects is required" };
-    const results = await Promise.allSettled(priorityLevelOrders.map(({ id, order }) => this.updatePriorityLevel(id, { PriorityOrder: order })));
+    const results = await Promise.allSettled(priorityLevelOrders.map(({ id, value }) => this.updatePriorityLevel(id, { PriorityLevelValue: value })));
     const successful = results.filter(r => r.status === "fulfilled" && r.value.success);
     const failed = results.filter(r => r.status === "rejected" || !r.value.success);
     return { success: failed.length === 0, data: { successful: successful.length, failed: failed.length, total: priorityLevelOrders.length }, message: `Reordered ${successful.length} out of ${priorityLevelOrders.length} priority levels` };
   }
 
   // -----------------------
-  // Dropdown & Next Order
+  // Dropdown & Next Value
   // -----------------------
 
   async getPriorityLevelsForDropdown(includeInactive = false) {
     const response = includeInactive ? await this.getAllPriorityLevels() : await this.getActivePriorityLevels();
     if (!response.success) return response;
-    const sorted = [...response.data].sort((a, b) => (a.PriorityOrder || 999) - (b.PriorityOrder || 999));
+    const sorted = [...response.data].sort((a, b) => (a.PriorityLevelValue || 999) - (b.PriorityLevelValue || 999));
     const options = sorted.map(pl => ({
       value: pl.PriorityLevelID,
       label: this.formatPriorityLevelForDisplay(pl),
-      order: pl.PriorityOrder,
+      priorityValue: pl.PriorityLevelValue,
       color: pl.Color,
       isActive: pl.IsActive === true || pl.IsActive === 1,
       raw: pl
@@ -215,12 +238,12 @@ class PriorityLevelService {
     return { success: true, data: options, message: "Priority level dropdown options retrieved successfully" };
   }
 
-  async getNextAvailablePriorityOrder() {
+  async getNextAvailablePriorityValue() {
     const response = await this.getAllPriorityLevels();
     if (!response.success) return response;
-    if (response.data.length === 0) return { success: true, data: { nextOrder: 1 }, message: "Next available priority order is 1" };
-    const maxOrder = Math.max(...response.data.map(pl => pl.PriorityOrder || 0));
-    return { success: true, data: { nextOrder: maxOrder + 1 }, message: `Next available priority order is ${maxOrder + 1}` };
+    if (response.data.length === 0) return { success: true, data: { nextValue: 1 }, message: "Next available priority value is 1" };
+    const maxValue = Math.max(...response.data.map(pl => pl.PriorityLevelValue || 0));
+    return { success: true, data: { nextValue: maxValue + 1 }, message: `Next available priority value is ${maxValue + 1}` };
   }
 
   async getPriorityLevelStats() {
@@ -230,12 +253,12 @@ class PriorityLevelService {
     const total = priorityLevels.length;
     const active = priorityLevels.filter(pl => pl.IsActive === true || pl.IsActive === 1).length;
     const inactive = total - active;
-    const high = priorityLevels.filter(pl => (pl.PriorityOrder || 999) <= 3).length;
+    const high = priorityLevels.filter(pl => (pl.PriorityLevelValue || 999) <= 3).length;
     const medium = priorityLevels.filter(pl => {
-      const order = pl.PriorityOrder || 999;
-      return order > 3 && order <= 7;
+      const value = pl.PriorityLevelValue || 999;
+      return value > 3 && value <= 7;
     }).length;
-    const low = priorityLevels.filter(pl => (pl.PriorityOrder || 999) > 7).length;
+    const low = priorityLevels.filter(pl => (pl.PriorityLevelValue || 999) > 7).length;
     return { success: true, data: { total, active, inactive, activePercentage: total ? ((active / total) * 100).toFixed(1) : '0.0', highPriority: high, mediumPriority: medium, lowPriority: low }, message: "Priority level statistics retrieved successfully" };
   }
 }
