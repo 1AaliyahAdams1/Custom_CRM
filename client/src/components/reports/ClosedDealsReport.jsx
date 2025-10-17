@@ -15,25 +15,24 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { getClosedDealsByPeriodReport } from '../../services/reportService';
 
 const ClosedDealsReport = forwardRef((props, ref) => {
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reportData, setReportData] = useState(null);
 
-  // Expose reportData to parent component
   useImperativeHandle(ref, () => ({
     getReportData: () => reportData
   }));
 
-  // Fetch data on component mount
   useEffect(() => {
     const fetchClosedDealsData = async () => {
       try {
         setLoading(true);
         setError(null);
-        // Use 'Closed Won' as the stage name, and no date filters for now
         const data = await getClosedDealsByPeriodReport('Closed Won');
         console.log('Closed Deals API Response:', data);
         setReportData(data);
@@ -87,48 +86,48 @@ const ClosedDealsReport = forwardRef((props, ref) => {
       {summary && (
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Total Revenue
                 </Typography>
-                <Typography variant="h5" component="div">
+                <Typography variant="h5" component="div" sx={{ color: theme.palette.text.primary }}>
                   {summary.formattedTotalRevenue || formatCurrency(summary.totalRevenue || 0)}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Total Periods
                 </Typography>
-                <Typography variant="h5" component="div">
+                <Typography variant="h5" component="div" sx={{ color: theme.palette.text.primary }}>
                   {summary.periodCount || 0}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Avg Monthly Revenue
                 </Typography>
-                <Typography variant="h5" component="div">
+                <Typography variant="h5" component="div" sx={{ color: theme.palette.text.primary }}>
                   {summary.formattedAverageMonthlyRevenue || formatCurrency(summary.averageMonthlyRevenue || 0)}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Highest Month
                 </Typography>
-                <Typography variant="h6" component="div" sx={{ fontSize: '1.1rem' }}>
+                <Typography variant="h6" component="div" sx={{ fontSize: '1.1rem', color: theme.palette.text.primary }}>
                   {summary.highestMonth ? summary.highestMonth.periodFormatted : 'N/A'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -141,35 +140,35 @@ const ClosedDealsReport = forwardRef((props, ref) => {
       )}
 
       {/* Deals Table */}
-      <Card sx={{ height: 'fit-content' }}>
+      <Card sx={{ height: 'fit-content', backgroundColor: theme.palette.background.paper }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             Closed Deals by Period
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Revenue breakdown by time period
           </Typography>
           
-          <TableContainer component={Paper} variant="outlined">
+          <TableContainer component={Paper} variant="outlined" sx={{ backgroundColor: theme.palette.background.paper }}>
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Period</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Period (Raw)</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Total Revenue</TableCell>
+                <TableRow sx={{ backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#f5f5f5' }}>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Period</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Period (Raw)</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Total Revenue</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {dealsData.map((deal, index) => (
-                  <TableRow key={index} hover>
+                  <TableRow key={index} hover sx={{ '&:hover': { backgroundColor: theme.palette.action.hover } }}>
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                         {deal.periodFormatted || deal.period}
                       </Typography>
                     </TableCell>
-                    <TableCell>{deal.period}</TableCell>
+                    <TableCell sx={{ color: theme.palette.text.primary }}>{deal.period}</TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                         {deal.formattedTotalRevenue || formatCurrency(deal.totalRevenue || 0)}
                       </Typography>
                     </TableCell>

@@ -23,8 +23,8 @@ import {
   downloadAttachment 
 } from "../../services/attachmentService";
 import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
-import NotesPopup from "../../components/NotesComponent";
-import AttachmentsPopup from "../../components/AttachmentsComponent";
+import NotesPopup from "../../components/dialogs/NotesComponent";
+import AttachmentsPopup from "../../components/dialogs/AttachmentsComponent";
 import { formatters } from '../../utils/formatters';
 import { ROUTE_ACCESS } from "../../utils/auth/routesAccess";
 

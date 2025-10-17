@@ -13,8 +13,8 @@ import {
   deleteAttachment, 
   downloadAttachment 
 } from "../../services/attachmentService";
-import NotesPopup from "../../components/NotesComponent";
-import AttachmentsPopup from "../../components/AttachmentsComponent";
+import NotesPopup from "../../components/dialogs/NotesComponent";
+import AttachmentsPopup from "../../components/dialogs/AttachmentsComponent";
 import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 
 const ProductsContainer = () => {
