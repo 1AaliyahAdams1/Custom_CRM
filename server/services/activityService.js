@@ -4,7 +4,6 @@ const getAllActivities = async (onlyActive = true) => {
   return await activityRepo.getAllActivities(onlyActive);
 };
 
-
 const getActivityByID = async (ActivityID) => {
   return await activityRepo.getActivityByID(ActivityID);
 };
@@ -12,14 +11,28 @@ const getActivityByID = async (ActivityID) => {
 const createActivity = async (activityData) => {
   const { AccountID, TypeID, PriorityLevelID, DueToStart, DueToEnd, Completed } = activityData;
 
-  if (!AccountID || !TypeID || !PriorityLevelID || !DueToStart || !DueToEnd || !Completed) {
+  // Validate required fields - Note: Completed can be false (boolean)
+  if (!AccountID || !TypeID || !PriorityLevelID || !DueToStart || !DueToEnd) {
     throw new Error("Missing required activity fields");
   }
 
-  return await activityRepo.createActivity(activityData);
+  // Convert Completed boolean to datetime or null
+  const completedDate = Completed ? new Date() : null;
+
+  return await activityRepo.createActivity({
+    ...activityData,
+    Completed: completedDate
+  });
 };
 
 const updateActivity = async (ActivityID, activityData) => {
+  // If Completed is a boolean, convert it to a date or null
+  if (activityData.Completed !== undefined) {
+    if (typeof activityData.Completed === 'boolean') {
+      activityData.Completed = activityData.Completed ? new Date() : null;
+    }
+  }
+  
   return await activityRepo.updateActivity(ActivityID, activityData);
 };
 
@@ -34,7 +47,6 @@ const reactivateActivity = async (ActivityID) => {
 const deleteActivity = async (ActivityID) => {
   return await activityRepo.deleteActivity(ActivityID);
 };
-
 
 const getActivitiesByUser = async (UserID) => {
   return await activityRepo.getActivitiesByUser(UserID);
@@ -51,8 +63,9 @@ const bulkMarkActivitiesComplete = async (activityIds) => {
   }
 
   try {
+    const completedDate = new Date();
     const updatePromises = activityIds.map(id => 
-      activityRepo.updateActivity(id, { Completed: true })
+      activityRepo.updateActivity(id, { Completed: completedDate })
     );
     
     const results = await Promise.all(updatePromises);
@@ -74,7 +87,7 @@ const bulkMarkActivitiesIncomplete = async (activityIds) => {
 
   try {
     const updatePromises = activityIds.map(id => 
-      activityRepo.updateActivity(id, { Completed: false })
+      activityRepo.updateActivity(id, { Completed: null })
     );
     
     const results = await Promise.all(updatePromises);
@@ -98,8 +111,9 @@ const bulkUpdateActivityStatus = async (activityIds, status) => {
   }
 
   try {
+    const completedDate = status ? new Date() : null;
     const updatePromises = activityIds.map(id => 
-      activityRepo.updateActivity(id, { Completed: status })
+      activityRepo.updateActivity(id, { Completed: completedDate })
     );
     
     const results = await Promise.all(updatePromises);
@@ -185,5 +199,4 @@ module.exports = {
   bulkUpdateActivityStatus,
   bulkUpdateActivityPriority,
   bulkUpdateActivityDueDates,
-
 };
