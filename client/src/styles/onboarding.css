@@ -1,28 +1,65 @@
-/* Custom Intro.js styling to match your theme */
+/* Custom Intro.js styling */
+
+/* Main tooltip container */
 .introjs-tooltip {
   background-color: #ffffff !important;
   border: 1px solid #e5e5e5 !important;
   color: #050505 !important;
   min-width: 300px !important;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  border-radius: 8px !important;
 }
 
+/* Tooltip header */
 .introjs-tooltip-header {
   background-color: #fafafa !important;
   border-bottom: 1px solid #e5e5e5 !important;
-  padding: 12px !important;
+  padding: 12px 16px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-radius: 8px 8px 0 0 !important;
 }
 
+/* Title styling */
 .introjs-tooltip-title {
-  color: #2196F3 !important;
+  color: #050505 !important;
   font-weight: 600 !important;
+  font-size: 16px !important;
+  flex: 1 !important;
+  margin-right: 12px !important;
 }
 
+/* Skip button */
+.introjs-skipbutton {
+  background-color: transparent !important;
+  color: #050505 !important;
+  border: none !important;
+  margin-top: 15px !important;
+}
+
+.introjs-skipbutton:hover {
+  background-color: transparent !important;
+  color: #666666 !important;
+}
+
+/* Tooltip content */
 .introjs-tooltiptext {
   padding: 16px !important;
   color: #050505 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
 }
 
+/* Button container */
+.introjs-tooltipbuttons {
+  padding: 12px 16px !important;
+  border-top: 1px solid #e5e5e5 !important;
+  background-color: #fafafa !important;
+  border-radius: 0 0 8px 8px !important;
+}
+
+/* Navigation buttons */
 .introjs-button {
   background-color: #050505 !important;
   border: none !important;
@@ -30,24 +67,92 @@
   text-shadow: none !important;
   padding: 8px 16px !important;
   border-radius: 4px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
 }
 
 .introjs-button:hover {
   background-color: #333333 !important;
 }
 
-.introjs-skipbutton {
-  color: #666666 !important;
+/* Previous button */
+.introjs-prevbutton {
+  background-color: #050505 !important;
+  color: white !important;
+  border: none !important;
 }
 
+.introjs-prevbutton:hover {
+  background-color: #333333 !important;
+}
+
+/* Done button - highlight with theme color */
+.introjs-donebutton {
+  background-color: #2196F3 !important;
+  color: white !important;
+  border: none !important;
+}
+
+.introjs-donebutton:hover {
+  background-color: #1976D2 !important;
+}
+
+/* Arrow styling */
 .introjs-arrow {
   border-right-color: #ffffff !important;
 }
 
-.introjs-progressbar {
-  background-color: #2196F3 !important;
+.introjs-arrow.top {
+  border-bottom-color: #ffffff !important;
 }
 
+.introjs-arrow.bottom {
+  border-top-color: #ffffff !important;
+}
+
+.introjs-arrow.left {
+  border-right-color: #ffffff !important;
+}
+
+/* Progress bar */
 .introjs-progress {
   background-color: #e5e5e5 !important;
+  height: 4px !important;
+  border-radius: 2px !important;
+  overflow: hidden !important;
+}
+
+.introjs-progressbar {
+  background-color: #050505 !important;
+  height: 4px !important;
+  border-radius: 2px !important;
+  transition: width 0.3s ease !important;
+}
+
+/* Bullets (if enabled) */
+.introjs-bullets ul li a {
+  background: #e5e5e5 !important;
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.introjs-bullets ul li a.active {
+  background: #2196F3 !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+
+/* Overlay */
+.introjs-overlay {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Highlighted element */
+.introjs-helperLayer {
+  background-color: transparent !important;
+  border: 2px solid #050505 !important;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 8px rgba(33, 150, 243, 0.6) !important;
+  border-radius: 6px !important;
 }

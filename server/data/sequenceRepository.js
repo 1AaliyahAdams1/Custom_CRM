@@ -638,6 +638,7 @@ const getActivityByID = async (activityId, userId) => {
           AND au.UserID = @UserID 
           AND a.Active = 1 
           AND au.Active = 1
+          AND acc.Active = 1
       `);
 
     return result.recordset[0] || null;
@@ -757,6 +758,7 @@ const completeActivityAndGetNext = async (activityId, userId) => {
         WHERE au.UserID = @UserID 
           AND a.Active = 1 
           AND au.Active = 1 
+          AND acc.Active = 1
           AND a.Completed = 0
           AND a.ActivityID != @CurrentActivityID
         ORDER BY 
@@ -826,6 +828,7 @@ const getWorkDashboardSummary = async (userId) => {
         WHERE au.UserID = @UserID 
           AND a.Active = 1 
           AND au.Active = 1
+          AND acc.Active = 1
       `);
 
     return result.recordset[0];
@@ -883,7 +886,8 @@ const getNextActivity = async (userId, currentActivityId = null) => {
       LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
       WHERE au.UserID = @UserID 
         AND a.Active = 1 
-        AND au.Active = 1 
+        AND au.Active = 1
+        AND acc.Active = 1 
         AND a.Completed = 0
         ${excludeClause}
       ORDER BY 
@@ -1010,6 +1014,7 @@ const getWorkPageActivities = async (userId) => {
         WHERE au.UserID = @UserID 
           AND a.Active = 1 
           AND au.Active = 1
+          AND acc.Active = 1
           AND a.Completed = 0
           AND CAST(a.DueToStart AS DATE) <= CAST(GETDATE() AS DATE)
         ORDER BY 

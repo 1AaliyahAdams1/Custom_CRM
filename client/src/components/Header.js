@@ -7,7 +7,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import TourIcon from '@mui/icons-material/Tour';
 import TriggerEFMSyncButton from './TriggerEFMSyncButton';
-import { startTour } from "../hooks/useOnboarding";
+import { startRoleBasedTour } from "../hooks/useOnboarding"; 
 import { useSettings } from "../context/SettingsContext";
 
 const Header = () => {
@@ -25,11 +25,11 @@ const Header = () => {
     navigate("/login");
   };
 
-  const handleTour = () => {
-    setTimeout(() => {
-      startTour();
-    }, 300);
-  };
+const handleTour = () => {
+  setTimeout(() => {
+    startRoleBasedTour(user); // ← Pass the user object
+  }, 300);
+};
 
   useEffect(() => {
     const onStorageChange = () => {
