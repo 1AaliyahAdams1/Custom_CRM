@@ -62,6 +62,8 @@ const ActionMenu = ({
     return tooltips?.actionMenu?.[action] || defaultMessage;
   };
 
+  
+
   // Check if account has assigned users
   const hasAssignedUsers = useMemo(() => {
     if (!menuRow) return false;

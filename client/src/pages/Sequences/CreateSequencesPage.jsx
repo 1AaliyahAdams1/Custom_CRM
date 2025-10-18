@@ -40,6 +40,7 @@ const CreateSequencesPage = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [itemErrors, setItemErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [itemTouched, setItemTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -63,6 +64,7 @@ const CreateSequencesPage = () => {
     fetchActivityTypes();
   }, []);
 
+ 
   const validateField = (name, value) => {
     const errors = [];
     const strValue = value?.toString().trim();
@@ -73,8 +75,8 @@ const CreateSequencesPage = () => {
 
     if (strValue) {
       if (name === 'SequenceName') {
-        if (strValue.length < 3) {
-          errors.push('Sequence name must be at least 3 characters long.');
+        if (strValue.length < 1) {
+          errors.push('Sequence name is required.');
         }
         if (strValue.length > 255) {
           errors.push('Sequence name cannot exceed 255 characters.');
@@ -93,27 +95,32 @@ const CreateSequencesPage = () => {
 
   const validateItem = (item, index) => {
     const errors = {};
+    const touched = itemTouched[index] || {};
 
-    if (!item.ActivityTypeID) {
+    if (touched.ActivityTypeID && !item.ActivityTypeID) {
       errors.ActivityTypeID = 'Activity type is required';
     }
 
-    if (!item.SequenceItemDescription || item.SequenceItemDescription.trim() === '') {
-      errors.SequenceItemDescription = 'Description is required';
-    } else if (item.SequenceItemDescription.length > 255) {
-      errors.SequenceItemDescription = 'Description cannot exceed 255 characters';
+    if (touched.SequenceItemDescription) {
+      if (!item.SequenceItemDescription || item.SequenceItemDescription.trim() === '') {
+        errors.SequenceItemDescription = 'Description is required';
+      } else if (item.SequenceItemDescription.length > 255) {
+        errors.SequenceItemDescription = 'Description cannot exceed 255 characters';
+      }
     }
 
-    if (item.DaysFromStart === undefined || item.DaysFromStart === null || item.DaysFromStart === '') {
-      errors.DaysFromStart = 'Days from start is required';
-    } else {
-      const days = parseInt(item.DaysFromStart, 10);
-      if (isNaN(days)) {
-        errors.DaysFromStart = 'Must be a number';
-      } else if (days < 0) {
-        errors.DaysFromStart = 'Cannot be negative';
-      } else if (days > 32767) {
-        errors.DaysFromStart = 'Cannot exceed 32767';
+    if (touched.DaysFromStart) {
+      if (item.DaysFromStart === undefined || item.DaysFromStart === null || item.DaysFromStart === '') {
+        errors.DaysFromStart = 'Days from start is required';
+      } else {
+        const days = parseInt(item.DaysFromStart, 10);
+        if (isNaN(days)) {
+          errors.DaysFromStart = 'Must be a valid number';
+        } else if (days < 0) {
+          errors.DaysFromStart = 'Cannot be negative';
+        } else if (days > 32767) {
+          errors.DaysFromStart = 'Cannot exceed 32767';
+        }
       }
     }
 
@@ -128,7 +135,18 @@ const CreateSequencesPage = () => {
     });
     setFieldErrors(newErrors);
 
-    // Validate items
+    // Mark all items as touched for final validation
+    const allItemsTouched = {};
+    items.forEach((_, index) => {
+      allItemsTouched[index] = {
+        ActivityTypeID: true,
+        SequenceItemDescription: true,
+        DaysFromStart: true,
+      };
+    });
+    setItemTouched(allItemsTouched);
+
+    // Validate items with all fields marked as touched
     const newItemErrors = {};
     items.forEach((item, index) => {
       const itemErrs = validateItem(item, index);
@@ -137,14 +155,6 @@ const CreateSequencesPage = () => {
       }
     });
     setItemErrors(newItemErrors);
-
-    // Check for duplicate days
-    const daysValues = items.map(item => parseInt(item.DaysFromStart, 10)).filter(d => !isNaN(d));
-    const duplicates = daysValues.filter((day, index) => daysValues.indexOf(day) !== index);
-    if (duplicates.length > 0) {
-      setError(`Duplicate days found: ${[...new Set(duplicates)].join(', ')}. Each item must have a unique day value.`);
-      return false;
-    }
 
     return Object.keys(newErrors).length === 0 && Object.keys(newItemErrors).length === 0;
   };
@@ -177,7 +187,7 @@ const CreateSequencesPage = () => {
     const newItem = {
       ActivityTypeID: '',
       SequenceItemDescription: '',
-      DaysFromStart: items.length,
+      DaysFromStart: '',
       Active: true,
       tempId: Date.now(),
     };
@@ -192,8 +202,13 @@ const CreateSequencesPage = () => {
     const newItemErrors = { ...itemErrors };
     delete newItemErrors[index];
     
-    // Reindex errors
+    // Remove touched state for this item
+    const newItemTouched = { ...itemTouched };
+    delete newItemTouched[index];
+    
+    // Reindex errors and touched states
     const reindexedErrors = {};
+    const reindexedTouched = {};
     Object.keys(newItemErrors).forEach(key => {
       const numKey = parseInt(key, 10);
       if (numKey > index) {
@@ -202,13 +217,31 @@ const CreateSequencesPage = () => {
         reindexedErrors[key] = newItemErrors[key];
       }
     });
+    Object.keys(newItemTouched).forEach(key => {
+      const numKey = parseInt(key, 10);
+      if (numKey > index) {
+        reindexedTouched[numKey - 1] = newItemTouched[key];
+      } else {
+        reindexedTouched[key] = newItemTouched[key];
+      }
+    });
     setItemErrors(reindexedErrors);
+    setItemTouched(reindexedTouched);
   };
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
     setItems(newItems);
+
+    // Mark field as touched
+    setItemTouched(prev => ({
+      ...prev,
+      [index]: {
+        ...(prev[index] || {}),
+        [field]: true,
+      }
+    }));
 
     // Validate this field
     const itemErrs = validateItem(newItems[index], index);
@@ -222,6 +255,28 @@ const CreateSequencesPage = () => {
     
     setItemErrors(newItemErrors);
     if (error) setError(null);
+  };
+
+  const handleItemBlur = (index, field) => {
+    setItemTouched(prev => ({
+      ...prev,
+      [index]: {
+        ...(prev[index] || {}),
+        [field]: true,
+      }
+    }));
+
+    // Revalidate the item
+    const itemErrs = validateItem(items[index], index);
+    const newItemErrors = { ...itemErrors };
+    
+    if (Object.keys(itemErrs).length === 0) {
+      delete newItemErrors[index];
+    } else {
+      newItemErrors[index] = itemErrs;
+    }
+    
+    setItemErrors(newItemErrors);
   };
 
   const handleSubmit = async (e) => {
@@ -277,15 +332,6 @@ const CreateSequencesPage = () => {
 
   const getItemError = (index, field) => {
     return itemErrors[index]?.[field] || '';
-  };
-
-  const sortItemsByDay = () => {
-    const sorted = [...items].sort((a, b) => {
-      const dayA = parseInt(a.DaysFromStart, 10);
-      const dayB = parseInt(b.DaysFromStart, 10);
-      return dayA - dayB;
-    });
-    setItems(sorted);
   };
 
   return (
@@ -381,27 +427,15 @@ const CreateSequencesPage = () => {
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Sequence Items
               </Typography>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                {items.length > 1 && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={sortItemsByDay}
-                    disabled={isSubmitting}
-                  >
-                    Sort by Day
-                  </Button>
-                )}
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={handleAddItem}
-                  disabled={isSubmitting || loadingActivityTypes}
-                  sx={{ backgroundColor: '#050505', '&:hover': { backgroundColor: '#333' } }}
-                >
-                  Add Item
-                </Button>
-              </Box>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={handleAddItem}
+                disabled={isSubmitting || loadingActivityTypes}
+                sx={{ backgroundColor: '#050505', '&:hover': { backgroundColor: '#333' } }}
+              >
+                Add Item
+              </Button>
             </Box>
 
             {loadingActivityTypes ? (
@@ -443,15 +477,19 @@ const CreateSequencesPage = () => {
                         </TableCell>
                         <TableCell>
                           <TextField
-                            type="number"
+                            type="text"
                             value={item.DaysFromStart}
                             onChange={(e) => handleItemChange(index, 'DaysFromStart', e.target.value)}
+                            onBlur={() => handleItemBlur(index, 'DaysFromStart')}
                             size="small"
                             fullWidth
                             error={!!getItemError(index, 'DaysFromStart')}
                             helperText={getItemError(index, 'DaysFromStart')}
                             disabled={isSubmitting}
-                            inputProps={{ min: 0, max: 32767 }}
+                            placeholder="0"
+                            inputProps={{ 
+                              style: { textAlign: 'left' }
+                            }}
                           />
                         </TableCell>
                         <TableCell>
@@ -459,6 +497,7 @@ const CreateSequencesPage = () => {
                             <Select
                               value={item.ActivityTypeID}
                               onChange={(e) => handleItemChange(index, 'ActivityTypeID', e.target.value)}
+                              onBlur={() => handleItemBlur(index, 'ActivityTypeID')}
                               disabled={isSubmitting}
                               displayEmpty
                             >
@@ -482,6 +521,7 @@ const CreateSequencesPage = () => {
                           <TextField
                             value={item.SequenceItemDescription}
                             onChange={(e) => handleItemChange(index, 'SequenceItemDescription', e.target.value)}
+                            onBlur={() => handleItemBlur(index, 'SequenceItemDescription')}
                             size="small"
                             fullWidth
                             multiline
@@ -523,6 +563,7 @@ const CreateSequencesPage = () => {
                 <Typography variant="body2" color="textSecondary">
                   <strong>Tip:</strong> Sequence items represent steps in your workflow. 
                   The "Day" field indicates when each step should occur relative to when the sequence starts.
+                  You can have multiple activities on the same day.
                 </Typography>
               </Box>
             )}

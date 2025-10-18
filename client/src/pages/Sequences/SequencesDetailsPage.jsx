@@ -89,9 +89,7 @@ export default function SequencesDetailPage() {
           return { data: [] };
         }
         
-        console.log('Extracted items:', items);
         
-        // Remove duplicates based on SequenceItemID (shouldn't be needed but safe)
         const uniqueItems = items.reduce((acc, current) => {
           const exists = acc.find(item => item.SequenceItemID === current.SequenceItemID);
           if (!exists) {
@@ -139,47 +137,13 @@ export default function SequencesDetailPage() {
   }, [createSequenceItemsDataService]);
 
   // Action handlers for sequence items
-  const relatedDataActions = useMemo(() => {
-    const actions = {
-      sequenceItem: {
-        view: (item) => {
-          console.log('View sequence item:', item);
-        },
-        edit: (item) => {
-          console.log('Edit sequence item:', item);
-        },
-        delete: async (item) => {
-          console.log('Delete sequence item:', item);
-        },
-        addNote: (item) => {
-          console.log('Add note to sequence item:', item);
-        },
-        addAttachment: (item) => {
-          console.log('Add attachment to sequence item:', item);
-        }
-      },
-      note: {
-        view: (note) => {
-          console.log('View note:', note);
-        },
-        edit: (note) => {
-          console.log('Edit note:', note);
-        },
-        delete: async (note) => {
-          console.log('Delete note:', note);
-        }
-      },
-      attachment: {
-        view: (attachment) => {
-          console.log('View attachment:', attachment);
-        },
-        delete: async (attachment) => {
-          console.log('Delete attachment:', attachment);
-        }
-      }
-    };
-    return actions;
-  }, []);
+const relatedDataActions = useMemo(() => ({
+  'sequence-items': { 
+    view: (item) => console.log('View', item),
+    edit: (item) => console.log('Edit', item),
+    delete: async (item) => console.log('Delete', item),
+  },
+}), []);
 
   // Header chips 
   const headerChips = useMemo(() => {
@@ -218,14 +182,6 @@ export default function SequencesDetailPage() {
     console.log('Refresh tab data:', tabKey);
   }, []);
 
-  const handleAddNote = useCallback((item) => {
-    console.log('Add note to sequence:', item);
-  }, []);
-
-  const handleAddAttachment = useCallback((item) => {
-    console.log('Add attachment to sequence:', item);
-  }, []);
-
   if (loading) return <Typography>Loading sequence details...</Typography>;
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!sequence) return <Alert severity="warning">Sequence not found.</Alert>;
@@ -247,8 +203,6 @@ export default function SequencesDetailPage() {
         onBack={handleBack}
         onSave={handleSave}
         onDelete={handleDelete}
-        onAddNote={handleAddNote}
-        onAddAttachment={handleAddAttachment}
         loading={loading}
         error={error}
         headerChips={headerChips}

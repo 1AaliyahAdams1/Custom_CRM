@@ -459,6 +459,36 @@ async function unassignSequenceFromAccount(accountId, changedBy) {
 }
 
 //======================================
+// Get all sequence items
+//======================================
+async function getAllSequenceItems() {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .query(`
+        SELECT 
+          si.SequenceItemID,
+          si.SequenceID,          -- ⭐ THIS IS THE KEY FIELD THAT WAS MISSING
+          si.ActivityTypeID,
+          at.TypeName AS ActivityTypeName,
+          si.SequenceItemDescription,
+          si.DaysFromStart,
+          si.CreatedAt,
+          si.UpdatedAt,
+          si.Active
+        FROM SequenceItem si
+        LEFT JOIN ActivityType at ON si.ActivityTypeID = at.TypeID AND at.Active = 1
+        ORDER BY si.SequenceID, si.DaysFromStart
+      `);
+
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getAllSequenceItems:", err);
+    throw err;
+  }
+}
+
+//======================================
 // Get accounts by sequence
 //======================================
 async function getAccountsBySequence(sequenceId) {
@@ -1282,6 +1312,7 @@ module.exports = {
   updateSequenceItem,
   deleteSequenceItem,
   createSequenceWithItems,
+  getAllSequenceItems,
 
   // Sequence-Account Relationship
   assignSequenceToAccount,
