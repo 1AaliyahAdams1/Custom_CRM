@@ -64,7 +64,7 @@ const ProductsContainer = () => {
   const openConfirmDialog = (title, description, action) => {
     setConfirmTitle(title);
     setConfirmDescription(description);
-    setConfirmAction(() => action); // save action to execute on confirm
+    setConfirmAction(() => action);
     setConfirmDialogOpen(true);
   };
 
@@ -109,44 +109,6 @@ const ProductsContainer = () => {
         } catch (err) {
           console.error('Error reactivating product:', err);
           setError('Failed to reactivate product: ' + err.message);
-        }
-      }
-    );
-  };
-
-  const handleDelete = (productId) => {
-    openConfirmDialog(
-      "Delete Product",
-      "Are you sure you want to permanently delete this product? This action cannot be undone.",
-      async () => {
-        try {
-          await productService.deleteProduct(productId);
-          setSuccessMessage('Product deleted successfully.');
-          setSelected(prev => prev.filter(id => id !== productId));
-          setRefreshFlag(flag => !flag);
-        } catch (err) {
-          console.error('Error deleting product:', err);
-          setError('Failed to delete product: ' + err.message);
-        }
-      }
-    );
-  };
-
-  const handleBulkDeactivate = () => {
-    openConfirmDialog(
-      `Deactivate ${selected.length} products`,
-      `Are you sure you want to deactivate ${selected.length} selected products?`,
-      async () => {
-        try {
-          for (const productId of selected) {
-            await productService.deactivateProduct(productId);
-          }
-          setSelected([]);
-          setSuccessMessage(`${selected.length} products deactivated successfully.`);
-          setRefreshFlag(flag => !flag);
-        } catch (err) {
-          console.error('Error deactivating products:', err);
-          setError('Failed to deactivate products: ' + err.message);
         }
       }
     );
@@ -289,8 +251,6 @@ const ProductsContainer = () => {
         onSelectAllClick={handleSelectAllClick}
         onDeactivate={handleDeactivate}
         onReactivate={handleReactivate}
-        onDelete={handleDelete}
-        onBulkDeactivate={handleBulkDeactivate}
         onEdit={handleEdit}
         onView={handleView}
         onCreate={handleCreate}
