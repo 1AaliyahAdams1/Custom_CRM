@@ -23,8 +23,8 @@ import {
 import { uploadAttachment, deleteAttachment, downloadAttachment } from "../../services/attachmentService";
 import { activityTypeService, priorityLevelService } from "../../services/dropdownServices";
 import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
-import NotesPopup from "../../components/NotesComponent";
-import AttachmentsPopup from "../../components/AttachmentsComponent";
+import NotesPopup from "../../components/dialogs/NotesComponent";
+import AttachmentsPopup from "../../components/dialogs/AttachmentsComponent";
 import { ROUTE_ACCESS } from "../../utils/auth/routesAccess";
 
 const ActivitiesContainer = () => {

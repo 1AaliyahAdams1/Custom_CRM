@@ -20,7 +20,6 @@ import { Add, Info } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { formatters } from '../../utils/formatters';
 import TableView from '../../components/tableFormat/TableView';
-import ActivityTypePage from './ActivityTypePage'; 
 import ActivitiesBulkActionsToolbar from './ActivitiesBulkActionsToolbar';
 import BulkDueDatesDialog from '../../components/dialogs/BulkDueDatesDialog';
 
@@ -64,7 +63,6 @@ const statusFormatter = (value) => {
 };
 
 const ActivitiesPage = ({
-  // Activities props
   activities = [],
   loading = false,
   error,
@@ -76,7 +74,6 @@ const ActivitiesPage = ({
   onSelectAllClick,
   onClearSelection,
   onDeactivate,
-  onEdit,
   onView,
   onCreate,
   onAddNote,
@@ -86,37 +83,62 @@ const ActivitiesPage = ({
   currentFilter = 'all',
   userRole = [],
   
-  // Bulk action handlers
   onBulkMarkComplete,
   onBulkMarkIncomplete,
   onBulkUpdateDueDates,
   onCloseDueDatesDialog,
   onConfirmDueDatesUpdate,
-  // Activity Types props (pass through to ActivityTypePage)
-  activityTypesProps = {},
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const [currentTab, setCurrentTab] = useState(0);
-  
-  // Local state for filter
   const [activityFilter, setActivityFilter] = useState(currentFilter);
-
-  // Local state for bulk due dates dialog
   const [dueDatesDialogOpen, setDueDatesDialogOpen] = useState(false);
 
-  // Handle account name click - navigates to account detail page
+  // Navigate to account detail
   const handleViewAccount = (activity) => {
     if (!activity?.AccountID) {
-      if (setError) {
-        setError("Cannot view account - missing ID");
-      }
+      if (setError) setError("Cannot view account - missing ID");
       return;
     }
     navigate(`/accounts/${activity.AccountID}`);
   };
 
-  // Table configuration for activities with clickable AccountName
+  // Navigate to edit activity with full state
+  const handleEditActivity = (activity) => {
+    if (!activity?.ActivityID) return;
+    navigate(`/activities/edit/${activity.ActivityID}`, { state: { activity } });
+  };
+
+  const handleConfirmDueDatesUpdate = async (newDates) => {
+    if (onConfirmDueDatesUpdate) await onConfirmDueDatesUpdate(newDates);
+    setDueDatesDialogOpen(false);
+  };
+
+  const handleFilterChange = (event) => {
+    const newFilter = event.target.value;
+    setActivityFilter(newFilter);
+    if (onFilterChange) onFilterChange(newFilter);
+  };
+
+  useEffect(() => {
+    setActivityFilter(currentFilter);
+  }, [currentFilter]);
+
+  const filterOptions = [
+    { value: 'all', label: 'All Activities' },
+    { value: 'my', label: 'My Account Activities' },
+    { value: 'team', label: "My Team's Account Activities" },
+    { value: 'unassigned', label: 'Unassigned Account Activities' },
+  ];
+
+  const selectedActivities = activities.filter(activity => selected.includes(activity.ActivityID));
+
+  const enhancedFormatters = {
+    ...formatters,
+    Status: statusFormatter,
+  };
+
   const activitiesTableConfig = {
     idField: "ActivityID",
     columns: [
@@ -136,102 +158,18 @@ const ActivitiesPage = ({
       },
       { field: "DueToStart", headerName: "Due To Start", type: "date" },
       { field: "DueToEnd", headerName: "Due To End", type: "date" },
-      {
-        field: "Completed",
-        headerName: "Completed",
-        type: "boolean",
-      },
+      { field: "Completed", headerName: "Completed", type: "boolean" },
     ],
   };
 
-  const handleConfirmDueDatesUpdate = async (newDates) => {
-    if (onConfirmDueDatesUpdate && typeof onConfirmDueDatesUpdate === 'function') {
-      await onConfirmDueDatesUpdate(newDates);
-    } else {
-      console.error('onConfirmDueDatesUpdate is not provided or is not a function');
-    }
-    setDueDatesDialogOpen(false);
-  };
-
-  // Define available tabs
-  const availableTabs = [
-    {
-      id: 'activities',
-      label: 'Activities',
-      component: 'activities'
-    },
-  ];
-
-  // Use all available tabs
-  const userTabs = availableTabs;
-
-  // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setCurrentTab(newValue);
-  };
-
-  // Handle filter change
-  const handleFilterChange = (event) => {
-    const newFilter = event.target.value;
-    setActivityFilter(newFilter);
-    
-    // Call the parent component's filter handler if provided
-    if (onFilterChange) {
-      onFilterChange(newFilter);
-    }
-  };
-
-  // Update local filter when prop changes
-  useEffect(() => {
-    setActivityFilter(currentFilter);
-  }, [currentFilter]);
-
-  const filterOptions = [
-    { value: 'all', label: 'All Activities' },
-    { value: 'my', label: 'My Account Activities' },
-    { value: 'team', label: 'My Team\'s Account Activities' },
-    { value: 'unassigned', label: 'Unassigned Account Activities' },
-  ];
-
-  // Get selected activities data for bulk actions
-  const selectedActivities = activities.filter(activity => 
-    selected.includes(activity.ActivityID)
-  );
-
-  // Combine imported formatters with custom formatters
-  const enhancedFormatters = {
-    ...formatters,
-    Status: statusFormatter,
-  };
-
   return (
-    <Box
-      sx={{
-        width: "100%",
-        backgroundColor: theme.palette.background.default,
-        minHeight: "100vh",
-        p: 3,
-      }}
-    >
+    <Box sx={{ width: "100%", backgroundColor: theme.palette.background.default, minHeight: "100vh", p: 3 }}>
       <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-        {/* Error and Success Messages */}
-        {error && (
-          <Alert severity="error" sx={{ m: 2 }}>
-            {error}
-          </Alert>
-        )}
-
+        {error && <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>}
         {successMessage && (
-          <Alert
-            severity="success"
-            sx={{ m: 2 }}
-            onClose={() => setSuccessMessage("")}
-          >
-            {successMessage}
-          </Alert>
+          <Alert severity="success" sx={{ m: 2 }} onClose={() => setSuccessMessage("")}>{successMessage}</Alert>
         )}
 
-        {/* Bulk Actions Toolbar - Shows when items are selected */}
         <ActivitiesBulkActionsToolbar
           selectedCount={selected.length}
           selectedItems={selectedActivities}
@@ -243,31 +181,17 @@ const ActivitiesPage = ({
           loading={loading}
         />
 
-        {/* Activities Toolbar */}
-        <Toolbar
-          sx={{
-            backgroundColor: theme.palette.background.paper,
-            borderBottom: selected.length > 0 ? "none" : `1px solid ${theme.palette.divider}`,
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 2,
-            py: 2,
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              flex: 1,
-            }}
-          >
+        <Toolbar sx={{
+          backgroundColor: theme.palette.background.paper,
+          borderBottom: selected.length > 0 ? "none" : `1px solid ${theme.palette.divider}`,
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 2,
+          py: 2,
+        }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="h6"
-                component="div"
-                sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
-              >
+              <Typography variant="h6" component="div" sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
                 Activities
               </Typography>
               <Tooltip title="Manage and view all activities linked to customer accounts" arrow>
@@ -275,69 +199,37 @@ const ActivitiesPage = ({
               </Tooltip>
             </Box>
 
-            {/* Activity Filter Dropdown */}
             <FormControl size="small" sx={{ minWidth: 240 }}>
-              <Select
-                value={activityFilter}
-                onChange={handleFilterChange}
-                displayEmpty
+              <Select value={activityFilter} onChange={handleFilterChange} displayEmpty
                 sx={{ 
                   backgroundColor: theme.palette.background.paper,
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: theme.palette.divider,
-                  },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: theme.palette.text.secondary,
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: theme.palette.primary.main,
-                  },
-                }}
-              >
-                {filterOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.divider },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.text.secondary },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.primary.main },
+                }}>
+                {filterOptions.map(option => (
+                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                 ))}
               </Select>
             </FormControl>
 
             {selected.length > 0 && (
-              <Tooltip title={`${selected.length} activit${selected.length === 1 ? 'y' : 'ies'} selected for operations`} arrow>
-                <Chip
-                  label={`${selected.length} selected`}
-                  size="small"
-                  sx={{ 
-                    backgroundColor: theme.palette.mode === 'dark' ? '#333' : "#e0e0e0", 
-                    color: theme.palette.text.primary 
-                  }}
-                />
+              <Tooltip title={`${selected.length} activit${selected.length === 1 ? 'y' : 'ies'} selected`} arrow>
+                <Chip label={`${selected.length} selected`} size="small"
+                  sx={{ backgroundColor: theme.palette.mode === 'dark' ? '#333' : "#e0e0e0", color: theme.palette.text.primary }} />
               </Tooltip>
             )}
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              flexWrap: "wrap",
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             <Tooltip title="Create a new activity in the system" arrow>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={onCreate}
-                disabled={loading}
-              >
+              <Button variant="contained" startIcon={<Add />} onClick={onCreate} disabled={loading}>
                 Add Activity
               </Button>
             </Tooltip>
           </Box>
         </Toolbar>
 
-        {/* Activities Table */}
         {loading ? (
           <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
             <CircularProgress />
@@ -358,38 +250,16 @@ const ActivitiesPage = ({
             onViewAccount={handleViewAccount}
             showSelection={true}
             onView={onView}
-            onEdit={onEdit}
+            onEdit={handleEditActivity} // <--- use the updated handler
             onDelete={onDeactivate}
             onAddNote={onAddNote}
             onAddAttachment={onAddAttachment}
             formatters={enhancedFormatters}
             entityType="activity"
-            tooltips={{
-              search: "Search activities by type, account, or description",
-              filter: "Show/hide advanced filtering options",
-              columns: "Customize which columns are visible in the table",
-              actionMenu: {
-                view: "View detailed information for this activity",
-                edit: "Edit this activity's information",
-                delete: "Delete or deactivate this activity",
-                addNote: "Add internal notes or comments",
-                addAttachment: "Attach files or documents"
-              }
-            }}
           />
         )}
 
-        {/* Activities Results Footer */}
-        <Box
-          sx={{
-            p: 2,
-            borderTop: `1px solid ${theme.palette.divider}`,
-            backgroundColor: theme.palette.background.default,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}`, backgroundColor: theme.palette.background.default, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Tooltip title="Total number of activities currently displayed in the table" arrow>
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, cursor: 'help' }}>
               Showing {activities.length} of {totalCount || activities.length} activities
@@ -397,10 +267,7 @@ const ActivitiesPage = ({
           </Tooltip>
           {selected.length > 0 && (
             <Tooltip title="Number of activities currently selected for operations" arrow>
-              <Typography
-                variant="body2"
-                sx={{ color: theme.palette.text.primary, fontWeight: 500, cursor: 'help' }}
-              >
+              <Typography variant="body2" sx={{ color: theme.palette.text.primary, fontWeight: 500, cursor: 'help' }}>
                 {selected.length} selected
               </Typography>
             </Tooltip>
@@ -408,7 +275,6 @@ const ActivitiesPage = ({
         </Box>
       </Paper>
 
-      {/* Bulk Due Dates Dialog */}
       <BulkDueDatesDialog
         open={dueDatesDialogOpen}
         onClose={() => setDueDatesDialogOpen(false)}
