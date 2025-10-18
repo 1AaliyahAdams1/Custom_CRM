@@ -56,6 +56,10 @@ const CreateEmployeePage = lazy(() => import("./pages/Employees/CreateEmployeePa
 const EditEmployeePage = lazy(() => import("./pages/Employees/EditEmployeePage"));
 const EmployeeDetailsPage = lazy(() => import("./pages/Employees/EmployeeDetailsPage"));
 
+const CreateSequenceItemPage = lazy(() => import("./pages/SequenceItems/CreateSequenceItem"));
+const EditSequenceItemPage = lazy(() => import("./pages/SequenceItems/EditSequenceItem"));
+const SequenceItemDetailPage = lazy(() => import("./pages/SequenceItems/SequenceItemDetails"));
+
 const CategoryPage = lazy(() => import("./pages/Classifications/CategoryPage"));
 const DepartmentPage = lazy(() => import("./pages//Classifications/DepartmentPage"));
 
@@ -279,6 +283,7 @@ const AppRoutes = () => {
         }
       />
       {/* --- Sequences Routes --- */}
+      
       <Route
         path="/sequences"
         element={
@@ -295,6 +300,41 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+       <Route
+        path="/sequences/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesEdit}>
+            <EditSequencesPage />
+          </PrivateRoute>
+        }
+      />
+
+       {/* --- Sequence Items Routes --- */}
+      <Route
+        path="/sequences/items/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesCreate}>
+            <CreateSequenceItemPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/sequences/items/edit/:itemId"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesEdit}>
+            <EditSequenceItemPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/sequences/items/:itemId"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesDetails}>
+            <SequenceItemDetailPage />
+          </PrivateRoute>
+        }
+      />
+
       <Route
         path="/sequences/:id"
         element={
@@ -303,14 +343,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      <Route
-        path="/sequences/edit/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesEdit}>
-            <EditSequencesPage />
-          </PrivateRoute>
-        }
-      />
+     
       
       {/* --- Geography Routes --- */} 
       {/* Main geography route - shows countries by default */}

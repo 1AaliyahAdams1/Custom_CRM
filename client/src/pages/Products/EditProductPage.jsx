@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -8,38 +8,26 @@ import {
   Paper,
   Alert,
   CircularProgress,
+  Skeleton
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
-import { ThemeProvider } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import { getProductById, updateProduct } from '../../services/productService';
 import { getAllAccounts } from '../../services/accountService';
+import { getAllCategories } from '../../services/categoryService';
 import SmartDropdown from '../../components/SmartDropdown';
-import theme from "../../components/Theme";
-
-// Mock services for categories - replace with your actual services
-const categoryService = {
-  getAll: async () => {
-    // Replace this with your actual category service
-    return [
-      { CategoryID: 1, CategoryName: 'Electronics' },
-      { CategoryID: 2, CategoryName: 'Software' },
-      { CategoryID: 3, CategoryName: 'Services' },
-      { CategoryID: 4, CategoryName: 'Hardware' },
-    ];
-  }
-};
 
 const EditProduct = () => {
   const navigate = useNavigate();
-  const { productId } = useParams();
-  const location = useLocation();
+  const { id } = useParams();
+  const theme = useTheme();
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     ProductName: "",
@@ -49,53 +37,8 @@ const EditProduct = () => {
     SKU: "",
     CategoryID: "",
     AccountID: "",
-    IsActive: true,
   });
 
-  // Load product data on component mount
-  useEffect(() => {
-    const loadProduct = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        let productData;
-        
-        // First try to get product data from navigation state (if available)
-        if (location.state?.product) {
-          productData = location.state.product;
-        } else {
-          // Otherwise, fetch from API
-          const response = await getProductById(productId);
-          productData = response.data || response;
-        }
-
-        if (productData) {
-          setFormData({
-            ProductName: productData.ProductName || "",
-            Description: productData.Description || "",
-            Price: productData.Price ? productData.Price.toString() : "",
-            Cost: productData.Cost ? productData.Cost.toString() : "",
-            SKU: productData.SKU || "",
-            CategoryID: productData.CategoryID || "",
-            AccountID: productData.AccountID || "",
-            IsActive: productData.IsActive !== undefined ? productData.IsActive : true,
-          });
-        }
-      } catch (err) {
-        console.error('Error loading product:', err);
-        setError('Failed to load product data. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (productId) {
-      loadProduct();
-    }
-  }, [productId, location.state]);
-
-  // Enhanced error display with icon
   const getFieldError = (fieldName) => {
     return touched[fieldName] && fieldErrors[fieldName] ? (
       <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -116,8 +59,6 @@ const EditProduct = () => {
       case 'ProductName':
         if (!value || value.trim().length === 0) {
           errors.push('Product name is required');
-        } else if (value.trim().length < 2) {
-          errors.push('Product name must be at least 2 characters');
         } else if (value.trim().length > 100) {
           errors.push('Product name must be 100 characters or less');
         }
@@ -132,12 +73,11 @@ const EditProduct = () => {
       case 'SKU':
         if (!value || value.trim().length === 0) {
           errors.push('SKU is required');
-        } else if (value.trim().length < 2) {
-          errors.push('SKU must be at least 2 characters');
-        } else if (value.trim().length > 50) {
-          errors.push('SKU must be 50 characters or less');
-        } else if (!/^[A-Za-z0-9\-_]+$/.test(value.trim())) {
-          errors.push('SKU can only contain letters, numbers, hyphens, and underscores');
+        } else {
+          const skuPattern = /^[A-Z]{3,7}-\d{3}$/;
+          if (!skuPattern.test(value.trim())) {
+            errors.push('Invalid SKU format. Example: LNTMS-001');
+          }
         }
         break;
 
@@ -186,18 +126,46 @@ const EditProduct = () => {
     let isValid = true;
 
     Object.keys(formData).forEach(field => {
-      if (field !== 'IsActive') { // Skip validation for IsActive as it's always boolean
-        const errors = validateField(field, formData[field]);
-        if (errors.length > 0) {
-          newFieldErrors[field] = errors;
-          isValid = false;
-        }
+      const errors = validateField(field, formData[field]);
+      if (errors.length > 0) {
+        newFieldErrors[field] = errors;
+        isValid = false;
       }
     });
 
     setFieldErrors(newFieldErrors);
     return isValid;
   };
+
+  useEffect(() => {
+    const loadProduct = async () => {
+      if (!id) {
+        setError("No product ID provided");
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await getProductById(id);
+        const productData = response.data || response;
+        
+        setFormData({
+          ProductName: productData.ProductName || "",
+          Description: productData.Description || "",
+          Price: productData.Price ? productData.Price.toString() : "",
+          Cost: productData.Cost ? productData.Cost.toString() : "",
+          SKU: productData.SKU || "",
+          CategoryID: productData.CategoryID || "",
+          AccountID: productData.AccountID || "",
+        });
+      } catch (err) {
+        console.error('Error loading product:', err);
+        setError("Failed to load product data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProduct();
+  }, [id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -254,11 +222,10 @@ const EditProduct = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    setError(null);
-
     try {
-      // Prepare the data for submission
+      setIsSubmitting(true);
+      setError(null);
+      
       const submitData = {
         ...formData,
         Price: parseFloat(formData.Price),
@@ -267,26 +234,17 @@ const EditProduct = () => {
         AccountID: parseInt(formData.AccountID),
       };
 
-      await updateProduct(productId, submitData);
-      
+      await updateProduct(id, submitData);
       setSuccessMessage("Product updated successfully!");
-
-      // Navigate after a short delay
-      setTimeout(() => {
-        navigate('/products');
-      }, 1500);
-
+      
+      setTimeout(() => navigate("/products"), 1500);
     } catch (error) {
       console.error('Error updating product:', error);
       
-      if (error.isValidation) {
-        setError(error.message);
-      } else if (error.response?.status === 409) {
+      if (error.response?.status === 409) {
         setError('Product with this SKU already exists');
       } else if (error.response?.status === 400) {
         setError(error.response.data?.error || 'Invalid data provided');
-      } else if (error.response?.status === 404) {
-        setError('Product not found');
       } else if (error.response?.status >= 500) {
         setError('Server error. Please try again later');
       } else {
@@ -297,234 +255,190 @@ const EditProduct = () => {
     }
   };
 
-  const handleCancel = () => {
-    navigate('/products');
-  };
-
-  // Show loading spinner while fetching product data
-  if (isLoading) {
+  if (loading) {
     return (
-      <ThemeProvider theme={theme}>
-        <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-          <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-              <CircularProgress size={60} />
-            </Box>
-          </Box>
-        </Box>
-      </ThemeProvider>
+      <Box sx={{ p: 3, backgroundColor: theme.palette.background.default }}>
+        <Skeleton variant="rectangular" width="100%" height={400} />
+      </Box>
     );
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3 }}>
-        <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="h4" sx={{ color: '#050505', fontWeight: 600 }}>
-                Edit Product
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<ArrowBack />}
-                onClick={() => navigate(-1)}
-                sx={{ minWidth: 'auto' }}
-              >
-                Back
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<Clear />}
-                onClick={handleCancel}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                sx={{
-                  backgroundColor: '#050505',
-                  '&:hover': { backgroundColor: '#333333' },
-                }}
-              >
-                {isSubmitting ? 'Updating...' : 'Update Product'}
-              </Button>
-            </Box>
+    <Box sx={{ 
+      width: '100%', 
+      backgroundColor: theme.palette.background.default, 
+      minHeight: '100vh', 
+      p: 3 
+    }}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+          <Typography variant="h4" sx={{ color: theme.palette.text.primary }}>
+            Edit Product
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>
+              Back
+            </Button>
+            <Button variant="outlined" startIcon={<Clear />} onClick={() => navigate("/products")} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button 
+              variant="contained" 
+              startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />} 
+              onClick={handleSubmit} 
+              disabled={isSubmitting}
+              sx={{
+                backgroundColor: '#050505',
+                '&:hover': { backgroundColor: '#333333' },
+              }}
+            >
+              {isSubmitting ? 'Updating...' : 'Update Product'}
+            </Button>
           </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-
-          {successMessage && (
-            <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
-              {successMessage}
-            </Alert>
-          )}
-
-          <Paper elevation={0} sx={{ p: 3 }}>
-            <form onSubmit={handleSubmit}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
-                
-                {/* Product Name - Full width */}
-                <Box sx={{ gridColumn: '1 / -1' }}>
-                  <TextField
-                    fullWidth
-                    label="Product Name"
-                    name="ProductName"
-                    value={formData.ProductName}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    required
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('ProductName')}
-                    helperText={getFieldError('ProductName')}
-                    FormHelperTextProps={{
-                      component: 'div'
-                    }}
-                  />
-                </Box>
-
-                {/* Description - Full width */}
-                <Box sx={{ gridColumn: '1 / -1' }}>
-                  <TextField
-                    fullWidth
-                    label="Description"
-                    name="Description"
-                    value={formData.Description}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    multiline
-                    rows={3}
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('Description')}
-                    helperText={getFieldError('Description')}
-                    FormHelperTextProps={{
-                      component: 'div'
-                    }}
-                  />
-                </Box>
-
-                {/* SKU */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="SKU"
-                    name="SKU"
-                    value={formData.SKU}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    required
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('SKU')}
-                    helperText={getFieldError('SKU')}
-                    FormHelperTextProps={{
-                      component: 'div'
-                    }}
-                  />
-                </Box>
-
-                {/* Category */}
-                <Box>
-                  <SmartDropdown
-                    label="Category"
-                    name="CategoryID"
-                    value={formData.CategoryID}
-                    onChange={handleInputChange}
-                    service={categoryService}
-                    displayField="CategoryName"
-                    valueField="CategoryID"
-                    required
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('CategoryID')}
-                    helperText={getFieldError('CategoryID')}
-                  />
-                </Box>
-
-                {/* Account */}
-                <Box sx={{ gridColumn: '1 / -1' }}>
-                  <SmartDropdown
-                    label="Account"
-                    name="AccountID"
-                    value={formData.AccountID}
-                    onChange={handleInputChange}
-                    service={{
-                      getAll: async () => {
-                        const response = await getAllAccounts();
-                        return response.data || response;
-                      }
-                    }}
-                    displayField="AccountName"
-                    valueField="AccountID"
-                    required
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('AccountID')}
-                    helperText={getFieldError('AccountID')}
-                  />
-                </Box>
-
-                {/* Price */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Price"
-                    name="Price"
-                    type="number"
-                    value={formData.Price}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    required
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('Price')}
-                    helperText={getFieldError('Price')}
-                    inputProps={{
-                      min: "0",
-                      step: "0.01"
-                    }}
-                    FormHelperTextProps={{
-                      component: 'div'
-                    }}
-                  />
-                </Box>
-
-                {/* Cost */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Cost"
-                    name="Cost"
-                    type="number"
-                    value={formData.Cost}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    disabled={isSubmitting}
-                    error={isFieldInvalid('Cost')}
-                    helperText={getFieldError('Cost')}
-                    inputProps={{
-                      min: "0",
-                      step: "0.01"
-                    }}
-                    FormHelperTextProps={{
-                      component: 'div'
-                    }}
-                  />
-                </Box>
-
-              </Box>
-            </form>
-          </Paper>
         </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+            {successMessage}
+          </Alert>
+        )}
+
+        <Paper elevation={0} sx={{ p: 3, bgcolor: theme.palette.background.paper }}>
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+
+              <Box sx={{ gridColumn: '1 / -1' }}>
+                <TextField
+                  fullWidth
+                  label="Product Name"
+                  name="ProductName"
+                  value={formData.ProductName}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  required
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('ProductName')}
+                  helperText={getFieldError('ProductName')}
+                  FormHelperTextProps={{ component: 'div' }}
+                />
+              </Box>
+
+              <Box sx={{ gridColumn: '1 / -1' }}>
+                <TextField
+                  fullWidth
+                  label="Description"
+                  name="Description"
+                  value={formData.Description}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  multiline
+                  rows={3}
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('Description')}
+                  helperText={getFieldError('Description')}
+                  FormHelperTextProps={{ component: 'div' }}
+                />
+              </Box>
+
+              <Box>
+                <TextField
+                  fullWidth
+                  label="SKU"
+                  name="SKU"
+                  value={formData.SKU}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  required
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('SKU')}
+                  helperText={getFieldError('SKU') || 'Format: ABC-123'}
+                  FormHelperTextProps={{ component: 'div' }}
+                />
+              </Box>
+
+              <Box>
+                <SmartDropdown
+                  label="Category"
+                  name="CategoryID"
+                  value={formData.CategoryID}
+                  onChange={handleInputChange}
+                  service={{
+                    getAll: async () => {
+                      const response = await getAllCategories();
+                      return response.data || response;
+                    }
+                  }}
+                  displayField="CategoryName"
+                  valueField="CategoryID"
+                  required
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('CategoryID')}
+                  helperText={getFieldError('CategoryID')}
+                />
+              </Box>
+
+              <Box sx={{ gridColumn: '1 / -1' }}>
+                <SmartDropdown
+                  label="Account"
+                  name="AccountID"
+                  value={formData.AccountID}
+                  onChange={handleInputChange}
+                  service={{
+                    getAll: async () => {
+                      const response = await getAllAccounts();
+                      return response.data || response;
+                    }
+                  }}
+                  displayField="AccountName"
+                  valueField="AccountID"
+                  required
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('AccountID')}
+                  helperText={getFieldError('AccountID')}
+                />
+              </Box>
+
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Price"
+                  name="Price"
+                  value={formData.Price}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  required
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('Price')}
+                  helperText={getFieldError('Price')}
+                  FormHelperTextProps={{ component: 'div' }}
+                />
+              </Box>
+
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Cost"
+                  name="Cost"
+                  value={formData.Cost}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  disabled={isSubmitting}
+                  error={isFieldInvalid('Cost')}
+                  helperText={getFieldError('Cost')}
+                  FormHelperTextProps={{ component: 'div' }}
+                />
+              </Box>
+
+            </Box>
+          </form>
+        </Paper>
       </Box>
-    </ThemeProvider>
+    </Box>
   );
 };
 

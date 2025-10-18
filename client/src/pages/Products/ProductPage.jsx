@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Box,
   Typography,
@@ -17,7 +17,6 @@ import {
   AttachFile as AttachFileIcon,
   PowerOff as PowerOffIcon,
   Power as PowerIcon,
-  Delete as DeleteIcon,
   Add,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
@@ -39,29 +38,12 @@ const ProductPage = ({
   onSelectAllClick,
   onDeactivate,
   onReactivate,
-  onDelete,
   onBulkDeactivate,
   onEdit,
   onView,
   onCreate,
   onAddNote,
   onAddAttachment,
-  onAssignUser,
-  showStatus,
-  // Popup props (for future use if needed)
-  notesPopupOpen,
-  setNotesPopupOpen,
-  attachmentsPopupOpen,
-  setAttachmentsPopupOpen,
-  selectedProduct,
-  popupLoading,
-  popupError,
-  handleSaveNote,
-  handleDeleteNote,
-  handleEditNote,
-  handleUploadAttachment,
-  handleDeleteAttachment,
-  handleDownloadAttachment,
 }) => {
   const theme = useTheme();
   
@@ -71,7 +53,6 @@ const ProductPage = ({
     { field: 'Price', headerName: 'Price', type: 'currency', defaultVisible: true },
     { field: 'Cost', headerName: 'Cost', type: 'currency', defaultVisible: false },
     { field: 'SKU', headerName: 'SKU', defaultVisible: true },
-    //{ field: 'CategoryID', headerName: 'Category', defaultVisible: true },
     { field: 'AccountName', headerName: 'Account', defaultVisible: false },
     { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
@@ -130,14 +111,6 @@ const ProductPage = ({
         show: !!onReactivate,
       });
     }
-
-    // Add delete option
-    baseItems.push({
-      label: 'Delete',
-      icon: <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />,
-      onClick: () => onDelete && onDelete(product.ProductID),
-      show: !!onDelete,
-    });
 
     return baseItems;
   };
@@ -266,10 +239,8 @@ const ProductPage = ({
             showSelection={true}
             onView={onView}
             onEdit={onEdit}
-            onDelete={onDelete}
             onAddNote={onAddNote}
             onAddAttachment={onAddAttachment}
-            onAssignUser={onAssignUser}
             formatters={productFormatters}
             entityType="product"
             getMenuItems={getMenuItems}
@@ -317,4 +288,4 @@ const ProductPage = ({
   );
 };
 
-export default ProductPage;
+export default ProductPage

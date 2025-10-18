@@ -8,335 +8,383 @@ import {
   Paper,
   Chip,
   Toolbar,
+  Tabs,
+  Tab,
+  Snackbar,
   FormControl,
-  Select,
   MenuItem,
+  Select,
   Tooltip,
 } from "@mui/material";
-import { Add, Info } from "@mui/icons-material";
+import {
+  Add,
+  Info,
+} from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import { formatters } from '../../utils/formatters';
 import TableView from '../../components/tableFormat/TableView';
+import { formatters } from '../../utils/formatters';
+import SequenceItemsPage from '../SequenceItems/SequenceItemsPage';
+import ConfirmDialog from '../../components/dialogs/ConfirmDialog';
 
-// Status configuration for active/inactive sequences
-const statusConfig = {
-  active: { label: "Active", color: "#4caf50" },
-  inactive: { label: "Inactive", color: "#f44336" }
-};
-
-// Custom formatter for the Active status field
-const activeStatusFormatter = (value) => {
-  const status = value ? "active" : "inactive";
-  const config = statusConfig[status];
+// Tab Panel Component
+function TabPanel({ children, value, index, ...other }) {
   return (
-    <Chip
-      label={config.label}
-      size="small"
-      sx={{
-        backgroundColor: config.color,
-        color: "#fff",
-        fontWeight: 500,
-      }}
-    />
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`sequence-tabpanel-${index}`}
+      aria-labelledby={`sequence-tab-${index}`}
+      {...other}
+    >
+      {value === index && children}
+    </div>
   );
-};
+}
 
-const SequencesPage = ({
-  // Sequences props
+const SequencePage = ({
+  // Sequences Props
   sequences = [],
   loading = false,
   error,
+  setError,
   successMessage,
   setSuccessMessage,
+  statusMessage,
+  statusSeverity,
+  setStatusMessage,
   selected = [],
   onSelectClick,
   onSelectAllClick,
-  onClearSelection,
+  onFilterChange,
+  currentFilter = 'all',
   onDeactivate,
+  onReactivate,
+  onBulkDeactivate,
   onEdit,
   onView,
   onCreate,
-  onAddNote,
-  onAddAttachment,
-  onFilterChange,
-  totalCount,
-  currentFilter = 'active',
-  userRole = [],
   
-  // Bulk action handlers
-  onBulkDeactivate,
-  onBulkReactivate,
+  // Sequence Items Tab Props
+  sequenceItemsProps = {},
+  
+  // Tab Management
+  currentTab = 0,
+  onTabChange,
+  
+  // Confirm Dialog Props
+  confirmDialog = {},
+  onConfirmDialogClose,
 }) => {
   const theme = useTheme();
-  
-  // Local state for filter
   const [sequenceFilter, setSequenceFilter] = useState(currentFilter);
 
-  // Table configuration for sequences
-  const sequencesTableConfig = {
-    idField: "SequenceID",
-    columns: [
-      { field: "SequenceName", headerName: "Sequence Name", type: "tooltip" },
-      { 
-        field: "SequenceDescription", 
-        headerName: "Description", 
-        type: "truncated",
-        maxWidth: 400 // Limit width for better table layout
-      },
-      { field: "CreatedAt", headerName: "Created", type: "date" },
-      { field: "UpdatedAt", headerName: "Updated", type: "date" },
-      {
-        field: "Active",
-        headerName: "Status",
-        type: "custom",
-        formatter: activeStatusFormatter,
-      },
-    ],
+  const availableTabs = [
+    { id: 'sequences', label: 'Sequences', component: 'sequences' },
+    { id: 'sequence-items', label: 'Sequence Items', component: 'items' },
+  ];
+
+  const handleTabChange = (event, newValue) => {
+    if (onTabChange) onTabChange(newValue);
   };
 
-  // Handle filter change
+  // Table columns configuration
+  const columns = [
+    { 
+      field: 'SequenceName', 
+      headerName: 'Sequence Name', 
+      type: 'tooltip', 
+      defaultVisible: true 
+    },
+    { 
+      field: 'SequenceDescription', 
+      headerName: 'Description', 
+      type: 'truncated',
+      defaultVisible: true 
+    },
+    { 
+      field: 'CreatedAt', 
+      headerName: 'Created', 
+      type: 'date',
+      defaultVisible: true 
+    },
+    { 
+      field: 'UpdatedAt', 
+      headerName: 'Updated', 
+      type: 'date',
+      defaultVisible: true 
+    },
+    { 
+      field: 'Active', 
+      headerName: 'Status', 
+      defaultVisible: true 
+    },
+  ];
+
   const handleFilterChange = (event) => {
     const newFilter = event.target.value;
     setSequenceFilter(newFilter);
-    
-    // Call the parent component's filter handler if provided
-    if (onFilterChange) {
-      onFilterChange(newFilter);
-    }
+    if (onFilterChange) onFilterChange(newFilter);
   };
 
-  // Update local filter when prop changes
   useEffect(() => {
     setSequenceFilter(currentFilter);
   }, [currentFilter]);
-
+  
   const filterOptions = [
-    { value: 'active', label: 'Active Sequences' },
-    { value: 'inactive', label: 'Inactive Sequences' },
     { value: 'all', label: 'All Sequences' },
+    { value: 'active', label: 'Active Sequences' },
+    { value: 'inactive', label: "Inactive Sequences" },
   ];
-
-  // Get selected sequences data for bulk actions
-  const selectedSequences = sequences.filter(sequence => 
-    selected.includes(sequence.SequenceID)
-  );
-
-  // Combine imported formatters with custom formatters
-  const enhancedFormatters = {
+  
+  // Custom formatters
+  const sequenceFormatters = {
     ...formatters,
-    Active: activeStatusFormatter,
+    Active: (value) => {
+      const isActive = value === true || value === 1;
+      return (
+        <Chip 
+          label={isActive ? 'Active' : 'Inactive'} 
+          size="small" 
+          sx={{ 
+            backgroundColor: isActive ? theme.palette.success.main : theme.palette.grey[500], 
+            color: theme.palette.common.white, 
+            fontWeight: 500 
+          }} 
+        />
+      );
+    },
   };
 
+  // Filter sequences based on selected filter
+  const filteredSequences = React.useMemo(() => {
+    if (!sequences) return [];
+
+    switch (sequenceFilter) {
+      case "active":
+        return sequences.filter(seq => seq.Active === true || seq.Active === 1);
+      case "inactive":
+        return sequences.filter(seq => !seq.Active || seq.Active === 0);
+      default:
+        return sequences;
+    }
+  }, [sequences, sequenceFilter]);
+
   return (
-    <Box
-      sx={{
-        width: "100%",
-        backgroundColor: theme.palette.background.default,
-        minHeight: "100vh",
-        p: 3,
-      }}
-    >
+    <Box sx={{ width: "100%", backgroundColor: theme.palette.background.default, minHeight: "100vh", p: 3 }}>
       <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
-        {/* Error and Success Messages */}
-        {error && (
-          <Alert severity="error" sx={{ m: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {successMessage && (
-          <Alert
-            severity="success"
-            sx={{ m: 2 }}
-            onClose={() => setSuccessMessage("")}
+        <Box sx={{ borderBottom: 1, borderColor: theme.palette.divider }}>
+          <Tabs 
+            value={currentTab} 
+            onChange={handleTabChange} 
+            sx={{ backgroundColor: theme.palette.background.paper }}
           >
-            {successMessage}
-          </Alert>
-        )}
-
-        {/* Sequences Toolbar */}
-        <Toolbar
-          sx={{
-            backgroundColor: theme.palette.background.paper,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 2,
-            py: 2,
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              flex: 1,
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="h6"
-                component="div"
-                sx={{ 
-                  color: theme.palette.text.primary, 
-                  fontWeight: 600 
-                }}
-              >
-                Sequences
-              </Typography>
-              <Tooltip title="Manage activity sequences and their workflow steps" arrow>
-                <Info sx={{ 
-                  fontSize: 18, 
-                  color: theme.palette.text.secondary, 
-                  cursor: 'help' 
-                }} />
-              </Tooltip>
-            </Box>
-
-            {/* Sequence Filter Dropdown */}
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <Select
-                value={sequenceFilter}
-                onChange={handleFilterChange}
-                displayEmpty
-                sx={{ 
-                  backgroundColor: theme.palette.background.paper,
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: theme.palette.divider,
+            {availableTabs.map((tab, index) => (
+              <Tab
+                key={tab.id}
+                label={tab.label}
+                sx={{
+                  color: currentTab === index ? theme.palette.text.primary : theme.palette.text.secondary,
+                  '&.Mui-selected': { 
+                    color: theme.palette.text.primary, 
+                    fontWeight: 600 
                   },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: theme.palette.text.secondary,
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: theme.palette.primary.main,
-                  },
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  minHeight: 56
                 }}
-              >
-                {filterOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {selected.length > 0 && (
-              <Tooltip title={`${selected.length} sequence${selected.length === 1 ? '' : 's'} selected for operations`} arrow>
-                <Chip
-                  label={`${selected.length} selected`}
-                  size="small"
-                  sx={{ 
-                    backgroundColor: theme.palette.mode === 'dark' ? '#333' : '#e0e0e0', 
-                    color: theme.palette.text.primary 
-                  }}
-                />
-              </Tooltip>
-            )}
-          </Box>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              flexWrap: "wrap",
-            }}
-          >
-            <Tooltip title="Create a new sequence workflow" arrow>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={onCreate}
-                disabled={loading}
-              >
-                Add Sequence
-              </Button>
-            </Tooltip>
-          </Box>
-        </Toolbar>
-
-        {/* Sequences Table */}
-        {loading ? (
-          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
-            <CircularProgress />
-            <Tooltip title="Loading sequence data from the database" arrow>
-              <Typography variant="body2" sx={{ 
-                mt: 2, 
-                color: theme.palette.text.secondary,
-                cursor: 'help' 
-              }}>
-                Loading sequences...
-              </Typography>
-            </Tooltip>
-          </Box>
-        ) : (
-          <TableView
-            data={sequences}
-            columns={sequencesTableConfig.columns}
-            idField={sequencesTableConfig.idField}
-            selected={selected}
-            onSelectClick={onSelectClick}
-            onSelectAllClick={onSelectAllClick}
-            showSelection={true}
-            onView={onView}
-            onEdit={onEdit}
-            onDelete={onDeactivate}
-            onAddNote={onAddNote}
-            onAddAttachment={onAddAttachment}
-            formatters={enhancedFormatters}
-            entityType="sequence"
-            tooltips={{
-              search: "Search sequences by name or description",
-              filter: "Show/hide advanced filtering options",
-              columns: "Customize which columns are visible in the table",
-              actionMenu: {
-                view: "View detailed information for this sequence",
-                edit: "Edit this sequence's information",
-                delete: "Deactivate or reactivate this sequence",
-                addNote: "Add internal notes or comments",
-                addAttachment: "Attach files or documents"
-              }
-            }}
-          />
-        )}
-
-        {/* Sequences Results Footer */}
-        <Box
-          sx={{
-            p: 2,
-            borderTop: `1px solid ${theme.palette.divider}`,
-            backgroundColor: theme.palette.background.default,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Tooltip title="Total number of sequences currently displayed in the table" arrow>
-            <Typography variant="body2" sx={{ 
-              color: theme.palette.text.secondary, 
-              cursor: 'help' 
-            }}>
-              Showing {sequences.length} of {totalCount || sequences.length} sequences
-            </Typography>
-          </Tooltip>
-          {selected.length > 0 && (
-            <Tooltip title="Number of sequences currently selected for operations" arrow>
-              <Typography
-                variant="body2"
-                sx={{ 
-                  color: theme.palette.text.primary, 
-                  fontWeight: 500, 
-                  cursor: 'help' 
-                }}
-              >
-                {selected.length} selected
-              </Typography>
-            </Tooltip>
-          )}
+              />
+            ))}
+          </Tabs>
         </Box>
+
+        {availableTabs.map((tab, index) => (
+          <TabPanel key={tab.id} value={currentTab} index={index}>
+            {tab.component === 'sequences' && (
+              <>
+                {error && <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>}
+                {successMessage && (
+                  <Alert 
+                    severity="success" 
+                    sx={{ m: 2 }} 
+                    onClose={() => setSuccessMessage && setSuccessMessage("")}
+                  >
+                    {successMessage}
+                  </Alert>
+                )}
+
+                <Toolbar 
+                  sx={{ 
+                    backgroundColor: theme.palette.background.paper, 
+                    borderBottom: `1px solid ${theme.palette.divider}`, 
+                    justifyContent: 'space-between', 
+                    flexWrap: 'wrap', 
+                    gap: 2, 
+                    py: 2 
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography 
+                        variant="h6" 
+                        sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
+                      >
+                        Sequences
+                      </Typography>
+                      <Tooltip title="Manage activity sequences and their workflow steps" arrow>
+                        <Info sx={{ 
+                          fontSize: 18, 
+                          color: theme.palette.text.secondary, 
+                          cursor: 'help' 
+                        }} />
+                      </Tooltip>
+                    </Box>
+                    <FormControl size="small" sx={{ minWidth: 240 }}>
+                      <Select value={sequenceFilter} onChange={handleFilterChange} displayEmpty
+                        sx={{ 
+                          backgroundColor: theme.palette.background.paper,
+                          '& .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.divider },
+                          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.text.secondary },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.primary.main },
+                        }}>
+                        {filterOptions.map(option => (
+                          <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    {selected.length > 0 && (
+                      <Chip 
+                        label={`${selected.length} selected`} 
+                        size="small" 
+                        sx={{ 
+                          backgroundColor: theme.palette.mode === 'dark' ? '#333' : "#e0e0e0", 
+                          color: theme.palette.text.primary 
+                        }} 
+                      />
+                    )}
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <Button 
+                      variant="contained" 
+                      startIcon={<Add />} 
+                      onClick={onCreate} 
+                      disabled={loading}
+                      sx={{ 
+                        backgroundColor: theme.palette.primary.main, 
+                        color: theme.palette.primary.contrastText, 
+                        "&:hover": { backgroundColor: theme.palette.primary.dark } 
+                      }}
+                    >
+                      Add Sequence
+                    </Button>
+                    
+                    {selected.length > 0 && (
+                      <Button 
+                        variant="outlined" 
+                        color="warning" 
+                        onClick={onBulkDeactivate}
+                      >
+                        Deactivate Selected
+                      </Button>
+                    )}
+                  </Box>
+                </Toolbar>
+
+                {loading ? (
+                  <Box display="flex" justifyContent="center" p={8}>
+                    <CircularProgress />
+                  </Box>
+                ) : (
+                  <TableView
+                    data={filteredSequences}
+                    columns={columns}
+                    idField="SequenceID"
+                    selected={selected}
+                    onSelectClick={onSelectClick}
+                    onSelectAllClick={onSelectAllClick}
+                    showSelection={true}
+                    onView={onView}
+                    onEdit={onEdit}
+                    onDelete={onDeactivate}
+                    onReactivate={onReactivate}
+                    formatters={sequenceFormatters}
+                    entityType="sequence"
+                    tooltips={{
+                      search: "Search sequences by name or description",
+                      filter: "Show/hide advanced filtering options",
+                      columns: "Customize which columns are visible in the table",
+                      actionMenu: {
+                        view: "View detailed information for this sequence",
+                        edit: "Edit this sequence's information",
+                        delete: "Deactivate this sequence",
+                        reactivate: "Reactivate this sequence"
+                      }
+                    }}
+                  />
+                )}
+
+                <Box 
+                  sx={{ 
+                    p: 2, 
+                    borderTop: `1px solid ${theme.palette.divider}`, 
+                    backgroundColor: theme.palette.background.default, 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center' 
+                  }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ color: theme.palette.text.secondary }}
+                  >
+                    Showing {filteredSequences.length} sequences
+                  </Typography>
+                  
+                  {selected.length > 0 && (
+                    <Typography 
+                      variant="body2" 
+                      sx={{ color: theme.palette.text.primary, fontWeight: 500 }}
+                    >
+                      {selected.length} selected
+                    </Typography>
+                  )}
+                </Box>
+              </>
+            )}
+
+            {tab.component === 'items' && <SequenceItemsPage {...sequenceItemsProps} />}
+          </TabPanel>
+        ))}
       </Paper>
+
+      {/* Status Snackbar */}
+      <Snackbar 
+        open={!!statusMessage} 
+        autoHideDuration={4000} 
+        onClose={() => setStatusMessage && setStatusMessage('')} 
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setStatusMessage && setStatusMessage('')} 
+          severity={statusSeverity} 
+          sx={{ width: '100%' }}
+        >
+          {statusMessage}
+        </Alert>
+      </Snackbar>
+
+      {/* Confirm Dialog */}
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open || false}
+          title={confirmDialog.title || ''}
+          description={confirmDialog.description || ''}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={onConfirmDialogClose}
+        />
+      )}
     </Box>
   );
 };
 
-export default SequencesPage;
+export default SequencePage;

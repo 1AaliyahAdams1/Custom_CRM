@@ -186,6 +186,18 @@ const updateSequenceItem = async (req, res) => {
   }
 };
 
+//======================================
+// Get all sequence items
+//======================================
+const getAllSequenceItems = async (req, res) => {
+  try {
+    const items = await sequenceService.getAllSequenceItems();
+    res.status(200).json(items);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 const deleteSequenceItem = async (req, res) => {
   try {
     const itemId = parseInt(req.params.itemId, 10);
@@ -299,4 +311,5 @@ module.exports = {
   unassignSequenceFromAccount,
   getAccountsBySequence,
   getAllActivityTypes,
+  getAllSequenceItems,
 };

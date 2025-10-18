@@ -14,7 +14,8 @@ export async function getAllProducts() {
 
 export async function getProductById(productId) {
   try {
-    return await api.get(`${RESOURCE}/${productId}`);
+    const response = await api.get(`${RESOURCE}/${productId}`);
+    return response.data;
   } catch (error) {
     console.error(`Error fetching product ${productId}:`, error);
     throw error;
