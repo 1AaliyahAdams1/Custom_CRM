@@ -18,10 +18,9 @@ import { Add, Info } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import TableView from '../../components/tableFormat/TableView';
 import { formatters } from '../../utils/formatters';
-////
 
-const EmployeesPage = ({
-  employees = [],
+const TeamsPage = ({
+  teams = [],
   loading = false,
   error,
   successMessage,
@@ -31,7 +30,6 @@ const EmployeesPage = ({
   onSelectClick,
   onSelectAllClick,
   onDeactivate,
-  onReactivate,
   onEdit,
   onView,
   onCreate,
@@ -44,20 +42,9 @@ const EmployeesPage = ({
   const theme = useTheme();
 
   const columns = [
-    { field: "EmployeeName", headerName: "Name", type: "text", defaultVisible: true },
-    { field: "EmployeeEmail", headerName: "Email", defaultVisible: true },
-    { field: "EmployeePhone", headerName: "Phone", defaultVisible: true },
-    { field: "JobTitleName", headerName: "Job Title", defaultVisible: true },
-    { field: "DepartmentName", headerName: "Department", defaultVisible: true },
-   
-    { field: "HireDate", headerName: "Hire Date", type: "date", defaultVisible: true },
-    { field: "TerminationDate", headerName: "Termination Date", type: "date", defaultVisible: false },
-    { field: "salary", headerName: "Salary", type: "currency", defaultVisible: false },
-    { field: "Holidays_PA", headerName: "Holidays/Year", defaultVisible: false },
-    { field: "CityName", headerName: "City", defaultVisible: false },
-    { field: "StateProvinceName", headerName: "State/Province", defaultVisible: false },
-    { field: "CreatedAt", headerName: "Created", type: "dateTime", defaultVisible: false },
-    { field: "UpdatedAt", headerName: "Updated", type: "dateTime", defaultVisible: false },
+    { field: "TeamName", headerName: "Team Name", type: "text", defaultVisible: true },
+    
+    { field: "CreatedAt", headerName: "Created", type: "dateTime", defaultVisible: true },
     {
       field: "Active",
       headerName: "Status",
@@ -68,11 +55,11 @@ const EmployeesPage = ({
     }
   ];
 
-  const [employeeFilter, setEmployeeFilter] = useState("all");
+  const [teamFilter, setTeamFilter] = useState("all");
 
   const handleFilterChange = (event) => {
     const newFilter = event.target.value;
-    setEmployeeFilter(newFilter);
+    setTeamFilter(newFilter);
     
     if (onFilterChange) {
       onFilterChange(newFilter);
@@ -80,10 +67,10 @@ const EmployeesPage = ({
   };
 
   const filterOptions = [
-    { value: "all", label: "All Employees" },
-    { value: "active", label: "Active Employees" },
-    { value: "inactive", label: "Inactive Employees" },
-    { value: "myTeam", label: "My Team" },
+    { value: "all", label: "All Teams" },
+    { value: "active", label: "Active Teams" },
+    { value: "inactive", label: "Inactive Teams" },
+    { value: "myTeams", label: "My Teams" },
   ];
 
   return (
@@ -119,9 +106,9 @@ const EmployeesPage = ({
                 color: theme.palette.text.primary,
                 fontWeight: 600 
               }}>
-                Employees
+                Teams
               </Typography>
-              <Tooltip title="Manage and view all employee records in the system" arrow>
+              <Tooltip title="Manage and view all teams in the system" arrow>
                 <Info sx={{ 
                   fontSize: 18, 
                   color: theme.palette.text.secondary,
@@ -130,10 +117,10 @@ const EmployeesPage = ({
               </Tooltip>
             </Box>
 
-            {/* Employee Filter Dropdown */}
+            {/* Team Filter Dropdown */}
             <FormControl size="small" sx={{ minWidth: 220 }}>
               <Select
-                value={employeeFilter}
+                value={teamFilter}
                 onChange={handleFilterChange}
                 displayEmpty
                 sx={{ 
@@ -158,7 +145,7 @@ const EmployeesPage = ({
             </FormControl>
 
             {selected.length > 0 && (
-              <Tooltip title={`${selected.length} employee${selected.length === 1 ? "" : "s"} selected for operations`} arrow>
+              <Tooltip title={`${selected.length} team${selected.length === 1 ? "" : "s"} selected for operations`} arrow>
                 <Chip
                   label={`${selected.length} selected`}
                   size="small"
@@ -171,13 +158,13 @@ const EmployeesPage = ({
             )}
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-            <Tooltip title="Create a new employee record in the system" arrow>
+            <Tooltip title="Create a new team in the system" arrow>
               <Button
                 variant="contained"
                 startIcon={<Add />}
                 onClick={onCreate}
               >
-                Add Employee
+                Add Team
               </Button>
             </Tooltip>
           </Box>
@@ -186,20 +173,20 @@ const EmployeesPage = ({
         {loading ? (
           <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
             <CircularProgress />
-            <Tooltip title="Loading employee data from the database" arrow>
+            <Tooltip title="Loading team data from the database" arrow>
               <Typography variant="body2" sx={{ 
                 mt: 2, 
                 color: theme.palette.text.secondary
               }}>
-                Loading employees...
+                Loading teams...
               </Typography>
             </Tooltip>
           </Box>
         ) : (
           <TableView
-            data={employees}
+            data={teams}
             columns={columns}
-            idField="EmployeeID"
+            idField="TeamID"
             selected={selected}
             onSelectClick={onSelectClick}
             onSelectAllClick={onSelectAllClick}
@@ -207,19 +194,18 @@ const EmployeesPage = ({
             onView={onView}
             onEdit={onEdit}
             onDelete={onDeactivate}
-            onReactivate={onReactivate}
             onAddNote={onAddNote}
             onAddAttachment={onAddAttachment}
             formatters={formatters}
-            entityType="employee"
+            entityType="team"
             tooltips={{
-              search: "Search employees by name, email, phone, department, or job title",
+              search: "Search teams by name, manager, or city",
               filter: "Show/hide advanced filtering options",
               columns: "Customize which columns are visible in the table",
               actionMenu: {
-                view: "View detailed information for this employee",
-                edit: "Edit this employee's information",
-                delete: "Deactivate this employee record",
+                view: "View detailed information and members for this team",
+                edit: "Edit this team's information",
+                delete: "Deactivate this team record",
                 addNote: "Add internal notes or comments",
                 addAttachment: "Attach files or documents"
               }
@@ -235,16 +221,16 @@ const EmployeesPage = ({
           justifyContent: "space-between", 
           alignItems: "center" 
         }}>
-          <Tooltip title="Total number of employees currently displayed in the table" arrow>
+          <Tooltip title="Total number of teams currently displayed in the table" arrow>
             <Typography variant="body2" sx={{ 
               color: theme.palette.text.secondary,
               cursor: "help" 
             }}>
-              Showing {employees.length} employees
+              Showing {teams.length} teams
             </Typography>
           </Tooltip>
           {selected.length > 0 && (
-            <Tooltip title="Number of employees currently selected for operations" arrow>
+            <Tooltip title="Number of teams currently selected for operations" arrow>
               <Typography variant="body2" sx={{ 
                 color: theme.palette.text.primary,
                 fontWeight: 500, 
@@ -260,4 +246,4 @@ const EmployeesPage = ({
   );
 };
 
-export default EmployeesPage;
+export default TeamsPage;

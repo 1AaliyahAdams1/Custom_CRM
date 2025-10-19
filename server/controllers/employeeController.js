@@ -22,12 +22,15 @@ class EmployeeController {
 
   static async create(req, res) {
     try {
-      const { data, changedBy, actionTypeId } = req.body;
-      await EmployeeService.createEmployee(data, changedBy, actionTypeId);
-      res.status(201).json({ message: "Employee created" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+      const { data, changedBy, actionTypeId, loggedInUserId } = req.body;
+
+    
+
+    await EmployeeService.createEmployee(data, changedBy, actionTypeId, loggedInUserId);
+    res.status(201).json({ message: "Employee created" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
   }
 
   static async update(req, res) {

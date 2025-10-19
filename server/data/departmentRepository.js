@@ -6,18 +6,18 @@ const { dbConfig } = require("../dbConfig");
 // =======================
 async function getAllDepartments() {
    try {
+   try {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
       .query("SELECT * FROM Department WHERE Active = 1 ORDER BY DepartmentName");
-    
-    
-    
+
     return result.recordset;
   } catch (error) {
     console.error("DepartmentRepo Error [getAllDepartments]:", error);
     throw error;
   }
 }
+
 
 
 // =======================
@@ -29,6 +29,7 @@ async function getDepartmentById(departmentId) {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
       .input("DepartmentID", sql.Int, departmentId)
+       .query("SELECT * FROM Department WHERE DepartmentID = @DepartmentID");
        .query("SELECT * FROM Department WHERE DepartmentID = @DepartmentID");
     return result.recordset[0] || null;
   } catch (error) {
@@ -42,12 +43,32 @@ async function getDepartmentById(departmentId) {
 // =======================
 async function createDepartment(departmentName) {
      if (!departmentName) throw new Error("departmentName is required");
+     if (!departmentName) throw new Error("departmentName is required");
   try {
     const pool = await sql.connect(dbConfig);
     
     // First, insert the department
     const insertResult = await pool.request()
+    
+    // First, insert the department
+    const insertResult = await pool.request()
       .input("DepartmentName", sql.VarChar(255), departmentName)
+      .query(`
+        INSERT INTO Department (DepartmentName, Active) 
+        VALUES (@DepartmentName, 1);
+        SELECT SCOPE_IDENTITY() AS DepartmentID;
+      `);
+    
+    const newId = insertResult.recordset[0].DepartmentID;
+    console.log('📊 Repository: Created department with ID:', newId);
+    
+    // Then fetch the created record
+    const selectResult = await pool.request()
+      .input("DepartmentID", sql.Int, newId)
+      .query("SELECT * FROM Department WHERE DepartmentID = @DepartmentID");
+    
+    console.log('📊 Repository: Returning department:', selectResult.recordset[0]);
+    return selectResult.recordset[0];
       .query(`
         INSERT INTO Department (DepartmentName, Active) 
         VALUES (@DepartmentName, 1);
@@ -88,6 +109,13 @@ async function updateDepartment(departmentId, departmentName) {
         SELECT * FROM Department WHERE DepartmentID = @DepartmentID;
       `);
       return result.recordset[0];
+       .query(`
+        UPDATE Department
+        SET DepartmentName = @DepartmentName 
+        WHERE DepartmentID = @DepartmentID;
+        SELECT * FROM Department WHERE DepartmentID = @DepartmentID;
+      `);
+      return result.recordset[0];
   } catch (error) {
     console.error("DepartmentRepo Error [updateDepartment]:", error);
     throw error;
@@ -103,6 +131,13 @@ async function deactivateDepartment(departmentId) {
     const pool = await sql.connect(dbConfig);
     await pool.request()
       .input("DepartmentID", sql.Int, departmentId)
+       .query(`
+        UPDATE Department
+        SET Active = 0 
+        WHERE DepartmentID = @DepartmentID AND Active = 1;
+        SELECT @@ROWCOUNT AS RowsAffected;
+      `);
+      return result.recordset[0]?.RowsAffected > 0;
        .query(`
         UPDATE Department
         SET Active = 0 
@@ -132,6 +167,13 @@ async function reactivateDepartment(departmentId) {
         SELECT @@ROWCOUNT AS RowsAffected;
       `);
       return result.recordset[0]?.RowsAffected > 0;
+      .query(`
+        UPDATE Department
+        SET Active = 1 
+        WHERE DepartmentID = @DepartmentID AND Active = 0;
+        SELECT @@ROWCOUNT AS RowsAffected;
+      `);
+      return result.recordset[0]?.RowsAffected > 0;
   } catch (error) {
     console.error("DepartmentRepo Error [reactivateDepartment]:", error);
     throw error;
@@ -147,6 +189,12 @@ async function deleteDepartment(departmentId) {
     const pool = await sql.connect(dbConfig);
     await pool.request()
       .input("DepartmentID", sql.Int, departmentId)
+      .query(`
+        DELETE FROM Department 
+        WHERE DepartmentID = @DepartmentID;
+        SELECT @@ROWCOUNT AS RowsAffected;
+      `);
+      return result.recordset[0]?.RowsAffected > 0;
       .query(`
         DELETE FROM Department 
         WHERE DepartmentID = @DepartmentID;

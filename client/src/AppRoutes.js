@@ -65,6 +65,11 @@ const DepartmentPage = lazy(() => import("./pages//Classifications/DepartmentPag
 
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
 
+const TeamPage = lazy(() => import("./components/containers/TeamContainer"));
+const CreateTeamPage = lazy(() => import("./pages/TeamManagement/CreateTeamPage"));
+const EditTeamPage = lazy(() => import("./pages/TeamManagement/EditTeamPage"));
+const TeamDetailsPage = lazy(() => import("./pages/TeamManagement/TeamDetailsPage"));
+
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
