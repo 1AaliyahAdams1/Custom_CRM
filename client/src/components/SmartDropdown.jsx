@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FormControl,
-  InputLabel,
   TextField,
   MenuItem,
   MenuList,
@@ -10,8 +9,7 @@ import {
   ClickAwayListener,
   InputAdornment,
   IconButton,
-  Alert,
-  Box
+  Alert
 } from '@mui/material';
 import { ArrowDropDown, Clear } from '@mui/icons-material';
 
@@ -41,66 +39,65 @@ const SmartDropdown = ({
   const anchorRef = useRef(null);
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    loadOptions();
-  }, []);
-
-  useEffect(() => {
-    if (value && options.length > 0) {
-      const selectedOption = options.find(opt =>
-        (opt[valueField] || opt.id || opt.ID) === value
-      );
-      if (selectedOption) {
-        setInputValue(formatDisplayText(selectedOption));
-      } else {
-        // If we have a value but can't find the option, keep the raw value as display
-        setInputValue(String(value));
-      }
-    } else if (!value) {
-      setInputValue('');
-    }
-    // If we have a value but no options yet, don't change inputValue
-  }, [value, options, valueField, displayField]);
-
-  useEffect(() => {
-    if (!inputValue.trim()) {
-      setFilteredOptions(options);
-    } else {
-      const filtered = options.filter(option => {
-        const displayText = formatDisplayText(option).toLowerCase();
-        const searchTerm = inputValue.toLowerCase();
-        return displayText.includes(searchTerm);
-      });
-      setFilteredOptions(filtered);
-    }
-    setHighlightedIndex(-1);
-  }, [inputValue, options]);
-
-  const loadOptions = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await service.getAll();
-      setOptions(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error(`Error loading ${label} options:`, err);
-      setError(`Failed to load ${label.toLowerCase()} options`);
-      setOptions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formatDisplayText = (option) => {
     if (customDisplayFormatter) return customDisplayFormatter(option);
     return option[displayField] || option.name || option.Name || `Item ${option[valueField] || option.id || option.ID}`;
   };
 
+  // Load options once on mount
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await service.getAll();
+        const opts = Array.isArray(data) ? data : [];
+        setOptions(opts);
+      } catch (err) {
+        console.error(`Error loading ${label} options:`, err);
+        setError(`Failed to load ${label.toLowerCase()} options`);
+        setOptions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadOptions();
+  }, [service, label]);
+
+  // Update inputValue when value prop or options change
+  useEffect(() => {
+    // Wait for options to be loaded
+    if (loading) return;
+
+    if (value != null && value !== '') {
+      const numericValue = Number(value);
+      const selectedOption = options.find(opt => {
+        const optValue = opt[valueField] || opt.id || opt.ID;
+        return Number(optValue) === numericValue;
+      });
+      
+      if (selectedOption) {
+        const displayText = formatDisplayText(selectedOption);
+        setInputValue(displayText);
+      } else {
+        // Option not found - might still be loading or invalid value
+        console.warn(`No option found for value: ${value} in ${label}`);
+        // Don't clear the input - keep the previous value
+      }
+    } else {
+      setInputValue('');
+    }
+  }, [value, options, loading, valueField, displayField]);
+
   const handleInputChange = (event) => {
     const newValue = event.target.value;
     setInputValue(newValue);
     if (!open && newValue) setOpen(true);
-    if (!newValue) handleSelectionChange(null);
+    
+    // Don't clear the selection unless user explicitly clears the input
+    if (!newValue) {
+      handleSelectionChange(null);
+    }
   };
 
   const handleSelectionChange = (selectedOption) => {
@@ -113,38 +110,19 @@ const SmartDropdown = ({
       return;
     }
 
-    // Get the raw value without forcing it to be a number
     const rawValue = selectedOption
       ? (selectedOption[valueField] || selectedOption.id || selectedOption.ID)
-      : null;
+      : '';
 
-    // Only convert to number if the value looks like a numeric string or is already a number
-    let finalValue = rawValue;
-    if (rawValue !== null && rawValue !== undefined) {
-      // Check if it's a string that represents a number
-      const numericValue = Number(rawValue);
-      if (!isNaN(numericValue) && isFinite(numericValue)) {
-        // Only use the numeric conversion if it's actually a valid number
-        // and the original wasn't a string that should stay a string
-        if (typeof rawValue === 'number' || /^\d+$/.test(String(rawValue))) {
-          finalValue = numericValue;
-        }
-      }
-    }
-
-    const syntheticEvent = {
-      target: {
-        name,
-        value: finalValue
-      }
-    };
-    onChange(syntheticEvent);
+    // Convert to number or empty string, not null
+    const finalValue = rawValue !== '' ? Number(rawValue) : '';
+    
+    onChange({ target: { name, value: finalValue } });
     setOpen(false);
   };
 
   const handleKeyDown = (event) => {
     const maxIndex = filteredOptions.length;
-
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
@@ -165,6 +143,8 @@ const SmartDropdown = ({
       case 'Escape':
         setOpen(false);
         break;
+      default:
+        break;
     }
   };
 
@@ -184,79 +164,86 @@ const SmartDropdown = ({
     inputRef.current?.focus();
   };
 
+  useEffect(() => {
+    // Filter options based on input
+    if (!inputValue.trim()) {
+      setFilteredOptions(options);
+    } else {
+      const filtered = options.filter(option =>
+        formatDisplayText(option).toLowerCase().includes(inputValue.toLowerCase())
+      );
+      setFilteredOptions(filtered);
+    }
+    setHighlightedIndex(-1);
+  }, [inputValue, options]);
+
   return (
-    <>
-      <ClickAwayListener onClickAway={handleClickAway}>
-        <FormControl fullWidth={fullWidth} error={!!error} {...props}>
-          <TextField
-            ref={inputRef}
-            name={name}
-            label={`${label}${required ? ' *' : ''}`}
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setOpen(true)}
-            placeholder={placeholder || `Type to search ${label.toLowerCase()}...`}
-            required={required}
-            disabled={loading}
-            InputProps={{
-              ref: anchorRef,
-              endAdornment: (
-                <InputAdornment position="end">
-                  {inputValue && (
-                    <IconButton onClick={handleClear} size="small">
-                      <Clear />
-                    </IconButton>
-                  )}
-                  <IconButton onClick={handleDropdownToggle} size="small">
-                    <ArrowDropDown />
+    <ClickAwayListener onClickAway={handleClickAway}>
+      <FormControl fullWidth={fullWidth} error={!!error} {...props}>
+        <TextField
+          ref={inputRef}
+          name={name}
+          label={`${label}${required ? ' *' : ''}`}
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder || `Type to search ${label.toLowerCase()}...`}
+          required={required}
+          disabled={loading}
+          InputProps={{
+            ref: anchorRef,
+            endAdornment: (
+              <InputAdornment position="end">
+                {inputValue && (
+                  <IconButton onClick={handleClear} size="small">
+                    <Clear />
                   </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
-
-          <Popper
-            open={open && !loading}
-            anchorEl={anchorRef.current}
-            style={{ width: anchorRef.current?.clientWidth, zIndex: 1300 }}
-            placement="bottom-start"
-          >
-            <Paper elevation={8} sx={{ maxHeight: 300, overflow: 'auto' }}>
-              <MenuList>
-                {filteredOptions.length === 0 && (
-                  <MenuItem disabled><em>No options found</em></MenuItem>
                 )}
-                {filteredOptions.map((option, index) => (
-                  <MenuItem
-                    key={option[valueField] || option.id || option.ID}
-                    selected={highlightedIndex === index}
-                    onClick={() => handleSelectionChange(option)}
-                    onMouseEnter={() => setHighlightedIndex(index)}
-                  >
-                    {formatDisplayText(option)}
-                  </MenuItem>
-                ))}
-                {onCreateNewClick && (
-                  <MenuItem
-                    selected={highlightedIndex === filteredOptions.length}
-                    onClick={() => handleSelectionChange('OTHER')}
-                    onMouseEnter={() => setHighlightedIndex(filteredOptions.length)}
-                    sx={{ fontStyle: 'italic', color: 'primary.main' }}
-                  >
-                    + Add New {label}
-                  </MenuItem>
-                )}
-              </MenuList>
-            </Paper>
-          </Popper>
+                <IconButton onClick={handleDropdownToggle} size="small">
+                  <ArrowDropDown />
+                </IconButton>
+              </InputAdornment>
+            )
+          }}
+        />
 
-          {error && (
-            <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>
-          )}
-        </FormControl>
-      </ClickAwayListener>
-    </>
+        <Popper
+          open={open && !loading}
+          anchorEl={anchorRef.current}
+          style={{ width: anchorRef.current?.clientWidth, zIndex: 1300 }}
+          placement="bottom-start"
+        >
+          <Paper elevation={8} sx={{ maxHeight: 300, overflow: 'auto' }}>
+            <MenuList>
+              {filteredOptions.length === 0 && <MenuItem disabled><em>No options found</em></MenuItem>}
+              {filteredOptions.map((option, index) => (
+                <MenuItem
+                  key={option[valueField] || option.id || option.ID}
+                  selected={highlightedIndex === index}
+                  onClick={() => handleSelectionChange(option)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                >
+                  {formatDisplayText(option)}
+                </MenuItem>
+              ))}
+              {onCreateNewClick && (
+                <MenuItem
+                  selected={highlightedIndex === filteredOptions.length}
+                  onClick={() => handleSelectionChange('OTHER')}
+                  onMouseEnter={() => setHighlightedIndex(filteredOptions.length)}
+                  sx={{ fontStyle: 'italic', color: 'primary.main' }}
+                >
+                  + Add New {label}
+                </MenuItem>
+              )}
+            </MenuList>
+          </Paper>
+        </Popper>
+
+        {error && <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>}
+      </FormControl>
+    </ClickAwayListener>
   );
 };
 

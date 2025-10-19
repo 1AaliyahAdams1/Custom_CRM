@@ -13,21 +13,9 @@ import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { createProduct } from '../../services/productService';
 import { getAllAccounts } from '../../services/accountService';
+import { getAllCategories } from '../../services/categoryService';
 import SmartDropdown from '../../components/SmartDropdown';
 import theme from "../../components/Theme";
-
-// Mock services for categories - replace with your actual services
-const categoryService = {
-  getAll: async () => {
-    // Replace this with your actual category service
-    return [
-      { CategoryID: 1, CategoryName: 'Electronics' },
-      { CategoryID: 2, CategoryName: 'Software' },
-      { CategoryID: 3, CategoryName: 'Services' },
-      { CategoryID: 4, CategoryName: 'Hardware' },
-    ];
-  }
-};
 
 const CreateProduct = () => {
   const navigate = useNavigate();
@@ -36,6 +24,7 @@ const CreateProduct = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [formData, setFormData] = useState({
     ProductName: "",
@@ -45,10 +34,21 @@ const CreateProduct = () => {
     SKU: "",
     CategoryID: "",
     AccountID: "",
-    IsActive: true,
   });
 
-  // Enhanced error display with icon
+  // Get current user from localStorage
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    
+    if (!user || !user.UserID) {
+      setError('User not authenticated. Please log in again.');
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
+    
+    setCurrentUser(user);
+  }, [navigate]);
+
   const getFieldError = (fieldName) => {
     return touched[fieldName] && fieldErrors[fieldName] ? (
       <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -69,28 +69,25 @@ const CreateProduct = () => {
       case 'ProductName':
         if (!value || value.trim().length === 0) {
           errors.push('Product name is required');
-        } else if (value.trim().length < 2) {
-          errors.push('Product name must be at least 2 characters');
         } else if (value.trim().length > 100) {
           errors.push('Product name must be 100 characters or less');
         }
         break;
 
       case 'Description':
-        if (value && value.trim().length > 1000) {
-          errors.push('Description must be 1000 characters or less');
+        if (value && value.trim().length > 255) {
+          errors.push('Description must be 255 characters or less');
         }
         break;
 
       case 'SKU':
         if (!value || value.trim().length === 0) {
           errors.push('SKU is required');
-        } else if (value.trim().length < 2) {
-          errors.push('SKU must be at least 2 characters');
-        } else if (value.trim().length > 50) {
-          errors.push('SKU must be 50 characters or less');
-        } else if (!/^[A-Za-z0-9\-_]+$/.test(value.trim())) {
-          errors.push('SKU can only contain letters, numbers, hyphens, and underscores');
+        } else {
+          const skuPattern = /^[A-Z]{3,7}-\d{3}$/;
+          if (!skuPattern.test(value.trim())) {
+            errors.push('Invalid SKU format. Example: LNTMS-001 (3-7 uppercase letters, hyphen, 3 digits)');
+          }
         }
         break;
 
@@ -102,7 +99,9 @@ const CreateProduct = () => {
           if (isNaN(price) || price < 0) {
             errors.push('Price must be a non-negative number');
           } else if (price > 999999.99) {
-            errors.push('Price must be less than $999,999.99');
+            errors.push('Price must be less than 999,999.99');
+          } else if (!/^\d+(\.\d{1,2})?$/.test(value.trim())) {
+            errors.push('Price must have at most 2 decimal places');
           }
         }
         break;
@@ -113,7 +112,9 @@ const CreateProduct = () => {
           if (isNaN(cost) || cost < 0) {
             errors.push('Cost must be a non-negative number');
           } else if (cost > 999999.99) {
-            errors.push('Cost must be less than $999,999.99');
+            errors.push('Cost must be less than 999,999.99');
+          } else if (!/^\d+(\.\d{1,2})?$/.test(value.trim())) {
+            errors.push('Cost must have at most 2 decimal places');
           }
         }
         break;
@@ -139,12 +140,10 @@ const CreateProduct = () => {
     let isValid = true;
 
     Object.keys(formData).forEach(field => {
-      if (field !== 'IsActive') { // Skip validation for IsActive as it's always boolean
-        const errors = validateField(field, formData[field]);
-        if (errors.length > 0) {
-          newFieldErrors[field] = errors;
-          isValid = false;
-        }
+      const errors = validateField(field, formData[field]);
+      if (errors.length > 0) {
+        newFieldErrors[field] = errors;
+        isValid = false;
       }
     });
 
@@ -165,6 +164,7 @@ const CreateProduct = () => {
       [name]: true
     }));
 
+    // Only validate if already touched - prevents blinking on first input
     if (touched[name]) {
       const errors = validateField(name, value);
       setFieldErrors(prev => ({
@@ -196,6 +196,13 @@ const CreateProduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Check if user is authenticated
+    if (!currentUser || !currentUser.UserID) {
+      setError('User not authenticated. Please log in again.');
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
+
     const allTouched = {};
     Object.keys(formData).forEach(key => {
       allTouched[key] = true;
@@ -211,33 +218,40 @@ const CreateProduct = () => {
     setError(null);
 
     try {
-      // Prepare the data for submission
       const submitData = {
         ...formData,
         Price: parseFloat(formData.Price),
         Cost: formData.Cost ? parseFloat(formData.Cost) : null,
         CategoryID: parseInt(formData.CategoryID),
         AccountID: parseInt(formData.AccountID),
+        changedBy: currentUser.UserID,
       };
+
+      console.log('Submitting product data:', submitData);
 
       await createProduct(submitData);
       
       setSuccessMessage("Product created successfully!");
-
-      // Navigate after a short delay
-      setTimeout(() => {
-        navigate('/products');
-      }, 1500);
+      setTimeout(() => navigate('/products'), 1500);
 
     } catch (error) {
       console.error('Error creating product:', error);
       
-      if (error.isValidation) {
-        setError(error.message);
-      } else if (error.response?.status === 409) {
+      if (error.response?.status === 409) {
+        setFieldErrors(prev => ({
+          ...prev,
+          SKU: ['Product with this SKU already exists']
+        }));
+        setTouched(prev => ({
+          ...prev,
+          SKU: true
+        }));
         setError('Product with this SKU already exists');
       } else if (error.response?.status === 400) {
         setError(error.response.data?.error || 'Invalid data provided');
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        setError('Unauthorized. Please log in again.');
+        setTimeout(() => navigate('/login'), 2000);
       } else if (error.response?.status >= 500) {
         setError('Server error. Please try again later');
       } else {
@@ -251,6 +265,17 @@ const CreateProduct = () => {
   const handleCancel = () => {
     navigate('/products');
   };
+
+  // Show loading state while checking authentication
+  if (!currentUser) {
+    return (
+      <ThemeProvider theme={theme}>
+        <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <CircularProgress />
+        </Box>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -311,7 +336,6 @@ const CreateProduct = () => {
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
                 
-                {/* Product Name - Full width */}
                 <Box sx={{ gridColumn: '1 / -1' }}>
                   <TextField
                     fullWidth
@@ -323,14 +347,20 @@ const CreateProduct = () => {
                     required
                     disabled={isSubmitting}
                     error={isFieldInvalid('ProductName')}
-                    helperText={getFieldError('ProductName')}
-                    FormHelperTextProps={{
-                      component: 'div'
+                    helperText={getFieldError('ProductName') || `${formData.ProductName.length}/100 characters`}
+                    FormHelperTextProps={{ component: 'div' }}
+                    inputProps={{ maxLength: 100 }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                        '&.Mui-focused': {
+                          backgroundColor: '#ffffff',
+                        },
+                      },
                     }}
                   />
                 </Box>
 
-                {/* Description - Full width */}
                 <Box sx={{ gridColumn: '1 / -1' }}>
                   <TextField
                     fullWidth
@@ -343,14 +373,20 @@ const CreateProduct = () => {
                     rows={3}
                     disabled={isSubmitting}
                     error={isFieldInvalid('Description')}
-                    helperText={getFieldError('Description')}
-                    FormHelperTextProps={{
-                      component: 'div'
+                    helperText={getFieldError('Description') || `${formData.Description.length}/255 characters`}
+                    FormHelperTextProps={{ component: 'div' }}
+                    inputProps={{ maxLength: 255 }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                        '&.Mui-focused': {
+                          backgroundColor: '#ffffff',
+                        },
+                      },
                     }}
                   />
                 </Box>
 
-                {/* SKU */}
                 <Box>
                   <TextField
                     fullWidth
@@ -362,21 +398,32 @@ const CreateProduct = () => {
                     required
                     disabled={isSubmitting}
                     error={isFieldInvalid('SKU')}
-                    helperText={getFieldError('SKU')}
-                    FormHelperTextProps={{
-                      component: 'div'
+                    helperText={getFieldError('SKU') || 'Format: ABC-123 (3-7 letters, hyphen, 3 digits)'}
+                    FormHelperTextProps={{ component: 'div' }}
+                    placeholder="LNTMS-001"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                        '&.Mui-focused': {
+                          backgroundColor: '#ffffff',
+                        },
+                      },
                     }}
                   />
                 </Box>
 
-                {/* Category */}
                 <Box>
                   <SmartDropdown
                     label="Category"
                     name="CategoryID"
                     value={formData.CategoryID}
                     onChange={handleInputChange}
-                    service={categoryService}
+                    service={{
+                      getAll: async () => {
+                        const response = await getAllCategories();
+                        return response.data || response;
+                      }
+                    }}
                     displayField="CategoryName"
                     valueField="CategoryID"
                     required
@@ -386,7 +433,6 @@ const CreateProduct = () => {
                   />
                 </Box>
 
-                {/* Account */}
                 <Box sx={{ gridColumn: '1 / -1' }}>
                   <SmartDropdown
                     label="Account"
@@ -408,49 +454,51 @@ const CreateProduct = () => {
                   />
                 </Box>
 
-                {/* Price */}
                 <Box>
                   <TextField
                     fullWidth
                     label="Price"
                     name="Price"
-                    type="number"
                     value={formData.Price}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
                     required
                     disabled={isSubmitting}
                     error={isFieldInvalid('Price')}
-                    helperText={getFieldError('Price')}
-                    inputProps={{
-                      min: "0",
-                      step: "0.01"
-                    }}
-                    FormHelperTextProps={{
-                      component: 'div'
+                    helperText={getFieldError('Price') || 'Enter amount (e.g., 99.99)'}
+                    FormHelperTextProps={{ component: 'div' }}
+                    placeholder="0.00"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                        '&.Mui-focused': {
+                          backgroundColor: '#ffffff',
+                        },
+                      },
                     }}
                   />
                 </Box>
 
-                {/* Cost */}
                 <Box>
                   <TextField
                     fullWidth
                     label="Cost"
                     name="Cost"
-                    type="number"
                     value={formData.Cost}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('Cost')}
-                    helperText={getFieldError('Cost')}
-                    inputProps={{
-                      min: "0",
-                      step: "0.01"
-                    }}
-                    FormHelperTextProps={{
-                      component: 'div'
+                    helperText={getFieldError('Cost') || 'Optional - Enter amount (e.g., 49.99)'}
+                    FormHelperTextProps={{ component: 'div' }}
+                    placeholder="0.00"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                        '&.Mui-focused': {
+                          backgroundColor: '#ffffff',
+                        },
+                      },
                     }}
                   />
                 </Box>

@@ -36,12 +36,14 @@ async function createProduct(productData, changedBy = 0, actionTypeID) {
   } = productData;
 
   const pool = await sql.connect(dbConfig);
+  
+  // First get the full product data to pass to the stored procedure
   const result = await pool.request()
     .input("AccountID", sql.Int, AccountID)
     .input("ProductName", sql.VarChar(100), ProductName)
-    .input("Description", sql.VarChar(255), Description)
+    .input("Description", sql.VarChar(255), Description || null)
     .input("Price", sql.Decimal(18, 2), Price)
-    .input("Cost", sql.Decimal(18, 0), Cost)
+    .input("Cost", sql.Decimal(18, 2), Cost || null)
     .input("SKU", sql.VarChar(255), SKU)
     .input("CategoryID", sql.Int, CategoryID)
     .input("ChangedBy", sql.Int, changedBy)
@@ -71,9 +73,9 @@ async function updateProduct(id, productData, changedBy = 0, actionTypeID) {
     .input("ProductID", sql.Int, id)
     .input("AccountID", sql.Int, AccountID)
     .input("ProductName", sql.VarChar(100), ProductName)
-    .input("Description", sql.VarChar(255), Description)
+    .input("Description", sql.VarChar(255), Description || null)
     .input("Price", sql.Decimal(18, 2), Price)
-    .input("Cost", sql.Decimal(18, 0), Cost)
+    .input("Cost", sql.Decimal(18, 2), Cost || null)
     .input("SKU", sql.VarChar(255), SKU)
     .input("CategoryID", sql.Int, CategoryID)
     .input("ChangedBy", sql.Int, changedBy)
@@ -86,9 +88,21 @@ async function updateProduct(id, productData, changedBy = 0, actionTypeID) {
 // =======================
 // Deactivate product + audit log
 // =======================
-async function deactivateProduct(productData, changedBy = 0, actionTypeID) {
+async function deactivateProduct(productId, changedBy = 0, actionTypeID = 3) {
+  const pool = await sql.connect(dbConfig);
+  
+  // First get the product data
+  const getResult = await pool.request()
+    .input("ProductID", sql.Int, productId)
+    .execute("getProductByID");
+  
+  const productData = getResult.recordset[0];
+  
+  if (!productData) {
+    throw new Error('Product not found');
+  }
+
   const {
-    ProductID,
     AccountID,
     ProductName,
     Description,
@@ -98,29 +112,40 @@ async function deactivateProduct(productData, changedBy = 0, actionTypeID) {
     CategoryID,
   } = productData;
 
-  const pool = await sql.connect(dbConfig);
   await pool.request()
-    .input("ProductID", sql.Int, ProductID)
+    .input("ProductID", sql.Int, productId)
     .input("AccountID", sql.Int, AccountID)
     .input("ProductName", sql.VarChar(100), ProductName)
     .input("Description", sql.VarChar(255), Description)
     .input("Price", sql.Decimal(18, 2), Price)
-    .input("Cost", sql.Decimal(18, 0), Cost)
+    .input("Cost", sql.Decimal(18, 2), Cost)
     .input("SKU", sql.VarChar(255), SKU)
     .input("CategoryID", sql.Int, CategoryID)
     .input("ChangedBy", sql.Int, changedBy)
     .input("ActionTypeID", sql.Int, actionTypeID)
     .execute("deactivateProduct");
 
-  return { message: "Product deactivated", ProductID };
+  return { message: "Product deactivated", ProductID: productId };
 }
 
 // =======================
 // Reactivate product + audit log
 // =======================
-async function reactivateProduct(productData, changedBy = 0, actionTypeID) {
+async function reactivateProduct(productId, changedBy = 0, actionTypeID = 4) {
+  const pool = await sql.connect(dbConfig);
+  
+  // First get the product data
+  const getResult = await pool.request()
+    .input("ProductID", sql.Int, productId)
+    .execute("getProductByID");
+  
+  const productData = getResult.recordset[0];
+  
+  if (!productData) {
+    throw new Error('Product not found');
+  }
+
   const {
-    ProductID,
     AccountID,
     ProductName,
     Description,
@@ -130,29 +155,40 @@ async function reactivateProduct(productData, changedBy = 0, actionTypeID) {
     CategoryID,
   } = productData;
 
-  const pool = await sql.connect(dbConfig);
   await pool.request()
-    .input("ProductID", sql.Int, ProductID)
+    .input("ProductID", sql.Int, productId)
     .input("AccountID", sql.Int, AccountID)
     .input("ProductName", sql.VarChar(100), ProductName)
     .input("Description", sql.VarChar(255), Description)
     .input("Price", sql.Decimal(18, 2), Price)
-    .input("Cost", sql.Decimal(18, 0), Cost)
+    .input("Cost", sql.Decimal(18, 2), Cost)
     .input("SKU", sql.VarChar(255), SKU)
     .input("CategoryID", sql.Int, CategoryID)
     .input("ChangedBy", sql.Int, changedBy)
     .input("ActionTypeID", sql.Int, actionTypeID)
     .execute("reactivateProduct");
 
-  return { message: "Product reactivated", ProductID };
+  return { message: "Product reactivated", ProductID: productId };
 }
 
 // =======================
 // Delete product + audit log
 // =======================
-async function deleteProduct(productData, changedBy = 0, actionTypeID) {
+async function deleteProduct(productId, changedBy = 0, actionTypeID = 5) {
+  const pool = await sql.connect(dbConfig);
+  
+  // First get the product data
+  const getResult = await pool.request()
+    .input("ProductID", sql.Int, productId)
+    .execute("getProductByID");
+  
+  const productData = getResult.recordset[0];
+  
+  if (!productData) {
+    throw new Error('Product not found');
+  }
+
   const {
-    ProductID,
     AccountID,
     ProductName,
     Description,
@@ -162,21 +198,20 @@ async function deleteProduct(productData, changedBy = 0, actionTypeID) {
     CategoryID,
   } = productData;
 
-  const pool = await sql.connect(dbConfig);
   await pool.request()
-    .input("ProductID", sql.Int, ProductID)
+    .input("ProductID", sql.Int, productId)
     .input("AccountID", sql.Int, AccountID)
     .input("ProductName", sql.VarChar(100), ProductName)
     .input("Description", sql.VarChar(255), Description)
     .input("Price", sql.Decimal(18, 2), Price)
-    .input("Cost", sql.Decimal(18, 0), Cost)
+    .input("Cost", sql.Decimal(18, 2), Cost)
     .input("SKU", sql.VarChar(255), SKU)
     .input("CategoryID", sql.Int, CategoryID)
     .input("ChangedBy", sql.Int, changedBy)
     .input("ActionTypeID", sql.Int, actionTypeID)
     .execute("deleteProduct");
 
-  return { message: "Product deleted", ProductID };
+  return { message: "Product deleted", ProductID: productId };
 }
 
 module.exports = {

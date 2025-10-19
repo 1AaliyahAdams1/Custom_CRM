@@ -19,9 +19,11 @@ import {
   FormControl,
   InputLabel,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { getCustomerSegmentationReport } from '../../services/reportService';
 
 const CustomerSegmentationReport = forwardRef((props, ref) => {
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [segmentationData, setSegmentationData] = useState(null);
@@ -100,6 +102,18 @@ const CustomerSegmentationReport = forwardRef((props, ref) => {
             value={segmentType}
             label="Segment Type"
             onChange={handleSegmentTypeChange}
+            sx={{
+              backgroundColor: theme.palette.background.paper,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: theme.palette.divider
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: theme.palette.text.secondary
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: theme.palette.primary.main
+              },
+            }}
           >
             {segmentTypes.map((type) => (
               <MenuItem key={type.value} value={type.value}>
@@ -114,36 +128,36 @@ const CustomerSegmentationReport = forwardRef((props, ref) => {
       {summary && (
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Total Customers
                 </Typography>
-                <Typography variant="h4" component="div">
+                <Typography variant="h4" component="div" sx={{ color: theme.palette.text.primary }}>
                   {summary.totalCustomers || 0}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Total Segments
                 </Typography>
-                <Typography variant="h4" component="div">
+                <Typography variant="h4" component="div" sx={{ color: theme.palette.text.primary }}>
                   {summary.segmentCount || 0}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Largest Segment
                 </Typography>
-                <Typography variant="h6" component="div" sx={{ fontSize: '1.2rem' }}>
+                <Typography variant="h6" component="div" sx={{ fontSize: '1.2rem', color: theme.palette.text.primary }}>
                   {summary.largestSegment ? summary.largestSegment.segment : 'N/A'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -153,12 +167,12 @@ const CustomerSegmentationReport = forwardRef((props, ref) => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Avg per Segment
                 </Typography>
-                <Typography variant="h4" component="div">
+                <Typography variant="h4" component="div" sx={{ color: theme.palette.text.primary }}>
                   {summary.formattedAverageCustomersPerSegment || Math.round(summary.averageCustomersPerSegment || 0)}
                 </Typography>
               </CardContent>
@@ -169,9 +183,9 @@ const CustomerSegmentationReport = forwardRef((props, ref) => {
 
       {/* Segment Type Information */}
       {segmentTypeInfo && (
-        <Card sx={{ mb: 3 }}>
+        <Card sx={{ mb: 3, backgroundColor: theme.palette.background.paper }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
               About {segmentType} Segmentation
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -185,31 +199,39 @@ const CustomerSegmentationReport = forwardRef((props, ref) => {
       )}
 
       {/* Segments Table */}
-      <Card sx={{ height: 'fit-content' }}>
+      <Card sx={{ height: 'fit-content', backgroundColor: theme.palette.background.paper }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             Customer Segments by {segmentType}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Distribution of customers across different {segmentType.toLowerCase()} segments
           </Typography>
           
-          <TableContainer component={Paper} variant="outlined">
+          <TableContainer component={Paper} variant="outlined" sx={{ backgroundColor: theme.palette.background.paper }}>
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>{segmentType}</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Customer Count</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Percentage</TableCell>
+                <TableRow sx={{ backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5' }}>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>{segmentType}</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Customer Count</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Percentage</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {segments.map((segment, index) => (
-                  <TableRow key={index} hover>
-                    <TableCell sx={{ fontWeight: 500 }}>
+                  <TableRow 
+                    key={index} 
+                    hover
+                    sx={{
+                      '&:hover': {
+                        backgroundColor: theme.palette.mode === 'dark' ? '#333' : '#f5f5f5'
+                      }
+                    }}
+                  >
+                    <TableCell sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                       {segment.segment}
                     </TableCell>
-                    <TableCell>{segment.customerCount}</TableCell>
+                    <TableCell sx={{ color: theme.palette.text.primary }}>{segment.customerCount}</TableCell>
                     <TableCell>
                       <Typography
                         variant="body2"

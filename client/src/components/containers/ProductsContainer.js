@@ -13,8 +13,8 @@ import {
   deleteAttachment, 
   downloadAttachment 
 } from "../../services/attachmentService";
-import NotesPopup from "../../components/NotesComponent";
-import AttachmentsPopup from "../../components/AttachmentsComponent";
+import NotesPopup from "../../components/dialogs/NotesComponent";
+import AttachmentsPopup from "../../components/dialogs/AttachmentsComponent";
 import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 
 const ProductsContainer = () => {
@@ -29,6 +29,7 @@ const ProductsContainer = () => {
   const [selected, setSelected] = useState([]);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusSeverity, setStatusSeverity] = useState('success');
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Popups
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
@@ -40,6 +41,17 @@ const ProductsContainer = () => {
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmTitle, setConfirmTitle] = useState("");
   const [confirmDescription, setConfirmDescription] = useState("");
+
+  // Get current user
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.UserID) {
+      setError('User not authenticated. Please log in again.');
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
+    setCurrentUser(user);
+  }, [navigate]);
 
   // ---------------- FETCH PRODUCTS ----------------
   const fetchProducts = async () => {
@@ -57,14 +69,16 @@ const ProductsContainer = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, [refreshFlag]);
+    if (currentUser) {
+      fetchProducts();
+    }
+  }, [refreshFlag, currentUser]);
 
   // ---------------- CONFIRM DIALOG HANDLERS ----------------
   const openConfirmDialog = (title, description, action) => {
     setConfirmTitle(title);
     setConfirmDescription(description);
-    setConfirmAction(() => action); // save action to execute on confirm
+    setConfirmAction(() => action);
     setConfirmDialogOpen(true);
   };
 
@@ -81,12 +95,17 @@ const ProductsContainer = () => {
 
   // ---------------- PRODUCT ACTIONS ----------------
   const handleDeactivate = (productId) => {
+    if (!currentUser) {
+      setError('User not authenticated');
+      return;
+    }
+
     openConfirmDialog(
       "Deactivate Product",
       "Are you sure you want to deactivate this product?",
       async () => {
         try {
-          await productService.deactivateProduct(productId);
+          await productService.deactivateProduct(productId, currentUser.UserID);
           setSuccessMessage('Product deactivated successfully.');
           setRefreshFlag(flag => !flag);
         } catch (err) {
@@ -98,55 +117,22 @@ const ProductsContainer = () => {
   };
 
   const handleReactivate = (productId) => {
+    if (!currentUser) {
+      setError('User not authenticated');
+      return;
+    }
+
     openConfirmDialog(
       "Reactivate Product",
       "Are you sure you want to reactivate this product?",
       async () => {
         try {
-          await productService.reactivateProduct(productId);
+          await productService.reactivateProduct(productId, currentUser.UserID);
           setSuccessMessage('Product reactivated successfully.');
           setRefreshFlag(flag => !flag);
         } catch (err) {
           console.error('Error reactivating product:', err);
           setError('Failed to reactivate product: ' + err.message);
-        }
-      }
-    );
-  };
-
-  const handleDelete = (productId) => {
-    openConfirmDialog(
-      "Delete Product",
-      "Are you sure you want to permanently delete this product? This action cannot be undone.",
-      async () => {
-        try {
-          await productService.deleteProduct(productId);
-          setSuccessMessage('Product deleted successfully.');
-          setSelected(prev => prev.filter(id => id !== productId));
-          setRefreshFlag(flag => !flag);
-        } catch (err) {
-          console.error('Error deleting product:', err);
-          setError('Failed to delete product: ' + err.message);
-        }
-      }
-    );
-  };
-
-  const handleBulkDeactivate = () => {
-    openConfirmDialog(
-      `Deactivate ${selected.length} products`,
-      `Are you sure you want to deactivate ${selected.length} selected products?`,
-      async () => {
-        try {
-          for (const productId of selected) {
-            await productService.deactivateProduct(productId);
-          }
-          setSelected([]);
-          setSuccessMessage(`${selected.length} products deactivated successfully.`);
-          setRefreshFlag(flag => !flag);
-        } catch (err) {
-          console.error('Error deactivating products:', err);
-          setError('Failed to deactivate products: ' + err.message);
         }
       }
     );
@@ -289,8 +275,6 @@ const ProductsContainer = () => {
         onSelectAllClick={handleSelectAllClick}
         onDeactivate={handleDeactivate}
         onReactivate={handleReactivate}
-        onDelete={handleDelete}
-        onBulkDeactivate={handleBulkDeactivate}
         onEdit={handleEdit}
         onView={handleView}
         onCreate={handleCreate}

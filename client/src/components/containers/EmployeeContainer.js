@@ -25,8 +25,8 @@ import {
 } from "../../services/employeeService";
 import EmployeesPage from "../../pages/Employees/EmployeePage";
 
-import NotesPopup from "../../components/NotesComponent";
-import AttachmentsPopup from "../../components/AttachmentsComponent";
+import NotesPopup from "../../components/dialogs/NotesComponent";
+import AttachmentsPopup from "../../components/dialogs/AttachmentsComponent";
 
 const EmployeesContainer = () => {
   const navigate = useNavigate();

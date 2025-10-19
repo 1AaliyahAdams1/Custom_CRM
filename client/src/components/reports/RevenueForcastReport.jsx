@@ -16,19 +16,19 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { getRevenueForecastReport } from '../../services/reportService';
 
 const RevenueForecastReport = forwardRef((props, ref) => {
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [forecastData, setForecastData] = useState(null);
 
-  // Expose reportData to parent component
   useImperativeHandle(ref, () => ({
     getReportData: () => forecastData
   }));
 
-  // Fetch data on component mount
   useEffect(() => {
     const fetchForecastData = async () => {
       try {
@@ -62,8 +62,8 @@ const RevenueForecastReport = forwardRef((props, ref) => {
         <Chip
           label="TBD"
           sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#616161',
+            backgroundColor: theme.palette.mode === 'dark' ? '#424242' : '#f5f5f5',
+            color: theme.palette.mode === 'dark' ? '#bdbdbd' : '#616161',
             fontWeight: 500,
           }}
           size="small"
@@ -78,7 +78,7 @@ const RevenueForecastReport = forwardRef((props, ref) => {
         <Chip
           label={`+${variance.toFixed(1)}%`}
           sx={{
-            backgroundColor: '#e8f5e8',
+            backgroundColor: theme.palette.mode === 'dark' ? '#1b5e20' : '#e8f5e8',
             color: '#2e7d32',
             fontWeight: 500,
           }}
@@ -90,7 +90,7 @@ const RevenueForecastReport = forwardRef((props, ref) => {
         <Chip
           label={`${variance.toFixed(1)}%`}
           sx={{
-            backgroundColor: '#ffebee',
+            backgroundColor: theme.palette.mode === 'dark' ? '#b71c1c' : '#ffebee',
             color: '#d32f2f',
             fontWeight: 500,
           }}
@@ -132,48 +132,48 @@ const RevenueForecastReport = forwardRef((props, ref) => {
       {summary && (
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Total Actual Revenue
                 </Typography>
-                <Typography variant="h5" component="div">
+                <Typography variant="h5" component="div" sx={{ color: theme.palette.text.primary }}>
                   {summary.formattedTotalActualRevenue || formatCurrency(summary.totalActualRevenue)}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Total Forecast Revenue
                 </Typography>
-                <Typography variant="h5" component="div">
+                <Typography variant="h5" component="div" sx={{ color: theme.palette.text.primary }}>
                   {summary.formattedTotalForecastRevenue || formatCurrency(summary.totalForecastRevenue)}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Avg Monthly Actual
                 </Typography>
-                <Typography variant="h5" component="div">
+                <Typography variant="h5" component="div" sx={{ color: theme.palette.text.primary }}>
                   {summary.formattedAverageMonthlyActual || formatCurrency(summary.averageMonthlyActual)}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom>
                   Avg Monthly Forecast
                 </Typography>
-                <Typography variant="h5" component="div">
+                <Typography variant="h5" component="div" sx={{ color: theme.palette.text.primary }}>
                   {summary.formattedAverageMonthlyForecast || formatCurrency(summary.averageMonthlyForecast)}
                 </Typography>
               </CardContent>
@@ -183,39 +183,39 @@ const RevenueForecastReport = forwardRef((props, ref) => {
       )}
 
       {/* Monthly Forecast Table */}
-      <Card sx={{ height: 'fit-content' }}>
+      <Card sx={{ height: 'fit-content', backgroundColor: theme.palette.background.paper }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             Monthly Revenue Forecast
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Predicted vs actual revenue by month
           </Typography>
           
-          <TableContainer component={Paper} variant="outlined">
+          <TableContainer component={Paper} variant="outlined" sx={{ backgroundColor: theme.palette.background.paper }}>
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Period</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Actual Revenue</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Forecast Revenue</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Total Revenue</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Variance</TableCell>
+                <TableRow sx={{ backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#f5f5f5' }}>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Period</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Actual Revenue</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Forecast Revenue</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Total Revenue</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Variance</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {monthlyForecast.map((forecast, index) => (
-                  <TableRow key={index} hover>
-                    <TableCell sx={{ fontWeight: 500 }}>
+                  <TableRow key={index} hover sx={{ '&:hover': { backgroundColor: theme.palette.action.hover } }}>
+                    <TableCell sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                       {forecast.periodFormatted || forecast.period}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ color: theme.palette.text.primary }}>
                       {forecast.formattedActualRevenue || formatCurrency(forecast.actualRevenue)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ color: theme.palette.text.primary }}>
                       {forecast.formattedForecastRevenue || formatCurrency(forecast.forecastRevenue)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ color: theme.palette.text.primary }}>
                       {forecast.formattedTotalRevenue || formatCurrency(forecast.totalRevenue)}
                     </TableCell>
                     <TableCell>

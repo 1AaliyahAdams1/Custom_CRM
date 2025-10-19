@@ -48,12 +48,13 @@ const createActivity = async (activityData) => {
       .input("PriorityLevelID", sql.Int, PriorityLevelID)
       .input("DueToStart", sql.SmallDateTime, DueToStart)
       .input("DueToEnd", sql.SmallDateTime, DueToEnd)
-      .input("Completed", sql.SmallDateTime, Completed)
+      .input("Completed", sql.Bit, Completed === true ? 1 : 0)
       .execute("CreateActivity");
 
     return true;
   } catch (error) {
     console.error("Error creating activity:", error);
+    console.error("Activity data:", activityData);
     throw error;
   }
 };
@@ -67,12 +68,13 @@ const updateActivity = async (ActivityID, activityData) => {
   try {
     const pool = await sql.connect(dbConfig);
     await pool.request()
+      .input("ActivityID", sql.Int, ActivityID)
       .input("AccountID", sql.Int, AccountID)
       .input("TypeID", sql.Int, TypeID)
       .input("PriorityLevelID", sql.Int, PriorityLevelID)
       .input("DueToStart", sql.SmallDateTime, DueToStart)
       .input("DueToEnd", sql.SmallDateTime, DueToEnd)
-      .input("Completed", sql.SmallDateTime, Completed)
+      .input("Completed", sql.Bit, Completed === true ? 1 : 0)
       .execute("UpdateActivity");
 
     return true;
@@ -132,7 +134,6 @@ const deleteActivity = async (ActivityID) => {
     throw error;
   }
 };
-
 
 async function getActivitiesByUser(userId) {
   try {
@@ -218,7 +219,6 @@ async function getActivitiesByAccountID(accountId) {
     throw error;
   }
 }
-
 
 //======================================
 // Exports

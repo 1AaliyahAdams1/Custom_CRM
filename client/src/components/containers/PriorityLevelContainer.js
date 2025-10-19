@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../utils/api';
-import PriorityLevelPage from '../../pages/PriorityLevelsPage';
+import PriorityLevelPage from '../../pages/Classifications/PriorityLevelsPage';
 import {
   getAllCategories,
       getCategoryById,
@@ -93,15 +93,15 @@ const PriorityLevelContainer = () => {
   try {
     setLoading(true);
     
+    console.log('🔍 Received data:', priorityLevelData);
     
-    
-    
+    // Map form fields to backend fields
     const dataToSend = {
       PriorityLevelName: priorityLevelData.PriorityName,
       PriorityLevelValue: priorityLevelData.PriorityOrder
     };
     
-    console.log(' Sending:', dataToSend);
+    console.log('📤 Sending:', dataToSend);
     
     const response = await api.post('/prioritylevels', dataToSend);
     

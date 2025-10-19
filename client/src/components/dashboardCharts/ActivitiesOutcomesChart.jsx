@@ -14,7 +14,7 @@ import { useTheme, Box, Typography, Card, CardContent } from "@mui/material";
 const ActivitiesOutcomesChart = ({ data }) => {
   const theme = useTheme();
 
-  // --- Data transformation (same logic as before)
+  // --- Data transformation
   const getChartData = () => {
     if (data?.chartData?.labels && data?.chartData?.datasets) {
       const { labels, datasets } = data.chartData;
@@ -31,7 +31,7 @@ const ActivitiesOutcomesChart = ({ data }) => {
       });
     }
 
-    // Fallback data
+    // --- Fallback data
     return [
       { type: "Calls", closed_won: 45, qualified: 32, proposal: 18, closed_lost: 12 },
       { type: "Emails", closed_won: 89, qualified: 65, proposal: 42, closed_lost: 23 },
@@ -50,12 +50,16 @@ const ActivitiesOutcomesChart = ({ data }) => {
 
   // --- Series colors
   const seriesColors = {
-    closed_won: "hsl(142, 76%, 36%)", // Green
-    qualified: "hsl(217, 91%, 60%)",  // Blue
-    proposal: "hsl(32, 95%, 44%)",    // Orange
-    negotiation: "hsl(271, 81%, 56%)",// Purple
-    closed_lost: "hsl(0, 84%, 60%)",  // Red
-    default: "hsl(220, 13%, 69%)",    // Gray
+    closed_won: "hsl(145, 63%, 40%)",   // Green
+    qualified: "hsl(210, 83%, 55%)",    // Blue
+    proposal: "hsl(36, 92%, 50%)",      // Orange
+    negotiation: "hsl(260, 70%, 55%)",  // Purple
+    closed_lost: "hsl(355, 70%, 55%)",  // Red
+    no_outcome: "hsl(220, 10%, 60%)",
+    lead: "hsl(190, 60%, 45%)",
+    contract: "hsl(125, 45%, 42%)",
+    needs_analysis: "hsl(30, 70%, 48%)",
+    default: "hsl(220, 13%, 69%)",
   };
 
   return (
@@ -67,7 +71,7 @@ const ActivitiesOutcomesChart = ({ data }) => {
         backgroundColor: theme.palette.background.paper,
       }}
     >
-      <CardContent>
+      <CardContent sx={{ pb: 1 }}>
         <Typography
           variant="h6"
           sx={{ mb: 2, color: theme.palette.text.primary }}
@@ -75,24 +79,36 @@ const ActivitiesOutcomesChart = ({ data }) => {
           Activities Outcomes
         </Typography>
 
-        <Box sx={{ width: "100%", height: 320 }}>
-          <ResponsiveContainer width="100%" height="100%">
+        {/* Chart container */}
+        <Box
+          sx={{
+            width: "100%",
+            height: 380,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ResponsiveContainer width="95%" height="100%">
             <BarChart
               data={chartData}
-              margin={{ top: 10, right: 30, left: 0, bottom: 30 }}
+              margin={{ top: 10, right: 80, left: 10, bottom: 30 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+
               <XAxis
                 dataKey="type"
                 tick={{ fill: theme.palette.text.secondary }}
                 axisLine={false}
                 tickLine={false}
               />
+
               <YAxis
                 tick={{ fill: theme.palette.text.secondary }}
                 axisLine={false}
                 tickLine={false}
               />
+
               <Tooltip
                 contentStyle={{
                   backgroundColor: theme.palette.background.default,
@@ -100,15 +116,28 @@ const ActivitiesOutcomesChart = ({ data }) => {
                 }}
                 formatter={(value, name) => [value, name.replace(/_/g, " ")]}
               />
-              <Legend />
-              {outcomeKeys.map((outcome, index) => (
+
+              {/* Move legend to the right */}
+              <Legend
+                layout="vertical"
+                align="right"
+                verticalAlign="middle"
+                wrapperStyle={{
+                  paddingLeft: "10px",
+                  fontSize: "0.9rem",
+                }}
+              />
+
+              {outcomeKeys.map((outcome) => (
                 <Bar
                   key={outcome}
                   dataKey={outcome}
-                  name={outcome.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                  name={outcome
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (l) => l.toUpperCase())}
                   fill={seriesColors[outcome] || seriesColors.default}
-                  radius={[4, 4, 0, 0]}
-                  barSize={40}
+                  radius={[6, 6, 0, 0]}
+                  barSize={35}
                 />
               ))}
             </BarChart>

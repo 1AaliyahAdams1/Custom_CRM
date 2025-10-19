@@ -17,8 +17,8 @@ import { Add, Info } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles"; 
 import TableView from "../../components/tableFormat/TableView";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
-import NotesPopup from "../../components/NotesComponent";
-import AttachmentsPopup from "../../components/AttachmentsComponent";
+import NotesPopup from "../../components/dialogs/NotesComponent";
+import AttachmentsPopup from "../../components/dialogs/AttachmentsComponent";
 import { formatters } from "../../utils/formatters";
 import StatusMessage from "../../components/tableFormat/StatusMessage";
 
@@ -74,12 +74,14 @@ const AccountsPage = ({
     if (onFilterChange) onFilterChange(newFilter);
   };
 
-  const filterOptions = [
-    { value: "all", label: "All Accounts" },
-    { value: "my", label: "My Accounts" },
-    { value: "team", label: "My Team's Accounts" },
-    { value: "unassigned", label: "Unassigned Accounts" },
-  ];
+const filterOptions = [
+  { value: "all", label: "All Accounts" },
+  { value: "active", label: "Active Accounts" },
+  { value: "inactive", label: "Inactive Accounts" },
+  { value: "my", label: "My Accounts" },
+  { value: "team", label: "My Team's Accounts" },
+  { value: "unassigned", label: "Unassigned Accounts" },
+];
 
   const columns = [
     { field: "AccountName", headerName: "Name", type: "clickable", defaultVisible: true, onClick: onView },
@@ -136,6 +138,25 @@ const AccountsPage = ({
       defaultVisible: true,
     },
   ];
+
+  // Derived filtered data
+const filteredAccounts = accounts.filter((acc) => {
+  switch (accountFilter) {
+    case "active":
+      return acc.Active === true || acc.Active === 1;
+    case "inactive":
+      return acc.Active === false || acc.Active === 0;
+    case "my":
+      return acc.ownerStatus === "owned" || acc.ownerStatus?.startsWith("owned-by-");
+    case "team":
+      return acc.ownerStatus === "owned-shared" || acc.ownerStatus === "owned-by-multiple";
+    case "unassigned":
+      return acc.ownerStatus === "unowned";
+    default:
+      return true; // "all"
+  }
+});
+
 
   return (
     
@@ -254,7 +275,7 @@ const AccountsPage = ({
             </Box>
           ) : (
             <TableView
-              data={accounts}
+              data={filteredAccounts}
               columns={columns}
               idField="AccountID"
               selected={selected}
