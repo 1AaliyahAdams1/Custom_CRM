@@ -29,6 +29,7 @@ const CreateTeamPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [formData, setFormData] = useState({
     TeamName: '',
@@ -39,6 +40,10 @@ const CreateTeamPage = () => {
     { UserID: '', name: '' }
   ]);
 
+ useEffect(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -48,8 +53,10 @@ const CreateTeamPage = () => {
   };
 
   const handleMemberChange = (index, field, value) => {
+    console.log('🔍 Member change:', { index, field, value, type: typeof value });
     const updatedMembers = [...teamMembers];
     updatedMembers[index][field] = value;
+    console.log('📝 Updated members:', updatedMembers);
     setTeamMembers(updatedMembers);
   };
 
@@ -90,11 +97,18 @@ const CreateTeamPage = () => {
         throw new Error('Could not find user ID in user object');
       }
 
-      // Step 1: Create the team
+      console.log('Sending team data:', {
+        TeamName: formData.TeamName,
+        ManagerID: formData.ManagerID,
+      });
+
+      // Step 1: Create the team (service wraps it)
       const teamResponse = await createTeam({
         TeamName: formData.TeamName,
         ManagerID: formData.ManagerID,
       });
+      
+      console.log('Team created:', teamResponse);
 
       const newTeamId = teamResponse.TeamID;
 
@@ -103,10 +117,8 @@ const CreateTeamPage = () => {
       
       if (membersToAdd.length > 0) {
         for (const member of membersToAdd) {
-          await addTeamMember({
-            TeamID: newTeamId,
-            UserID: member.UserID,
-          });
+          // FIXED: Pass teamId and userId as separate parameters
+          await addTeamMember(newTeamId, member.UserID);
         }
       }
 

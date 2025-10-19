@@ -79,15 +79,21 @@ const SmartDropdown = ({
       if (selectedOption) {
         const displayText = formatDisplayText(selectedOption);
         setInputValue(displayText);
+        console.log(`✅ Selected option for ${label}:`, { value: numericValue, display: displayText });
       } else {
         // Option not found - might still be loading or invalid value
-        console.warn(`No option found for value: ${value} in ${label}`);
+        console.warn(`⚠️ No option found for value: ${value} in ${label}`, { 
+          availableOptions: options.map(o => ({ 
+            value: o[valueField] || o.id || o.ID, 
+            display: formatDisplayText(o) 
+          }))
+        });
         // Don't clear the input - keep the previous value
       }
     } else {
       setInputValue('');
     }
-  }, [value, options, loading, valueField, displayField]);
+  }, [value, options, loading, valueField, displayField, label]);
 
   const handleInputChange = (event) => {
     const newValue = event.target.value;
@@ -116,6 +122,11 @@ const SmartDropdown = ({
 
     // Convert to number or empty string, not null
     const finalValue = rawValue !== '' ? Number(rawValue) : '';
+    
+    console.log(`🎯 ${label} selection:`, { 
+      selectedOption: selectedOption ? formatDisplayText(selectedOption) : 'None', 
+      finalValue 
+    });
     
     onChange({ target: { name, value: finalValue } });
     setOpen(false);
@@ -153,10 +164,21 @@ const SmartDropdown = ({
     setHighlightedIndex(-1);
   };
 
-  const handleDropdownToggle = () => {
-    setOpen(!open);
-    if (!open) inputRef.current?.focus();
-  };
+  const handleDropdownToggle = async () => {
+  if (!open) {
+    // Reload data when opening
+    try {
+      const data = await service.getAll();
+      const opts = Array.isArray(data) ? data : [];
+      setOptions(opts);
+      console.log(`🔄 Refreshed ${opts.length} options for ${label}`);
+    } catch (err) {
+      console.error(`Error refreshing ${label} options:`, err);
+    }
+  }
+  setOpen(!open);
+  if (!open) inputRef.current?.focus();
+};
 
   const handleClear = () => {
     setInputValue('');
