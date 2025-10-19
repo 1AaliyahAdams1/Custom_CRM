@@ -1,5 +1,5 @@
 import api from "../utils/api";
-
+//
 const EMPLOYEE_API = "/employees"; 
 
 export const getAllEmployees = async () => {
@@ -22,9 +22,15 @@ export const getEmployeeById = async (id) => {
   }
 };
 
-export const createEmployee = async (data, changedBy, actionTypeId) => {
+export const createEmployee = async (employeeData, changedBy, actionTypeId, loggedInUserId) => {
   try {
-    await api.post(EMPLOYEE_API, { data, changedBy, actionTypeId });
+    const response = await api.post(EMPLOYEE_API, {
+      data: employeeData,
+      changedBy: changedBy,
+      actionTypeId: actionTypeId,
+      loggedInUserId: loggedInUserId
+    });
+    return response.data;
   } catch (error) {
     console.error("Error creating employee:", error.response?.data || error.message);
     throw error;
@@ -42,7 +48,11 @@ export const updateEmployee = async (id, updates, changedBy, actionTypeId) => {
 
 export const deactivateEmployee = async (employee, changedBy, actionTypeId) => {
   try {
-    await api.put(`${EMPLOYEE_API}/deactivate/${employee.EmployeeID}`, { employee, changedBy, actionTypeId });
+    await api.put(`${EMPLOYEE_API}/deactivate/${employee.EmployeeID}`, { 
+      employee, 
+      changedBy, 
+      actionTypeId 
+    });
   } catch (error) {
     console.error(`Error deactivating employee ${employee.EmployeeID}:`, error.response?.data || error.message);
     throw error;
@@ -51,7 +61,11 @@ export const deactivateEmployee = async (employee, changedBy, actionTypeId) => {
 
 export const reactivateEmployee = async (employee, changedBy, actionTypeId) => {
   try {
-    await api.put(`${EMPLOYEE_API}/reactivate/${employee.EmployeeID}`, { employee, changedBy, actionTypeId });
+    await api.put(`${EMPLOYEE_API}/reactivate/${employee.EmployeeID}`, { 
+      employee, 
+      changedBy, 
+      actionTypeId 
+    });
   } catch (error) {
     console.error(`Error reactivating employee ${employee.EmployeeID}:`, error.response?.data || error.message);
     throw error;

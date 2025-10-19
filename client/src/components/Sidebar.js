@@ -28,6 +28,7 @@ import {
   Flag as FlagIcon,
   History as HistoryIcon,
 } from "@mui/icons-material";
+import Diversity3Icon from '@mui/icons-material/Diversity3';
 import PriorityHighIcon from "@mui/icons-material/PriorityHigh";
 import WorkspacesOutlineIcon from "@mui/icons-material/WorkspacesOutline";
 import TimelineIcon from '@mui/icons-material/Timeline';
@@ -53,6 +54,7 @@ const NAV_ITEMS = [
   { name: "Role Management", href: "/rolemanagement", icon: AdminPanelSettingsIcon, accessKey: "roles", section: "Admin" },
   { name: "Audit Log", href: "/audit-logs", icon: HistoryIcon, accessKey: "auditLog", section: "Admin" },
   { name: "Employees", href: "/employees", icon: CorporateFareIcon, accessKey: "employees", section: "Admin" },
+  {name: "Teams", href: "/teams", icon: Diversity3Icon, accessKey: "teams", section: "Admin"},
 
   // CRM
   { name: "Accounts", href: "/accounts", icon: BusinessIcon, accessKey: "accounts", section: "CRM Management" },

@@ -6,23 +6,13 @@ export const stateProvinceService = {
     try {
       const response = await api.get('/states');
       return response.data || [];
-    } catch (error) {
-      console.error('Error loading state/provinces:', error);
+    }
+    catch (error) {
+      console.error('Error loading states/provinces:', error);
       return [];
     }
   },
-
-  getByCountry: async (countryId) => {
-    try {
-      const response = await api.get('/states', {
-        params: { countryId },
-      });
-      return response.data || [];
-    } catch (error) {
-      console.error('Error loading state/provinces by country:', error);
-      return [];
-    }
-  },
+  
 
   // Enhanced method for filtering by country
   getAllFiltered: async (countryId = null) => {
@@ -193,3 +183,44 @@ export async function currencyService() {
     throw error;
   }
 }
+
+// Team Service
+export const teamService = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/teams');
+      return response.data || [];
+    } catch (error) {
+      console.error('Error loading teams:', error);
+      return [];
+    }
+  },
+};
+
+// department Service
+export const departmentService = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/departments');
+      return response.data || [];
+    }
+    catch (error) {
+      console.error('Error loading departments:', error);
+      return [];
+    }
+  },
+};
+
+// employee service
+export const employeeService = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/employees');
+      return response.data || [];
+    }
+    catch (error) {
+      console.error('Error loading employees:', error);
+      return [];
+    }
+  },
+};

@@ -9,9 +9,7 @@ async function getAllDepartments() {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
       .query("SELECT * FROM Department WHERE Active = 1 ORDER BY DepartmentName");
-    
-    
-    
+
     return result.recordset;
   } catch (error) {
     console.error("DepartmentRepo Error [getAllDepartments]:", error);

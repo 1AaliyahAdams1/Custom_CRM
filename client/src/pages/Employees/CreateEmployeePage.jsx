@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -14,20 +14,24 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ArrowBack, Save, Close,Clear } from "@mui/icons-material";
+import { ArrowBack, Save, Close, Clear } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { createEmployee } from "../../services/employeeService";
+import { AuthContext } from '../../context/auth/authContext';
 import {
   cityService,
   industryService,
   countryService,
-  stateProvinceService
+  stateProvinceService,
+  departmentService,  
+  jobTitleService,  
+  teamService        
 } from '../../services/dropdownServices';
-
 
 import SmartDropdown from '../../components/SmartDropdown';
 
 const CreateEmployeePage = () => {
+  const { user } = useContext(AuthContext);
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -49,116 +53,19 @@ const CreateEmployeePage = () => {
     StateProvinceID: '',
   });
 
-  const [formErrors, setFormErrors] = useState({});
-  const [touchedFields, setTouchedFields] = useState({});
-
-  const departmentService = {
-    getAll: async () => {
-      // TODO: Replace with actual API call
-      return [];
-    }
-  };
-
-  const jobTitleService = {
-    getAll: async () => {
-      // TODO: Replace with actual API call
-      return [];
-    }
-  };
-
-  const teamService = {
-    getAll: async () => {
-      // TODO: Replace with actual API call
-      return [];
-    }
-  };
-
-  const stateProvinceService = {
-    getAll: async () => {
-      return await stateProvinceService.getAll();
-    }
-  };
-    const cityService = {
-    getAll: async () => {
-      return await cityService.getAll();
-    }
-    };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
-    // Clear error for this field
-    if (formErrors[name]) {
-      setFormErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const handleBlur = (e) => {
-    const { name } = e.target;
-    setTouchedFields(prev => ({
-      ...prev,
-      [name]: true
-    }));
-  };
-
-  const validateForm = () => {
-    const errors = {};
-    
-    if (!formData.EmployeeName.trim()) {
-      errors.EmployeeName = 'Full name is required';
-    }
-    
-    if (!formData.EmployeeEmail.trim()) {
-      errors.EmployeeEmail = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.EmployeeEmail)) {
-      errors.EmployeeEmail = 'Invalid email format';
-    }
-    
-    if (!formData.DepartmentID) {
-      errors.DepartmentID = 'Department is required';
-    }
-    
-    if (!formData.JobTitleID) {
-      errors.JobTitleID = 'Job title is required';
-    }
-    
-    if (!formData.HireDate) {
-      errors.HireDate = 'Hire date is required';
-    }
-    
-    return errors;
-  };
-
-  const isFieldInvalid = (fieldName) => {
-    return touchedFields[fieldName] && !!formErrors[fieldName];
-  };
-
-  const getFieldError = (fieldName) => {
-    return touchedFields[fieldName] ? formErrors[fieldName] : '';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Mark all fields as touched
-    const allFields = Object.keys(formData).reduce((acc, key) => {
-      acc[key] = true;
-      return acc;
-    }, {});
-    setTouchedFields(allFields);
-    
-    const errors = validateForm();
-    setFormErrors(errors);
-    
-    if (Object.keys(errors).length > 0) {
-      setError('Please fix the errors before submitting');
+
+    if (!user) {
+      setError('You must be logged in to create an employee');
       return;
     }
     
@@ -166,29 +73,56 @@ const CreateEmployeePage = () => {
     setError(null);
     
     try {
-      // Replace with your actual API call
-      // const response = await employeeService.create(formData);
+      const userId = user.UserID;
+
+      console.log('User object:', user);
+      console.log('Extracted userId:', userId);
+      
+      
+      if (!userId) {
+        throw new Error('Could not find user ID in user object');
+      }
+      
+      const dataToSubmit = {
+        EmployeeName: formData.EmployeeName,
+        EmployeeEmail: formData.EmployeeEmail,
+        EmployeePhone: formData.EmployeePhone,
+        HireDate: formData.HireDate,
+        salary: formData.salary,
+        Holidays_PA: formData.Holidays_PA,
+        DepartmentID: formData.DepartmentID,
+        JobTitleID: formData.JobTitleID,
+        
+        CityID: formData.CityID || null,
+        StateProvinceID: formData.StateProvinceID || null,
+      };
+      
+      
+     
+      const response = await createEmployee(dataToSubmit, userId, 1, userId);
+      
       
       setSuccessMessage('Employee created successfully!');
       
-      // Navigate after short delay
       setTimeout(() => {
-        navigate('/employees'); // Adjust route as needed
+        navigate('/employees');
       }, 1500);
       
     } catch (err) {
-      setError(err.message || 'Failed to create employee');
+      console.error('Full error object:', err);
+      console.error('Error response:', err.response);
+      console.error('Error response data:', err.response?.data);
+      setError(err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to create employee');
     } finally {
       setIsSubmitting(false);
     }
-  };
+};
 
   const handleCancel = () => {
     if (window.confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
       navigate(-1);
     }
   };
-
 
   return (
     <Box sx={{ 
@@ -267,7 +201,7 @@ const CreateEmployeePage = () => {
                 </Typography>
               </Box>
 
-              {/* Full Name - Required */}
+              {/* Full Name */}
               <Box>
                 <TextField
                   fullWidth
@@ -275,18 +209,11 @@ const CreateEmployeePage = () => {
                   name="EmployeeName"
                   value={formData.EmployeeName}
                   onChange={handleChange}
-                  onBlur={handleBlur}
-                  required
                   disabled={isSubmitting}
-                  error={isFieldInvalid('EmployeeName')}
-                  helperText={getFieldError('EmployeeName')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
-              {/* Email - Required */}
+              {/* Email */}
               <Box>
                 <TextField
                   fullWidth
@@ -295,32 +222,20 @@ const CreateEmployeePage = () => {
                   type="email"
                   value={formData.EmployeeEmail}
                   onChange={handleChange}
-                  onBlur={handleBlur}
-                  required
                   disabled={isSubmitting}
-                  error={isFieldInvalid('EmployeeEmail')}
-                  helperText={getFieldError('EmployeeEmail')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
-              {/* Phone Number - Optional */}
+              {/* Phone Number */}
               <Box>
                 <TextField
                   fullWidth
                   label="Phone Number (Optional)"
                   name="EmployeePhone"
+                  type="text"
                   value={formData.EmployeePhone}
                   onChange={handleChange}
-                  onBlur={handleBlur}
                   disabled={isSubmitting}
-                  error={isFieldInvalid('EmployeePhone')}
-                  helperText={getFieldError('EmployeePhone')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -335,50 +250,44 @@ const CreateEmployeePage = () => {
                 </Typography>
               </Box>
 
-              {/* Department Dropdown - Required */}
+              {/* Department Dropdown */}
               <Box>
                 <SmartDropdown
                   label="Department"
                   name="DepartmentID"
                   value={formData.DepartmentID}
                   onChange={handleChange}
-                  service={departmentService} // Replace with your actual service
+                  service={departmentService}
                   displayField="DepartmentName"
                   valueField="DepartmentID"
                   placeholder="Search for department..."
-                  required
                   disabled={isSubmitting}
-                  error={isFieldInvalid('DepartmentID')}
-                  helperText={getFieldError('DepartmentID')}
                 />
               </Box>
 
-              {/* Job Title Dropdown - Required */}
+              {/* Job Title Dropdown */}
               <Box>
                 <SmartDropdown
                   label="Job Title"
                   name="JobTitleID"
                   value={formData.JobTitleID}
                   onChange={handleChange}
-                  service={jobTitleService} // Replace with your actual service
+                  service={jobTitleService}
                   displayField="JobTitleName"
                   valueField="JobTitleID"
                   placeholder="Search for job title..."
-                  required
                   disabled={isSubmitting}
-                  error={isFieldInvalid('JobTitleID')}
-                  helperText={getFieldError('JobTitleID')}
                 />
               </Box>
 
-              {/* Team Dropdown - Optional */}
+              {/* Team Dropdown */}
               <Box>
                 <SmartDropdown
                   label="Team (Optional)"
                   name="TeamID"
                   value={formData.TeamID}
                   onChange={handleChange}
-                  service={teamService} // Replace with your actual service
+                  service={teamService}
                   displayField="TeamName"
                   valueField="TeamID"
                   placeholder="Search for team..."
@@ -386,7 +295,7 @@ const CreateEmployeePage = () => {
                 />
               </Box>
 
-              {/* Hire Date - Required */}
+              {/* Hire Date */}
               <Box>
                 <TextField
                   fullWidth
@@ -395,58 +304,41 @@ const CreateEmployeePage = () => {
                   type="date"
                   value={formData.HireDate}
                   onChange={handleChange}
-                  onBlur={handleBlur}
-                  required
                   disabled={isSubmitting}
-                  error={isFieldInvalid('HireDate')}
-                  helperText={getFieldError('HireDate')}
                   InputLabelProps={{
                     shrink: true,
-                  }}
-                  FormHelperTextProps={{
-                    component: 'div'
                   }}
                 />
               </Box>
 
-              {/* Salary - Optional */}
+              {/* Salary */}
               <Box>
                 <TextField
                   fullWidth
                   label="Salary (Optional)"
                   name="salary"
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={formData.salary}
                   onChange={handleChange}
-                  onBlur={handleBlur}
                   disabled={isSubmitting}
-                  error={isFieldInvalid('salary')}
-                  helperText={getFieldError('salary')}
                   InputProps={{
                     startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
-                  }}
-                  FormHelperTextProps={{
-                    component: 'div'
                   }}
                 />
               </Box>
 
-              {/* Holidays Per Year - Optional */}
+              {/* Holidays Per Year */}
               <Box>
                 <TextField
                   fullWidth
                   label="Holidays Per Year (Optional)"
                   name="Holidays_PA"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={formData.Holidays_PA}
                   onChange={handleChange}
-                  onBlur={handleBlur}
                   disabled={isSubmitting}
-                  error={isFieldInvalid('Holidays_PA')}
-                  helperText={getFieldError('Holidays_PA')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -461,14 +353,14 @@ const CreateEmployeePage = () => {
                 </Typography>
               </Box>
 
-              {/* City Dropdown - Optional */}
+              {/* City Dropdown */}
               <Box>
                 <SmartDropdown
                   label="City (Optional)"
                   name="CityID"
                   value={formData.CityID}
                   onChange={handleChange}
-                  service={cityService} // Replace with your actual service
+                  service={cityService}
                   displayField="CityName"
                   valueField="CityID"
                   placeholder="Search for city..."
@@ -476,15 +368,15 @@ const CreateEmployeePage = () => {
                 />
               </Box>
 
-              {/* State/Province Dropdown - Optional */}
+              {/* State/Province Dropdown */}
               <Box>
                 <SmartDropdown
                   label="State/Province (Optional)"
                   name="StateProvinceID"
                   value={formData.StateProvinceID}
                   onChange={handleChange}
-                  service={stateProvinceService} // Replace with your actual service
-                  displayField="StateProvinceName"
+                  service={stateProvinceService} 
+                  displayField="StateProvince_Name"
                   valueField="StateProvinceID"
                   placeholder="Search for state/province..."
                   disabled={isSubmitting}

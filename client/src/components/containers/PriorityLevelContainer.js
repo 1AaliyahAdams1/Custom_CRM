@@ -93,15 +93,15 @@ const PriorityLevelContainer = () => {
   try {
     setLoading(true);
     
-    console.log('🔍 Received data:', priorityLevelData);
     
-    // Map form fields to backend fields
+    
+    
     const dataToSend = {
       PriorityLevelName: priorityLevelData.PriorityName,
       PriorityLevelValue: priorityLevelData.PriorityOrder
     };
     
-    console.log('📤 Sending:', dataToSend);
+    console.log(' Sending:', dataToSend);
     
     const response = await api.post('/prioritylevels', dataToSend);
     

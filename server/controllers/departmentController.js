@@ -6,10 +6,7 @@ const departmentService = require('../services/departmentService');
 const getAllDepartments = async (req, res) => {
     try {
         const data = await departmentService.getAllDepartments();
-        console.log('📊 Backend: getAllDepartments called');
-        console.log('📊 Backend: Data from service:', JSON.stringify(data, null, 2)); // ✅ KEY LINE
-        console.log('📊 Backend: Data length:', data?.length);
-        console.log('📊 Backend: Is array?', Array.isArray(data));
+       
         res.status(200).json(data);
     }
     catch (err) {

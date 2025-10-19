@@ -61,7 +61,10 @@ const DepartmentPage = lazy(() => import("./pages/DepartmentPage"));
 
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
 
-
+const TeamPage = lazy(() => import("./components/containers/TeamContainer"));
+const CreateTeamPage = lazy(() => import("./pages/TeamManagement/CreateTeamPage"));
+const EditTeamPage = lazy(() => import("./pages/TeamManagement/EditTeamPage"));
+const TeamDetailsPage = lazy(() => import("./pages/TeamManagement/TeamDetailsPage"));
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
@@ -460,6 +463,47 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/employees/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.employeesDetails}>
+            <EmployeeDetailsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/teams"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.teams}>
+            <TeamPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/teams/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.teamsCreate}>
+            <CreateTeamPage />
+          </PrivateRoute>
+        }
+      />
+      <Route 
+        path="/teams/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.teamsEdit}>
+            <EditTeamPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/teams/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.teamsDetails}>
+            <TeamDetailsPage />
+          </PrivateRoute>
+        }
+      />
+      
       
 
       {/* Catch all */}
