@@ -6,10 +6,9 @@ const RESOURCE = '/departments';
 //======================================
 export async function getAllDepartments() {
    try {
-    console.log('📡 Fetching departments from:', RESOURCE);
+    
     const response = await api.get(RESOURCE);
     
-    console.log('📡 Response.data:', response.data);
     
     // Handle if backend returns single object instead of array
     if (response.data && !Array.isArray(response.data) && response.data.DepartmentID) {

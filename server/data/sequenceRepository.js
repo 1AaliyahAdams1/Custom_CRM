@@ -459,6 +459,36 @@ async function unassignSequenceFromAccount(accountId, changedBy) {
 }
 
 //======================================
+// Get all sequence items
+//======================================
+async function getAllSequenceItems() {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .query(`
+        SELECT 
+          si.SequenceItemID,
+          si.SequenceID,          -- ⭐ THIS IS THE KEY FIELD THAT WAS MISSING
+          si.ActivityTypeID,
+          at.TypeName AS ActivityTypeName,
+          si.SequenceItemDescription,
+          si.DaysFromStart,
+          si.CreatedAt,
+          si.UpdatedAt,
+          si.Active
+        FROM SequenceItem si
+        LEFT JOIN ActivityType at ON si.ActivityTypeID = at.TypeID AND at.Active = 1
+        ORDER BY si.SequenceID, si.DaysFromStart
+      `);
+
+    return result.recordset;
+  } catch (err) {
+    console.error("Database error in getAllSequenceItems:", err);
+    throw err;
+  }
+}
+
+//======================================
 // Get accounts by sequence
 //======================================
 async function getAccountsBySequence(sequenceId) {
@@ -638,6 +668,7 @@ const getActivityByID = async (activityId, userId) => {
           AND au.UserID = @UserID 
           AND a.Active = 1 
           AND au.Active = 1
+          AND acc.Active = 1
       `);
 
     return result.recordset[0] || null;
@@ -757,6 +788,7 @@ const completeActivityAndGetNext = async (activityId, userId) => {
         WHERE au.UserID = @UserID 
           AND a.Active = 1 
           AND au.Active = 1 
+          AND acc.Active = 1
           AND a.Completed = 0
           AND a.ActivityID != @CurrentActivityID
         ORDER BY 
@@ -826,6 +858,7 @@ const getWorkDashboardSummary = async (userId) => {
         WHERE au.UserID = @UserID 
           AND a.Active = 1 
           AND au.Active = 1
+          AND acc.Active = 1
       `);
 
     return result.recordset[0];
@@ -883,7 +916,8 @@ const getNextActivity = async (userId, currentActivityId = null) => {
       LEFT JOIN Sequence seq ON si.SequenceID = seq.SequenceID AND seq.Active = 1
       WHERE au.UserID = @UserID 
         AND a.Active = 1 
-        AND au.Active = 1 
+        AND au.Active = 1
+        AND acc.Active = 1 
         AND a.Completed = 0
         ${excludeClause}
       ORDER BY 
@@ -1010,6 +1044,7 @@ const getWorkPageActivities = async (userId) => {
         WHERE au.UserID = @UserID 
           AND a.Active = 1 
           AND au.Active = 1
+          AND acc.Active = 1
           AND a.Completed = 0
           AND CAST(a.DueToStart AS DATE) <= CAST(GETDATE() AS DATE)
         ORDER BY 
@@ -1277,6 +1312,7 @@ module.exports = {
   updateSequenceItem,
   deleteSequenceItem,
   createSequenceWithItems,
+  getAllSequenceItems,
 
   // Sequence-Account Relationship
   assignSequenceToAccount,

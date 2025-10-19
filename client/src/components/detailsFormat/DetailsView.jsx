@@ -74,6 +74,7 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
   const [tabLoading, setTabLoading] = useState({});
   const [tabSelected, setTabSelected] = useState({});
   const [tabErrors, setTabErrors] = useState({});
+  const [displayNames, setDisplayNames] = useState({});
 
   const relatedTabsRef = useRef(relatedTabs);
   const itemRef = useRef(item);
@@ -86,6 +87,44 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
     formDataRef.current = formData;
     tabSelectedRef.current = tabSelected;
   }, [relatedTabs, item, formData, tabSelected]);
+
+  useEffect(() => {
+  const fetchDisplayNames = async () => {
+    if (!item || isEditing) return;
+    
+    const dropdownFields = mainFields.filter(field => field.type === 'dropdown');
+    const names = {};
+    
+    for (const field of dropdownFields) {
+      const value = item[field.key];
+      
+      // Skip if no value or if display field already exists in item
+      if (!value || item[field.displayField]) {
+        if (item[field.displayField]) {
+          names[field.key] = item[field.displayField];
+        }
+        continue;
+      }
+      
+      // Fetch the display name using the service
+      if (field.service) {
+        try {
+          const response = await field.service(value);
+          const data = response?.data || response;
+          names[field.key] = data?.[field.displayField] || value;
+        } catch (err) {
+          console.error(`Failed to fetch ${field.label}:`, err);
+          names[field.key] = value; // Fallback to showing the ID
+        }
+      }
+    }
+    
+    setDisplayNames(names);
+  };
+  
+  fetchDisplayNames();
+}, [item, mainFields, isEditing]);
+
 
   useEffect(() => {
     if (item) setFormData(item);
@@ -483,120 +522,137 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
   }, [mainFields, isEditing, formData]);
 
   const renderField = useCallback((field) => {
-    const value = formData[field.key] ?? "";
+  const value = formData[field.key] ?? "";
 
-    if (!isEditing) {
-      if (field.type === "boolean") return <Checkbox checked={Boolean(value)} disabled size="small" />;
-      if (field.type === "link" && value)
-        return (
-          <a href={value} target="_blank" rel="noopener noreferrer">
-            {value}
-          </a>
-        );
-      if (field.type === "currency" && value) return `$${parseFloat(value).toLocaleString()}`;
-      if (field.type === "date" && value) return new Date(value).toLocaleDateString();
-      if (field.type === "datetime" && value) return new Date(value).toLocaleString();
-      if (field.type === "dropdown" && item?.[field.displayField]) return item[field.displayField];
-
+  if (!isEditing) {
+    if (field.type === "boolean") return <Checkbox checked={Boolean(value)} disabled size="small" />;
+    if (field.type === "link" && value)
+      return (
+        <a href={value} target="_blank" rel="noopener noreferrer">
+          {value}
+        </a>
+      );
+    if (field.type === "currency" && value) return `${parseFloat(value).toLocaleString()}`;
+    if (field.type === "date" && value) return new Date(value).toLocaleDateString();
+    if (field.type === "datetime" && value) return new Date(value).toLocaleString();
+    
+    // UPDATED DROPDOWN LOGIC FOR VIEW MODE
+    if (field.type === "dropdown") {
+      // First check if we have the display name in the item itself
+      if (item?.[field.displayField]) {
+        return item[field.displayField];
+      }
+      // Then check our fetched display names
+      if (displayNames[field.key]) {
+        return displayNames[field.key];
+      }
+      // If still loading, show a spinner
+      if (value && !displayNames[field.key] && displayNames[field.key] !== value) {
+        return <CircularProgress size={16} />;
+      }
+      // Fallback to the value (ID)
       return value || "-";
     }
 
+    return value || "-";
+  }
+
     switch (field.type) {
-      case "textarea":
-        return (
-          <TextField
-            multiline
-            rows={field.rows || 4}
-            value={value}
-            onChange={(e) => updateField(field.key, e.target.value)}
-            placeholder={field.placeholder || field.label}
-            size="small"
-            fullWidth
-            required={field.required}
-          />
-        );
-      case "boolean":
-        return (
-          <FormControlLabel
-            control={
-              <Switch
-                checked={Boolean(value)}
-                onChange={(e) => updateField(field.key, e.target.checked)}
-                size="small"
-              />
-            }
-            label={value ? "Yes" : "No"}
-          />
-        );
-      case "number":
-      case "currency":
-        return (
-          <TextField
-            type="number"
-            value={value}
-            onChange={(e) => updateField(field.key, e.target.value)}
-            placeholder={field.placeholder || field.label}
-            size="small"
-            fullWidth
-            required={field.required}
-            InputProps={
-              field.type === "currency" ? { startAdornment: <span style={{ marginRight: 4 }}>$</span> } : undefined
-            }
-          />
-        );
-      case "date":
-        return (
-          <TextField
-            type="date"
-            value={value ? new Date(value).toISOString().split("T")[0] : ""}
-            onChange={(e) => updateField(field.key, e.target.value)}
-            size="small"
-            fullWidth
-            required={field.required}
-            InputLabelProps={{ shrink: true }}
-          />
-        );
-      case "datetime":
-        return (
-          <TextField
-            type="datetime-local"
-            value={value ? new Date(value).toISOString().slice(0, 16) : ""}
-            onChange={(e) => updateField(field.key, e.target.value)}
-            size="small"
-            fullWidth
-            required={field.required}
-            InputLabelProps={{ shrink: true }}
-          />
-        );
-      case "dropdown":
-        return (
-          <SmartDropdown
-            label={field.label}
-            name={field.key}
-            value={value}
-            onChange={(e) => updateField(field.key, e.target.value)}
-            service={field.service}
-            displayField={field.displayField}
-            valueField={field.valueField}
-            required={field.required}
-            fullWidth
-            placeholder={field.placeholder || `Select ${field.label}`}
-          />
-        );
-      default:
-        return (
-          <TextField
-            type="text"
-            value={value}
-            onChange={(e) => updateField(field.key, e.target.value)}
-            placeholder={field.placeholder || field.label}
-            size="small"
-            fullWidth
-            required={field.required}
-          />
-        );
-    }
-  }, [formData, isEditing, updateField, item]);
+    case "textarea":
+      return (
+        <TextField
+          multiline
+          rows={field.rows || 4}
+          value={value}
+          onChange={(e) => updateField(field.key, e.target.value)}
+          placeholder={field.placeholder || field.label}
+          size="small"
+          fullWidth
+          required={field.required}
+        />
+      );
+    case "boolean":
+      return (
+        <FormControlLabel
+          control={
+            <Switch
+              checked={Boolean(value)}
+              onChange={(e) => updateField(field.key, e.target.checked)}
+              size="small"
+            />
+          }
+          label={value ? "Yes" : "No"}
+        />
+      );
+    case "number":
+    case "currency":
+      return (
+        <TextField
+          type="number"
+          value={value}
+          onChange={(e) => updateField(field.key, e.target.value)}
+          placeholder={field.placeholder || field.label}
+          size="small"
+          fullWidth
+          required={field.required}
+          InputProps={
+            field.type === "currency" ? { startAdornment: <span style={{ marginRight: 4 }}>$</span> } : undefined
+          }
+        />
+      );
+    case "date":
+      return (
+        <TextField
+          type="date"
+          value={value ? new Date(value).toISOString().split("T")[0] : ""}
+          onChange={(e) => updateField(field.key, e.target.value)}
+          size="small"
+          fullWidth
+          required={field.required}
+          InputLabelProps={{ shrink: true }}
+        />
+      );
+    case "datetime":
+      return (
+        <TextField
+          type="datetime-local"
+          value={value ? new Date(value).toISOString().slice(0, 16) : ""}
+          onChange={(e) => updateField(field.key, e.target.value)}
+          size="small"
+          fullWidth
+          required={field.required}
+          InputLabelProps={{ shrink: true }}
+        />
+      );
+    case "dropdown":
+      return (
+        <SmartDropdown
+          label={field.label}
+          name={field.key}
+          value={value}
+          onChange={(e) => updateField(field.key, e.target.value)}
+          service={field.optionsService || field.service}
+          displayField={field.displayField}
+          valueField={field.valueField}
+          required={field.required}
+          fullWidth
+          placeholder={field.placeholder || `Select ${field.label}`}
+        />
+      );
+    default:
+      return (
+        <TextField
+          type="text"
+          value={value}
+          onChange={(e) => updateField(field.key, e.target.value)}
+          placeholder={field.placeholder || field.label}
+          size="small"
+          fullWidth
+          required={field.required}
+        />
+      );
+  }
+}, [formData, isEditing, updateField, item, displayNames]);
 
   if (loading) {
     return (

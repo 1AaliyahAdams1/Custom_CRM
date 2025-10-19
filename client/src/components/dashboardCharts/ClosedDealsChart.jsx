@@ -5,6 +5,7 @@ import {
   Paper,
   Typography,
   useTheme,
+  Alert,
 } from "@mui/material";
 import {
   ResponsiveContainer,
@@ -19,29 +20,65 @@ import {
 const ClosedDealsChart = ({ data }) => {
   const theme = useTheme();
 
-  // --- Default fallback data
-  const defaultChartData = [
-    { month: "Jan", revenue: 1250 },
-    { month: "Feb", revenue: 1350 },
-    { month: "Mar", revenue: 1450 },
-    { month: "Apr", revenue: 1520 },
-    { month: "May", revenue: 1680 },
-  ];
+  // Check if we have valid data
+  if (!data) {
+    return (
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          borderRadius: 2,
+          background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+          backdropFilter: "blur(10px)",
+          border: `1px solid ${theme.palette.divider}`,
+          height: "100%",
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+          Closed Deals Revenue Trend
+        </Typography>
+        <Alert severity="info">Loading closed deals data...</Alert>
+      </Paper>
+    );
+  }
 
-  // --- Data transformation
+  // Transform data from API response
   const getChartData = () => {
-    if (data?.chartData?.labels && data?.chartData?.revenue) {
-      return data.chartData.labels.map((label, index) => ({
-        month: label,
-        revenue: Math.round((data.chartData.revenue[index] || 0) / 1000), // Convert to thousands
+    if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+      return data.data.map((period) => ({
+        month: period.periodFormatted || period.period,
+        revenue: Math.round((period.totalRevenue || 0) / 1000), // Convert to thousands
       }));
     }
-    return defaultChartData;
+
+    return [];
   };
 
   const chartData = getChartData();
 
-  // --- Tooltip formatter
+  // If no data after transformation, show empty state
+  if (chartData.length === 0) {
+    return (
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          borderRadius: 2,
+          background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+          backdropFilter: "blur(10px)",
+          border: `1px solid ${theme.palette.divider}`,
+          height: "100%",
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
+          Closed Deals Revenue Trend
+        </Typography>
+        <Alert severity="info">No closed deals yet. Close your first deal to see trends.</Alert>
+      </Paper>
+    );
+  }
+
+  // Custom tooltip formatter
   const formatTooltip = (value, name) => [`R${value}K`, "Revenue"];
 
   return (
@@ -52,14 +89,13 @@ const ClosedDealsChart = ({ data }) => {
           sx={{
             p: 3,
             borderRadius: 2,
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+            background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
             backdropFilter: "blur(10px)",
             border: `1px solid ${theme.palette.divider}`,
             height: "100%",
           }}
         >
-          {/* --- Title */}
+          {/* Title */}
           <Typography
             variant="h6"
             sx={{
@@ -71,7 +107,7 @@ const ClosedDealsChart = ({ data }) => {
             Closed Deals Revenue Trend
           </Typography>
 
-          {/* --- Chart */}
+          {/* Chart */}
           <Box sx={{ width: "100%", height: 320 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
@@ -84,9 +120,12 @@ const ClosedDealsChart = ({ data }) => {
                 />
                 <XAxis
                   dataKey="month"
-                  tick={{ fill: theme.palette.text.secondary }}
+                  tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
                 />
                 <YAxis
                   tickFormatter={(v) => `R${v}K`}
@@ -99,6 +138,7 @@ const ClosedDealsChart = ({ data }) => {
                   contentStyle={{
                     backgroundColor: theme.palette.background.default,
                     border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 4,
                   }}
                 />
                 <Line
@@ -111,6 +151,7 @@ const ClosedDealsChart = ({ data }) => {
                     r: 5,
                     fill: "hsl(142, 76%, 36%)",
                     strokeWidth: 2,
+                    stroke: theme.palette.background.paper,
                   }}
                   activeDot={{
                     r: 7,
@@ -122,75 +163,79 @@ const ClosedDealsChart = ({ data }) => {
             </ResponsiveContainer>
           </Box>
 
-          {/* --- Summary Section */}
-          <Box
-            sx={{
-              mt: 3,
-              display: "flex",
-              justifyContent: "space-around",
-              flexWrap: "wrap",
-              gap: 2,
-            }}
-          >
-            <Box sx={{ textAlign: "center" }}>
-              <Typography
-                variant="h6"
-                sx={{ color: theme.palette.text.primary, fontWeight: "bold" }}
-              >
-                {data?.formattedTotalRevenue || "R0"}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ color: theme.palette.text.secondary }}
-              >
-                Total Revenue
-              </Typography>
-            </Box>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography
-                variant="h6"
-                sx={{ color: theme.palette.text.primary, fontWeight: "bold" }}
-              >
-                {data?.formattedAverageMonthly || "R0"}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ color: theme.palette.text.secondary }}
-              >
-                Average Monthly
-              </Typography>
-            </Box>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography
-                variant="h6"
-                sx={{ color: theme.palette.text.primary, fontWeight: "bold" }}
-              >
-                {data?.periodCount || 0}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ color: theme.palette.text.secondary }}
-              >
-                Periods
-              </Typography>
-            </Box>
-            {data?.highestMonth && (
+          {/* Summary Section */}
+          {data.summary && (
+            <Box
+              sx={{
+                mt: 3,
+                pt: 2,
+                borderTop: `1px solid ${theme.palette.divider}`,
+                display: "flex",
+                justifyContent: "space-around",
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
               <Box sx={{ textAlign: "center" }}>
                 <Typography
                   variant="h6"
-                  sx={{ color: theme.palette.text.primary, fontWeight: "bold" }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: "bold", fontSize: '1rem' }}
                 >
-                  {data.highestMonth.formattedTotalRevenue}
+                  {data.summary.formattedTotalRevenue || "R0"}
                 </Typography>
                 <Typography
-                  variant="body2"
+                  variant="caption"
                   sx={{ color: theme.palette.text.secondary }}
                 >
-                  Best Month ({data.highestMonth.periodFormatted})
+                  Total Revenue
                 </Typography>
               </Box>
-            )}
-          </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography
+                  variant="h6"
+                  sx={{ color: theme.palette.text.primary, fontWeight: "bold", fontSize: '1rem' }}
+                >
+                  {data.summary.formattedAverageMonthlyRevenue || "R0"}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: theme.palette.text.secondary }}
+                >
+                  Average Monthly
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography
+                  variant="h6"
+                  sx={{ color: theme.palette.text.primary, fontWeight: "bold", fontSize: '1rem' }}
+                >
+                  {data.summary.periodCount || 0}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: theme.palette.text.secondary }}
+                >
+                  Periods
+                </Typography>
+              </Box>
+              {data.summary.highestMonth && (
+                <Box sx={{ textAlign: "center" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ color: theme.palette.text.primary, fontWeight: "bold", fontSize: '1rem' }}
+                  >
+                    {data.summary.highestMonth.formattedTotalRevenue}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: theme.palette.text.secondary }}
+                  >
+                    Best ({data.summary.highestMonth.periodFormatted})
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          )}
         </Paper>
       </Grid>
     </Grid>

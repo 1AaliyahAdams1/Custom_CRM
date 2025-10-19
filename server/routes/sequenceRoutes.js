@@ -7,6 +7,7 @@ const sequenceController = require("../controllers/sequenceController");
 //======================================
 router.get("/activity-types", sequenceController.getAllActivityTypes);
 router.get("/", sequenceController.getAllSequences);
+router.get("/items", sequenceController.getAllSequenceItems); 
 router.get("/:id", sequenceController.getSequenceByID);
 router.get("/:id/items", sequenceController.getSequenceWithItems);
 router.post("/", sequenceController.createSequence);

@@ -2,6 +2,9 @@ import api from "../utils/api";
 
 const RESOURCE = "/sequences";
 
+// ======================================
+// SEQUENCE CRUD
+// ======================================
 export const getAllSequences = async (onlyActive = true) => {
   try {
     const response = await api.get(RESOURCE, { params: { onlyActive } });
@@ -14,7 +17,8 @@ export const getAllSequences = async (onlyActive = true) => {
 
 export const fetchSequenceById = async (sequenceId) => {
   try {
-    return await api.get(`${RESOURCE}/${sequenceId}`);
+    const response = await api.get(`${RESOURCE}/${sequenceId}`);
+    return response.data;
   } catch (error) {
     console.error(`Error fetching sequence ${sequenceId}:`, error);
     throw error;
@@ -71,7 +75,7 @@ export const reactivateSequence = async (sequenceId) => {
 
 export const deleteSequence = async (sequenceId) => {
   try {
-    const response = await api.delete(`${RESOURCE}/${sequenceId}`);
+    const response = await api.delete(`${RESOURCE}/${sequenceId}/delete`);
     return response.data;
   } catch (error) {
     console.error(`Error deleting sequence ${sequenceId}:`, error);
@@ -79,7 +83,30 @@ export const deleteSequence = async (sequenceId) => {
   }
 };
 
-// Sequence Items CRUD
+// ======================================
+// SEQUENCE ITEMS CRUD
+// ======================================
+export const getAllSequenceItems = async () => {
+  try {
+    // Now using the efficient endpoint that returns ALL items with SequenceID
+    const response = await api.get(`${RESOURCE}/items`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching all sequence items:", error);
+    throw error;
+  }
+};
+
+export const fetchSequenceItemById = async (itemId) => {
+  try {
+    const response = await api.get(`${RESOURCE}/items/${itemId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching sequence item ${itemId}:`, error);
+    throw error;
+  }
+};
+
 export const createSequenceItem = async (itemData) => {
   try {
     return await api.post(`${RESOURCE}/items`, itemData);
@@ -108,16 +135,19 @@ export const deleteSequenceItem = async (itemId) => {
   }
 };
 
-export const fetchSequenceItemById = async (itemId) => {
+export const getAllActivityTypes = async () => {
   try {
-    return await api.get(`${RESOURCE}/items/${itemId}`);
+    const response = await api.get(`${RESOURCE}/activity-types`);
+    return response.data;
   } catch (error) {
-    console.error(`Error fetching sequence item ${itemId}:`, error);
+    console.error("Error fetching activity types:", error);
     throw error;
   }
 };
 
-// Bulk operations for sequences
+// ======================================
+// BULK OPERATIONS
+// ======================================
 export const bulkDeactivateSequences = async (sequenceIds) => {
   if (!Array.isArray(sequenceIds) || sequenceIds.length === 0) {
     throw new Error("Sequence IDs array is required");

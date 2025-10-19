@@ -14,7 +14,8 @@ export async function getAllProducts() {
 
 export async function getProductById(productId) {
   try {
-    return await api.get(`${RESOURCE}/${productId}`);
+    const response = await api.get(`${RESOURCE}/${productId}`);
+    return response.data;
   } catch (error) {
     console.error(`Error fetching product ${productId}:`, error);
     throw error;
@@ -51,9 +52,11 @@ export async function deleteProduct(productId) {
   }
 }
 
-export async function deactivateProduct(productId) {
+export async function deactivateProduct(productId, changedBy) {
   try {
-    const response = await api.patch(`${RESOURCE}/${productId}/deactivate`);
+    const response = await api.patch(`${RESOURCE}/${productId}/deactivate`, {
+      changedBy: changedBy
+    });
     return response.data;
   } catch (error) {
     console.error(`Error deactivating product ${productId}:`, error);
@@ -61,9 +64,11 @@ export async function deactivateProduct(productId) {
   }
 }
 
-export async function reactivateProduct(productId) {
+export async function reactivateProduct(productId, changedBy) {
   try {
-    const response = await api.patch(`${RESOURCE}/${productId}/reactivate`);
+    const response = await api.patch(`${RESOURCE}/${productId}/reactivate`, {
+      changedBy: changedBy
+    });
     return response.data;
   } catch (error) {
     console.error(`Error reactivating product ${productId}:`, error);

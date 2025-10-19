@@ -56,10 +56,19 @@ const CreateEmployeePage = lazy(() => import("./pages/Employees/CreateEmployeePa
 const EditEmployeePage = lazy(() => import("./pages/Employees/EditEmployeePage"));
 const EmployeeDetailsPage = lazy(() => import("./pages/Employees/EmployeeDetailsPage"));
 
+const CreateSequenceItemPage = lazy(() => import("./pages/SequenceItems/CreateSequenceItem"));
+const EditSequenceItemPage = lazy(() => import("./pages/SequenceItems/EditSequenceItem"));
+const SequenceItemDetailPage = lazy(() => import("./pages/SequenceItems/SequenceItemDetails"));
+
 const CategoryPage = lazy(() => import("./pages/Classifications/CategoryPage"));
 const DepartmentPage = lazy(() => import("./pages//Classifications/DepartmentPage"));
 
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
+
+const TeamPage = lazy(() => import("./components/containers/TeamContainer"));
+const CreateTeamPage = lazy(() => import("./pages/TeamManagement/CreateTeamPage"));
+const EditTeamPage = lazy(() => import("./pages/TeamManagement/EditTeamPage"));
+const TeamDetailsPage = lazy(() => import("./pages/TeamManagement/TeamDetailsPage"));
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
@@ -278,7 +287,10 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+
       {/* --- Sequences Routes --- */}
+
+      {/* Main sequences route - shows sequences by default */}
       <Route
         path="/sequences"
         element={
@@ -287,6 +299,18 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+
+      {/* Sequences sub-routes - all use the same container but with different tabs */}
+      <Route
+        path="/sequences/items"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequences}>
+            <SequencesPage />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Sequence creation */}
       <Route
         path="/sequences/create"
         element={
@@ -295,14 +319,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      <Route
-        path="/sequences/:id"
-        element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesDetails}>
-            <SequencesDetailPage />
-          </PrivateRoute>
-        }
-      />
+
       <Route
         path="/sequences/edit/:id"
         element={
@@ -311,6 +328,45 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+
+      {/* Sequence Item routes */}
+      <Route
+        path="/sequences/items/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesCreate}>
+            <CreateSequenceItemPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/sequences/items/edit/:itemId"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesEdit}>
+            <EditSequenceItemPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/sequences/items/:itemId"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesDetails}>
+            <SequenceItemDetailPage />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Sequence details */}
+      <Route
+        path="/sequences/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesDetails}>
+            <SequencesDetailPage />
+          </PrivateRoute>
+        }
+      />
+     
       
       {/* --- Geography Routes --- */} 
       {/* Main geography route - shows countries by default */}

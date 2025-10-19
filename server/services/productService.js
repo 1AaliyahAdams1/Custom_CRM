@@ -9,25 +9,23 @@ async function getProductById(id) {
 }
 
 async function createProduct(data, changedBy = 0) {
-
   return await productRepo.createProduct(data, changedBy, 1);
 }
 
-async function updateProduct(id, data, changedBy = 2) {
-
+async function updateProduct(id, data, changedBy = 0) {
   return await productRepo.updateProduct(id, data, changedBy, 2);
 }
 
-async function deleteProduct(productId, changedBy) {
-  return await productRepository.deleteProduct(productId, changedBy);
+async function deleteProduct(productId, changedBy = 0) {
+  return await productRepo.deleteProduct(productId, changedBy, 5);
 }
 
-async function deactivateProduct(productId, changedBy) {
-  return await productRepository.deactivateProduct(productId, changedBy);
+async function deactivateProduct(productId, changedBy = 0) {
+  return await productRepo.deactivateProduct(productId, changedBy, 3);
 }
 
-async function reactivateProduct(productId, changedBy) {
-  return await productRepository.reactivateProduct(productId, changedBy);
+async function reactivateProduct(productId, changedBy = 0) {
+  return await productRepo.reactivateProduct(productId, changedBy, 4);
 }
 
 module.exports = {

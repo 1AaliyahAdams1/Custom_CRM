@@ -68,8 +68,8 @@ const createSequence = async (sequenceData) => {
     throw new Error("Sequence name is required");
   }
 
-  if (SequenceName.trim().length < 3) {
-    throw new Error("Sequence name must be at least 3 characters long");
+  if (SequenceName.trim().length < 1) {
+    throw new Error("Sequence name is required");
   }
 
   if (SequenceName.length > 255) {
@@ -93,7 +93,7 @@ const updateSequence = async (sequenceId, sequenceData) => {
     if (!SequenceName || SequenceName.trim().length === 0) {
       throw new Error("Sequence name is required");
     }
-    if (SequenceName.trim().length < 3) {
+    if (SequenceName.trim().length < 1) {
       throw new Error("Sequence name must be at least 3 characters long");
     }
     if (SequenceName.length > 255) {
@@ -106,6 +106,13 @@ const updateSequence = async (sequenceId, sequenceData) => {
   }
 
   return await sequenceRepo.updateSequence(sequenceId, sequenceData, null);
+};
+
+//======================================
+// Get all sequence items
+//======================================
+const getAllSequenceItems = async () => {
+  return await sequenceRepo.getAllSequenceItems();
 };
 
 //======================================
@@ -222,8 +229,8 @@ const createSequenceWithItems = async (sequenceData, items) => {
     throw new Error("Sequence name is required");
   }
 
-  if (SequenceName.trim().length < 3) {
-    throw new Error("Sequence name must be at least 3 characters long");
+  if (SequenceName.trim().length < 1) {
+    throw new Error("Sequence name is required");
   }
 
   if (SequenceName.length > 255) {
@@ -332,4 +339,5 @@ module.exports = {
   unassignSequenceFromAccount,
   getAccountsBySequence,
   getAllActivityTypes,
+  getAllSequenceItems,
 };
