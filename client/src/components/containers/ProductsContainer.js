@@ -29,6 +29,7 @@ const ProductsContainer = () => {
   const [selected, setSelected] = useState([]);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusSeverity, setStatusSeverity] = useState('success');
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Popups
   const [notesPopupOpen, setNotesPopupOpen] = useState(false);
@@ -40,6 +41,17 @@ const ProductsContainer = () => {
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmTitle, setConfirmTitle] = useState("");
   const [confirmDescription, setConfirmDescription] = useState("");
+
+  // Get current user
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.UserID) {
+      setError('User not authenticated. Please log in again.');
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
+    setCurrentUser(user);
+  }, [navigate]);
 
   // ---------------- FETCH PRODUCTS ----------------
   const fetchProducts = async () => {
@@ -57,8 +69,10 @@ const ProductsContainer = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, [refreshFlag]);
+    if (currentUser) {
+      fetchProducts();
+    }
+  }, [refreshFlag, currentUser]);
 
   // ---------------- CONFIRM DIALOG HANDLERS ----------------
   const openConfirmDialog = (title, description, action) => {
@@ -81,12 +95,17 @@ const ProductsContainer = () => {
 
   // ---------------- PRODUCT ACTIONS ----------------
   const handleDeactivate = (productId) => {
+    if (!currentUser) {
+      setError('User not authenticated');
+      return;
+    }
+
     openConfirmDialog(
       "Deactivate Product",
       "Are you sure you want to deactivate this product?",
       async () => {
         try {
-          await productService.deactivateProduct(productId);
+          await productService.deactivateProduct(productId, currentUser.UserID);
           setSuccessMessage('Product deactivated successfully.');
           setRefreshFlag(flag => !flag);
         } catch (err) {
@@ -98,12 +117,17 @@ const ProductsContainer = () => {
   };
 
   const handleReactivate = (productId) => {
+    if (!currentUser) {
+      setError('User not authenticated');
+      return;
+    }
+
     openConfirmDialog(
       "Reactivate Product",
       "Are you sure you want to reactivate this product?",
       async () => {
         try {
-          await productService.reactivateProduct(productId);
+          await productService.reactivateProduct(productId, currentUser.UserID);
           setSuccessMessage('Product reactivated successfully.');
           setRefreshFlag(flag => !flag);
         } catch (err) {

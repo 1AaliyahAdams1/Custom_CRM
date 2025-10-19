@@ -89,16 +89,16 @@ function ProductDetailsPage() {
       helperText: 'Format: ABC-123'
     },
     { 
-      key: 'Description', 
-      label: 'Description', 
-      type: 'textarea',
-      editable: true,
-      validation: (value) => {
-        if (value && value.trim().length > 1000) {
-          throw new Error('Description must be 1000 characters or less');
-        }
-      }
-    },
+  key: 'Description', 
+  label: 'Description', 
+  type: 'textarea',
+  editable: true,
+  validation: (value) => {
+    if (value && value.trim().length > 255) {
+      throw new Error('Description must be 255 characters or less');
+    }
+  }
+},
     { 
       key: 'Price', 
       label: 'Price', 
@@ -288,51 +288,70 @@ function ProductDetailsPage() {
     return chips;
   }, [product]);
 
-  const handleSave = useCallback(async (formData) => {
-    try {
-      const submitData = {
-        ProductName: formData.ProductName,
-        Description: formData.Description || null,
-        SKU: formData.SKU,
-        Price: parseFloat(formData.Price),
-        Cost: formData.Cost ? parseFloat(formData.Cost) : null,
-        CategoryID: parseInt(formData.CategoryID),
-        AccountID: parseInt(formData.AccountID),
-      };
-
-      await updateProduct(parseInt(idRef.current, 10), submitData);
-      setSuccessMessage('Product updated successfully');
-      await refreshProduct();
-    } catch (err) {
-      console.error('Error updating product:', err);
-      setError(err.message || 'Failed to update product');
-      throw err;
+const handleSave = useCallback(async (formData) => {
+  try {
+    // Get current user
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.UserID) {
+      throw new Error('User not authenticated');
     }
-  }, [refreshProduct]);
 
-  const handleDeactivate = useCallback(async () => {
-    try {
-      await deactivateProduct(parseInt(idRef.current, 10));
-      setSuccessMessage('Product deactivated successfully');
-      await refreshProduct();
-    } catch (err) {
-      console.error('Error deactivating product:', err);
-      setError('Failed to deactivate product');
-      throw err;
-    }
-  }, [refreshProduct]);
+    const submitData = {
+      ProductName: formData.ProductName,
+      Description: formData.Description || null,
+      SKU: formData.SKU,
+      Price: parseFloat(formData.Price),
+      Cost: formData.Cost ? parseFloat(formData.Cost) : null,
+      CategoryID: parseInt(formData.CategoryID),
+      AccountID: parseInt(formData.AccountID),
+      changedBy: user.UserID, // ADD THIS
+    };
 
-  const handleReactivate = useCallback(async () => {
-    try {
-      await reactivateProduct(parseInt(idRef.current, 10));
-      setSuccessMessage('Product reactivated successfully');
-      await refreshProduct();
-    } catch (err) {
-      console.error('Error reactivating product:', err);
-      setError('Failed to reactivate product');
-      throw err;
+    await updateProduct(parseInt(idRef.current, 10), submitData);
+    setSuccessMessage('Product updated successfully');
+    await refreshProduct();
+  } catch (err) {
+    console.error('Error updating product:', err);
+    setError(err.message || 'Failed to update product');
+    throw err;
+  }
+}, [refreshProduct]);
+
+const handleDeactivate = useCallback(async () => {
+  try {
+    // Get current user
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.UserID) {
+      throw new Error('User not authenticated');
     }
-  }, [refreshProduct]);
+
+    await deactivateProduct(parseInt(idRef.current, 10), user.UserID); // ADD user.UserID
+    setSuccessMessage('Product deactivated successfully');
+    await refreshProduct();
+  } catch (err) {
+    console.error('Error deactivating product:', err);
+    setError('Failed to deactivate product');
+    throw err;
+  }
+}, [refreshProduct]);
+
+const handleReactivate = useCallback(async () => {
+  try {
+    // Get current user
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.UserID) {
+      throw new Error('User not authenticated');
+    }
+
+    await reactivateProduct(parseInt(idRef.current, 10), user.UserID); // ADD user.UserID
+    setSuccessMessage('Product reactivated successfully');
+    await refreshProduct();
+  } catch (err) {
+    console.error('Error reactivating product:', err);
+    setError('Failed to reactivate product');
+    throw err;
+  }
+}, [refreshProduct]);
 
   const handleRefreshRelatedData = useCallback((tabKey) => {
     console.log('Refresh tab data:', tabKey);

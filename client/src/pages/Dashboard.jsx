@@ -127,11 +127,12 @@ const Dashboard = () => {
 
       {/* Row 3 */}
       {data.activities && (
-        <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 6' } }}>
-          <ChartCard title="Activities vs Outcomes">
-            <ActivitiesOutcomesChart data={data.activities} />
-          </ChartCard>
-        </Box>
+       <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 12' } }}>
+  <ChartCard title="Activities vs Outcomes">
+    <ActivitiesOutcomesChart data={data.activities} />
+  </ChartCard>
+</Box>
+
       )}
     </Box>
   );

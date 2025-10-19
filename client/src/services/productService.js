@@ -52,9 +52,11 @@ export async function deleteProduct(productId) {
   }
 }
 
-export async function deactivateProduct(productId) {
+export async function deactivateProduct(productId, changedBy) {
   try {
-    const response = await api.patch(`${RESOURCE}/${productId}/deactivate`);
+    const response = await api.patch(`${RESOURCE}/${productId}/deactivate`, {
+      changedBy: changedBy
+    });
     return response.data;
   } catch (error) {
     console.error(`Error deactivating product ${productId}:`, error);
@@ -62,9 +64,11 @@ export async function deactivateProduct(productId) {
   }
 }
 
-export async function reactivateProduct(productId) {
+export async function reactivateProduct(productId, changedBy) {
   try {
-    const response = await api.patch(`${RESOURCE}/${productId}/reactivate`);
+    const response = await api.patch(`${RESOURCE}/${productId}/reactivate`, {
+      changedBy: changedBy
+    });
     return response.data;
   } catch (error) {
     console.error(`Error reactivating product ${productId}:`, error);

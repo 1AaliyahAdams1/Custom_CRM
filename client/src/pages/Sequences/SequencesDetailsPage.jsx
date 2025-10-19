@@ -2,7 +2,15 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Alert, Typography } from "@mui/material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
-import { fetchSequenceById, fetchSequenceWithItems } from "../../services/sequenceService";
+import { 
+  fetchSequenceById, 
+  fetchSequenceWithItems,
+  updateSequence,
+  deactivateSequence,
+  reactivateSequence,
+  updateSequenceItem
+} from "../../services/sequenceService";
+import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
 
 export default function SequencesDetailPage() {
   const { id } = useParams();
@@ -15,6 +23,12 @@ export default function SequencesDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: '',
+    description: '',
+    onConfirm: null,
+  });
 
   useEffect(() => {
     idRef.current = id;
@@ -67,28 +81,22 @@ export default function SequencesDetailPage() {
         
         console.log('Sequence data received:', sequenceData);
         
-        // The backend service transforms the data into: { SequenceID, SequenceName, ..., Items: [...] }
-        // So we need to extract the Items array (capital I)
         let items = [];
         
         if (sequenceData && typeof sequenceData === 'object') {
-          // Check for Items property (capital I) - this is what the backend returns
           items = sequenceData.Items || 
                   sequenceData.items || 
                   sequenceData.SequenceItems || 
                   sequenceData.sequenceItems ||
                   [];
         } else if (Array.isArray(sequenceData)) {
-          // Fallback: if it's an array, use it directly
           items = sequenceData;
         }
         
-        // Ensure we have an array
         if (!Array.isArray(items)) {
           console.warn('Could not find items array in response. Expected Items property. Got:', sequenceData);
           return { data: [] };
         }
-        
         
         const uniqueItems = items.reduce((acc, current) => {
           const exists = acc.find(item => item.SequenceItemID === current.SequenceItemID);
@@ -105,6 +113,123 @@ export default function SequencesDetailPage() {
       }
     };
   }, []);
+
+  // Action handlers for sequence items
+  const relatedDataActions = useMemo(() => ({
+    'sequence-items': { 
+      view: (item) => {
+        navigate(`/sequences/items/${item.SequenceItemID}`);
+      },
+      edit: (item) => {
+        navigate(`/sequences/items/edit/${item.SequenceItemID}`);
+      },
+      delete: async (item) => {
+        setConfirmDialog({
+          open: true,
+          title: 'Deactivate Sequence Item',
+          description: `Are you sure you want to deactivate "${item.SequenceItemDescription || 'this sequence item'}"? This action can be reversed.`,
+          onConfirm: async () => {
+            try {
+              await updateSequenceItem(item.SequenceItemID, {
+                SequenceID: item.SequenceID,
+                ActivityTypeID: item.ActivityTypeID,
+                SequenceItemDescription: item.SequenceItemDescription,
+                DaysFromStart: item.DaysFromStart,
+                Active: false
+              });
+              setSuccessMessage('Sequence item deactivated successfully');
+              await refreshSequence();
+              setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+            } catch (err) {
+              setError(err.message || 'Failed to deactivate sequence item');
+              setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+            }
+          }
+        });
+      },
+      reactivate: async (item) => {
+        setConfirmDialog({
+          open: true,
+          title: 'Reactivate Sequence Item',
+          description: `Are you sure you want to reactivate "${item.SequenceItemDescription || 'this sequence item'}"?`,
+          onConfirm: async () => {
+            try {
+              await updateSequenceItem(item.SequenceItemID, {
+                SequenceID: item.SequenceID,
+                ActivityTypeID: item.ActivityTypeID,
+                SequenceItemDescription: item.SequenceItemDescription,
+                DaysFromStart: item.DaysFromStart,
+                Active: true
+              });
+              setSuccessMessage('Sequence item reactivated successfully');
+              await refreshSequence();
+              setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+            } catch (err) {
+              setError(err.message || 'Failed to reactivate sequence item');
+              setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+            }
+          }
+        });
+      },
+    },
+    // Also add by entityType to ensure it works
+    'sequenceItem': { 
+      view: (item) => {
+        navigate(`/sequences/items/${item.SequenceItemID}`);
+      },
+      edit: (item) => {
+        navigate(`/sequences/items/edit/${item.SequenceItemID}`);
+      },
+      delete: async (item) => {
+        setConfirmDialog({
+          open: true,
+          title: 'Deactivate Sequence Item',
+          description: `Are you sure you want to deactivate "${item.SequenceItemDescription || 'this sequence item'}"? This action can be reversed.`,
+          onConfirm: async () => {
+            try {
+              await updateSequenceItem(item.SequenceItemID, {
+                SequenceID: item.SequenceID,
+                ActivityTypeID: item.ActivityTypeID,
+                SequenceItemDescription: item.SequenceItemDescription,
+                DaysFromStart: item.DaysFromStart,
+                Active: false
+              });
+              setSuccessMessage('Sequence item deactivated successfully');
+              await refreshSequence();
+              setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+            } catch (err) {
+              setError(err.message || 'Failed to deactivate sequence item');
+              setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+            }
+          }
+        });
+      },
+      reactivate: async (item) => {
+        setConfirmDialog({
+          open: true,
+          title: 'Reactivate Sequence Item',
+          description: `Are you sure you want to reactivate "${item.SequenceItemDescription || 'this sequence item'}"?`,
+          onConfirm: async () => {
+            try {
+              await updateSequenceItem(item.SequenceItemID, {
+                SequenceID: item.SequenceID,
+                ActivityTypeID: item.ActivityTypeID,
+                SequenceItemDescription: item.SequenceItemDescription,
+                DaysFromStart: item.DaysFromStart,
+                Active: true
+              });
+              setSuccessMessage('Sequence item reactivated successfully');
+              await refreshSequence();
+              setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+            } catch (err) {
+              setError(err.message || 'Failed to reactivate sequence item');
+              setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+            }
+          }
+        });
+      },
+    },
+  }), [navigate, refreshSequence]);
 
   // Define related tabs
   const relatedTabs = useMemo(() => {
@@ -136,15 +261,6 @@ export default function SequencesDetailPage() {
     return tabs;
   }, [createSequenceItemsDataService]);
 
-  // Action handlers for sequence items
-const relatedDataActions = useMemo(() => ({
-  'sequence-items': { 
-    view: (item) => console.log('View', item),
-    edit: (item) => console.log('Edit', item),
-    delete: async (item) => console.log('Delete', item),
-  },
-}), []);
-
   // Header chips 
   const headerChips = useMemo(() => {
     if (!sequence) return [];
@@ -161,29 +277,70 @@ const relatedDataActions = useMemo(() => ({
   // Event handlers
   const handleSave = useCallback(async (formData) => {
     try {
-      console.log('Saving sequence:', formData);
+      console.log('Saving sequence with data:', formData);
+      
+      const updatePayload = {
+        SequenceName: formData.SequenceName,
+        SequenceDescription: formData.SequenceDescription,
+        Active: formData.Active
+      };
+      
+      await updateSequence(parseInt(idRef.current, 10), updatePayload);
+      
       setSuccessMessage('Sequence updated successfully');
       await refreshSequence();
     } catch (err) {
-      setError('Failed to update sequence');
+      console.error('Error updating sequence:', err);
+      setError(err.message || 'Failed to update sequence');
+      throw err;
     }
   }, [refreshSequence]);
 
   const handleDelete = useCallback(async (formData) => {
-    try {
-      console.log('Deleting sequence:', formData);
-      navigateRef.current('/sequences');
-    } catch (err) {
-      setError('Failed to delete sequence');
-    }
-  }, []);
+    setConfirmDialog({
+      open: true,
+      title: 'Deactivate Sequence',
+      description: `Are you sure you want to deactivate "${formData.SequenceName}"? This action can be reversed.`,
+      onConfirm: async () => {
+        try {
+          await deactivateSequence(parseInt(idRef.current, 10));
+          setSuccessMessage('Sequence deactivated successfully');
+          await refreshSequence();
+          setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+        } catch (err) {
+          setError(err.message || 'Failed to deactivate sequence');
+          setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+        }
+      }
+    });
+  }, [refreshSequence]);
+
+  const handleReactivate = useCallback(async (formData) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Reactivate Sequence',
+      description: `Are you sure you want to reactivate "${formData.SequenceName}"?`,
+      onConfirm: async () => {
+        try {
+          await reactivateSequence(parseInt(idRef.current, 10));
+          setSuccessMessage('Sequence reactivated successfully');
+          await refreshSequence();
+          setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+        } catch (err) {
+          setError(err.message || 'Failed to reactivate sequence');
+          setConfirmDialog({ open: false, title: '', description: '', onConfirm: null });
+        }
+      }
+    });
+  }, [refreshSequence]);
 
   const handleRefreshRelatedData = useCallback((tabKey) => {
     console.log('Refresh tab data:', tabKey);
-  }, []);
+    refreshSequence();
+  }, [refreshSequence]);
 
   if (loading) return <Typography>Loading sequence details...</Typography>;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (error && !sequence) return <Alert severity="error">{error}</Alert>;
   if (!sequence) return <Alert severity="warning">Sequence not found.</Alert>;
 
   return (
@@ -191,6 +348,12 @@ const relatedDataActions = useMemo(() => ({
       {successMessage && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
           {successMessage}
+        </Alert>
+      )}
+      
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
         </Alert>
       )}
       
@@ -203,12 +366,22 @@ const relatedDataActions = useMemo(() => ({
         onBack={handleBack}
         onSave={handleSave}
         onDelete={handleDelete}
+        onReactivate={handleReactivate}
         loading={loading}
-        error={error}
+        error={null}
         headerChips={headerChips}
         entityType="sequence"
         relatedDataActions={relatedDataActions}
         onRefreshRelatedData={handleRefreshRelatedData}
+        // Don't pass these - let relatedDataActions control everything
+      />
+      
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog({ open: false, title: '', description: '', onConfirm: null })}
       />
     </Box>
   );

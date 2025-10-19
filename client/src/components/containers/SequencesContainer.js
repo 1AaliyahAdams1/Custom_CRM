@@ -1,3 +1,7 @@
+// ========================
+// SequencesContainer.jsx
+// ========================
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -20,13 +24,12 @@ const SequencesContainer = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Determine initial tab based on URL (matching geography pattern)
   const getInitialTab = () => {
     const path = location.pathname;
-    // Check URL path to determine which tab to open
+    // Check if we're on the items route
     if (path.includes('/sequences/items')) return 1;
-    if (path === '/sequences' && location.state?.openTab !== undefined) {
-      return location.state.openTab;
-    }
+    // Default to sequences tab
     return 0;
   };
 
@@ -42,6 +45,24 @@ const SequencesContainer = () => {
   const [selected, setSelected] = useState([]);
   const [currentTab, setCurrentTab] = useState(getInitialTab());
   
+  // Handle tab changes with URL updates (matching geography pattern)
+  const handleTabChange = useCallback((newTab) => {
+    setCurrentTab(newTab);
+    setSelected([]); // Clear selection when switching tabs
+    
+    // Update URL based on tab
+    switch (newTab) {
+      case 0:
+        navigate('/sequences', { replace: true });
+        break;
+      case 1:
+        navigate('/sequences/items', { replace: true });
+        break;
+      default:
+        navigate('/sequences', { replace: true });
+    }
+  }, [navigate]);
+  
   // Confirmation dialog state
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
@@ -49,11 +70,6 @@ const SequencesContainer = () => {
     description: '',
     onConfirm: null,
   });
-
-  const handleTabChange = useCallback((newTab) => {
-    setCurrentTab(newTab);
-    setSelected([]);
-  }, []);
 
   const clearError = useCallback(() => {
     setError(null);
