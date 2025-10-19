@@ -282,8 +282,10 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+
       {/* --- Sequences Routes --- */}
-      
+
+      {/* Main sequences route - shows sequences by default */}
       <Route
         path="/sequences"
         element={
@@ -292,6 +294,18 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+
+      {/* Sequences sub-routes - all use the same container but with different tabs */}
+      <Route
+        path="/sequences/items"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequences}>
+            <SequencesPage />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Sequence creation */}
       <Route
         path="/sequences/create"
         element={
@@ -300,7 +314,8 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-       <Route
+
+      <Route
         path="/sequences/edit/:id"
         element={
           <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesEdit}>
@@ -309,7 +324,7 @@ const AppRoutes = () => {
         }
       />
 
-       {/* --- Sequence Items Routes --- */}
+      {/* Sequence Item routes */}
       <Route
         path="/sequences/items/create"
         element={
@@ -318,6 +333,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+
       <Route
         path="/sequences/items/edit/:itemId"
         element={
@@ -326,6 +342,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+
       <Route
         path="/sequences/items/:itemId"
         element={
@@ -335,6 +352,7 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Sequence details */}
       <Route
         path="/sequences/:id"
         element={

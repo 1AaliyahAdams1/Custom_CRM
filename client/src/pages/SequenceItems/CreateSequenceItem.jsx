@@ -26,7 +26,7 @@ const CreateSequenceItemPage = () => {
     SequenceID: '',
     ActivityTypeID: '',
     SequenceItemDescription: '',
-    DaysFromStart: 0,
+    DaysFromStart: '',
     Active: true,
   });
   const [sequences, setSequences] = useState([]);
@@ -75,13 +75,17 @@ const CreateSequenceItemPage = () => {
     }
 
     if (name === 'DaysFromStart') {
-      const days = parseInt(value, 10);
-      if (isNaN(days)) {
-        errors.push('Must be a number');
-      } else if (days < 0) {
-        errors.push('Cannot be negative');
-      } else if (days > 32767) {
-        errors.push('Cannot exceed 32767');
+      if (value === undefined || value === null || value === '') {
+        errors.push('Days from start is required');
+      } else {
+        const days = parseInt(value, 10);
+        if (isNaN(days)) {
+          errors.push('Must be a valid number');
+        } else if (days < 0) {
+          errors.push('Cannot be negative');
+        } else if (days > 32767) {
+          errors.push('Cannot exceed 32767');
+        }
       }
     }
 
@@ -150,7 +154,7 @@ const CreateSequenceItemPage = () => {
 
       await api.post('/sequences/items', payload);
       setSuccessMessage('Sequence item created successfully!');
-      setTimeout(() => navigate('/sequences'), 1500);
+      setTimeout(() => navigate('/sequences/items'), 1500);
     } catch (err) {
       console.error('Error creating sequence item:', err);
       setError(err.response?.data?.error || 'Failed to create sequence item. Please try again.');
@@ -159,7 +163,7 @@ const CreateSequenceItemPage = () => {
     }
   };
 
-  const handleCancel = () => navigate('/sequences', { state: { openTab: 1 } });
+  const handleCancel = () => navigate('/sequences/items');
 
   const getFieldError = (fieldName) => {
     return touched[fieldName] && fieldErrors[fieldName] ? (
@@ -298,7 +302,7 @@ const CreateSequenceItemPage = () => {
                 <TextField
                   label="Days From Start"
                   name="DaysFromStart"
-                  type="number"
+                  type="text"
                   value={formData.DaysFromStart}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -307,7 +311,7 @@ const CreateSequenceItemPage = () => {
                   disabled={isSubmitting}
                   error={isFieldInvalid('DaysFromStart')}
                   helperText={getFieldError('DaysFromStart') || 'Number of days from sequence start'}
-                  InputProps={{ inputProps: { min: 0, max: 32767 } }}
+                  placeholder="0"
                   FormHelperTextProps={{ component: 'div' }}
                 />
 
