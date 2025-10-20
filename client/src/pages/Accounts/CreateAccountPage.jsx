@@ -54,32 +54,46 @@ const CreateAccount = () => {
     ParentAccount: "",
   });
 
-const validateField = (name, value) => {
-    const errors = {};
-    
+  const validateField = (name, value) => {
     switch(name) {
       case 'AccountName':
         if (!value || value.trim().length === 0) {
-          errors.AccountName = 'Account name is required';
+          return 'Account name is required';
+        } else if (value.trim().length > 100) {
+          return 'Account name must be 100 characters or less';
         }
         break;
         
       case 'email':
         if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          errors.email = 'Please enter a valid email address';
+          return 'Please enter a valid email address e.g. example@gmail.com';
         }
         break;
         
       case 'Website':
         if (value && value.trim() && !/^https?:\/\/.+/.test(value)) {
-          errors.Website = 'Website must start with http:// or https://';
+          return 'Website must start with http:// or https://';
         }
         break;
         
       case 'PrimaryPhone':
       case 'fax':
         if (value && !/^[\d\s\-\(\)\+]+$/.test(value)) {
-          errors[name] = 'Invalid format';
+          return 'Invalid format e.g. 0680713091, +27 68 071 3091, (068) 071-3091';
+        }
+        break;
+      
+      case 'postal_code':
+        if (value && value.trim().length > 12) {
+          return 'Postal code must be 12 characters or less';
+        }
+        break;
+
+      case 'street_address1':
+      case 'street_address2':
+      case 'street_address3':
+        if (value && value.trim().length > 255) {
+          return 'Address must be 255 characters or less';
         }
         break;
         
@@ -87,19 +101,42 @@ const validateField = (name, value) => {
       case 'number_of_venues':
       case 'number_of_releases':
       case 'number_of_events_anually':
-      case 'annual_revenue':
-        // Only validate if there's a value
         if (value && value.trim() !== '') {
-          if (isNaN(value) || Number(value) < 0) {
-            errors[name] = 'Must be a positive number';
+          if (/\s/.test(value)) {
+            return 'Must not contain spaces';
+          }
+          if (isNaN(value)) {
+            return 'Invalid format. Must not be a character';
+          }
+          if (Number(value) < 0) {
+            return 'Must be a positive number';
+          }
+          if (Number(value) >= 1000000) {
+            return 'Must be less than 1,000,000';
+          }
+        }
+        break;
+      
+      case 'annual_revenue':
+        if (value && value.trim() !== '') {
+          if (/\s/.test(value)) {
+            return 'Must not contain spaces';
+          }
+          if (isNaN(value)) {
+            return 'Invalid format. Must not be a character';
+          }
+          if (Number(value) < 0) {
+            return 'Must be a positive number';
+          }
+          if (Number(value) >= 1000000000) {
+            return 'Must be less than 1,000,000,000';
           }
         }
         break;
     }
     
-    return errors;
+    return null;
   };
-
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -117,20 +154,30 @@ const validateField = (name, value) => {
       return newData;
     });
 
-    if (fieldErrors[name]) {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
+    // Mark as touched when user starts typing
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
+    }));
+
+    // Validate in real-time
+    const errorMessage = validateField(name, value);
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      if (errorMessage) {
+        newErrors[name] = errorMessage;
+      } else {
         delete newErrors[name];
-        return newErrors;
-      });
-    }
+      }
+      return newErrors;
+    });
 
     if (error) {
       setError(null);
     }
   };
 
-const handleBlur = (e) => {
+  const handleBlur = (e) => {
     const { name, value } = e.target;
     
     setTouched(prev => ({
@@ -138,25 +185,20 @@ const handleBlur = (e) => {
       [name]: true
     }));
 
-    // Run validation
-    const errors = validateField(name, value);
-    
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(prev => ({
-        ...prev,
-        ...errors
-      }));
-    } else {
-      // Clear error if validation passes
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
+    // Run validation on blur as well
+    const errorMessage = validateField(name, value);
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      if (errorMessage) {
+        newErrors[name] = errorMessage;
+      } else {
         delete newErrors[name];
-        return newErrors;
-      });
-    }
+      }
+      return newErrors;
+    });
   };
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate required field
@@ -168,12 +210,22 @@ const handleSubmit = async (e) => {
     // Validate all fields before submit
     const allErrors = {};
     Object.keys(formData).forEach(key => {
-      const errors = validateField(key, formData[key]);
-      Object.assign(allErrors, errors);
+      const errorMessage = validateField(key, formData[key]);
+      if (errorMessage) {
+        allErrors[key] = errorMessage;
+      }
     });
 
     if (Object.keys(allErrors).length > 0) {
       setFieldErrors(allErrors);
+      
+      // Mark all fields as touched
+      const allTouched = {};
+      Object.keys(formData).forEach(key => {
+        allTouched[key] = true;
+      });
+      setTouched(allTouched);
+      
       setError('Please fix validation errors before submitting');
       return;
     }
@@ -376,7 +428,7 @@ const handleSubmit = async (e) => {
                   onBlur={handleBlur}
                   disabled={isSubmitting}
                   error={isFieldInvalid('PrimaryPhone')}
-                  helperText={getFieldError('PrimaryPhone') || "Format: 0680713091, +27 68 071 3091, (068) 071-3091"}
+                  helperText={getFieldError('PrimaryPhone')}
                   size={settings.general.compactView ? "small" : "medium"}
                 />
               </Box>
