@@ -28,7 +28,6 @@ const CreateAccount = () => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
 
@@ -50,7 +49,7 @@ const CreateAccount = () => {
     annual_revenue: "",
     number_of_venues: "",
     number_of_releases: "",
-    number_of_events_anually: "",
+    number_of_events_annually: "",
     ParentAccount: "",
   });
 
@@ -61,39 +60,81 @@ const validateField = (name, value) => {
       case 'AccountName':
         if (!value || value.trim().length === 0) {
           errors.AccountName = 'Account name is required';
+        } else if (value.trim().length < 2) {
+          errors.AccountName = 'Account name must be at least 2 characters';
+        } else if (!/^[a-zA-Z0-9\s\-_.,&()]+$/.test(value.trim())) {
+          errors.AccountName = 'Account name contains invalid characters';
+        }
+        break;
+        
+      case 'street_address1':
+      case 'street_address2':
+      case 'street_address3':
+        if (value && value.trim() !== '') {
+          if (!/^[a-zA-Z0-9\s\-.,#/]+$/.test(value.trim())) {
+            errors[name] = 'Address contains invalid characters';
+          }
+        }
+        break;
+        
+      case 'postal_code':
+        if (value && value.trim() !== '') {
+          if (!/^[a-zA-Z0-9\s\-]{3,10}$/.test(value.trim())) {
+            errors.postal_code = 'Postal code must be 3-10 alphanumeric characters';
+          }
         }
         break;
         
       case 'email':
-        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          errors.email = 'Please enter a valid email address';
+        if (value && value.trim() !== '') {
+          const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+          if (!emailRegex.test(value.trim())) {
+            errors.email = 'Please enter a valid email address';
+          }
         }
         break;
         
       case 'Website':
-        if (value && value.trim() && !/^https?:\/\/.+/.test(value)) {
-          errors.Website = 'Website must start with http:// or https://';
+        if (value && value.trim() !== '') {
+          const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+          if (!urlRegex.test(value.trim())) {
+            errors.Website = 'Please enter a valid website URL';
+          }
         }
         break;
         
       case 'PrimaryPhone':
       case 'fax':
-        if (value && !/^[\d\s\-\(\)\+]+$/.test(value)) {
-          errors[name] = 'Invalid format';
+        if (value && value.trim() !== '') {
+          // International phone regex - supports all formats with +, spaces, dashes, parentheses
+          const phoneRegex = /^[\+]?[1-9][\d]{0,15}$|^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
+          const cleanPhone = value.replace(/[\s\-\(\)]/g, '');
+          if (!phoneRegex.test(value) || cleanPhone.length < 7 || cleanPhone.length > 15) {
+            errors[name] = 'Please enter a valid phone number';
+          }
         }
         break;
         
       case 'number_of_employees':
       case 'number_of_venues':
       case 'number_of_releases':
-      case 'number_of_events_anually':
+      case 'number_of_events_annually':
       case 'annual_revenue':
-        // Only validate if there's a value
         if (value && value.trim() !== '') {
-          if (isNaN(value) || Number(value) < 0) {
-            errors[name] = 'Must be a positive number';
+          const numValue = Number(value);
+          if (isNaN(numValue) || numValue < 0 || !Number.isInteger(numValue)) {
+            errors[name] = 'Must be a positive whole number';
           }
         }
+        break;
+        
+      case 'CountryID':
+      case 'StateProvinceID':
+      case 'CityID':
+      case 'IndustryID':
+      case 'ParentAccount':
+        // These are dropdown fields - validation depends on business rules
+        // Currently treating as optional, but can be made required if needed
         break;
     }
     
@@ -117,7 +158,15 @@ const validateField = (name, value) => {
       return newData;
     });
 
-    if (fieldErrors[name]) {
+    // Real-time validation
+    const errors = validateField(name, value);
+    
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(prev => ({
+        ...prev,
+        ...errors
+      }));
+    } else {
       setFieldErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[name];
@@ -184,11 +233,8 @@ const handleSubmit = async (e) => {
     try {
       const response = await createAccount(formData);
       
-      setSuccessMessage("Account created successfully!");
-      
-      setTimeout(() => {
-        navigate('/accounts');
-      }, 1500);
+      // Navigate immediately on success
+      navigate('/accounts');
 
     } catch (error) {
       console.error('Error creating account:', error);
@@ -203,11 +249,27 @@ const handleSubmit = async (e) => {
   };
 
   const isFieldInvalid = (fieldName) => {
-    return touched[fieldName] && fieldErrors[fieldName];
+    return fieldErrors[fieldName];
   };
 
   const getFieldError = (fieldName) => {
     return isFieldInvalid(fieldName) ? fieldErrors[fieldName] : '';
+  };
+
+  const isFormValid = () => {
+    // Check if AccountName is filled (required field)
+    if (!formData.AccountName || formData.AccountName.trim().length === 0) {
+      return false;
+    }
+
+    // Check if there are any validation errors
+    const allErrors = {};
+    Object.keys(formData).forEach(key => {
+      const errors = validateField(key, formData[key]);
+      Object.assign(allErrors, errors);
+    });
+
+    return Object.keys(allErrors).length === 0;
   };
 
   return (
@@ -245,7 +307,7 @@ const handleSubmit = async (e) => {
               variant="contained"
               startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isFormValid()}
             >
               {isSubmitting ? 'Saving...' : 'Save Account'}
             </Button>
@@ -255,12 +317,6 @@ const handleSubmit = async (e) => {
         {error && (
           <Alert severity="error" sx={{ mb: getSpacing(3) }} onClose={() => setError(null)}>
             {error}
-          </Alert>
-        )}
-
-        {successMessage && (
-          <Alert severity="success" sx={{ mb: getSpacing(3) }} onClose={() => setSuccessMessage('')}>
-            {successMessage}
           </Alert>
         )}
 
@@ -514,7 +570,8 @@ const handleSubmit = async (e) => {
                   fullWidth
                   label="Number of Employees"
                   name="number_of_employees"
-                  type="text"
+                  type="number"
+                  inputProps={{ min: 0 }}
                   value={formData.number_of_employees}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -531,7 +588,8 @@ const handleSubmit = async (e) => {
                   fullWidth
                   label="Annual Revenue"
                   name="annual_revenue"
-                  type="text"
+                  type="number"
+                  inputProps={{ min: 0 }}
                   value={formData.annual_revenue}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -548,7 +606,8 @@ const handleSubmit = async (e) => {
                   fullWidth
                   label="Number of Venues"
                   name="number_of_venues"
-                  type="text"
+                  type="number"
+                  inputProps={{ min: 0 }}
                   value={formData.number_of_venues}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -565,7 +624,8 @@ const handleSubmit = async (e) => {
                   fullWidth
                   label="Number of Releases"
                   name="number_of_releases"
-                  type="text"
+                  type="number"
+                  inputProps={{ min: 0 }}
                   value={formData.number_of_releases}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -581,14 +641,15 @@ const handleSubmit = async (e) => {
                 <TextField
                   fullWidth
                   label="Number of Events Annually"
-                  name="number_of_events_anually"
-                  type="text"
-                  value={formData.number_of_events_anually}
+                  name="number_of_events_annually"
+                  type="number"
+                  inputProps={{ min: 0 }}
+                  value={formData.number_of_events_annually}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
                   disabled={isSubmitting}
-                  error={isFieldInvalid('number_of_events_anually')}
-                  helperText={getFieldError('number_of_events_anually')}
+                  error={isFieldInvalid('number_of_events_annually')}
+                  helperText={getFieldError('number_of_events_annually')}
                   size={settings.general.compactView ? "small" : "medium"}
                   placeholder="e.g., 20"
                 />

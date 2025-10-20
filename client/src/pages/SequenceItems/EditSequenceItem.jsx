@@ -193,7 +193,7 @@ const EditSequenceItemPage = () => {
   const getFieldError = (fieldName) => {
     return touched[fieldName] && fieldErrors[fieldName] ? (
       <span style={{ display: 'flex', alignItems: 'center', color: '#ff4444' }}>
-        ✗ {fieldErrors[fieldName][0]}
+         {fieldErrors[fieldName][0]}
       </span>
     ) : '';
   };

@@ -50,11 +50,23 @@ const SmartDropdown = ({
       try {
         setLoading(true);
         setError(null);
+        console.log(`🔍 SmartDropdown (${label}): Loading options from service`);
         const data = await service.getAll();
+        console.log(`🔍 SmartDropdown (${label}): Raw data from service:`, data);
         const opts = Array.isArray(data) ? data : [];
+        console.log(`🔍 SmartDropdown (${label}): Processed options:`, opts);
+        console.log(`🔍 SmartDropdown (${label}): Options count:`, opts.length);
+        console.log(`🔍 SmartDropdown (${label}): Display field: ${displayField}, Value field: ${valueField}`);
+        
+        if (opts.length > 0) {
+          console.log(`🔍 SmartDropdown (${label}): First option sample:`, opts[0]);
+          console.log(`🔍 SmartDropdown (${label}): First option display value:`, opts[0][displayField]);
+          console.log(`🔍 SmartDropdown (${label}): First option value:`, opts[0][valueField]);
+        }
+        
         setOptions(opts);
       } catch (err) {
-        console.error(`Error loading ${label} options:`, err);
+        console.error(`❌ SmartDropdown (${label}): Error loading options:`, err);
         setError(`Failed to load ${label.toLowerCase()} options`);
         setOptions([]);
       } finally {
@@ -62,7 +74,7 @@ const SmartDropdown = ({
       }
     };
     loadOptions();
-  }, [service, label]);
+  }, [service, label, displayField, valueField]);
 
   // Update inputValue when value prop or options change
   useEffect(() => {
@@ -166,16 +178,23 @@ const SmartDropdown = ({
 
   useEffect(() => {
     // Filter options based on input
+    console.log(`🔍 SmartDropdown (${label}): Filtering options. Input: "${inputValue}", Options count: ${options.length}`);
+    
     if (!inputValue.trim()) {
+      console.log(`🔍 SmartDropdown (${label}): No input, showing all options`);
       setFilteredOptions(options);
     } else {
-      const filtered = options.filter(option =>
-        formatDisplayText(option).toLowerCase().includes(inputValue.toLowerCase())
-      );
+      const filtered = options.filter(option => {
+        const displayText = formatDisplayText(option);
+        const matches = displayText.toLowerCase().includes(inputValue.toLowerCase());
+        console.log(`🔍 SmartDropdown (${label}): Option "${displayText}" matches "${inputValue}": ${matches}`);
+        return matches;
+      });
+      console.log(`🔍 SmartDropdown (${label}): Filtered options count: ${filtered.length}`);
       setFilteredOptions(filtered);
     }
     setHighlightedIndex(-1);
-  }, [inputValue, options]);
+  }, [inputValue, options, label, displayField, valueField]);
 
   return (
     <ClickAwayListener onClickAway={handleClickAway}>

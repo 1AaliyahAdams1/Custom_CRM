@@ -69,7 +69,7 @@ const Unauthorized = () => {
             fontSize: "1.1rem"
           }}
         >
-          You don't have permission to access this page.
+          Access Denied - This page is only accessible by C-Level users.
         </Typography>
 
         <Typography

@@ -95,11 +95,13 @@ const PriorityLevelPage = ({
   const [newPriorityLevel, setNewPriorityLevel] = useState({
     PriorityName: '',
     Description: '',
-    PriorityOrder: '',
-    Color: '#079141ff',
+    PriorityLevel: '',
+    ColorCode: '#079141ff',
     IsActive: true
   });
   const [addPriorityLevelLoading, setAddPriorityLevelLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
@@ -172,15 +174,60 @@ const PriorityLevelPage = ({
     }
   };
 
+  // Validation rules
+  const validateField = (name, value) => {
+    const fieldErrors = {};
+
+    switch (name) {
+      case 'PriorityName':
+        if (!value.trim()) {
+          fieldErrors.PriorityName = 'Priority name is required';
+        } else if (value.trim().length < 2) {
+          fieldErrors.PriorityName = 'Priority name must be at least 2 characters';
+        } else if (value.trim().length > 100) {
+          fieldErrors.PriorityName = 'Priority name must be 100 characters or less';
+        }
+        break;
+      
+      case 'PriorityLevel':
+        const levelValue = parseInt(value);
+        if (!value || value === '') {
+          fieldErrors.PriorityLevel = 'Priority level is required';
+        } else if (isNaN(levelValue) || levelValue < 1 || levelValue > 10) {
+          fieldErrors.PriorityLevel = 'Priority level must be between 1 and 10';
+        }
+        break;
+
+      case 'ColorCode':
+        if (value.trim() && !/^#[0-9A-Fa-f]{6}$/.test(value.trim())) {
+          fieldErrors.ColorCode = 'Color code must be a valid hex color (e.g., #RRGGBB)';
+        }
+        break;
+
+      case 'Description':
+        if (value.trim() && value.trim().length > 255) {
+          fieldErrors.Description = 'Description must be 255 characters or less';
+        }
+        break;
+      
+      default:
+        break;
+    }
+
+    return fieldErrors;
+  };
+
   const handleOpenAddPriorityLevelDialog = () => {
     setAddPriorityLevelDialogOpen(true);
     setNewPriorityLevel({
       PriorityName: '',
       Description: '',
-      PriorityOrder: '',
-      Color: '#079141ff',
+      PriorityLevel: '',
+      ColorCode: '#079141ff',
       IsActive: true
     });
+    setErrors({});
+    setTouched({});
   };
 
   const handleCloseAddPriorityLevelDialog = () => {
@@ -188,54 +235,96 @@ const PriorityLevelPage = ({
     setNewPriorityLevel({
       PriorityName: '',
       Description: '',
-      PriorityOrder: '',
-      Color: '#079141ff',
+      PriorityLevel: '',
+      ColorCode: '#079141ff',
       IsActive: true
     });
+    setErrors({});
+    setTouched({});
   };
 
   const handleAddPriorityLevel = async () => {
-  if (!newPriorityLevel.PriorityName.trim()) {
-    setError && setError('Priority name is required');
-    return;
-  }
+    // Mark all fields as touched
+    const allTouched = {};
+    Object.keys(newPriorityLevel).forEach(key => {
+      allTouched[key] = true;
+    });
+    setTouched(allTouched);
 
-  // Validate PriorityOrder
-  if (!newPriorityLevel.PriorityOrder || newPriorityLevel.PriorityOrder === '') {
-    setError && setError('Priority order is required');
-    return;
-  }
+    // Validate all fields
+    const allErrors = {};
+    Object.keys(newPriorityLevel).forEach(key => {
+      const fieldErrors = validateField(key, newPriorityLevel[key]);
+      Object.assign(allErrors, fieldErrors);
+    });
 
-  setAddPriorityLevelLoading(true);
-  try {
-    if (onCreate) {
-      const priorityLevelData = {
-        PriorityName: newPriorityLevel.PriorityName.trim(),
-        Description: newPriorityLevel.Description,
-        PriorityOrder: parseInt(newPriorityLevel.PriorityOrder, 10),
-        Color: newPriorityLevel.Color,
-        IsActive: newPriorityLevel.IsActive
-      };
-      
-      console.log('Submitting priority level:', priorityLevelData);
-      
-      await onCreate(priorityLevelData);
-      handleCloseAddPriorityLevelDialog();
-      setSuccessMessage && setSuccessMessage('Priority level added successfully');
+    setErrors(allErrors);
+
+    if (Object.keys(allErrors).length > 0) {
+      setError && setError('Please fix the errors below before submitting');
+      return;
     }
-  } catch (error) {
-    console.error('Error in handleAddPriorityLevel:', error);
-    setError && setError(error.message || 'Failed to add priority level');
-  } finally {
-    setAddPriorityLevelLoading(false);
-  }
-};
+
+    setAddPriorityLevelLoading(true);
+    try {
+      if (onCreate) {
+        const priorityLevelData = {
+          PriorityName: newPriorityLevel.PriorityName.trim(),
+          Description: newPriorityLevel.Description,
+          PriorityLevel: parseInt(newPriorityLevel.PriorityLevel, 10),
+          ColorCode: newPriorityLevel.ColorCode,
+          IsActive: newPriorityLevel.IsActive
+        };
+        
+        console.log('Submitting priority level:', priorityLevelData);
+        
+        await onCreate(priorityLevelData);
+        handleCloseAddPriorityLevelDialog();
+        setSuccessMessage && setSuccessMessage('Priority level added successfully');
+      }
+    } catch (error) {
+      console.error('Error in handleAddPriorityLevel:', error);
+      setError && setError(error.message || 'Failed to add priority level');
+    } finally {
+      setAddPriorityLevelLoading(false);
+    }
+  };
+
   const handleInputChange = (field, value) => {
     setNewPriorityLevel(prev => ({
       ...prev,
       [field]: value
     }));
+
+    // Real-time validation
+    const fieldErrors = validateField(field, value);
+    setErrors(prev => ({
+      ...prev,
+      ...fieldErrors
+    }));
+
+    setTouched(prev => ({
+      ...prev,
+      [field]: true
+    }));
   };
+
+  // Check if form is valid for submit button
+  const isFormValid = () => {
+    const requiredFields = ['PriorityName', 'PriorityLevel'];
+    const hasRequiredFields = requiredFields.every(field => {
+      const value = newPriorityLevel[field];
+      return value && value.toString().trim();
+    });
+    const hasNoErrors = Object.keys(errors).length === 0;
+    return hasRequiredFields && hasNoErrors;
+  };
+
+  // Get field props for consistent styling
+  const getFieldProps = (name) => ({
+    error: touched[name] && !!errors[name],
+    helperText: touched[name] && errors[name] ? errors[name] : '',
+  });
 
   const colorOptions = [
     { value: '#f44336', label: 'High Priority (Red)' },
@@ -249,11 +338,8 @@ const PriorityLevelPage = ({
   ];
 
   const handleColorChange = (event) => {
-  setNewPriorityLevel(prev => ({
-    ...prev,
-    Color: event.target.value
-  }));
-};
+    handleInputChange('ColorCode', event.target.value);
+  };
 
   return (
     <Box sx={{ 

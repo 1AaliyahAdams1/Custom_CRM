@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -14,7 +14,7 @@ import { useTheme } from '@mui/material/styles';
 import SmartDropdown from '../../components/SmartDropdown';
 import { createDeal } from '../../services/dealService';
 import { getAllAccounts } from '../../services/accountService';
-import { dealStageService } from '../../services/dropdownServices';
+import { dealStageService, currencyService } from '../../services/dropdownServices';
 
 const CreateDealPage = () => {
   const theme = useTheme();
@@ -32,33 +32,108 @@ const CreateDealPage = () => {
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
 
-  const requiredFields = ['AccountID', 'DealStageID', 'DealName', 'Value', 'CloseDate', 'Probability', 'CurrencyID'];
+  const requiredFields = ['AccountID', 'DealName', 'Value'];
+
+  // Test currency API directly
+  useEffect(() => {
+    const testCurrencyAPI = async () => {
+      try {
+        console.log('=== TESTING CURRENCY API DIRECTLY ===');
+        const response = await fetch('/currencies', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        console.log('Direct API Response Status:', response.status);
+        console.log('Direct API Response OK:', response.ok);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Direct API Response Data:', data);
+          console.log('Direct API Data Length:', data?.length);
+        } else {
+          console.error('Direct API Error:', response.statusText);
+        }
+        console.log('=====================================');
+      } catch (error) {
+        console.error('Direct API Test Error:', error);
+      }
+    };
+    
+    testCurrencyAPI();
+  }, []);
 
   const validateField = (name, value) => {
     const errors = [];
-    const strValue = (value ?? '').toString().trim();
+    
+    // Define dropdown fields that contain numeric IDs
+    const dropdownFields = ['AccountID', 'DealStageID', 'CurrencyID'];
+    
+    // For dropdown fields, only check if value exists (don't call trim on numbers)
+    if (dropdownFields.includes(name)) {
+      if (name === 'AccountID') {
+        // Required dropdown field
+        if (!value || value === '') {
+          errors.push('Account is required.');
+        }
+      }
+      // Optional dropdown fields are always valid if they have a value or are empty
+      return errors;
+    }
+    
+    // For string fields, safely convert to string and trim
+    const strValue = typeof value === 'string' ? value.trim() : (value ?? '').toString().trim();
 
+    // Check required fields
     if (requiredFields.includes(name) && !strValue) {
       errors.push('This field is required.');
     }
 
+    // Only validate format if value exists
     if (strValue) {
       if (name === 'DealName') {
-        if (strValue.length < 3) errors.push('Deal name must be at least 3 characters.');
-        else if (!/^[A-Za-z\s]+$/.test(strValue)) errors.push('Deal name should only contain letters and spaces.');
+        if (strValue.length < 2) {
+          errors.push('Deal name must be at least 2 characters.');
+        } else if (!/^[a-zA-Z0-9\s\-_.,&()]+$/.test(strValue)) {
+          errors.push('Deal name contains invalid characters.');
+        }
       }
       if (name === 'Value') {
-        if (isNaN(strValue) || Number(strValue) < 0) errors.push('Please enter a valid positive numeric value.');
+        const numValue = Number(strValue);
+        if (isNaN(numValue) || numValue < 0) {
+          errors.push('Value must be a positive number.');
+        } else if (!/^\d+(\.\d{1,2})?$/.test(strValue)) {
+          errors.push('Value must have at most 2 decimal places (e.g., 99.99).');
+        }
       }
       if (name === 'Probability') {
         const num = Number(strValue);
-        if (isNaN(num)) errors.push('Please enter a valid number.');
-        else if (num < 0 || num > 100) errors.push('Probability must be between 0 and 100.');
+        if (isNaN(num)) {
+          errors.push('Please enter a valid number.');
+        } else if (num < 0 || num > 100) {
+          errors.push('Probability must be between 0 and 100.');
+        }
       }
       if (name === 'CloseDate') {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(strValue)) errors.push('Please enter a valid date in YYYY-MM-DD format.');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(strValue)) {
+          errors.push('Please enter a valid date in YYYY-MM-DD format.');
+        } else {
+          const selectedDate = new Date(strValue);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (selectedDate < today) {
+            errors.push('Close date cannot be in the past.');
+          }
+        }
+      }
+      if (name === 'DealStageID' || name === 'CurrencyID') {
+        // Optional dropdown fields - only validate if selected
+        if (strValue && strValue.trim() !== '') {
+          // Additional validation can be added here if needed
+        }
       }
     }
 
@@ -77,12 +152,19 @@ const CreateDealPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Ensure dropdown values are stored as strings for consistency
+    const processedValue = typeof value === 'number' ? value.toString() : value;
+    
+    console.log(`Field ${name} changed:`, { originalValue: value, processedValue, type: typeof processedValue });
+    
+    setFormData((prev) => ({ ...prev, [name]: processedValue }));
 
-    if (touched[name]) {
-      const errors = validateField(name, value);
-      setFieldErrors((prev) => ({ ...prev, [name]: errors.length > 0 ? errors : undefined }));
-    }
+    setTouched((prev) => ({ ...prev, [name]: true }));
+
+    // Real-time validation
+    const errors = validateField(name, processedValue);
+    setFieldErrors((prev) => ({ ...prev, [name]: errors.length > 0 ? errors : undefined }));
 
     if (error) setError(null);
   };
@@ -91,7 +173,10 @@ const CreateDealPage = () => {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
 
-    const errors = validateField(name, value);
+    // Ensure dropdown values are processed consistently
+    const processedValue = typeof value === 'number' ? value.toString() : value;
+    
+    const errors = validateField(name, processedValue);
     setFieldErrors((prev) => ({ ...prev, [name]: errors.length > 0 ? errors : undefined }));
   };
 
@@ -108,8 +193,8 @@ const CreateDealPage = () => {
 
     try {
       await createDeal(formData);
-      setSuccessMessage('Deal created successfully!');
-      setTimeout(() => navigate('/deals'), 1500);
+      // Navigate immediately on success
+      navigate('/deals');
     } catch (err) {
       console.error('Error creating deal:', err);
       setError('Failed to create deal. Please try again.');
@@ -128,14 +213,70 @@ const CreateDealPage = () => {
     ) : '';
   };
 
-  const isFieldInvalid = (fieldName) => touched[fieldName] && fieldErrors[fieldName]?.length > 0;
+  const isFieldInvalid = (fieldName) => fieldErrors[fieldName]?.length > 0;
+
+  const isFormValid = () => {
+    // Define dropdown fields that contain numeric IDs
+    const dropdownFields = ['AccountID', 'DealStageID', 'CurrencyID'];
+    
+    // Check required fields with safe type handling
+    if (!formData.AccountID || formData.AccountID === '') {
+      return false;
+    }
+    if (!formData.DealName || (typeof formData.DealName === 'string' && formData.DealName.trim() === '')) {
+      return false;
+    }
+    if (!formData.Value || (typeof formData.Value === 'string' && formData.Value.trim() === '')) {
+      return false;
+    }
+
+    // Check if there are any validation errors
+    const allErrors = {};
+    Object.keys(formData).forEach(key => {
+      const errors = validateField(key, formData[key]);
+      if (errors.length > 0) {
+        allErrors[key] = errors;
+      }
+    });
+
+    return Object.keys(allErrors).length === 0;
+  };
 
   const accountService = {
     getAll: async () => {
       try {
+        console.log('=== ACCOUNT SERVICE DEBUG ===');
+        console.log('Account Service: Fetching accounts from /accounts...');
         const response = await getAllAccounts();
+        console.log('Account Service: Response:', response);
+        console.log('Account Service: Response type:', typeof response);
+        console.log('Account Service: Is array:', Array.isArray(response));
+        console.log('Account Service: Length:', response?.length);
+        console.log('================================');
         return response.data || response;
-      } catch {
+      } catch (error) {
+        console.error('Account Service: Error:', error);
+        return [];
+      }
+    },
+  };
+
+  // Create a custom currency service with detailed logging
+  const currencyServiceWithLogging = {
+    getAll: async () => {
+      try {
+        console.log('=== CURRENCY SERVICE DEBUG ===');
+        console.log('Currency Service: Fetching currencies from /currencies...');
+        const response = await currencyService.getAll();
+        console.log('Currency Service: Response:', response);
+        console.log('Currency Service: Response type:', typeof response);
+        console.log('Currency Service: Is array:', Array.isArray(response));
+        console.log('Currency Service: Length:', response?.length);
+        console.log('Currency Service: Sample data:', response?.[0]);
+        console.log('================================');
+        return response;
+      } catch (error) {
+        console.error('Currency Service: Error:', error);
         return [];
       }
     },
@@ -163,7 +304,7 @@ const CreateDealPage = () => {
               variant="contained"
               startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isFormValid()}
             >
               {isSubmitting ? 'Saving...' : 'Save Deal'}
             </Button>
@@ -171,7 +312,6 @@ const CreateDealPage = () => {
         </Box>
 
         {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>{error}</Alert>}
-        {successMessage && <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>{successMessage}</Alert>}
 
         <Paper elevation={0} sx={{ 
           p: 3,
@@ -214,24 +354,29 @@ const CreateDealPage = () => {
                 onChange={handleInputChange}
                 onBlur={handleBlur}
                 fullWidth
+                required
                 error={isFieldInvalid('DealName')}
-                helperText={getFieldError('DealName')}
+                helperText={getFieldError('DealName') || 'Enter deal name (min 2 characters)'}
+                placeholder="Enter deal name"
               />
 
               <TextField
                 label="Value"
                 name="Value"
                 type="number"
+                inputProps={{ step: "0.01", min: 0 }}
                 value={formData.Value}
                 onChange={handleInputChange}
                 onBlur={handleBlur}
                 fullWidth
+                required
                 error={isFieldInvalid('Value')}
-                helperText={getFieldError('Value')}
+                helperText={getFieldError('Value') || 'Enter amount (e.g., 99.99)'}
+                placeholder="0.00"
               />
 
               <TextField
-                label="Close Date"
+                label="Close Date (Optional)"
                 name="CloseDate"
                 type="date"
                 value={formData.CloseDate}
@@ -240,30 +385,36 @@ const CreateDealPage = () => {
                 fullWidth
                 InputLabelProps={{ shrink: true }}
                 error={isFieldInvalid('CloseDate')}
-                helperText={getFieldError('CloseDate')}
+                helperText={getFieldError('CloseDate') || 'Select future date (optional)'}
               />
 
               <TextField
                 label="Probability (%)"
                 name="Probability"
                 type="number"
+                inputProps={{ min: 0, max: 100 }}
                 value={formData.Probability}
                 onChange={handleInputChange}
                 onBlur={handleBlur}
                 fullWidth
                 error={isFieldInvalid('Probability')}
-                helperText={getFieldError('Probability')}
+                helperText={getFieldError('Probability') || 'Enter percentage (0-100)'}
+                placeholder="0"
               />
 
-              <TextField
-                label="Currency ID"
+              <SmartDropdown
+                label="Currency"
                 name="CurrencyID"
                 value={formData.CurrencyID}
                 onChange={handleInputChange}
                 onBlur={handleBlur}
-                fullWidth
+                service={currencyServiceWithLogging}
+                displayField="EnglishName"
+                valueField="CurrencyID"
+                disabled={isSubmitting}
                 error={isFieldInvalid('CurrencyID')}
-                helperText={getFieldError('CurrencyID')}
+                helperText={getFieldError('CurrencyID') || 'Select currency (e.g., USD - US Dollar)'}
+                placeholder="Search for currency..."
               />
             </Box>
           </form>

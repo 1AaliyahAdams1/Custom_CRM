@@ -1,7 +1,7 @@
 const ALL = ["C-level", "Sales Manager", "HR Manager", "Sales Representative", "Reporter", "Customer Support", "Marketing", "Finance"];
 const MANAGEMENT = ["C-level", "Sales Manager", "HR Manager"]; 
 const HR = ["C-level", "HR Manager"];
-const CLEVEL = ["C-level"];
+const CLEVEL = ["C-level", "Clevel", "Admin", "Administrator"];
 
 export const ROUTE_ACCESS = {
   // Core
@@ -101,11 +101,11 @@ export const ROUTE_ACCESS = {
   //AuditLog
   auditLog: MANAGEMENT,
 
-  //Employees
-  employees: MANAGEMENT,
-  employeesCreate: MANAGEMENT,
-  employeesEdit: MANAGEMENT,
-  employeesDetails: MANAGEMENT,
+  //Employees - C-Level only
+  employees: CLEVEL,
+  employeesCreate: CLEVEL,
+  employeesEdit: CLEVEL,
+  employeesDetails: CLEVEL,
 
   //Category
   category: MANAGEMENT,

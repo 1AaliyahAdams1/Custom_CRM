@@ -97,6 +97,9 @@ const EditContactPage = () => {
   const [stateProvinces, setStateProvinces] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
+  
+  // FIX: Define successMessage state variable
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [formData, setFormData] = useState({
     ContactID: "",
@@ -127,13 +130,39 @@ const EditContactPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
+
+  const requiredFields = ['first_name', 'surname', 'WorkEmail'];
+
+  const isFormValid = () => {
+    // Check if all required fields are valid
+    const requiredFieldValid = requiredFields.every(field => {
+      const error = validateContactField(field, formData[field]);
+      return !error;
+    });
+
+    // Check if all non-empty fields are valid
+    const allFieldsValid = Object.keys(formData).every(field => {
+      const value = formData[field];
+      const strValue = value?.toString().trim();
+      
+      // If field is empty and not required, it's valid
+      if ((!strValue || strValue === '') && !requiredFields.includes(field)) {
+        return true;
+      }
+      
+      // If field has value, validate it
+      const error = validateContactField(field, value);
+      return !error;
+    });
+
+    return requiredFieldValid && allFieldsValid;
+  };
 
   // Enhanced error display with icon
   const getFieldError = (fieldName) => {
     return touched[fieldName] && fieldErrors[fieldName] ? (
       <span style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ color: '#ff4444', marginRight: '4px' }}>✗</span>
+        <span style={{ color: '#ff4444', marginRight: '4px' }}></span>
         {fieldErrors[fieldName]}
       </span>
     ) : '';
@@ -283,6 +312,7 @@ const EditContactPage = () => {
     try {
       setSaving(true);
       setError(null);
+      setSuccessMessage(null); // Clear previous success message
 
       // Add ContactID to formData for the update
       const updateData = {
@@ -291,13 +321,10 @@ const EditContactPage = () => {
       };
 
       await updateContact(id, updateData);
-      setSuccessMessage("Contact updated successfully!");
-
-      // Navigate back to contacts page after a short delay
-      setTimeout(() => {
-        navigate("/contacts");
-      }, 1500);
-
+      
+      // setSuccessMessage("Contact updated successfully!"); // If you want to show success on this page
+      navigate("/contacts"); // Navigating away immediately after a successful update
+      
     } catch (error) {
       console.error("Failed to update contact:", error);
       
@@ -393,7 +420,7 @@ const EditContactPage = () => {
                 variant="contained"
                 startIcon={saving ? <CircularProgress size={20} /> : <Save />}
                 onClick={handleSubmit}
-                disabled={saving}
+                disabled={saving || !isFormValid()}
               >
                 {saving ? 'Updating...' : 'Update Contact'}
               </Button>
@@ -407,9 +434,9 @@ const EditContactPage = () => {
             </Alert>
           )}
 
-          {/* Success Alert */}
+          {/* Success Alert (Added for completeness, assuming intended use of successMessage) */}
           {successMessage && (
-            <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+            <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage(null)}>
               {successMessage}
             </Alert>
           )}

@@ -5,7 +5,8 @@ const { dbConfig } = require("../dbConfig");
 async function getAllCurrencies() {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
-    .query("SELECT * FROM Currency");
+    .query("SELECT CurrencyID, Symbol, EnglishName, ISOCode, DecimalPlaces, LocalName, ExchangeRate, Prefix, Active FROM dbo.Currency WHERE Active = 1 ORDER BY EnglishName");
+  console.log('Currency Repository: Fetched', result.recordset.length, 'currencies');
   return result.recordset;
 }
 
@@ -14,21 +15,21 @@ async function getCurrencyById(id) {
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
     .input("CurrencyID", sql.Int, id)
-    .query("SELECT * FROM Currency WHERE CurrencyID = @CurrencyID");
+    .query("SELECT * FROM dbo.Currency WHERE CurrencyID = @CurrencyID");
   return result.recordset[0];
 }
 
 // Create new currency
 async function createCurrency(data) {
   const {
-    Symbol, ISOcode, DecimalPlaces, EnglishName,
+    Symbol, ISOCode, DecimalPlaces, EnglishName,
     LocalName, ExchangeRate, Prefix
   } = data;
 
   const pool = await sql.connect(dbConfig);
   const result = await pool.request()
     .input("Symbol", sql.NVarChar(5), Symbol)
-    .input("ISOcode", sql.NVarChar(3), ISOcode)
+    .input("ISOCode", sql.NVarChar(3), ISOCode)
     .input("DecimalPlaces", sql.TinyInt, DecimalPlaces)
     .input("EnglishName", sql.NVarChar(100), EnglishName)
     .input("LocalName", sql.NVarChar(100), LocalName)
@@ -36,8 +37,8 @@ async function createCurrency(data) {
     .input("Prefix", sql.Bit, Prefix)
     .input("Active", sql.Bit, true)
     .query(`
-      INSERT INTO Currency (Symbol, ISOcode, DecimalPlaces, EnglishName, LocalName, ExchangeRate, Prefix, Active, LastUpdated)
-      VALUES (@Symbol, @ISOcode, @DecimalPlaces, @EnglishName, @LocalName, @ExchangeRate, @Prefix, @Active, GETDATE());
+      INSERT INTO dbo.Currency (Symbol, ISOCode, DecimalPlaces, EnglishName, LocalName, ExchangeRate, Prefix, Active, LastUpdated)
+      VALUES (@Symbol, @ISOCode, @DecimalPlaces, @EnglishName, @LocalName, @ExchangeRate, @Prefix, @Active, GETDATE());
       SELECT SCOPE_IDENTITY() AS CurrencyID
     `);
 
@@ -47,7 +48,7 @@ async function createCurrency(data) {
 // Update currency
 async function updateCurrency(id, data) {
   const {
-    Symbol, ISOcode, DecimalPlaces, EnglishName,
+    Symbol, ISOCode, DecimalPlaces, EnglishName,
     LocalName, ExchangeRate, Prefix
   } = data;
 
@@ -55,16 +56,16 @@ async function updateCurrency(id, data) {
   await pool.request()
     .input("CurrencyID", sql.Int, id)
     .input("Symbol", sql.NVarChar(5), Symbol)
-    .input("ISOcode", sql.NVarChar(3), ISOcode)
+    .input("ISOCode", sql.NVarChar(3), ISOCode)
     .input("DecimalPlaces", sql.TinyInt, DecimalPlaces)
     .input("EnglishName", sql.NVarChar(100), EnglishName)
     .input("LocalName", sql.NVarChar(100), LocalName)
     .input("ExchangeRate", sql.Decimal(9, 4), ExchangeRate)
     .input("Prefix", sql.Bit, Prefix)
     .query(`
-      UPDATE Currency
+      UPDATE dbo.Currency
       SET Symbol = @Symbol,
-          ISOcode = @ISOcode,
+          ISOCode = @ISOCode,
           DecimalPlaces = @DecimalPlaces,
           EnglishName = @EnglishName,
           LocalName = @LocalName,
@@ -82,7 +83,7 @@ async function deactivateCurrency(id) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CurrencyID", sql.Int, id)
-    .query("UPDATE Currency SET Active = 0, LastUpdated = GETDATE() WHERE CurrencyID = @CurrencyID");
+    .query("UPDATE dbo.Currency SET Active = 0, LastUpdated = GETDATE() WHERE CurrencyID = @CurrencyID");
   return { CurrencyID: id };
 }
 
@@ -91,7 +92,7 @@ async function reactivateCurrency(id) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CurrencyID", sql.Int, id)
-    .query("UPDATE Currency SET Active = 1, LastUpdated = GETDATE() WHERE CurrencyID = @CurrencyID");
+    .query("UPDATE dbo.Currency SET Active = 1, LastUpdated = GETDATE() WHERE CurrencyID = @CurrencyID");
   return { CurrencyID: id };
 }
 
@@ -100,7 +101,7 @@ async function deleteCurrency(id) {
   const pool = await sql.connect(dbConfig);
   await pool.request()
     .input("CurrencyID", sql.Int, id)
-    .query("DELETE FROM Currency WHERE CurrencyID = @CurrencyID");
+    .query("DELETE FROM dbo.Currency WHERE CurrencyID = @CurrencyID");
   return { CurrencyID: id };
 }
 

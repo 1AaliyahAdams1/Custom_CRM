@@ -21,11 +21,15 @@ import {
   cityService,
   industryService,
   countryService,
-  stateProvinceService
+  stateProvinceService,
+  teamService,
+  departmentService,
+  jobTitleService
 } from '../../services/dropdownServices';
 
 
 import SmartDropdown from '../../components/SmartDropdown';
+import RoleBasedAccess from '../../components/auth/RoleBasedAccess';
 
 const CreateEmployeePage = () => {
   const theme = useTheme();
@@ -48,41 +52,168 @@ const CreateEmployeePage = () => {
     CityID: '',
     StateProvinceID: '',
   });
+  
+  // Debug: verify teams load once on mount and structure matches expectations
+  useEffect(() => {
+    (async () => {
+      try {
+        console.log('Fetching teams...');
+        const teams = await teamService.getAll();
+        console.log('Team API response:', teams);
+        if (Array.isArray(teams)) {
+          console.log('Teams loaded in state (SmartDropdown manages its own state): count =', teams.length);
+          if (teams.length > 0) {
+            console.log('First team sample:', teams[0]);
+            const hasExpectedShape = teams[0] &&
+              (Object.prototype.hasOwnProperty.call(teams[0], 'TeamID') || Object.prototype.hasOwnProperty.call(teams[0], 'teamId')) &&
+              (Object.prototype.hasOwnProperty.call(teams[0], 'TeamName') || Object.prototype.hasOwnProperty.call(teams[0], 'teamName'));
+            if (!hasExpectedShape) {
+              console.warn('Team objects do not have expected fields TeamID/TeamName');
+            }
+          }
+        } else {
+          console.warn('Teams response is not an array.');
+        }
+      } catch (e) {
+        console.error('Team fetch error:', e);
+      }
+    })();
+  }, []);
 
   const [formErrors, setFormErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
 
-  const departmentService = {
-    getAll: async () => {
-      // TODO: Replace with actual API call
-      return [];
+  // Regex patterns for validation
+  const validationPatterns = {
+    // Phone validation: Accepts international formats with/without +, spaces, dashes, parentheses
+    phone: /^[\+]?[\d\s\-\(\)]{7,20}$/,
+    // Email validation: Standard email format
+    email: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
+    // Name validation: Letters, spaces, hyphens only
+    name: /^[a-zA-Z\s\-']+$/
+  };
+
+  // Real-time validation function
+  const validateField = (fieldName, value) => {
+    // Define dropdown fields that contain numeric IDs
+    const dropdownFields = ['DepartmentID', 'JobTitleID', 'TeamID', 'CityID', 'StateProvinceID'];
+    
+    // For dropdown fields, only check if value exists (don't call trim on numbers)
+    if (dropdownFields.includes(fieldName)) {
+      if (fieldName === 'DepartmentID' || fieldName === 'JobTitleID') {
+        // Required dropdown fields
+        if (!value || value === '') {
+          return fieldName === 'DepartmentID' ? 'Department is required' : 'Job title is required';
+        }
+      }
+      // Optional dropdown fields are always valid if they have a value or are empty
+      return '';
+    }
+    
+    // For string fields, safely convert to string and trim
+    const trimmedValue = typeof value === 'string' ? value.trim() : (value ?? '').toString().trim();
+    
+    switch (fieldName) {
+      case 'EmployeeName':
+        if (!trimmedValue) {
+          return 'Full name is required';
+        }
+        if (!validationPatterns.name.test(trimmedValue)) {
+          return 'Name can only contain letters, spaces, hyphens, and apostrophes';
+        }
+        if (trimmedValue.length < 2) {
+          return 'Name must be at least 2 characters long';
+        }
+        if (trimmedValue.length > 100) {
+          return 'Name must be less than 100 characters';
+        }
+        return '';
+
+      case 'EmployeeEmail':
+        if (!trimmedValue) {
+          return 'Email is required';
+        }
+        if (!validationPatterns.email.test(trimmedValue)) {
+          return 'Please enter a valid email address';
+        }
+        if (trimmedValue.length > 255) {
+          return 'Email must be less than 255 characters';
+        }
+        return '';
+
+      case 'EmployeePhone':
+        if (trimmedValue && !validationPatterns.phone.test(trimmedValue)) {
+          return 'Please enter a valid phone number (e.g., +1234567890, (123) 456-7890, 123-456-7890)';
+        }
+        return '';
+
+      case 'HireDate':
+        if (!trimmedValue) {
+          return 'Hire date is required';
+        }
+        const hireDate = new Date(trimmedValue);
+          const today = new Date();
+        if (hireDate > today) {
+          return 'Hire date cannot be in the future';
+        }
+        if (hireDate < new Date('1900-01-01')) {
+          return 'Hire date cannot be before 1900';
+        }
+        return '';
+
+      case 'salary':
+        if (trimmedValue && (isNaN(Number(trimmedValue)) || Number(trimmedValue) < 0)) {
+          return 'Salary must be a positive number';
+        }
+        if (trimmedValue && Number(trimmedValue) > 999999999) {
+          return 'Salary must be less than $1,000,000,000';
+        }
+        return '';
+
+      case 'Holidays_PA':
+        if (trimmedValue && (isNaN(Number(trimmedValue)) || Number(trimmedValue) < 0)) {
+          return 'Holidays must be a positive number';
+        }
+        if (trimmedValue && Number(trimmedValue) > 365) {
+          return 'Holidays cannot exceed 365 days per year';
+        }
+        return '';
+
+      default:
+        return '';
     }
   };
 
-  const jobTitleService = {
-    getAll: async () => {
-      // TODO: Replace with actual API call
-      return [];
+  // Check if form is valid for submission
+  const isFormValid = () => {
+    const requiredFields = ['EmployeeName', 'EmployeeEmail', 'DepartmentID', 'JobTitleID', 'HireDate'];
+    const dropdownFields = ['DepartmentID', 'JobTitleID', 'TeamID', 'CityID', 'StateProvinceID'];
+    
+    // Check if all required fields have values
+    for (const field of requiredFields) {
+      if (dropdownFields.includes(field)) {
+        // For dropdown fields, check if value exists (don't call trim on numbers)
+        if (!formData[field] || formData[field] === '') {
+          return false;
+        }
+      } else {
+        // For string fields, check if trimmed value exists
+        if (!formData[field] || (typeof formData[field] === 'string' && !formData[field].trim())) {
+          return false;
+        }
+      }
     }
+    
+    // Check if all fields pass validation
+    for (const fieldName of Object.keys(formData)) {
+      const error = validateField(fieldName, formData[fieldName]);
+      if (error) {
+        return false;
+      }
+    }
+    
+    return true;
   };
-
-  const teamService = {
-    getAll: async () => {
-      // TODO: Replace with actual API call
-      return [];
-    }
-  };
-
-  const stateProvinceService = {
-    getAll: async () => {
-      return await stateProvinceService.getAll();
-    }
-  };
-    const cityService = {
-    getAll: async () => {
-      return await cityService.getAll();
-    }
-    };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -91,49 +222,33 @@ const CreateEmployeePage = () => {
       [name]: value
     }));
     
-    // Clear error for this field
-    if (formErrors[name]) {
-      setFormErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const handleBlur = (e) => {
-    const { name } = e.target;
+    // Mark field as touched
     setTouchedFields(prev => ({
       ...prev,
       [name]: true
     }));
+    
+    // Validate field in real-time
+    const error = validateField(name, value);
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
   };
 
-  const validateForm = () => {
-    const errors = {};
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouchedFields(prev => ({
+      ...prev,
+      [name]: true
+    }));
     
-    if (!formData.EmployeeName.trim()) {
-      errors.EmployeeName = 'Full name is required';
-    }
-    
-    if (!formData.EmployeeEmail.trim()) {
-      errors.EmployeeEmail = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.EmployeeEmail)) {
-      errors.EmployeeEmail = 'Invalid email format';
-    }
-    
-    if (!formData.DepartmentID) {
-      errors.DepartmentID = 'Department is required';
-    }
-    
-    if (!formData.JobTitleID) {
-      errors.JobTitleID = 'Job title is required';
-    }
-    
-    if (!formData.HireDate) {
-      errors.HireDate = 'Hire date is required';
-    }
-    
-    return errors;
+    // Validate field on blur
+    const error = validateField(name, value);
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
   };
 
   const isFieldInvalid = (fieldName) => {
@@ -154,7 +269,14 @@ const CreateEmployeePage = () => {
     }, {});
     setTouchedFields(allFields);
     
-    const errors = validateForm();
+    // Validate all fields
+    const errors = {};
+    for (const fieldName of Object.keys(formData)) {
+      const error = validateField(fieldName, formData[fieldName]);
+      if (error) {
+        errors[fieldName] = error;
+      }
+    }
     setFormErrors(errors);
     
     if (Object.keys(errors).length > 0) {
@@ -162,22 +284,44 @@ const CreateEmployeePage = () => {
       return;
     }
     
+    // Double-check form validity before submitting
+    if (!isFormValid()) {
+      setError('Please fix the errors before submitting');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
-    
+
     try {
-      // Replace with your actual API call
-      // const response = await employeeService.create(formData);
+      // Prepare data for API call - convert empty strings to null for optional fields
+      const employeeData = {
+        ...formData,
+        TeamID: formData.TeamID || null,
+        CityID: formData.CityID || null,
+        StateProvinceID: formData.StateProvinceID || null,
+        salary: formData.salary || null,
+        Holidays_PA: formData.Holidays_PA || null,
+        EmployeePhone: formData.EmployeePhone || null
+      };
+      
+      // Get current user for audit logging (you may need to adjust this based on your auth implementation)
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const changedBy = currentUser.EmployeeID || 1; // Default to 1 if no user found
+      const actionTypeId = 1; // Create action type ID
+      
+      await createEmployee(employeeData, changedBy, actionTypeId);
       
       setSuccessMessage('Employee created successfully!');
       
       // Navigate after short delay
       setTimeout(() => {
-        navigate('/employees'); // Adjust route as needed
+        navigate('/employees');
       }, 1500);
       
     } catch (err) {
-      setError(err.message || 'Failed to create employee');
+      console.error('Error creating employee:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to create employee');
     } finally {
       setIsSubmitting(false);
     }
@@ -191,22 +335,23 @@ const CreateEmployeePage = () => {
 
 
   return (
-    <Box sx={{ 
-      width: '100%', 
+    <RoleBasedAccess allowedRoles={['C-level', 'Clevel', 'Admin', 'Administrator']} fallbackPath="/unauthorized">
+    <Box sx={{
+      width: '100%',
       backgroundColor: theme.palette.background.default,
-      minHeight: '100vh', 
+      minHeight: '100vh',
       p: 3 
     }}>
       <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h4" sx={{ 
+          <Typography variant="h4" sx={{
               color: theme.palette.text.primary,
               fontWeight: 600 
-            }}>
+          }}>
               Create New Employee
-            </Typography>
+          </Typography>
           </Box>
           
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -230,7 +375,7 @@ const CreateEmployeePage = () => {
               variant="contained"
               startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isFormValid()}
             >
               {isSubmitting ? 'Saving...' : 'Save Employee'}
             </Button>
@@ -275,11 +420,12 @@ const CreateEmployeePage = () => {
                   name="EmployeeName"
                   value={formData.EmployeeName}
                   onChange={handleChange}
-                  onBlur={handleBlur}
+                onBlur={handleBlur}
                   required
-                  disabled={isSubmitting}
+                disabled={isSubmitting}
                   error={isFieldInvalid('EmployeeName')}
-                  helperText={getFieldError('EmployeeName')}
+                  helperText={getFieldError('EmployeeName') || 'Enter first and last name'}
+                  placeholder="Enter full name"
                   FormHelperTextProps={{
                     component: 'div'
                   }}
@@ -295,11 +441,12 @@ const CreateEmployeePage = () => {
                   type="email"
                   value={formData.EmployeeEmail}
                   onChange={handleChange}
-                  onBlur={handleBlur}
+                onBlur={handleBlur}
                   required
-                  disabled={isSubmitting}
+                disabled={isSubmitting}
                   error={isFieldInvalid('EmployeeEmail')}
-                  helperText={getFieldError('EmployeeEmail')}
+                  helperText={getFieldError('EmployeeEmail') || 'Enter valid email address'}
+                  placeholder="Enter email address"
                   FormHelperTextProps={{
                     component: 'div'
                   }}
@@ -308,16 +455,18 @@ const CreateEmployeePage = () => {
 
               {/* Phone Number - Optional */}
               <Box>
-                <TextField
+              <TextField
                   fullWidth
                   label="Phone Number (Optional)"
                   name="EmployeePhone"
                   value={formData.EmployeePhone}
                   onChange={handleChange}
-                  onBlur={handleBlur}
+                onBlur={handleBlur}
                   disabled={isSubmitting}
                   error={isFieldInvalid('EmployeePhone')}
-                  helperText={getFieldError('EmployeePhone')}
+                  helperText={getFieldError('EmployeePhone') || 'e.g., +1234567890, (123) 456-7890, 123-456-7890'}
+                  placeholder="Enter phone number"
+                  type="number"
                   FormHelperTextProps={{
                     component: 'div'
                   }}
@@ -346,7 +495,7 @@ const CreateEmployeePage = () => {
                   displayField="DepartmentName"
                   valueField="DepartmentID"
                   placeholder="Search for department..."
-                  required
+                required
                   disabled={isSubmitting}
                   error={isFieldInvalid('DepartmentID')}
                   helperText={getFieldError('DepartmentID')}
@@ -364,7 +513,7 @@ const CreateEmployeePage = () => {
                   displayField="JobTitleName"
                   valueField="JobTitleID"
                   placeholder="Search for job title..."
-                  required
+                required
                   disabled={isSubmitting}
                   error={isFieldInvalid('JobTitleID')}
                   helperText={getFieldError('JobTitleID')}
@@ -378,24 +527,26 @@ const CreateEmployeePage = () => {
                   name="TeamID"
                   value={formData.TeamID}
                   onChange={handleChange}
-                  service={teamService} // Replace with your actual service
+                  service={teamService}
                   displayField="TeamName"
                   valueField="TeamID"
                   placeholder="Search for team..."
                   disabled={isSubmitting}
+                  error={isFieldInvalid('TeamID')}
+                  helperText={getFieldError('TeamID')}
                 />
               </Box>
 
               {/* Hire Date - Required */}
               <Box>
-                <TextField
+              <TextField
                   fullWidth
                   label="Hire Date"
                   name="HireDate"
-                  type="date"
+                type="date"
                   value={formData.HireDate}
                   onChange={handleChange}
-                  onBlur={handleBlur}
+                onBlur={handleBlur}
                   required
                   disabled={isSubmitting}
                   error={isFieldInvalid('HireDate')}
@@ -411,14 +562,14 @@ const CreateEmployeePage = () => {
 
               {/* Salary - Optional */}
               <Box>
-                <TextField
+              <TextField
                   fullWidth
                   label="Salary (Optional)"
                   name="salary"
-                  type="number"
+                type="number"
                   value={formData.salary}
                   onChange={handleChange}
-                  onBlur={handleBlur}
+                onBlur={handleBlur}
                   disabled={isSubmitting}
                   error={isFieldInvalid('salary')}
                   helperText={getFieldError('salary')}
@@ -433,14 +584,14 @@ const CreateEmployeePage = () => {
 
               {/* Holidays Per Year - Optional */}
               <Box>
-                <TextField
+              <TextField
                   fullWidth
                   label="Holidays Per Year (Optional)"
                   name="Holidays_PA"
                   type="number"
                   value={formData.Holidays_PA}
                   onChange={handleChange}
-                  onBlur={handleBlur}
+                onBlur={handleBlur}
                   disabled={isSubmitting}
                   error={isFieldInvalid('Holidays_PA')}
                   helperText={getFieldError('Holidays_PA')}
@@ -483,8 +634,8 @@ const CreateEmployeePage = () => {
                   name="StateProvinceID"
                   value={formData.StateProvinceID}
                   onChange={handleChange}
-                  service={stateProvinceService} // Replace with your actual service
-                  displayField="StateProvinceName"
+                  service={stateProvinceService}
+                  displayField="StateProvince_Name"
                   valueField="StateProvinceID"
                   placeholder="Search for state/province..."
                   disabled={isSubmitting}
@@ -496,6 +647,7 @@ const CreateEmployeePage = () => {
         </Paper>
       </Box>
     </Box>
+    </RoleBasedAccess>
   );
 };
 

@@ -27,7 +27,6 @@ const EditAccount = () => {
   const theme = useTheme();
   
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -61,10 +60,12 @@ const EditAccount = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const requiredFields = ['AccountName', 'PrimaryPhone'];
+
   const getFieldError = (fieldName) => {
     return touched[fieldName] && fieldErrors[fieldName] ? (
       <span style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ color: '#ff4444', marginRight: '4px' }}>✗</span>
+        <span style={{ color: '#ff4444', marginRight: '4px' }}></span>
         {fieldErrors[fieldName][0]}
       </span>
     ) : '';
@@ -183,6 +184,31 @@ const EditAccount = () => {
     return isValid;
   };
 
+  const isFormValid = () => {
+    // Check if all required fields are valid
+    const requiredFieldValid = requiredFields.every(field => {
+      const errors = validateField(field, formData[field]);
+      return errors.length === 0;
+    });
+
+    // Check if all non-empty fields are valid
+    const allFieldsValid = Object.keys(formData).every(field => {
+      const value = formData[field];
+      const strValue = value?.toString().trim();
+      
+      // If field is empty and not required, it's valid
+      if ((!strValue || strValue === '') && !requiredFields.includes(field)) {
+        return true;
+      }
+      
+      // If field has value, validate it
+      const errors = validateField(field, value);
+      return errors.length === 0;
+    });
+
+    return requiredFieldValid && allFieldsValid;
+  };
+
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
@@ -264,13 +290,12 @@ const EditAccount = () => {
       [name]: true
     }));
 
-    if (touched[name]) {
-      const errors = validateField(name, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [name]: errors.length > 0 ? errors : undefined
-      }));
-    }
+    // Always validate the changed field in real-time
+    const errors = validateField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: errors.length > 0 ? errors : undefined
+    }));
 
     if (error) {
       setError(null);
@@ -310,10 +335,9 @@ const EditAccount = () => {
       setSaving(true);
       setError(null);
       await updateAccount(id, formData);
-      setSuccessMessage("Account updated successfully!");
       console.log("Server id response:", id);
       console.log("Server formdata response:", formData);
-      setTimeout(() => navigate("/accounts"), 1500);
+      navigate("/accounts");
     } catch (error) {
       console.error('Error updating account:', error);
       
@@ -364,7 +388,7 @@ const EditAccount = () => {
               variant="contained" 
               startIcon={saving ? <CircularProgress size={20} /> : <Save />} 
               onClick={handleSubmit} 
-              disabled={saving}
+              disabled={saving || !isFormValid()}
             >
               {saving ? 'Updating...' : 'Update Account'}
             </Button>
@@ -374,11 +398,6 @@ const EditAccount = () => {
         {error && (
           <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
             {error}
-          </Alert>
-        )}
-        {successMessage && (
-          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
-            {successMessage}
           </Alert>
         )}
 

@@ -16,10 +16,30 @@ function authorizeRole(allowedRoles = [], options = {}) {
       const userRoles = req.user?.roles || [];
       const userId = req.user?.userId;
 
-      // Role check
-      const hasRole = allowedRoles.some(role => userRoles.includes(role));
+      // Debug logging
+      console.log('=== AUTHORIZATION DEBUG ===');
+      console.log('User ID:', userId);
+      console.log('User roles from token:', userRoles);
+      console.log('Allowed roles:', allowedRoles);
+      console.log('User roles type:', typeof userRoles);
+      console.log('Is userRoles array?', Array.isArray(userRoles));
+
+      // Case-insensitive role check
+      const hasRole = allowedRoles.some(allowedRole => 
+        userRoles.some(userRole => 
+          userRole.toLowerCase() === allowedRole.toLowerCase()
+        )
+      );
+      
+      console.log('Has role match:', hasRole);
+      console.log('===========================');
+
       if (!hasRole) {
-        return res.status(403).json({ message: "Forbidden: Insufficient role" });
+        return res.status(403).json({ 
+          message: "Forbidden: Insufficient role",
+          userRoles: userRoles,
+          allowedRoles: allowedRoles
+        });
       }
 
       // Ownership check (if entityType provided)

@@ -23,28 +23,35 @@ import { cityService, jobTitleService } from '../../services/dropdownServices';
 
 // Validation functions
 const validateContactField = (fieldName, value) => {
-  if (!value || (typeof value === 'string' && value.trim().length === 0)) {
-    const requiredFields = ['AccountID', 'PersonID', 'JobTitleID', 'WorkEmail'];
-    if (requiredFields.includes(fieldName)) {
+  // Check required fields
+  const requiredFields = ['AccountID', 'PersonID'];
+  if (requiredFields.includes(fieldName)) {
+    if (!value || (typeof value === 'string' && value.trim().length === 0)) {
       return `${fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
     }
+  }
+
+  // Only validate format if value exists
+  if (!value || (typeof value === 'string' && value.trim().length === 0)) {
     return null;
   }
 
   switch (fieldName) {
     case 'WorkEmail':
     case 'personal_email':
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
       if (!emailRegex.test(value.trim())) {
-        return 'Invalid email format';
+        return 'Please enter a valid email address';
       }
       break;
 
     case 'WorkPhone':
     case 'personal_mobile':
-      const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
-      if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
-        return 'Invalid phone number - Phone number requires at least 8 numbers';
+      // International phone regex - supports all formats with +, spaces, dashes, parentheses
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$|^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
+      const cleanPhone = value.replace(/[\s\-\(\)]/g, '');
+      if (!phoneRegex.test(value) || cleanPhone.length < 7 || cleanPhone.length > 15) {
+        return 'Please enter a valid phone number';
       }
       break;
 
@@ -70,6 +77,13 @@ const validateContactField = (fieldName, value) => {
         return `${fieldName.replace('_', ' ')} must be 100 characters or less`;
       }
       break;
+
+    case 'JobTitleID':
+      // Optional field - only validate if selected
+      if (value && value.trim() !== '') {
+        // Additional validation can be added here if needed
+      }
+      break;
   }
 
   return null;
@@ -78,8 +92,18 @@ const validateContactField = (fieldName, value) => {
 const validateContactData = (contactData, personData, isNewPerson) => {
   const errors = [];
 
-  const contactFieldsToValidate = ['AccountID', 'JobTitleID', 'WorkEmail', 'WorkPhone'];
-  contactFieldsToValidate.forEach(field => {
+  // Validate required contact fields
+  const requiredContactFields = ['AccountID'];
+  requiredContactFields.forEach(field => {
+    const error = validateContactField(field, contactData[field]);
+    if (error) {
+      errors.push(error);
+    }
+  });
+
+  // Validate optional contact fields
+  const optionalContactFields = ['JobTitleID', 'WorkEmail', 'WorkPhone'];
+  optionalContactFields.forEach(field => {
     const error = validateContactField(field, contactData[field]);
     if (error) {
       errors.push(error);
@@ -87,20 +111,23 @@ const validateContactData = (contactData, personData, isNewPerson) => {
   });
 
   if (isNewPerson) {
-    const personFieldsToValidate = ['first_name', 'surname', 'middle_name', 'Title', 'personal_email', 'personal_mobile', 'linkedin_link'];
-    personFieldsToValidate.forEach(field => {
+    // Validate required person fields
+    const requiredPersonFields = ['first_name', 'surname'];
+    requiredPersonFields.forEach(field => {
       const error = validateContactField(field, personData[field]);
       if (error) {
         errors.push(error);
       }
     });
 
-    if (!personData.first_name || personData.first_name.trim().length === 0) {
-      errors.push('First name is required for new person');
-    }
-    if (!personData.surname || personData.surname.trim().length === 0) {
-      errors.push('Surname is required for new person');
-    }
+    // Validate optional person fields
+    const optionalPersonFields = ['middle_name', 'Title', 'personal_email', 'personal_mobile', 'linkedin_link'];
+    optionalPersonFields.forEach(field => {
+      const error = validateContactField(field, personData[field]);
+      if (error) {
+        errors.push(error);
+      }
+    });
   } else {
     if (!contactData.PersonID) {
       errors.push('Please select a person');
@@ -116,7 +143,6 @@ const CreateContactsPage = () => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
 
@@ -155,16 +181,24 @@ const CreateContactsPage = () => {
 
   const isFieldInvalid = (fieldName, isPersonField = false) => {
     const touchedKey = `${isPersonField ? 'person' : 'contact'}_${fieldName}`;
-    return touched[touchedKey] && fieldErrors[touchedKey];
+    return fieldErrors[touchedKey];
   };
 
   const accountService = {
     getAll: async () => {
       try {
-        const res = await getAllAccounts();
-        return res.data || [];
+        console.log('=== ACCOUNT SERVICE DEBUG (CONTACTS PAGE) ===');
+        console.log('Account Service: Fetching accounts from /accounts...');
+        const response = await getAllAccounts();
+        console.log('Account Service: Response:', response);
+        console.log('Account Service: Response type:', typeof response);
+        console.log('Account Service: Is array:', Array.isArray(response));
+        console.log('Account Service: Length:', response?.length);
+        console.log('Account Service: Response.data:', response?.data);
+        console.log('============================================');
+        return response.data || response;  // Same as CreateDealPage - handles both cases
       } catch (error) {
-        console.error('Error loading accounts:', error);
+        console.error('Account Service: Error:', error);
         return [];
       }
     },
@@ -229,13 +263,12 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
-    if (touched[touchedKey]) {
-      const error = validateContactField(name, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [touchedKey]: error || undefined
-      }));
-    }
+    // Real-time validation
+    const error = validateContactField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [touchedKey]: error || undefined
+    }));
 
     if (error) setError(null);
   };
@@ -269,13 +302,12 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
-    if (touched[touchedKey]) {
-      const error = validateContactField(name, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [touchedKey]: error || undefined
-      }));
-    }
+    // Real-time validation
+    const error = validateContactField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [touchedKey]: error || undefined
+    }));
 
     if (error) setError(null);
   };
@@ -342,13 +374,9 @@ const CreateContactsPage = () => {
       };
 
       await createContact(cleanedContactData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setSuccessMessage("Contact created successfully!");
-      
-      setTimeout(() => {
-        navigate('/contacts');
-      }, 1500);
+      // Navigate immediately on success
+      navigate('/contacts');
 
     } catch (error) {
       console.error('Error creating contact/person:', error);
@@ -371,6 +399,52 @@ const CreateContactsPage = () => {
 
   const handleCancel = () => {
     navigate('/contacts');
+  };
+
+  const isFormValid = () => {
+    // Check required contact fields
+    if (!contactData.AccountID) {
+      return false;
+    }
+
+    // Check if creating new person
+    if (isNewPerson) {
+      // Check required person fields
+      if (!personData.first_name || personData.first_name.trim().length === 0) {
+        return false;
+      }
+      if (!personData.surname || personData.surname.trim().length === 0) {
+        return false;
+      }
+    } else {
+      // Check if existing person is selected
+      if (!contactData.PersonID) {
+        return false;
+      }
+    }
+
+    // Check if there are any validation errors
+    const allErrors = {};
+    
+    // Check contact fields
+    Object.keys(contactData).forEach(key => {
+      const error = validateContactField(key, contactData[key]);
+      if (error) {
+        allErrors[`contact_${key}`] = error;
+      }
+    });
+
+    // Check person fields if creating new person
+    if (isNewPerson) {
+      Object.keys(personData).forEach(key => {
+        const error = validateContactField(key, personData[key]);
+        if (error) {
+          allErrors[`person_${key}`] = error;
+        }
+      });
+    }
+
+    return Object.keys(allErrors).length === 0;
   };
 
   return (
@@ -413,7 +487,7 @@ const CreateContactsPage = () => {
               variant="contained"
               startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isFormValid()}
             >
               {isSubmitting ? 'Saving...' : 'Save Contact'}
             </Button>
@@ -424,13 +498,6 @@ const CreateContactsPage = () => {
         {error && (
           <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
             {error}
-          </Alert>
-        )}
-
-        {/* Success Alert */}
-        {successMessage && (
-          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
-            {successMessage}
           </Alert>
         )}
 
@@ -661,20 +728,19 @@ const CreateContactsPage = () => {
                 />
               </Box>
 
-              {/* Work Email - Required */}
+              {/* Work Email - Optional */}
               <Box>
                 <TextField
                   fullWidth
-                  label="Work Email"
+                  label="Work Email (Optional)"
                   name="WorkEmail"
                   value={contactData.WorkEmail}
                   onChange={handleContactChange}
                   onBlur={handleContactBlur}
                   type="email"
-                  required
                   disabled={isSubmitting}
                   error={isFieldInvalid('WorkEmail', false)}
-                  helperText={getFieldError('WorkEmail', false)}
+                  helperText={getFieldError('WorkEmail', false) || 'Enter valid email format'}
                   FormHelperTextProps={{
                     component: 'div'
                   }}
@@ -692,7 +758,7 @@ const CreateContactsPage = () => {
                   onBlur={handleContactBlur}
                   disabled={isSubmitting}
                   error={isFieldInvalid('WorkPhone', false)}
-                  helperText={getFieldError('WorkPhone', false)}
+                  helperText={getFieldError('WorkPhone', false) || 'Format: +27 68 071 3091, (068) 071-3091'}
                   FormHelperTextProps={{
                     component: 'div'
                   }}

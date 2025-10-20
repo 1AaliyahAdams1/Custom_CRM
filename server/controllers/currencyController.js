@@ -3,10 +3,18 @@ const currencyService = require("../services/currencyService");
 // Get all currencies
 async function getAllCurrencies(req, res) {
   try {
+    console.log('=== CURRENCY CONTROLLER ===');
+    console.log('Currency Controller: Fetching all currencies...');
     const currencies = await currencyService.getAllCurrencies();
+    console.log('Currency Controller: Returning', currencies.length, 'currencies');
+    console.log('Currency Controller: Sample currency:', currencies[0]);
+    console.log('===========================');
     res.json(currencies);
   } catch (error) {
+    console.error("=== CURRENCY CONTROLLER ERROR ===");
     console.error("Error getting all currencies:", error);
+    console.error("Error stack:", error.stack);
+    console.error("=================================");
     res.status(500).json({ message: error.message });
   }
 }

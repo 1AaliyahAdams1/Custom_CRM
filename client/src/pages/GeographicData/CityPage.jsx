@@ -82,11 +82,14 @@ const CityPage = ({
   const [addCityDialogOpen, setAddCityDialogOpen] = useState(false);
   const [newCity, setNewCity] = useState({
     CityName: '',
+    CountryID: '',
     StateProvinceID: '',
-    EntertainmentCityID: '',
+    PostalCode: '',
     Active: true
   });
   const [addCityLoading, setAddCityLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const columns = [
     { field: 'CityName', headerName: 'City Name', type: 'tooltip', defaultVisible: true },
@@ -125,29 +128,93 @@ const CityPage = ({
     }
   };
 
+  // Validation rules
+  const validateField = (name, value) => {
+    const fieldErrors = {};
+
+    switch (name) {
+      case 'CityName':
+        if (!value.trim()) {
+          fieldErrors.CityName = 'City name is required';
+        } else if (value.trim().length < 2) {
+          fieldErrors.CityName = 'City name must be at least 2 characters';
+        } else if (value.trim().length > 100) {
+          fieldErrors.CityName = 'City name must be 100 characters or less';
+        } else if (!/^[a-zA-Z\s\-]+$/.test(value.trim())) {
+          fieldErrors.CityName = 'City name can only contain letters, spaces, and hyphens';
+        }
+        break;
+      
+      case 'CountryID':
+        if (!value) {
+          fieldErrors.CountryID = 'Country is required';
+        }
+        break;
+
+      case 'StateProvinceID':
+        if (value && !value.toString().trim()) {
+          fieldErrors.StateProvinceID = 'State/Province must be valid if selected';
+        }
+        break;
+
+      case 'PostalCode':
+        if (value.trim() && !/^[a-zA-Z0-9\s\-]{3,10}$/.test(value.trim())) {
+          fieldErrors.PostalCode = 'Postal code must be 3-10 alphanumeric characters';
+        }
+        break;
+      
+      default:
+        break;
+    }
+
+    return fieldErrors;
+  };
+
   const handleOpenAddCityDialog = () => {
     setAddCityDialogOpen(true);
     setNewCity({
       CityName: '',
+      CountryID: '',
       StateProvinceID: '',
-      EntertainmentCityID: '',
+      PostalCode: '',
       Active: true
     });
+    setErrors({});
+    setTouched({});
   };
 
   const handleCloseAddCityDialog = () => {
     setAddCityDialogOpen(false);
     setNewCity({
       CityName: '',
+      CountryID: '',
       StateProvinceID: '',
-      EntertainmentCityID: '',
+      PostalCode: '',
       Active: true
     });
+    setErrors({});
+    setTouched({});
   };
 
   const handleAddCity = async () => {
-    if (!newCity.CityName.trim() || !newCity.StateProvinceID) {
-      setError && setError('City name and state/province are required');
+    // Mark all fields as touched
+    const allTouched = {};
+    Object.keys(newCity).forEach(key => {
+      allTouched[key] = true;
+    });
+    setTouched(allTouched);
+
+    // Validate all fields
+    const allErrors = {};
+    Object.keys(newCity).forEach(key => {
+      const fieldErrors = validateField(key, newCity[key]);
+      Object.assign(allErrors, fieldErrors);
+    });
+
+    setErrors(allErrors);
+
+    if (Object.keys(allErrors).length > 0) {
+      setError && setError('Please fix the errors below before submitting');
       return;
     }
 
@@ -170,7 +237,36 @@ const CityPage = ({
       ...prev,
       [field]: value
     }));
+
+    // Real-time validation
+    const fieldErrors = validateField(field, value);
+    setErrors(prev => ({
+      ...prev,
+      ...fieldErrors
+    }));
+
+    setTouched(prev => ({
+      ...prev,
+      [field]: true
+    }));
   };
+
+  // Check if form is valid for submit button
+  const isFormValid = () => {
+    const requiredFields = ['CityName', 'CountryID'];
+    const hasRequiredFields = requiredFields.every(field => {
+      const value = newCity[field];
+      return value && value.toString().trim();
+    });
+    const hasNoErrors = Object.keys(errors).length === 0;
+    return hasRequiredFields && hasNoErrors;
+  };
+
+  // Get field props for consistent styling
+  const getFieldProps = (name) => ({
+    error: touched[name] && !!errors[name],
+    helperText: touched[name] && errors[name] ? errors[name] : '',
+  });
 
   return (
     <Box sx={{ 
@@ -320,15 +416,35 @@ const CityPage = ({
               fullWidth
               required
               variant="outlined"
+              placeholder="e.g., New York"
+              inputProps={{ maxLength: 100 }}
+              {...getFieldProps('CityName')}
             />
 
-            <FormControl fullWidth required>
-              <InputLabel>State/Province</InputLabel>
+            <FormControl fullWidth required {...getFieldProps('CountryID')}>
+              <InputLabel>Country</InputLabel>
+              <Select
+                value={newCity.CountryID}
+                onChange={(e) => handleInputChange('CountryID', e.target.value)}
+                label="Country"
+              >
+                <MenuItem value="">
+                  <em>Select Country</em>
+                </MenuItem>
+                {/* Add countries data here when available */}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth {...getFieldProps('StateProvinceID')}>
+              <InputLabel>State/Province (Optional)</InputLabel>
               <Select
                 value={newCity.StateProvinceID}
                 onChange={(e) => handleInputChange('StateProvinceID', e.target.value)}
-                label="State/Province"
+                label="State/Province (Optional)"
               >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
                 {statesProvinces.map((state) => (
                   <MenuItem key={state.StateProvinceID} value={state.StateProvinceID}>
                     {state.StateProvinceName}
@@ -337,23 +453,16 @@ const CityPage = ({
               </Select>
             </FormControl>
 
-            <FormControl fullWidth>
-              <InputLabel>Entertainment City (Optional)</InputLabel>
-              <Select
-                value={newCity.EntertainmentCityID}
-                onChange={(e) => handleInputChange('EntertainmentCityID', e.target.value)}
-                label="Entertainment City (Optional)"
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {entertainmentCities.map((entertainment) => (
-                  <MenuItem key={entertainment.EntertainmentCityID} value={entertainment.EntertainmentCityID}>
-                    {entertainment.EntertainmentCityName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField
+              label="Postal Code (Optional)"
+              value={newCity.PostalCode}
+              onChange={(e) => handleInputChange('PostalCode', e.target.value)}
+              fullWidth
+              variant="outlined"
+              placeholder="e.g., 10001"
+              inputProps={{ maxLength: 10 }}
+              {...getFieldProps('PostalCode')}
+            />
 
             <FormControlLabel
               control={
@@ -377,7 +486,7 @@ const CityPage = ({
           <Button
             onClick={handleAddCity}
             variant="contained"
-            disabled={addCityLoading || !newCity.CityName.trim() || !newCity.StateProvinceID}
+            disabled={addCityLoading || !isFormValid()}
           >
             {addCityLoading ? <CircularProgress size={20} /> : 'Add City'}
           </Button>

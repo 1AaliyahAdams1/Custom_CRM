@@ -43,7 +43,6 @@ const CreateSequencesPage = () => {
   const [itemTouched, setItemTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
   const [loadingActivityTypes, setLoadingActivityTypes] = useState(true);
 
   const requiredFields = ['SequenceName'];
@@ -69,24 +68,40 @@ const CreateSequencesPage = () => {
     const errors = [];
     const strValue = value?.toString().trim();
 
+    // Required field validation
     if (requiredFields.includes(name) && (!strValue || strValue === '')) {
       errors.push('This field is required.');
     }
 
-    if (strValue) {
-      if (name === 'SequenceName') {
-        if (strValue.length < 1) {
-          errors.push('Sequence name is required.');
-        }
-        if (strValue.length > 255) {
-          errors.push('Sequence name cannot exceed 255 characters.');
-        }
-      }
+    // Only validate if field has value or is required
+    if (strValue || requiredFields.includes(name)) {
+      switch (name) {
+        case 'SequenceName':
+          if (!strValue || strValue === '') {
+            errors.push('Sequence name is required.');
+          } else {
+            if (strValue.length < 2) {
+              errors.push('Sequence name must be at least 2 characters long.');
+            }
+            if (strValue.length > 255) {
+              errors.push('Sequence name cannot exceed 255 characters.');
+            }
+            // Allow alphanumeric with spaces and special characters
+            if (!/^[a-zA-Z0-9\s\-_.,!?@#$%^&*()+=\[\]{}|\\:";'<>?/~`]*$/.test(strValue)) {
+              errors.push('Sequence name contains invalid characters.');
+            }
+          }
+          break;
 
-      if (name === 'SequenceDescription') {
-        if (strValue.length > 4000) {
-          errors.push('Description cannot exceed 4000 characters.');
-        }
+        case 'SequenceDescription':
+          if (strValue && strValue.length > 4000) {
+            errors.push('Description cannot exceed 4000 characters.');
+          }
+          // Allow alphanumeric with spaces, special characters, and newlines
+          if (strValue && !/^[a-zA-Z0-9\s\-_.,!?@#$%^&*()+=\[\]{}|\\:";'<>?/~`\n\r]*$/.test(strValue)) {
+            errors.push('Description contains invalid characters.');
+          }
+          break;
       }
     }
 
@@ -159,16 +174,40 @@ const CreateSequencesPage = () => {
     return Object.keys(newErrors).length === 0 && Object.keys(newItemErrors).length === 0;
   };
 
+  const isFormValid = () => {
+    // Check if all required fields are valid
+    const requiredFieldValid = requiredFields.every(field => {
+      const errors = validateField(field, formData[field]);
+      return errors.length === 0;
+    });
+
+    // Check if all non-empty fields are valid
+    const allFieldsValid = Object.keys(formData).every(field => {
+      const value = formData[field];
+      const strValue = value?.toString().trim();
+      
+      // If field is empty and not required, it's valid
+      if ((!strValue || strValue === '') && !requiredFields.includes(field)) {
+        return true;
+      }
+      
+      // If field has value, validate it
+      const errors = validateField(field, value);
+      return errors.length === 0;
+    });
+
+    return requiredFieldValid && allFieldsValid;
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     const val = type === 'checkbox' ? checked : value;
 
     setFormData((prev) => ({ ...prev, [name]: val }));
 
-    if (touched[name]) {
-      const errors = validateField(name, val);
-      setFieldErrors((prev) => ({ ...prev, [name]: errors.length > 0 ? errors : undefined }));
-    }
+    // Always validate the changed field in real-time
+    const errors = validateField(name, val);
+    setFieldErrors((prev) => ({ ...prev, [name]: errors.length > 0 ? errors : undefined }));
 
     if (error) setError(null);
   };
@@ -308,8 +347,7 @@ const CreateSequencesPage = () => {
       };
 
       await api.post('/sequences/with-items', payload);
-      setSuccessMessage('Sequence created successfully!');
-      setTimeout(() => navigate('/sequences'), 1500);
+      navigate('/sequences');
     } catch (err) {
       console.error('Error creating sequence:', err);
       setError(err.response?.data?.error || 'Failed to create sequence. Please try again.');
@@ -323,7 +361,7 @@ const CreateSequencesPage = () => {
   const getFieldError = (fieldName) => {
     return touched[fieldName] && fieldErrors[fieldName] ? (
       <span style={{ display: 'flex', alignItems: 'center', color: '#ff4444' }}>
-        ✗ {fieldErrors[fieldName][0]}
+         {fieldErrors[fieldName][0]}
       </span>
     ) : '';
   };
@@ -353,7 +391,7 @@ const CreateSequencesPage = () => {
                 variant="contained"
                 startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
                 onClick={handleSubmit}
-                disabled={isSubmitting || loadingActivityTypes}
+                disabled={isSubmitting || loadingActivityTypes || !isFormValid()}
                 sx={{ backgroundColor: '#050505', '&:hover': { backgroundColor: '#333' } }}
               >
                 {isSubmitting ? 'Saving...' : 'Save Sequence'}
@@ -367,11 +405,6 @@ const CreateSequencesPage = () => {
             </Alert>
           )}
 
-          {successMessage && (
-            <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
-              {successMessage}
-            </Alert>
-          )}
 
           {/* Sequence Information */}
           <Paper elevation={0} sx={{ p: 3, mb: 3 }}>
@@ -404,7 +437,10 @@ const CreateSequencesPage = () => {
                 rows={4}
                 disabled={isSubmitting}
                 error={isFieldInvalid('SequenceDescription')}
-                helperText={getFieldError('SequenceDescription') || 'Describe the purpose and workflow of this sequence'}
+                helperText={
+                  getFieldError('SequenceDescription') || 
+                  `${formData.SequenceDescription.length}/4000 characters`
+                }
               />
 
               <FormControlLabel

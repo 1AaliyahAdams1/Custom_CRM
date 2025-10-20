@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -21,9 +21,9 @@ const CreateProduct = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [formData, setFormData] = useState({
     ProductName: "",
@@ -35,17 +35,30 @@ const CreateProduct = () => {
     AccountID: "",
   });
 
+  // Get current user from localStorage
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    
+    if (!user || !user.UserID) {
+      setError('User not authenticated. Please log in again.');
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
+    
+    setCurrentUser(user);
+  }, [navigate]);
+
   const getFieldError = (fieldName) => {
     return touched[fieldName] && fieldErrors[fieldName] ? (
       <span style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ color: '#ff4444', marginRight: '4px' }}>✗</span>
+        <span style={{ color: '#ff4444', marginRight: '4px' }}></span>
         {fieldErrors[fieldName][0]}
       </span>
     ) : '';
   };
 
   const isFieldInvalid = (fieldName) => {
-    return touched[fieldName] && fieldErrors[fieldName] && fieldErrors[fieldName].length > 0;
+    return fieldErrors[fieldName] && fieldErrors[fieldName].length > 0;
   };
 
   const validateField = (name, value) => {
@@ -55,24 +68,30 @@ const CreateProduct = () => {
       case 'ProductName':
         if (!value || value.trim().length === 0) {
           errors.push('Product name is required');
+        } else if (value.trim().length < 2) {
+          errors.push('Product name must be at least 2 characters');
         } else if (value.trim().length > 100) {
           errors.push('Product name must be 100 characters or less');
+        } else if (!/^[a-zA-Z0-9\s\-_.,&()]+$/.test(value.trim())) {
+          errors.push('Product name contains invalid characters');
         }
         break;
 
       case 'Description':
-        if (value && value.trim().length > 1000) {
-          errors.push('Description must be 1000 characters or less');
+        if (value && value.trim().length > 255) {
+          errors.push('Description must be 255 characters or less');
+        } else if (value && !/^[a-zA-Z0-9\s\-_.,&()!?]+$/.test(value.trim())) {
+          errors.push('Description contains invalid characters');
         }
         break;
 
       case 'SKU':
-        if (!value || value.trim().length === 0) {
-          errors.push('SKU is required');
-        } else {
-          const skuPattern = /^[A-Z]{3,7}-\d{3}$/;
+        if (value && value.trim() !== '') {
+          const skuPattern = /^[a-zA-Z0-9\-_]+$/;
           if (!skuPattern.test(value.trim())) {
-            errors.push('Invalid SKU format. Example: LNTMS-001');
+            errors.push('SKU can only contain letters, numbers, dashes, and underscores');
+          } else if (value.trim().length > 50) {
+            errors.push('SKU must be 50 characters or less');
           }
         }
         break;
@@ -83,20 +102,24 @@ const CreateProduct = () => {
         } else {
           const price = parseFloat(value);
           if (isNaN(price) || price < 0) {
-            errors.push('Price must be a non-negative number');
+            errors.push('Price must be a positive number');
           } else if (price > 999999.99) {
-            errors.push('Price must be less than $999,999.99');
+            errors.push('Price must be less than 999,999.99');
+          } else if (!/^\d+(\.\d{1,2})?$/.test(value.trim())) {
+            errors.push('Price must have at most 2 decimal places (e.g., 99.99)');
           }
         }
         break;
 
       case 'Cost':
-        if (value && value.trim()) {
+        if (value && value.trim() !== '') {
           const cost = parseFloat(value);
           if (isNaN(cost) || cost < 0) {
-            errors.push('Cost must be a non-negative number');
-          } else if (cost > 999999.99) {
-            errors.push('Cost must be less than $999,999.99');
+            errors.push('Cost must be a positive number');
+          } else if (cost > 999999) {
+            errors.push('Cost must be less than 999,999');
+          } else if (!/^\d+$/.test(value.trim())) {
+            errors.push('Cost must be a whole number');
           }
         }
         break;
@@ -133,6 +156,33 @@ const CreateProduct = () => {
     return isValid;
   };
 
+  const isFormValid = () => {
+    // Check required fields
+    if (!formData.ProductName || formData.ProductName.trim().length === 0) {
+      return false;
+    }
+    if (!formData.Price || formData.Price.trim().length === 0) {
+      return false;
+    }
+    if (!formData.CategoryID) {
+      return false;
+    }
+    if (!formData.AccountID) {
+      return false;
+    }
+
+    // Check if there are any validation errors
+    const allErrors = {};
+    Object.keys(formData).forEach(key => {
+      const errors = validateField(key, formData[key]);
+      if (errors.length > 0) {
+        allErrors[key] = errors;
+      }
+    });
+
+    return Object.keys(allErrors).length === 0;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
@@ -146,13 +196,12 @@ const CreateProduct = () => {
       [name]: true
     }));
 
-    if (touched[name]) {
-      const errors = validateField(name, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [name]: errors.length > 0 ? errors : undefined
-      }));
-    }
+    // Real-time validation
+    const errors = validateField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: errors.length > 0 ? errors : undefined
+    }));
 
     if (error) {
       setError(null);
@@ -177,6 +226,13 @@ const CreateProduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Check if user is authenticated
+    if (!currentUser || !currentUser.UserID) {
+      setError('User not authenticated. Please log in again.');
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
+
     const allTouched = {};
     Object.keys(formData).forEach(key => {
       allTouched[key] = true;
@@ -198,20 +254,34 @@ const CreateProduct = () => {
         Cost: formData.Cost ? parseFloat(formData.Cost) : null,
         CategoryID: parseInt(formData.CategoryID),
         AccountID: parseInt(formData.AccountID),
+        changedBy: currentUser.UserID,
       };
+
+      console.log('Submitting product data:', submitData);
 
       await createProduct(submitData);
       
-      setSuccessMessage("Product created successfully!");
-      setTimeout(() => navigate('/products'), 1500);
+      // Navigate immediately on success
+      navigate('/products');
 
     } catch (error) {
       console.error('Error creating product:', error);
       
       if (error.response?.status === 409) {
+        setFieldErrors(prev => ({
+          ...prev,
+          SKU: ['Product with this SKU already exists']
+        }));
+        setTouched(prev => ({
+          ...prev,
+          SKU: true
+        }));
         setError('Product with this SKU already exists');
       } else if (error.response?.status === 400) {
         setError(error.response.data?.error || 'Invalid data provided');
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        setError('Unauthorized. Please log in again.');
+        setTimeout(() => navigate('/login'), 2000);
       } else if (error.response?.status >= 500) {
         setError('Server error. Please try again later');
       } else {
@@ -225,6 +295,17 @@ const CreateProduct = () => {
   const handleCancel = () => {
     navigate('/products');
   };
+
+  // Show loading state while checking authentication
+  if (!currentUser) {
+    return (
+      <ThemeProvider theme={theme}>
+        <Box sx={{ width: '100%', backgroundColor: '#fafafa', minHeight: '100vh', p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <CircularProgress />
+        </Box>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -258,7 +339,7 @@ const CreateProduct = () => {
                 variant="contained"
                 startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
                 onClick={handleSubmit}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isFormValid()}
                 sx={{
                   backgroundColor: '#050505',
                   '&:hover': { backgroundColor: '#333333' },
@@ -272,12 +353,6 @@ const CreateProduct = () => {
           {error && (
             <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
               {error}
-            </Alert>
-          )}
-
-          {successMessage && (
-            <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
-              {successMessage}
             </Alert>
           )}
 
@@ -296,8 +371,17 @@ const CreateProduct = () => {
                     required
                     disabled={isSubmitting}
                     error={isFieldInvalid('ProductName')}
-                    helperText={getFieldError('ProductName')}
+                    helperText={getFieldError('ProductName') || `${formData.ProductName.length}/100 characters`}
                     FormHelperTextProps={{ component: 'div' }}
+                    inputProps={{ maxLength: 100 }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                        '&.Mui-focused': {
+                          backgroundColor: '#ffffff',
+                        },
+                      },
+                    }}
                   />
                 </Box>
 
@@ -313,8 +397,17 @@ const CreateProduct = () => {
                     rows={3}
                     disabled={isSubmitting}
                     error={isFieldInvalid('Description')}
-                    helperText={getFieldError('Description')}
+                    helperText={getFieldError('Description') || `${formData.Description.length}/255 characters`}
                     FormHelperTextProps={{ component: 'div' }}
+                    inputProps={{ maxLength: 255 }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                        '&.Mui-focused': {
+                          backgroundColor: '#ffffff',
+                        },
+                      },
+                    }}
                   />
                 </Box>
 
@@ -326,11 +419,19 @@ const CreateProduct = () => {
                     value={formData.SKU}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
-                    required
                     disabled={isSubmitting}
                     error={isFieldInvalid('SKU')}
-                    helperText={getFieldError('SKU')}
+                    helperText={getFieldError('SKU') || 'Optional - Letters, numbers, dashes, underscores'}
                     FormHelperTextProps={{ component: 'div' }}
+                    placeholder="PROD-001"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                        '&.Mui-focused': {
+                          backgroundColor: '#ffffff',
+                        },
+                      },
+                    }}
                   />
                 </Box>
 
@@ -381,14 +482,25 @@ const CreateProduct = () => {
                     fullWidth
                     label="Price"
                     name="Price"
+                    type="number"
+                    inputProps={{ step: "0.01", min: 0 }}
                     value={formData.Price}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
                     required
                     disabled={isSubmitting}
                     error={isFieldInvalid('Price')}
-                    helperText={getFieldError('Price')}
+                    helperText={getFieldError('Price') || 'Enter amount (e.g., 99.99)'}
                     FormHelperTextProps={{ component: 'div' }}
+                    placeholder="0.00"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                        '&.Mui-focused': {
+                          backgroundColor: '#ffffff',
+                        },
+                      },
+                    }}
                   />
                 </Box>
 
@@ -397,13 +509,24 @@ const CreateProduct = () => {
                     fullWidth
                     label="Cost"
                     name="Cost"
+                    type="number"
+                    inputProps={{ min: 0 }}
                     value={formData.Cost}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
                     disabled={isSubmitting}
                     error={isFieldInvalid('Cost')}
-                    helperText={getFieldError('Cost')}
+                    helperText={getFieldError('Cost') || 'Optional - Enter whole number (e.g., 50)'}
                     FormHelperTextProps={{ component: 'div' }}
+                    placeholder="0"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                        '&.Mui-focused': {
+                          backgroundColor: '#ffffff',
+                        },
+                      },
+                    }}
                   />
                 </Box>
 

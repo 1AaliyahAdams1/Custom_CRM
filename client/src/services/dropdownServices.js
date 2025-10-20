@@ -6,23 +6,13 @@ export const stateProvinceService = {
     try {
       const response = await api.get('/states');
       return response.data || [];
-    } catch (error) {
-      console.error('Error loading state/provinces:', error);
+    }
+    catch (error) {
+      console.error('Error loading states/provinces:', error);
       return [];
     }
   },
-
-  getByCountry: async (countryId) => {
-    try {
-      const response = await api.get('/states', {
-        params: { countryId },
-      });
-      return response.data || [];
-    } catch (error) {
-      console.error('Error loading state/provinces by country:', error);
-      return [];
-    }
-  },
+  
 
   // Enhanced method for filtering by country
   getAllFiltered: async (countryId = null) => {
@@ -184,12 +174,107 @@ export const productService = {
   },
 };
 
-export async function currencyService() {
-  try {
-    const response = await api.get('/currency');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching currencies:', error);
-    throw error;
-  }
-}
+export const currencyService = {
+  getAll: async () => {
+    try {
+      console.log('=== CURRENCY SERVICE DEBUG ===');
+      console.log('Currency Service: Fetching currencies from /currencies...');
+      console.log('Currency Service: API Base URL:', process.env.REACT_APP_API_URL);
+      
+      const response = await api.get('/currencies');
+      console.log('Currency Service: Full response:', response);
+      console.log('Currency Service: Response data:', response.data);
+      console.log('Currency Service: Response status:', response.status);
+      console.log('Currency Service: Response headers:', response.headers);
+      
+      const data = response.data || [];
+      console.log('Currency Service: Processed data:', data);
+      console.log('Currency Service: Data length:', data.length);
+      console.log('Currency Service: Is array:', Array.isArray(data));
+      
+      if (data.length === 0) {
+        console.warn('Currency Service: No currencies found in database');
+      }
+      
+      console.log('================================');
+      return data;
+    } catch (error) {
+      console.error('=== CURRENCY SERVICE ERROR ===');
+      console.error('Currency Service: Error fetching currencies:', error);
+      console.error('Currency Service: Error response:', error.response);
+      console.error('Currency Service: Error message:', error.message);
+      console.error('Currency Service: Error config:', error.config);
+      console.error('Currency Service: Error status:', error.response?.status);
+      console.error('Currency Service: Error data:', error.response?.data);
+      console.error('================================');
+      return [];
+    }
+  },
+};
+
+// Team Service
+export const teamService = {
+  getAll: async () => {
+    try {
+      console.log('=== TEAM SERVICE DEBUG ===');
+      console.log('Team Service: Fetching teams from /teams...');
+      console.log('Team Service: API Base URL:', process.env.REACT_APP_API_URL);
+      
+      const response = await api.get('/teams');
+      console.log('Team Service: Full response:', response);
+      console.log('Team Service: Response data:', response.data);
+      console.log('Team Service: Response status:', response.status);
+      console.log('Team Service: Response headers:', response.headers);
+      
+      const data = response.data || response;
+      console.log('Team Service: Processed data:', data);
+      console.log('Team Service: Data length:', data?.length);
+      console.log('Team Service: Is array:', Array.isArray(data));
+      
+      if (data.length === 0) {
+        console.warn('Team Service: No teams found in database');
+      }
+      
+      console.log('================================');
+      return data;
+    } catch (error) {
+      console.error('=== TEAM SERVICE ERROR ===');
+      console.error('Team Service: Error fetching teams:', error);
+      console.error('Team Service: Error response:', error.response);
+      console.error('Team Service: Error message:', error.message);
+      console.error('Team Service: Error config:', error.config);
+      console.error('Team Service: Error status:', error.response?.status);
+      console.error('Team Service: Error data:', error.response?.data);
+      console.error('================================');
+      return [];
+    }
+  },
+};
+
+// department Service
+export const departmentService = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/departments');
+      return response.data || [];
+    }
+    catch (error) {
+      console.error('Error loading departments:', error);
+      return [];
+    }
+  },
+};
+
+// employee service
+export const employeeService = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/employees');
+      return response.data || [];
+    }
+    catch (error) {
+      console.error('Error loading employees:', error);
+      return [];
+    }
+  },
+};

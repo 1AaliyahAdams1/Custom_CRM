@@ -65,9 +65,13 @@ const IndustryPage = ({
   const [addIndustryDialogOpen, setAddIndustryDialogOpen] = useState(false);
   const [newIndustry, setNewIndustry] = useState({
     IndustryName: '',
+    IndustryCode: '',
+    Description: '',
     Active: true
   });
   const [addIndustryLoading, setAddIndustryLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const columns = [
     { field: 'IndustryName', headerName: 'Industry Name', type: 'tooltip', defaultVisible: true }
@@ -95,26 +99,86 @@ const IndustryPage = ({
     }
   };
 
+  // Validation rules
+  const validateField = (name, value) => {
+    const fieldErrors = {};
+
+    switch (name) {
+      case 'IndustryName':
+        if (!value.trim()) {
+          fieldErrors.IndustryName = 'Industry name is required';
+        } else if (value.trim().length < 2) {
+          fieldErrors.IndustryName = 'Industry name must be at least 2 characters';
+        } else if (value.trim().length > 100) {
+          fieldErrors.IndustryName = 'Industry name must be 100 characters or less';
+        } else if (!/^[a-zA-Z0-9\s]+$/.test(value.trim())) {
+          fieldErrors.IndustryName = 'Industry name can only contain letters, numbers, and spaces';
+        }
+        break;
+      
+      case 'IndustryCode':
+        if (value.trim() && !/^[A-Z0-9]+$/.test(value.trim())) {
+          fieldErrors.IndustryCode = 'Industry code must contain only uppercase letters and numbers';
+        }
+        break;
+
+      case 'Description':
+        if (value.trim() && value.trim().length > 500) {
+          fieldErrors.Description = 'Description must be 500 characters or less';
+        }
+        break;
+      
+      default:
+        break;
+    }
+
+    return fieldErrors;
+  };
+
   // Handle Add Industry Dialog
   const handleOpenAddIndustryDialog = () => {
     setAddIndustryDialogOpen(true);
     setNewIndustry({
       IndustryName: '',
+      IndustryCode: '',
+      Description: '',
       Active: true
     });
+    setErrors({});
+    setTouched({});
   };
 
   const handleCloseAddIndustryDialog = () => {
     setAddIndustryDialogOpen(false);
     setNewIndustry({
       IndustryName: '',
+      IndustryCode: '',
+      Description: '',
       Active: true
     });
+    setErrors({});
+    setTouched({});
   };
 
   const handleAddIndustry = async () => {
-    if (!newIndustry.IndustryName.trim()) {
-      setError && setError('Industry name is required');
+    // Mark all fields as touched
+    const allTouched = {};
+    Object.keys(newIndustry).forEach(key => {
+      allTouched[key] = true;
+    });
+    setTouched(allTouched);
+
+    // Validate all fields
+    const allErrors = {};
+    Object.keys(newIndustry).forEach(key => {
+      const fieldErrors = validateField(key, newIndustry[key]);
+      Object.assign(allErrors, fieldErrors);
+    });
+
+    setErrors(allErrors);
+
+    if (Object.keys(allErrors).length > 0) {
+      setError && setError('Please fix the errors below before submitting');
       return;
     }
 
@@ -137,7 +201,36 @@ const IndustryPage = ({
       ...prev,
       [field]: value
     }));
+
+    // Real-time validation
+    const fieldErrors = validateField(field, value);
+    setErrors(prev => ({
+      ...prev,
+      ...fieldErrors
+    }));
+
+    setTouched(prev => ({
+      ...prev,
+      [field]: true
+    }));
   };
+
+  // Check if form is valid for submit button
+  const isFormValid = () => {
+    const requiredFields = ['IndustryName'];
+    const hasRequiredFields = requiredFields.every(field => {
+      const value = newIndustry[field];
+      return value && value.toString().trim();
+    });
+    const hasNoErrors = Object.keys(errors).length === 0;
+    return hasRequiredFields && hasNoErrors;
+  };
+
+  // Get field props for consistent styling
+  const getFieldProps = (name) => ({
+    error: touched[name] && !!errors[name],
+    helperText: touched[name] && errors[name] ? errors[name] : '',
+  });
 
   return (
     <Box sx={{ 
@@ -307,7 +400,32 @@ const IndustryPage = ({
               required
               variant="outlined"
               helperText="Enter the name of the industry (e.g., Technology, Healthcare, Finance)"
-              inputProps={{ maxLength: 255 }}
+              inputProps={{ maxLength: 100 }}
+              {...getFieldProps('IndustryName')}
+            />
+
+            <TextField
+              label="Industry Code (Optional)"
+              value={newIndustry.IndustryCode}
+              onChange={(e) => handleInputChange('IndustryCode', e.target.value.toUpperCase())}
+              fullWidth
+              variant="outlined"
+              helperText="Optional industry code (e.g., TECH, HEALTH, FIN)"
+              inputProps={{ maxLength: 20 }}
+              {...getFieldProps('IndustryCode')}
+            />
+
+            <TextField
+              label="Description (Optional)"
+              value={newIndustry.Description}
+              onChange={(e) => handleInputChange('Description', e.target.value)}
+              fullWidth
+              multiline
+              rows={3}
+              variant="outlined"
+              helperText={`${newIndustry.Description.length}/500 characters`}
+              inputProps={{ maxLength: 500 }}
+              {...getFieldProps('Description')}
             />
 
             <FormControlLabel
@@ -329,7 +447,7 @@ const IndustryPage = ({
           <Button
             onClick={handleAddIndustry}
             variant="contained"
-            disabled={addIndustryLoading || !newIndustry.IndustryName.trim()}
+            disabled={addIndustryLoading || !isFormValid()}
           >
             {addIndustryLoading ? <CircularProgress size={20} /> : 'Add Industry'}
           </Button>

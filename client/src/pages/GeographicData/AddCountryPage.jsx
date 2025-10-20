@@ -48,6 +48,7 @@ const AddCountryPage = ({
   const [formData, setFormData] = useState({
     CountryName: '',
     CountryCode: '',
+    PhoneCode: '',
     CurrencyID: '',
     Region: '',
     Active: true,
@@ -103,18 +104,26 @@ const AddCountryPage = ({
       case 'CountryName':
         if (!value.trim()) {
           fieldErrors.CountryName = 'Country name is required';
-        } else if (value.length > 100) {
+        } else if (value.trim().length < 2) {
+          fieldErrors.CountryName = 'Country name must be at least 2 characters';
+        } else if (value.trim().length > 100) {
           fieldErrors.CountryName = 'Country name must be 100 characters or less';
+        } else if (!/^[a-zA-Z\s]+$/.test(value.trim())) {
+          fieldErrors.CountryName = 'Country name can only contain letters and spaces';
         }
         break;
       
       case 'CountryCode':
         if (!value.trim()) {
           fieldErrors.CountryCode = 'Country code is required';
-        } else if (value.length > 5) {
-          fieldErrors.CountryCode = 'Country code must be 5 characters or less';
-        } else if (!/^[A-Z]{2,3}$/.test(value.toUpperCase())) {
-          fieldErrors.CountryCode = 'Country code must be 2-3 uppercase letters (e.g., US, USA)';
+        } else if (!/^[A-Z]{2,3}$/.test(value.trim())) {
+          fieldErrors.CountryCode = 'Country code must be 2-3 uppercase letters (e.g., US, PAK)';
+        }
+        break;
+
+      case 'PhoneCode':
+        if (value.trim() && !/^\+?[0-9]+$/.test(value.trim())) {
+          fieldErrors.PhoneCode = 'Phone code must contain only numbers with optional + prefix';
         }
         break;
       
@@ -131,7 +140,7 @@ const AddCountryPage = ({
     return fieldErrors;
   };
 
-  // Handle input changes
+  // Handle input changes with real-time validation
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     const fieldValue = type === 'checkbox' ? checked : value;
@@ -144,14 +153,12 @@ const AddCountryPage = ({
       [name]: finalValue
     }));
 
-    // Clear field error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
+    // Real-time validation
+    const fieldErrors = validateField(name, finalValue);
+    setErrors(prev => ({
+      ...prev,
+      ...fieldErrors
+    }));
 
     // Clear submit error when user makes changes
     if (submitError) {
@@ -165,21 +172,21 @@ const AddCountryPage = ({
     }));
   };
 
-  // Handle autocomplete changes
+  // Handle autocomplete changes with real-time validation
   const handleAutocompleteChange = (name, value) => {
+    const finalValue = value || '';
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value || ''
+      [name]: finalValue
     }));
 
-    // Clear field error when user makes selection
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
+    // Real-time validation
+    const fieldErrors = validateField(name, finalValue);
+    setErrors(prev => ({
+      ...prev,
+      ...fieldErrors
+    }));
 
     // Clear submit error when user makes changes
     if (submitError) {
@@ -214,6 +221,14 @@ const AddCountryPage = ({
 
     setErrors(allErrors);
     return Object.keys(allErrors).length === 0;
+  };
+
+  // Check if form is valid for submit button
+  const isFormValid = () => {
+    const requiredFields = ['CountryName', 'CountryCode', 'Region'];
+    const hasRequiredFields = requiredFields.every(field => formData[field]?.trim());
+    const hasNoErrors = Object.keys(errors).length === 0;
+    return hasRequiredFields && hasNoErrors;
   };
 
   const handleSubmit = async (e) => {
@@ -287,6 +302,7 @@ const AddCountryPage = ({
     setFormData({
       CountryName: '',
       CountryCode: '',
+      PhoneCode: '',
       CurrencyID: '',
       Region: '',
       Active: true,
@@ -420,6 +436,32 @@ const AddCountryPage = ({
                       )
                     }}
                     {...getFieldProps('CountryCode')}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Phone Code"
+                    name="PhoneCode"
+                    value={formData.PhoneCode}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="e.g., +27"
+                    disabled={isLoading}
+                    inputProps={{ 
+                      maxLength: 10
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Tooltip title="International dialing code (optional)">
+                            <InfoIcon color="action" fontSize="small" />
+                          </Tooltip>
+                        </InputAdornment>
+                      )
+                    }}
+                    {...getFieldProps('PhoneCode')}
                   />
                 </Grid>
 
@@ -566,7 +608,7 @@ const AddCountryPage = ({
                 type="submit"
                 variant="contained"
                 startIcon={isLoading ? <CircularProgress size={20} /> : <SaveIcon />}
-                disabled={isLoading}
+                disabled={isLoading || !isFormValid()}
               >
                 {isLoading ? 'Adding Country...' : 'Add Country'}
               </Button>

@@ -29,7 +29,7 @@ import {
   History as HistoryIcon,
 } from "@mui/icons-material";
 import PriorityHighIcon from "@mui/icons-material/PriorityHigh";
-import WorkspacesOutlineIcon from "@mui/icons-material/WorkspacesOutline";
+import WorkspacesOutlinedIcon from "@mui/icons-material/WorkspacesOutlined";
 import TimelineIcon from '@mui/icons-material/Timeline';
 import CorporateFareIcon from '@mui/icons-material/CorporateFare';
 import WorkIcon from '@mui/icons-material/Work';
@@ -47,7 +47,7 @@ const DRAWER_WIDTH_COLLAPSED = 64;
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: DashboardIcon, accessKey: "dashboard", section: "Main" },
   { name: "Reports", href: "/reports", icon: BarChartIcon, accessKey: "reports", section: "Main" },
-  { name: "Work Page", href: "/smart-work", icon: WorkspacesOutlineIcon, accessKey: "smartWork", section: "Main" },
+  { name: "Work Page", href: "/smart-work", icon: WorkspacesOutlinedIcon, accessKey: "smartWork", section: "Main" },
 
   // Admin
   { name: "Role Management", href: "/rolemanagement", icon: AdminPanelSettingsIcon, accessKey: "roles", section: "Admin" },

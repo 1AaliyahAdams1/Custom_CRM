@@ -68,7 +68,7 @@ const CurrencyPage = ({
   const [addCurrencyDialogOpen, setAddCurrencyDialogOpen] = useState(false);
   const [newCurrency, setNewCurrency] = useState({
     Symbol: '',
-    ISOcode: '',
+    ISOCode: '',
     DecimalPlaces: 2,
     EnglishName: '',
     LocalName: '',
@@ -77,6 +77,8 @@ const CurrencyPage = ({
     Prefix: true
   });
   const [addCurrencyLoading, setAddCurrencyLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const columns = [
     { field: 'Symbol', headerName: 'Symbol', defaultVisible: true },
@@ -105,11 +107,91 @@ const CurrencyPage = ({
     DecimalPlaces: (value) => `${value} places`,
   };
 
-  const handleInputChange = (field, value) => setNewCurrency(prev => ({ ...prev, [field]: value }));
+  // Validation rules
+  const validateField = (name, value) => {
+    const fieldErrors = {};
+
+    switch (name) {
+      case 'Symbol':
+        if (!value.trim()) {
+          fieldErrors.Symbol = 'Currency symbol is required';
+        } else if (value.trim().length > 5) {
+          fieldErrors.Symbol = 'Symbol must be 5 characters or less';
+        }
+        break;
+      
+      case 'ISOCode':
+        if (!value.trim()) {
+          fieldErrors.ISOCode = 'ISO code is required';
+        } else if (!/^[A-Z]{3}$/.test(value.trim())) {
+          fieldErrors.ISOCode = 'ISO code must be exactly 3 uppercase letters (e.g., USD, GBP, PKR)';
+        }
+        break;
+
+      case 'EnglishName':
+        if (!value.trim()) {
+          fieldErrors.EnglishName = 'English name is required';
+        } else if (value.trim().length < 2) {
+          fieldErrors.EnglishName = 'English name must be at least 2 characters';
+        } else if (value.trim().length > 100) {
+          fieldErrors.EnglishName = 'English name must be 100 characters or less';
+        } else if (!/^[a-zA-Z\s]+$/.test(value.trim())) {
+          fieldErrors.EnglishName = 'English name can only contain letters and spaces';
+        }
+        break;
+
+      case 'LocalName':
+        if (value.trim() && value.trim().length < 2) {
+          fieldErrors.LocalName = 'Local name must be at least 2 characters';
+        } else if (value.trim().length > 100) {
+          fieldErrors.LocalName = 'Local name must be 100 characters or less';
+        }
+        break;
+
+      case 'DecimalPlaces':
+        const decimalValue = parseInt(value);
+        if (isNaN(decimalValue) || decimalValue < 0 || decimalValue > 4) {
+          fieldErrors.DecimalPlaces = 'Decimal places must be between 0 and 4';
+        }
+        break;
+
+      case 'ExchangeRate':
+        if (!value || value === '') {
+          fieldErrors.ExchangeRate = 'Exchange rate is required';
+        } else {
+          const rateValue = parseFloat(value);
+          if (isNaN(rateValue) || rateValue <= 0) {
+            fieldErrors.ExchangeRate = 'Exchange rate must be a positive number';
+          }
+        }
+        break;
+      
+      default:
+        break;
+    }
+
+    return fieldErrors;
+  };
+
+  const handleInputChange = (field, value) => {
+    setNewCurrency(prev => ({ ...prev, [field]: value }));
+
+    // Real-time validation
+    const fieldErrors = validateField(field, value);
+    setErrors(prev => ({
+      ...prev,
+      ...fieldErrors
+    }));
+
+    setTouched(prev => ({
+      ...prev,
+      [field]: true
+    }));
+  };
 
   const handleISOCodeChange = (e) => {
     const value = e.target.value.toUpperCase();
-    if (value.length <= 3) handleInputChange('ISOcode', value);
+    if (value.length <= 3) handleInputChange('ISOCode', value);
   };
 
   const handleSymbolChange = (e) => {
@@ -119,7 +201,7 @@ const CurrencyPage = ({
 
   const handleDecimalPlacesChange = (e) => {
     const value = parseInt(e.target.value);
-    if (!isNaN(value) && value >= 0 && value <= 8) handleInputChange('DecimalPlaces', value);
+    if (!isNaN(value) && value >= 0 && value <= 4) handleInputChange('DecimalPlaces', value);
   };
 
   const handleExchangeRateChange = (e) => {
@@ -127,23 +209,51 @@ const CurrencyPage = ({
     if (/^\d*\.?\d{0,4}$/.test(value) || value === '') handleInputChange('ExchangeRate', value);
   };
 
-  const handleOpenAddCurrencyDialog = () => setAddCurrencyDialogOpen(true);
+  const handleOpenAddCurrencyDialog = () => {
+    setAddCurrencyDialogOpen(true);
+    setNewCurrency({ Symbol: '', ISOCode: '', DecimalPlaces: 2, EnglishName: '', LocalName: '', ExchangeRate: '', Active: true, Prefix: true });
+    setErrors({});
+    setTouched({});
+  };
+
   const handleCloseAddCurrencyDialog = () => {
     setAddCurrencyDialogOpen(false);
-    setNewCurrency({ Symbol: '', ISOcode: '', DecimalPlaces: 2, EnglishName: '', LocalName: '', ExchangeRate: '', Active: true, Prefix: true });
+    setNewCurrency({ Symbol: '', ISOCode: '', DecimalPlaces: 2, EnglishName: '', LocalName: '', ExchangeRate: '', Active: true, Prefix: true });
+    setErrors({});
+    setTouched({});
   };
 
   const handleAddCurrency = async () => {
-    if (!newCurrency.Symbol.trim()) return setError && setError('Currency symbol is required');
-    if (!newCurrency.ISOcode.trim()) return setError && setError('ISO code is required');
-    if (newCurrency.ISOcode.length !== 3) return setError && setError('ISO code must be exactly 3 characters');
-    if (!newCurrency.EnglishName.trim()) return setError && setError('English name is required');
-    if (!newCurrency.ExchangeRate || parseFloat(newCurrency.ExchangeRate) <= 0) return setError && setError('Valid exchange rate is required');
+    // Mark all fields as touched
+    const allTouched = {};
+    Object.keys(newCurrency).forEach(key => {
+      allTouched[key] = true;
+    });
+    setTouched(allTouched);
+
+    // Validate all fields
+    const allErrors = {};
+    Object.keys(newCurrency).forEach(key => {
+      const fieldErrors = validateField(key, newCurrency[key]);
+      Object.assign(allErrors, fieldErrors);
+    });
+
+    setErrors(allErrors);
+
+    if (Object.keys(allErrors).length > 0) {
+      setError && setError('Please fix the errors below before submitting');
+      return;
+    }
 
     setAddCurrencyLoading(true);
     try {
       if (onCreate) {
-        await onCreate({ ...newCurrency, ExchangeRate: parseFloat(newCurrency.ExchangeRate), DecimalPlaces: parseInt(newCurrency.DecimalPlaces), LocalName: newCurrency.LocalName || newCurrency.EnglishName });
+        await onCreate({ 
+          ...newCurrency, 
+          ExchangeRate: parseFloat(newCurrency.ExchangeRate), 
+          DecimalPlaces: parseInt(newCurrency.DecimalPlaces), 
+          LocalName: newCurrency.LocalName || newCurrency.EnglishName 
+        });
         handleCloseAddCurrencyDialog();
         setSuccessMessage && setSuccessMessage('Currency added successfully');
       }
@@ -153,6 +263,23 @@ const CurrencyPage = ({
       setAddCurrencyLoading(false);
     }
   };
+
+  // Check if form is valid for submit button
+  const isFormValid = () => {
+    const requiredFields = ['Symbol', 'ISOCode', 'EnglishName', 'ExchangeRate'];
+    const hasRequiredFields = requiredFields.every(field => {
+      const value = newCurrency[field];
+      return value && value.toString().trim();
+    });
+    const hasNoErrors = Object.keys(errors).length === 0;
+    return hasRequiredFields && hasNoErrors;
+  };
+
+  // Get field props for consistent styling
+  const getFieldProps = (name) => ({
+    error: touched[name] && !!errors[name],
+    helperText: touched[name] && errors[name] ? errors[name] : '',
+  });
 
   return (
     <>
@@ -207,18 +334,71 @@ const CurrencyPage = ({
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
             {/* Left Column */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField label="Currency Symbol" value={newCurrency.Symbol} onChange={handleSymbolChange} fullWidth required variant="outlined" helperText="Enter currency symbol (e.g., $, €, £)" inputProps={{ maxLength: 5 }} InputProps={{ startAdornment: <AttachMoneyIcon sx={{ mr: 1, color: theme.palette.text.secondary }} /> }} />
-              <TextField label="ISO Code" value={newCurrency.ISOcode} onChange={handleISOCodeChange} fullWidth required variant="outlined" helperText="3-letter ISO 4217 code (e.g., USD, EUR, ZAR)" inputProps={{ maxLength: 3 }} InputProps={{ startAdornment: <CodeIcon sx={{ mr: 1, color: theme.palette.text.secondary }} /> }} />
-              <TextField label="English Name" value={newCurrency.EnglishName} onChange={(e) => handleInputChange('EnglishName', e.target.value)} fullWidth required variant="outlined" helperText="English name of the currency" inputProps={{ maxLength: 100 }} />
-              <TextField label="Local Name" value={newCurrency.LocalName} onChange={(e) => handleInputChange('LocalName', e.target.value)} fullWidth variant="outlined" helperText="Local language name (optional)" inputProps={{ maxLength: 100 }} />
+              <TextField 
+                label="Currency Symbol" 
+                value={newCurrency.Symbol} 
+                onChange={handleSymbolChange} 
+                fullWidth 
+                required 
+                variant="outlined" 
+                helperText="Enter currency symbol (e.g., $, €, £)" 
+                inputProps={{ maxLength: 5 }} 
+                InputProps={{ startAdornment: <AttachMoneyIcon sx={{ mr: 1, color: theme.palette.text.secondary }} /> }}
+                {...getFieldProps('Symbol')}
+              />
+              <TextField 
+                label="ISO Code" 
+                value={newCurrency.ISOCode} 
+                onChange={handleISOCodeChange} 
+                fullWidth 
+                required 
+                variant="outlined" 
+                helperText="3-letter ISO 4217 code (e.g., USD, EUR, ZAR)" 
+                inputProps={{ maxLength: 3 }} 
+                InputProps={{ startAdornment: <CodeIcon sx={{ mr: 1, color: theme.palette.text.secondary }} /> }}
+                {...getFieldProps('ISOCode')}
+              />
+              <TextField 
+                label="English Name" 
+                value={newCurrency.EnglishName} 
+                onChange={(e) => handleInputChange('EnglishName', e.target.value)} 
+                fullWidth 
+                required 
+                variant="outlined" 
+                helperText="English name of the currency" 
+                inputProps={{ maxLength: 100 }}
+                {...getFieldProps('EnglishName')}
+              />
+              <TextField 
+                label="Local Name" 
+                value={newCurrency.LocalName} 
+                onChange={(e) => handleInputChange('LocalName', e.target.value)} 
+                fullWidth 
+                variant="outlined" 
+                helperText="Local language name (optional)" 
+                inputProps={{ maxLength: 100 }}
+                {...getFieldProps('LocalName')}
+              />
             </Box>
             {/* Right Column */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField label="Exchange Rate" value={newCurrency.ExchangeRate} onChange={handleExchangeRateChange} fullWidth required variant="outlined" helperText="Exchange rate relative to base currency" type="text" />
-              <FormControl fullWidth>
+              <TextField 
+                label="Exchange Rate" 
+                value={newCurrency.ExchangeRate} 
+                onChange={handleExchangeRateChange} 
+                fullWidth 
+                required 
+                variant="outlined" 
+                helperText="Exchange rate relative to base currency" 
+                type="number"
+                step="0.0001"
+                inputProps={{ min: 0 }}
+                {...getFieldProps('ExchangeRate')}
+              />
+              <FormControl fullWidth {...getFieldProps('DecimalPlaces')}>
                 <InputLabel>Decimal Places</InputLabel>
                 <Select value={newCurrency.DecimalPlaces} onChange={handleDecimalPlacesChange} label="Decimal Places">
-                  {[...Array(9).keys()].map((places) => <MenuItem key={places} value={places}>{places} decimal places</MenuItem>)}
+                  {[...Array(5).keys()].map((places) => <MenuItem key={places} value={places}>{places} decimal places</MenuItem>)}
                 </Select>
               </FormControl>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -231,7 +411,7 @@ const CurrencyPage = ({
         </DialogContent>
         <DialogActions sx={{ p: 3, borderTop: `1px solid ${theme.palette.divider}` }}>
           <Button onClick={handleCloseAddCurrencyDialog} color="inherit">Cancel</Button>
-          <Button onClick={handleAddCurrency} variant="contained" disabled={addCurrencyLoading || !newCurrency.Symbol.trim() || !newCurrency.ISOcode.trim() || newCurrency.ISOcode.length !== 3 || !newCurrency.EnglishName.trim() || !newCurrency.ExchangeRate || parseFloat(newCurrency.ExchangeRate) <= 0}>
+          <Button onClick={handleAddCurrency} variant="contained" disabled={addCurrencyLoading || !isFormValid()}>
             {addCurrencyLoading ? <CircularProgress size={20} /> : 'Add Currency'}
           </Button>
         </DialogActions>

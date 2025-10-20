@@ -53,6 +53,7 @@ const chatbotRoutes = require("./routes/chatbotRoutes");
 const auditLogRoutes = require("./routes/auditLogRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const departmentRoutes = require("./routes/departmentRoutes");
+const teamRoutes = require("./routes/teamRoutes");
 
 //API ROUTES
 const efmvenuesRoute = require('./routes/efm/efmVenueRoute');
@@ -98,6 +99,7 @@ app.use("/chatbot", chatbotRoutes);
 app.use("/audit-logs", auditLogRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/departments", departmentRoutes);
+app.use("/teams", teamRoutes);
 
 //API Mounting
 app.use('/api/cities', efmcitiesRoute);

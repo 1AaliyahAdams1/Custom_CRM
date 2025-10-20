@@ -35,7 +35,126 @@ const EditDealPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
+
+  const requiredFields = ['DealStageID', 'DealName', 'Value', 'CloseDate'];
+
+  const validateField = (name, value) => {
+    const errors = [];
+    const strValue = value?.toString().trim();
+
+    // Required field validation
+    if (requiredFields.includes(name) && (!strValue || strValue === '')) {
+      errors.push('This field is required.');
+    }
+
+    // Only validate if field has value or is required
+    if (strValue || requiredFields.includes(name)) {
+      switch (name) {
+        case 'DealName':
+          if (!strValue || strValue === '') {
+            errors.push('Deal name is required.');
+          } else {
+            if (strValue.length < 2) {
+              errors.push('Deal name must be at least 2 characters long.');
+            }
+            if (strValue.length > 255) {
+              errors.push('Deal name cannot exceed 255 characters.');
+            }
+          }
+          break;
+
+        case 'Value':
+          if (!strValue || strValue === '') {
+            errors.push('Deal value is required.');
+          } else {
+            const value = parseFloat(strValue);
+            if (isNaN(value) || value < 0) {
+              errors.push('Deal value must be a non-negative number.');
+            } else if (value > 999999999999) {
+              errors.push('Deal value must be less than 1 trillion.');
+            }
+          }
+          break;
+
+        case 'CloseDate':
+          if (!strValue || strValue === '') {
+            errors.push('Close date is required.');
+          } else {
+            const closeDate = new Date(strValue);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (isNaN(closeDate.getTime())) {
+              errors.push('Please enter a valid date.');
+            }
+          }
+          break;
+
+        case 'Probability':
+          if (strValue && strValue !== '') {
+            const probability = parseInt(strValue, 10);
+            if (isNaN(probability) || probability < 0 || probability > 100) {
+              errors.push('Probability must be between 0 and 100.');
+            }
+          }
+          break;
+
+        case 'DealStageID':
+          if (!strValue || strValue === '') {
+            errors.push('Deal stage selection is required.');
+          }
+          break;
+      }
+    }
+
+    return errors;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    Object.keys(formData).forEach((field) => {
+      const errors = validateField(field, formData[field]);
+      if (errors.length > 0) newErrors[field] = errors;
+    });
+    setFieldErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const isFormValid = () => {
+    // Check if all required fields are valid
+    const requiredFieldValid = requiredFields.every(field => {
+      const errors = validateField(field, formData[field]);
+      return errors.length === 0;
+    });
+
+    // Check if all non-empty fields are valid
+    const allFieldsValid = Object.keys(formData).every(field => {
+      const value = formData[field];
+      const strValue = value?.toString().trim();
+      
+      // If field is empty and not required, it's valid
+      if ((!strValue || strValue === '') && !requiredFields.includes(field)) {
+        return true;
+      }
+      
+      // If field has value, validate it
+      const errors = validateField(field, value);
+      return errors.length === 0;
+    });
+
+    return requiredFieldValid && allFieldsValid;
+  };
+
+  const getFieldError = (fieldName) => {
+    return touched[fieldName] && fieldErrors[fieldName] ? (
+      <span style={{ display: 'flex', alignItems: 'center', color: '#ff4444' }}>
+         {fieldErrors[fieldName][0]}
+      </span>
+    ) : '';
+  };
+
+  const isFieldInvalid = (fieldName) => touched[fieldName] && fieldErrors[fieldName]?.length > 0;
 
   // Memoized function to get account name from AccountID
   const accountName = useMemo(() => {
@@ -79,16 +198,43 @@ const EditDealPage = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Always validate the changed field in real-time
+    const errors = validateField(name, value);
+    setFieldErrors(prev => ({ ...prev, [name]: errors.length > 0 ? errors : undefined }));
+
     if (error) setError(null);
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    
+    setTouched(prev => ({ ...prev, [name]: true }));
+
+    const errors = validateField(name, value);
+    setFieldErrors(prev => ({ ...prev, [name]: errors.length > 0 ? errors : undefined }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Mark all fields as touched for validation
+    const allTouched = {};
+    Object.keys(formData).forEach(key => {
+      allTouched[key] = true;
+    });
+    setTouched(allTouched);
+
+    // Validate the entire form
+    if (!validateForm()) {
+      setError("Please fix the errors below before submitting");
+      return;
+    }
+
     try {
       setSaving(true);
       await updateDeal(id, formData);
-      setSuccessMessage("Deal updated successfully!");
-      setTimeout(() => navigate("/deals"), 1500);
+      navigate("/deals");
     } catch {
       setError("Failed to update deal");
     } finally {
@@ -124,7 +270,7 @@ const EditDealPage = () => {
                   variant="contained"
                   startIcon={saving ? <CircularProgress size={20} /> : <Save />}
                   onClick={handleSubmit}
-                  disabled={saving}
+                  disabled={saving || !isFormValid()}
                 >
                   {saving ? 'Updating...' : 'Update Deal'}
                 </Button>
@@ -132,7 +278,6 @@ const EditDealPage = () => {
             </Box>
 
             {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-            {successMessage && <Alert severity="success" sx={{ mb: 3 }}>{successMessage}</Alert>}
 
             <Paper elevation={0} sx={{
               p: 3,
@@ -169,10 +314,13 @@ const EditDealPage = () => {
                     name="DealStageID"
                     value={formData.DealStageID}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     service={dealStageService}
                     displayField="StageName"
                     valueField="DealStageID"
                     disabled={saving}
+                    error={isFieldInvalid('DealStageID')}
+                    helperText={getFieldError('DealStageID')}
                   />
 
                   <TextField
@@ -181,7 +329,10 @@ const EditDealPage = () => {
                     name="DealName"
                     value={formData.DealName}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     disabled={saving}
+                    error={isFieldInvalid('DealName')}
+                    helperText={getFieldError('DealName')}
                   />
 
                   <TextField
@@ -191,7 +342,10 @@ const EditDealPage = () => {
                     type="number"
                     value={formData.Value}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     disabled={saving}
+                    error={isFieldInvalid('Value')}
+                    helperText={getFieldError('Value')}
                   />
 
                   <TextField
@@ -202,7 +356,10 @@ const EditDealPage = () => {
                     InputLabelProps={{ shrink: true }}
                     value={formData.CloseDate}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     disabled={saving}
+                    error={isFieldInvalid('CloseDate')}
+                    helperText={getFieldError('CloseDate')}
                   />
 
                   <TextField
@@ -212,7 +369,10 @@ const EditDealPage = () => {
                     type="number"
                     value={formData.Probability}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     disabled={saving}
+                    error={isFieldInvalid('Probability')}
+                    helperText={getFieldError('Probability')}
                   />
                 </Box>
               </form>

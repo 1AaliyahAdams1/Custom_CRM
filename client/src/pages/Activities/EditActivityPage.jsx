@@ -46,8 +46,129 @@ const EditActivityPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
   const [accounts, setAccounts] = useState([]);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
+
+  const requiredFields = ['AccountID'];
+
+  const validateField = (name, value) => {
+    const errors = [];
+    const strValue = value?.toString().trim();
+
+    // Required field validation
+    if (requiredFields.includes(name) && (!strValue || strValue === '')) {
+      errors.push('This field is required.');
+    }
+
+    // Only validate if field has value or is required
+    if (strValue || requiredFields.includes(name)) {
+      switch (name) {
+        case 'AccountID':
+          if (!strValue || strValue === '') {
+            errors.push('Account selection is required.');
+          }
+          break;
+
+        case 'TypeID':
+          // Optional field - only validate if value is provided
+          if (strValue && strValue !== '') {
+            // Validate it's a valid ID (numeric)
+            if (!/^\d+$/.test(strValue)) {
+              errors.push('Please select a valid activity type.');
+            }
+          }
+          break;
+
+        case 'PriorityLevelID':
+          // Optional field - only validate if value is provided
+          if (strValue && strValue !== '') {
+            // Validate it's a valid ID (numeric)
+            if (!/^\d+$/.test(strValue)) {
+              errors.push('Please select a valid priority level.');
+            }
+          }
+          break;
+
+        case 'DueToStart':
+          if (strValue && strValue !== '') {
+            const startDate = new Date(strValue);
+            if (isNaN(startDate.getTime())) {
+              errors.push('Please enter a valid date and time.');
+            }
+          }
+          break;
+
+        case 'DueToEnd':
+          if (strValue && strValue !== '') {
+            const endDate = new Date(strValue);
+            if (isNaN(endDate.getTime())) {
+              errors.push('Please enter a valid date and time.');
+            } else if (formData.DueToStart) {
+              const startDate = new Date(formData.DueToStart);
+              if (!isNaN(startDate.getTime()) && endDate <= startDate) {
+                errors.push('End date must be after start date.');
+              }
+            }
+          }
+          break;
+
+        case 'Completed':
+          // Checkbox validation - should be boolean
+          if (typeof value !== 'boolean') {
+            errors.push('Completed must be true or false.');
+          }
+          break;
+      }
+    }
+
+    return errors;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    Object.keys(formData).forEach((field) => {
+      const errors = validateField(field, formData[field]);
+      if (errors.length > 0) newErrors[field] = errors;
+    });
+    setFieldErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const isFormValid = () => {
+    // Check if all required fields are valid
+    const requiredFieldValid = requiredFields.every(field => {
+      const errors = validateField(field, formData[field]);
+      return errors.length === 0;
+    });
+
+    // Check if all non-empty fields are valid
+    const allFieldsValid = Object.keys(formData).every(field => {
+      const value = formData[field];
+      const strValue = value?.toString().trim();
+      
+      // If field is empty and not required, it's valid
+      if ((!strValue || strValue === '') && !requiredFields.includes(field)) {
+        return true;
+      }
+      
+      // If field has value, validate it
+      const errors = validateField(field, value);
+      return errors.length === 0;
+    });
+
+    return requiredFieldValid && allFieldsValid;
+  };
+
+  const getFieldError = (fieldName) => {
+    return touched[fieldName] && fieldErrors[fieldName] ? (
+      <span style={{ display: 'flex', alignItems: 'center', color: '#ff4444' }}>
+         {fieldErrors[fieldName][0]}
+      </span>
+    ) : '';
+  };
+
+  const isFieldInvalid = (fieldName) => touched[fieldName] && fieldErrors[fieldName]?.length > 0;
 
   // Load activity either from passed state or server
   useEffect(() => {
@@ -196,7 +317,21 @@ const EditActivityPage = () => {
       console.log("Updated formData:", updated);
       return updated;
     });
+
+    // Always validate the changed field in real-time
+    const errors = validateField(name, value);
+    setFieldErrors(prev => ({ ...prev, [name]: errors.length > 0 ? errors : undefined }));
+
     if (error) setError(null);
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    
+    setTouched(prev => ({ ...prev, [name]: true }));
+
+    const errors = validateField(name, value);
+    setFieldErrors(prev => ({ ...prev, [name]: errors.length > 0 ? errors : undefined }));
   };
 
   const handleCheckboxChange = (e) => {
@@ -212,6 +347,19 @@ const EditActivityPage = () => {
     console.log("AccountID:", formData.AccountID);
     console.log("AccountID type:", typeof formData.AccountID);
     console.log("============================");
+
+    // Mark all fields as touched for validation
+    const allTouched = {};
+    Object.keys(formData).forEach(key => {
+      allTouched[key] = true;
+    });
+    setTouched(allTouched);
+
+    // Validate the entire form
+    if (!validateForm()) {
+      setError("Please fix the errors below before submitting");
+      return;
+    }
 
     if (!formData.AccountID || formData.AccountID === '') {
       console.error("❌ AccountID is missing or empty!");
@@ -234,9 +382,7 @@ const EditActivityPage = () => {
       console.log("📤 Payload to send:", payload);
 
       await updateActivity(id, payload);
-
-      setSuccessMessage("Activity updated successfully!");
-      setTimeout(() => navigate("/activities"), 1500);
+      navigate("/activities");
     } catch (err) {
       console.error("Error updating activity:", err);
       setError(`Failed to update activity: ${err.message || 'Unknown error'}`);
@@ -261,14 +407,13 @@ const EditActivityPage = () => {
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>Back</Button>
             <Button variant="outlined" startIcon={<Clear />} onClick={() => navigate("/activities")} disabled={saving}>Cancel</Button>
-            <Button variant="contained" startIcon={saving ? <CircularProgress size={20} /> : <Save />} onClick={handleSubmit} disabled={saving}>
+            <Button variant="contained" startIcon={saving ? <CircularProgress size={20} /> : <Save />} onClick={handleSubmit} disabled={saving || !isFormValid()}>
               {saving ? 'Updating...' : 'Update Activity'}
             </Button>
           </Box>
         </Box>
 
         {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-        {successMessage && <Alert severity="success" sx={{ mb: 3 }}>{successMessage}</Alert>}
 
         <Paper elevation={0} sx={{ p: 3 }}>
           <form onSubmit={handleSubmit}>
@@ -282,6 +427,7 @@ const EditActivityPage = () => {
                 name="TypeID"
                 value={formData.TypeID}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 service={{
                   getAll: async () => {
                     const types = await activityTypeService.getAll();
@@ -295,6 +441,8 @@ const EditActivityPage = () => {
                 displayField="TypeName"
                 valueField="TypeID"
                 disabled={saving}
+                error={isFieldInvalid('TypeID')}
+                helperText={getFieldError('TypeID')}
               />
 
               <SmartDropdown
@@ -302,10 +450,13 @@ const EditActivityPage = () => {
                 name="PriorityLevelID"
                 value={formData.PriorityLevelID}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 service={priorityLevelService}
                 displayField="PriorityLevelName"
                 valueField="PriorityLevelID"
                 disabled={saving}
+                error={isFieldInvalid('PriorityLevelID')}
+                helperText={getFieldError('PriorityLevelID')}
               />
 
               <TextField
@@ -316,7 +467,10 @@ const EditActivityPage = () => {
                 InputLabelProps={{ shrink: true }}
                 value={formData.DueToStart}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 disabled={saving}
+                error={isFieldInvalid('DueToStart')}
+                helperText={getFieldError('DueToStart')}
               />
 
               <TextField
@@ -327,7 +481,10 @@ const EditActivityPage = () => {
                 InputLabelProps={{ shrink: true }}
                 value={formData.DueToEnd}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 disabled={saving}
+                error={isFieldInvalid('DueToEnd')}
+                helperText={getFieldError('DueToEnd')}
               />
 
               <FormControlLabel
