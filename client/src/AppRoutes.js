@@ -65,6 +65,20 @@ const DepartmentPage = lazy(() => import("./pages//Classifications/DepartmentPag
 
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
 
+// Employee pages
+const EmployeesContainer = lazy(() =>
+  import("./components/containers/EmployeesContainer")
+);
+const EmployeeDetailsPage = lazy(() =>
+  import("./pages/Employees/EmployeeDetailsPage")
+);
+const CreateEmployeePage = lazy(() =>
+  import("./pages/Employees/CreateEmployeePage")
+);
+const EditEmployeePage = lazy(() =>
+  import("./pages/Employees/EditEmployeePage")
+);
+
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/Error"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
@@ -88,7 +102,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-    
+
       {/* --- Accounts Routes --- */}
       <Route
         path="/accounts"
@@ -277,8 +291,41 @@ const AppRoutes = () => {
       <Route
         path="/products/:id"
         element={
-          <PrivateRoute allowedRoles={ROUTE_ACCESS.productsDetails}>  
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.productsDetails}>
             <ProductDetailsPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Employee Routes --- */}
+      <Route
+        path="/employees"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.employees}>
+            <EmployeesContainer />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/employees/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.employeesDetails}>
+            <EmployeeDetailsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/employees/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.employeesCreate}>
+            <CreateEmployeePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/employees/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.employeesEdit}>
+            <EditEmployeePage />
           </PrivateRoute>
         }
       />
@@ -343,17 +390,30 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+<<<<<<< HEAD
      
       
       {/* --- Geography Routes --- */} 
+=======
+      <Route
+        path="/sequences/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.sequencesEdit}>
+            <EditSequencesPage />
+          </PrivateRoute>
+        }
+      />
+
+      {/* --- Geography Routes --- */}
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
       {/* Main geography route - shows countries by default */}
       <Route
         path="/countries"
         element={
-        <PrivateRoute allowedRoles={ROUTE_ACCESS.country}>
-          <CountryContainer />
-       </PrivateRoute>
-       }
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.country}>
+            <CountryContainer />
+          </PrivateRoute>
+        }
       />
 
       {/* Geography sub-routes - all use the same container but with different tabs */}

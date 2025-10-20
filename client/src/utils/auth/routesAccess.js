@@ -55,6 +55,14 @@ export const ROUTE_ACCESS = {
   // Products
   products: ALL,
   productsCreate: ALL,
+  productsEdit: ALL,
+  productsDetails: ALL,
+
+  // Employees
+  employees: ALL,
+  employeesDetails: ALL,
+  employeesCreate: HR,
+  employeesEdit: HR,
 
   // Geography
   country: ALL,

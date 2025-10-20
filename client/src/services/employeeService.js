@@ -31,9 +31,15 @@ export const createEmployee = async (data, changedBy, actionTypeId) => {
   }
 };
 
-export const updateEmployee = async (id, updates, changedBy, actionTypeId) => {
+export const updateEmployee = async (id, employeeData, changedBy, actionTypeId) => {
   try {
-    await api.put(`${EMPLOYEE_API}/${id}`, { updates, changedBy, actionTypeId });
+    console.log("Frontend updateEmployee called with:", { id, employeeData, changedBy, actionTypeId });
+    const response = await api.put(`${EMPLOYEE_API}/${id}`, { 
+      ...employeeData, 
+      changedBy, 
+      actionTypeId 
+    });
+    return response.data;
   } catch (error) {
     console.error(`Error updating employee ${id}:`, error.response?.data || error.message);
     throw error;

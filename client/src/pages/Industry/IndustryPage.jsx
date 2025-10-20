@@ -70,8 +70,15 @@ const IndustryPage = ({
     Active: true
   });
   const [addIndustryLoading, setAddIndustryLoading] = useState(false);
+<<<<<<< HEAD
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+=======
+  
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
 
   const columns = [
     { field: 'IndustryName', headerName: 'Industry Name', type: 'tooltip', defaultVisible: true }
@@ -99,6 +106,7 @@ const IndustryPage = ({
     }
   };
 
+<<<<<<< HEAD
   // Validation rules
   const validateField = (name, value) => {
     const fieldErrors = {};
@@ -133,6 +141,35 @@ const IndustryPage = ({
     }
 
     return fieldErrors;
+=======
+  // Validation functions
+  const validateField = (field, value) => {
+    const errors = {};
+    
+    switch (field) {
+      case 'IndustryName':
+        if (!value || value.trim() === '') {
+          errors.IndustryName = 'Industry name is required';
+        } else if (value.length > 255) {
+          errors.IndustryName = 'Industry name must be 255 characters or less';
+        }
+        break;
+      default:
+        break;
+    }
+    
+    return errors;
+  };
+
+  const validateForm = (industryData) => {
+    const errors = {};
+    
+    // Validate IndustryName
+    const nameErrors = validateField('IndustryName', industryData.IndustryName);
+    Object.assign(errors, nameErrors);
+    
+    return errors;
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
   };
 
   // Handle Add Industry Dialog
@@ -144,8 +181,13 @@ const IndustryPage = ({
       Description: '',
       Active: true
     });
+<<<<<<< HEAD
     setErrors({});
     setTouched({});
+=======
+    setValidationErrors({});
+    setTouchedFields({});
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
   };
 
   const handleCloseAddIndustryDialog = () => {
@@ -156,6 +198,7 @@ const IndustryPage = ({
       Description: '',
       Active: true
     });
+<<<<<<< HEAD
     setErrors({});
     setTouched({});
   };
@@ -179,6 +222,41 @@ const IndustryPage = ({
 
     if (Object.keys(allErrors).length > 0) {
       setError && setError('Please fix the errors below before submitting');
+=======
+    setValidationErrors({});
+    setTouchedFields({});
+  };
+
+  // Handle field blur event
+  const handleFieldBlur = (field) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [field]: true
+    }));
+    
+    // Validate the field that just lost focus
+    const fieldErrors = validateField(field, newIndustry[field]);
+    setValidationErrors(prev => ({
+      ...prev,
+      [field]: fieldErrors[field]
+    }));
+  };
+
+  const handleAddIndustry = async () => {
+    // Mark all fields as touched on submit
+    const allTouched = {
+      IndustryName: true
+    };
+    setTouchedFields(allTouched);
+    
+    // Validate entire form
+    const errors = validateForm(newIndustry);
+    setValidationErrors(errors);
+    
+    // Check if form is valid
+    if (Object.keys(errors).length > 0) {
+      setError && setError('Please fix validation errors before submitting');
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
       return;
     }
 
@@ -201,6 +279,7 @@ const IndustryPage = ({
       ...prev,
       [field]: value
     }));
+<<<<<<< HEAD
 
     // Real-time validation
     const fieldErrors = validateField(field, value);
@@ -213,6 +292,22 @@ const IndustryPage = ({
       ...prev,
       [field]: true
     }));
+=======
+    
+    // Clear validation error for this field when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: null
+      }));
+    }
+  };
+
+  // Check if form is valid for enabling submit button
+  const isFormValid = () => {
+    const errors = validateForm(newIndustry);
+    return Object.keys(errors).length === 0;
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
   };
 
   // Check if form is valid for submit button
@@ -396,9 +491,11 @@ const IndustryPage = ({
               label="Industry Name"
               value={newIndustry.IndustryName}
               onChange={(e) => handleInputChange('IndustryName', e.target.value)}
+              onBlur={() => handleFieldBlur('IndustryName')}
               fullWidth
               required
               variant="outlined"
+<<<<<<< HEAD
               helperText="Enter the name of the industry (e.g., Technology, Healthcare, Finance)"
               inputProps={{ maxLength: 100 }}
               {...getFieldProps('IndustryName')}
@@ -426,6 +523,18 @@ const IndustryPage = ({
               helperText={`${newIndustry.Description.length}/500 characters`}
               inputProps={{ maxLength: 500 }}
               {...getFieldProps('Description')}
+=======
+              helperText={validationErrors.IndustryName || "Enter the name of the industry (e.g., Technology, Healthcare, Finance)"}
+              inputProps={{ maxLength: 255 }}
+              error={!!validationErrors.IndustryName && touchedFields.IndustryName}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&.Mui-error fieldset': {
+                    borderColor: '#f44336',
+                  },
+                },
+              }}
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
             />
 
             <FormControlLabel

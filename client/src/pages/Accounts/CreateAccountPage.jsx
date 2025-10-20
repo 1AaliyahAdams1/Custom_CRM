@@ -20,6 +20,7 @@ import {
   stateProvinceService
 } from '../../services/dropdownServices';
 import SmartDropdown from '../../components/SmartDropdown';
+import { buildAccountFieldErrors, isFormValid, trimString } from '../../utils/validation/accountValidation';
 
 const CreateAccount = () => {
   const navigate = useNavigate();
@@ -145,6 +146,7 @@ const validateField = (name, value) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
+    const cleanedValue = typeof value === 'string' ? value : value;
     setFormData(prev => {
       const newData = { ...prev, [name]: value };
       
@@ -158,6 +160,7 @@ const validateField = (name, value) => {
       return newData;
     });
 
+<<<<<<< HEAD
     // Real-time validation
     const errors = validateField(name, value);
     
@@ -173,6 +176,15 @@ const validateField = (name, value) => {
         return newErrors;
       });
     }
+=======
+    // Live validation for the changed field
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const nextErrors = { ...fieldErrors };
+    const computed = buildAccountFieldErrors({ ...formData, [name]: cleanedValue });
+    // Keep only the changed field's error for responsiveness
+    if (computed[name]) nextErrors[name] = computed[name]; else delete nextErrors[name];
+    setFieldErrors(nextErrors);
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
 
     if (error) {
       setError(null);
@@ -187,6 +199,7 @@ const handleBlur = (e) => {
       [name]: true
     }));
 
+<<<<<<< HEAD
     // Run validation
     const errors = validateField(name, value);
     
@@ -203,11 +216,16 @@ const handleBlur = (e) => {
         return newErrors;
       });
     }
+=======
+    const computed = buildAccountFieldErrors({ ...formData, [name]: value });
+    setFieldErrors(prev => ({ ...prev, [name]: computed[name] }));
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
   };
 
 const handleSubmit = async (e) => {
     e.preventDefault();
     
+<<<<<<< HEAD
     // Validate required field
     if (!formData.AccountName || formData.AccountName.trim().length === 0) {
       setError('Account name is required');
@@ -226,19 +244,66 @@ const handleSubmit = async (e) => {
       setError('Please fix validation errors before submitting');
       return;
     }
+=======
+    // Touch all fields and build full error map
+    const allTouched = {};
+    Object.keys(formData).forEach(key => { allTouched[key] = true; });
+    setTouched(allTouched);
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
+
+    const computed = buildAccountFieldErrors(formData);
+    setFieldErrors(computed);
+
+    if (!isFormValid(computed)) {
+      setError('Please fix the validation errors');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
 
     try {
+<<<<<<< HEAD
       const response = await createAccount(formData);
+=======
+      const payload = {
+        ...formData,
+        AccountName: trimString(formData.AccountName),
+        email: trimString(formData.email)?.toLowerCase(),
+        Website: trimString(formData.Website),
+      };
+      console.log('[CreateAccountPage] Submitting:', payload);
+      const result = await createAccount(payload);
+      console.log('[CreateAccountPage] Create result:', result);
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
       
       // Navigate immediately on success
       navigate('/accounts');
 
     } catch (error) {
+<<<<<<< HEAD
       console.error('Error creating account:', error);
       setError(error.message || 'Failed to create account. Please try again.');
+=======
+      console.error('[CreateAccountPage] Error creating account:', error);
+      console.error('[CreateAccountPage] Error response data:', error.response?.data);
+
+      const status = error.response?.status;
+      const serverMessage = error.response?.data?.message || error.response?.data?.error;
+
+      if (error.response?.data?.errors) {
+        setFieldErrors(error.response.data.errors);
+        setError('Please fix the validation errors');
+      } else if (status === 409) {
+        setError(serverMessage || 'Account with this information already exists');
+      } else if (status === 400) {
+        setError(serverMessage || 'Invalid data provided');
+      } else if (status >= 500) {
+        setError(serverMessage || 'Server error. Please try again later');
+      } else {
+        setError(serverMessage || 'Failed to create account. Please try again.');
+      }
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
     } finally {
       setIsSubmitting(false);
     }

@@ -168,7 +168,6 @@ const CreateContactsPage = () => {
   });
 
   const getFieldError = (fieldName, isPersonField = false) => {
-    const data = isPersonField ? personData : contactData;
     const touchedKey = `${isPersonField ? 'person' : 'contact'}_${fieldName}`;
     
     return touched[touchedKey] && fieldErrors[touchedKey] ? (
@@ -263,7 +262,10 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
+<<<<<<< HEAD
     // Real-time validation
+=======
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
     const error = validateContactField(name, value);
     setFieldErrors(prev => ({
       ...prev,
@@ -302,7 +304,10 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
+<<<<<<< HEAD
     // Real-time validation
+=======
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
     const error = validateContactField(name, value);
     setFieldErrors(prev => ({
       ...prev,

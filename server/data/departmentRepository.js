@@ -8,10 +8,19 @@ async function getAllDepartments() {
    try {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
+<<<<<<< HEAD
       .query("SELECT * FROM Department WHERE Active = 1 ORDER BY DepartmentName");
     
     
     
+=======
+      .query(
+        `SELECT DepartmentID, DepartmentName, Active
+         FROM dbo.Department
+         WHERE Active = 1
+         ORDER BY DepartmentName`
+      );
+>>>>>>> ea839b4db07b3dad90afd56e3760b09b150ea2f7
     return result.recordset;
   } catch (error) {
     console.error("DepartmentRepo Error [getAllDepartments]:", error);
