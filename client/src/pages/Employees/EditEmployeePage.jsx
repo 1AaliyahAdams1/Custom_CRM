@@ -1,480 +1,500 @@
-// import React, { useState, useEffect } from "react";
-// import { useNavigate, useParams, useLocation } from "react-router-dom";
-// import {
-//   Box,
-//   Paper,
-//   Typography,
-//   TextField,
-//   Button,
-//   Grid,
-//   Alert,
-//   CircularProgress,
-//   FormControl,
-//   InputLabel,
-//   Select,
-//   MenuItem,
-//   InputAdornment,
-//   FormControlLabel,
-//   Switch,
-// } from "@mui/material";
-// import { Save, Cancel } from "@mui/icons-material";
-// import { useTheme } from "@mui/material/styles";
-// import { getEmployeeById, updateEmployee } from "../../services/employeeService";
-// import { getAllDepartments } from "../../services/departmentService";
-// import { getAllJobTitles } from "../../services/jobTitleService";
-// import { getAllTeams } from "../../services/teamService";
-// import { getAllCities } from "../../services/cityService";
-// import { getAllStateProvinces } from "../../services/stateProvinceService";
 
-// const EditEmployee = () => {
-//   const navigate = useNavigate();
-//   const { id } = useParams();
-//   const location = useLocation();
-//   const theme = useTheme();
-  
-//   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
-//   const userId = storedUser.UserID || storedUser.id || null;
+import React, { useState, useEffect, useContext } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Paper,
+  Alert,
+  CircularProgress,
+  MenuItem,
+} from "@mui/material";
+import { ArrowBack, Save, Clear } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
+import { getEmployeeById, updateEmployee } from "../../services/employeeService";
+import { AuthContext } from '../../context/auth/authContext';
+import {
+  cityService,
+  stateProvinceService,
+  departmentService,  
+  jobTitleService,
+} from '../../services/dropdownServices';
 
-//   const [loading, setLoading] = useState(false);
-//   const [fetchLoading, setFetchLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [formData, setFormData] = useState({
-//     EmployeeName: "",
-//     EmployeeEmail: "",
-//     EmployeePhone: "",
-//     CityID: "",
-//     StateProvinceID: "",
-//     HireDate: "",
-//     TerminationDate: "",
-//     DepartmentID: "",
-//     salary: "",
-//     Holidays_PA: "",
-//     JobTitleID: "",
-//     UserID: "",
-//     TeamID: "",
-//     Active: true,
-//   });
+import SmartDropdown from '../../components/SmartDropdown';
 
-//   // Lookup data
-//   const [departments, setDepartments] = useState([]);
-//   const [jobTitles, setJobTitles] = useState([]);
-//   const [teams, setTeams] = useState([]);
-//   const [cities, setCities] = useState([]);
-//   const [stateProvinces, setStateProvinces] = useState([]);
+const EditEmployeePage = () => {
+  const { id } = useParams();
+  const { user } = useContext(AuthContext);
+  const theme = useTheme();
+  const navigate = useNavigate();
 
-//   useEffect(() => {
-//     fetchLookupData();
-//     fetchEmployee();
-//   }, [id]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
-//   const fetchLookupData = async () => {
-//     try {
-//       const [depts, jobs, teamsList, citiesList, statesList] = await Promise.all([
-//         getAllDepartments(),
-//         getAllJobTitles(),
-//         getAllTeams(),
-//         getAllCities(),
-//         getAllStateProvinces(),
-//       ]);
+  const [formData, setFormData] = useState({
+    EmployeeName: '',
+    EmployeeEmail: '',
+    EmployeePhone: '',
+    DepartmentID: '',
+    JobTitleID: '',
+    HireDate: '',
+    TerminationDate: '',
+    salary: '',
+    Holidays_PA: '',
+    CityID: '',
+    StateProvinceID: '',
+    Active: true,
+     UserID: null,
+  });
+
+  // Fetch employee data on component mount
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      if (!id) {
+        setError("No employee ID provided");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const employeeId = parseInt(id, 10);
+        
+        if (isNaN(employeeId)) {
+          throw new Error('Invalid employee ID');
+        }
+        
+        const response = await getEmployeeById(employeeId);
+        const employeeData = response?.data || response;
+        
+        if (!employeeData) {
+          throw new Error('Employee not found');
+        }
+
+        // Populate form with existing data
+        setFormData({
+          EmployeeName: employeeData.EmployeeName || '',
+          EmployeeEmail: employeeData.EmployeeEmail || '',
+          EmployeePhone: employeeData.EmployeePhone || '',
+          DepartmentID: employeeData.DepartmentID || '',
+          JobTitleID: employeeData.JobTitleID || '',
+          HireDate: employeeData.HireDate ? employeeData.HireDate.split('T')[0] : '',
+          TerminationDate: employeeData.TerminationDate ? employeeData.TerminationDate.split('T')[0] : '',
+          salary: employeeData.salary || '',
+          Holidays_PA: employeeData.Holidays_PA || '',
+          CityID: employeeData.CityID || '',
+          StateProvinceID: employeeData.StateProvinceID || '',
+          Active: employeeData.Active !== undefined ? employeeData.Active : true,
+           UserID: employeeData.UserID || null,
+        });
+        
+      } catch (err) {
+        console.error('Error fetching employee:', err);
+        setError(err.message || 'Failed to load employee details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEmployee();
+  }, [id]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!user) {
+      setError('You must be logged in to update an employee');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      const userId = user.UserID;
       
-//       setDepartments(Array.isArray(depts) ? depts : []);
-//       setJobTitles(Array.isArray(jobs) ? jobs : []);
-//       setTeams(Array.isArray(teamsList) ? teamsList : []);
-//       setCities(Array.isArray(citiesList) ? citiesList : []);
-//       setStateProvinces(Array.isArray(statesList) ? statesList : []);
-//     } catch (err) {
-//       console.error("Error fetching lookup data:", err);
-//       setError("Failed to load form options. Please refresh the page.");
-//     }
-//   };
-
-//   const fetchEmployee = async () => {
-//     try {
-//       setFetchLoading(true);
-//       let employeeData;
+      if (!userId) {
+        throw new Error('Could not find user ID in user object');
+      }
       
-//       // Check if employee data was passed via location state
-//       if (location.state?.employee) {
-//         employeeData = location.state.employee;
-//       } else {
-//         // Otherwise fetch from API
-//         employeeData = await getEmployeeById(id);
-//       }
+      const employeeId = parseInt(id, 10);
+      
+      // Prepare data for submission - only send what the backend needs
+      const dataToSubmit = {
+        EmployeeName: formData.EmployeeName,
+        EmployeeEmail: formData.EmployeeEmail,
+        EmployeePhone: formData.EmployeePhone || null,
+        DepartmentID: formData.DepartmentID,
+        JobTitleID: formData.JobTitleID,
+        HireDate: formData.HireDate,
+        TerminationDate: formData.TerminationDate || null,
+        salary: formData.salary || null,
+        Holidays_PA: formData.Holidays_PA || null,
+        CityID: formData.CityID || null,
+        StateProvinceID: formData.StateProvinceID || null,
+        Active: formData.Active,
+        UserID: formData.UserID || null,
+      };
+      
+      console.log('Updating employee with data:', dataToSubmit);
+      
+      const changedBy = userId;
+      const actionTypeId = 2; // Update action
+      
+      await updateEmployee(employeeId, dataToSubmit, changedBy, actionTypeId);
+      
+      setSuccessMessage('Employee updated successfully!');
+      
+      setTimeout(() => {
+        navigate(`/employees/${employeeId}`);
+      }, 1500);
+      
+    } catch (err) {
+      console.error('Full error object:', err);
+      console.error('Error response:', err.response);
+      console.error('Error response data:', err.response?.data);
+      setError(err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to update employee');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-//       // Format dates for input fields
-//       const formatDate = (dateStr) => {
-//         if (!dateStr) return "";
-//         const date = new Date(dateStr);
-//         return date.toISOString().split("T")[0];
-//       };
+  const handleCancel = () => {
+    if (window.confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
+      navigate(-1);
+    }
+  };
 
-//       setFormData({
-//         EmployeeName: employeeData.EmployeeName || "",
-//         EmployeeEmail: employeeData.EmployeeEmail || "",
-//         EmployeePhone: employeeData.EmployeePhone || "",
-//         CityID: employeeData.CityID || "",
-//         StateProvinceID: employeeData.StateProvinceID || "",
-//         HireDate: formatDate(employeeData.HireDate),
-//         TerminationDate: formatDate(employeeData.TerminationDate),
-//         DepartmentID: employeeData.DepartmentID || "",
-//         salary: employeeData.salary || "",
-//         Holidays_PA: employeeData.Holidays_PA || "",
-//         JobTitleID: employeeData.JobTitleID || "",
-//         UserID: employeeData.UserID || "",
-//         TeamID: employeeData.TeamID || "",
-//         Active: employeeData.Active !== false,
-//       });
-//     } catch (err) {
-//       console.error("Error fetching employee:", err);
-//       setError("Failed to load employee data. Please try again.");
-//     } finally {
-//       setFetchLoading(false);
-//     }
-//   };
+  if (isLoading) {
+    return (
+      <Box sx={{ 
+        width: '100%', 
+        backgroundColor: theme.palette.background.default,
+        minHeight: '100vh', 
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <CircularProgress />
+        <Typography variant="body2" sx={{ mt: 2, color: theme.palette.text.secondary }}>
+          Loading employee details...
+        </Typography>
+      </Box>
+    );
+  }
 
-//   const handleChange = (e) => {
-//     const { name, value, checked, type } = e.target;
-//     setFormData((prev) => ({
-//       ...prev,
-//       [name]: type === "checkbox" ? checked : value,
-//     }));
-//   };
+  return (
+    <Box sx={{ 
+      width: '100%', 
+      backgroundColor: theme.palette.background.default,
+      minHeight: '100vh', 
+      p: 3 
+    }}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h4" sx={{ 
+              color: theme.palette.text.primary,
+              fontWeight: 600 
+            }}>
+              Edit Employee
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBack />}
+              onClick={() => navigate(`/employees/${id}`)}
+              sx={{ minWidth: 'auto' }}
+            >
+              Back
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Clear />}
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </Box>
+        </Box>
 
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-//     setError(null);
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-//     try {
-//       // Validate required fields
-//       if (!formData.EmployeeName || !formData.HireDate) {
-//         throw new Error("Employee Name and Hire Date are required");
-//       }
+        {/* Success Alert */}
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+            {successMessage}
+          </Alert>
+        )}
 
-//       // Convert numeric fields and handle nulls
-//       const updates = {
-//         ...formData,
-//         CityID: formData.CityID || null,
-//         StateProvinceID: formData.StateProvinceID || null,
-//         DepartmentID: formData.DepartmentID || null,
-//         JobTitleID: formData.JobTitleID || null,
-//         TeamID: formData.TeamID || null,
-//         UserID: formData.UserID || null,
-//         salary: formData.salary ? parseFloat(formData.salary) : null,
-//         Holidays_PA: formData.Holidays_PA ? parseInt(formData.Holidays_PA) : null,
-//       };
+        {/* Form */}
+        <Paper elevation={0} sx={{ p: 3 }}>
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+              
+              {/* Personal Information Section Header */}
+              <Box sx={{ gridColumn: '1 / -1' }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600,
+                  color: theme.palette.text.primary,
+                  mb: 1
+                }}>
+                  Personal Information
+                </Typography>
+              </Box>
 
-//       await updateEmployee(id, updates, userId, 2); // Action type 2 for update
-//       navigate("/employees", { 
-//         state: { successMessage: "Employee updated successfully!" } 
-//       });
-//     } catch (err) {
-//       console.error("Error updating employee:", err);
-//       setError(err.message || "Failed to update employee. Please try again.");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
+              {/* Full Name */}
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Full Name"
+                  name="EmployeeName"
+                  value={formData.EmployeeName}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  required
+                />
+              </Box>
 
-//   const handleCancel = () => {
-//     navigate("/employees");
-//   };
+              {/* Email */}
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="EmployeeEmail"
+                  type="email"
+                  value={formData.EmployeeEmail}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  required
+                />
+              </Box>
 
-//   if (fetchLoading) {
-//     return (
-//       <Box sx={{ 
-//         display: "flex", 
-//         justifyContent: "center", 
-//         alignItems: "center", 
-//         minHeight: "100vh" 
-//       }}>
-//         <CircularProgress />
-//       </Box>
-//     );
-//   }
+              {/* Phone Number */}
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Phone Number (Optional)"
+                  name="EmployeePhone"
+                  type="text"
+                  value={formData.EmployeePhone}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
+              </Box>
 
-//   return (
-//     <Box sx={{ 
-//       width: "100%", 
-//       backgroundColor: theme.palette.background.default,
-//       minHeight: "100vh", 
-//       p: 3 
-//     }}>
-//       <Paper sx={{ maxWidth: 1200, mx: "auto", p: 4, borderRadius: 2 }}>
-//         <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-//           Edit Employee
-//         </Typography>
+              {/* Employment Information Section Header */}
+              <Box sx={{ gridColumn: '1 / -1', mt: 2 }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600,
+                  color: theme.palette.text.primary,
+                  mb: 1
+                }}>
+                  Employment Information
+                </Typography>
+              </Box>
 
-//         {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+              {/* Department Dropdown */}
+              <Box>
+                <SmartDropdown
+                  label="Department"
+                  name="DepartmentID"
+                  value={formData.DepartmentID}
+                  onChange={handleChange}
+                  service={departmentService}
+                  displayField="DepartmentName"
+                  valueField="DepartmentID"
+                  placeholder="Search for department..."
+                  disabled={isSubmitting}
+                  required
+                />
+              </Box>
 
-//         <form onSubmit={handleSubmit}>
-//           <Grid container spacing={3}>
-//             {/* Basic Information */}
-//             <Grid item xs={12}>
-//               <Typography variant="h6" sx={{ mb: 2, color: theme.palette.text.secondary }}>
-//                 Basic Information
-//               </Typography>
-//             </Grid>
+              {/* Job Title Dropdown */}
+              <Box>
+                <SmartDropdown
+                  label="Job Title"
+                  name="JobTitleID"
+                  value={formData.JobTitleID}
+                  onChange={handleChange}
+                  service={jobTitleService}
+                  displayField="JobTitleName"
+                  valueField="JobTitleID"
+                  placeholder="Search for job title..."
+                  disabled={isSubmitting}
+                  required
+                />
+              </Box>
 
-//             <Grid item xs={12} md={6}>
-//               <TextField
-//                 fullWidth
-//                 required
-//                 label="Employee Name"
-//                 name="EmployeeName"
-//                 value={formData.EmployeeName}
-//                 onChange={handleChange}
-//               />
-//             </Grid>
+              {/* Hire Date */}
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Hire Date"
+                  name="HireDate"
+                  type="date"
+                  value={formData.HireDate}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  required
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              </Box>
 
-//             <Grid item xs={12} md={6}>
-//               <TextField
-//                 fullWidth
-//                 label="Email"
-//                 name="EmployeeEmail"
-//                 type="email"
-//                 value={formData.EmployeeEmail}
-//                 onChange={handleChange}
-//               />
-//             </Grid>
+              {/* Termination Date */}
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Termination Date (Optional)"
+                  name="TerminationDate"
+                  type="date"
+                  value={formData.TerminationDate}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              </Box>
 
-//             <Grid item xs={12} md={6}>
-//               <TextField
-//                 fullWidth
-//                 label="Phone"
-//                 name="EmployeePhone"
-//                 value={formData.EmployeePhone}
-//                 onChange={handleChange}
-//               />
-//             </Grid>
+              {/* Salary */}
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Salary (Optional)"
+                  name="salary"
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.salary}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  InputProps={{
+                    startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
+                  }}
+                />
+              </Box>
 
-//             <Grid item xs={12} md={6}>
-//               <TextField
-//                 fullWidth
-//                 label="User ID"
-//                 name="UserID"
-//                 type="number"
-//                 value={formData.UserID}
-//                 onChange={handleChange}
-//                 helperText="Link to system user account"
-//               />
-//             </Grid>
+              {/* Holidays Per Year */}
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Holidays Per Year (Optional)"
+                  name="Holidays_PA"
+                  type="text"
+                  inputMode="numeric"
+                  value={formData.Holidays_PA}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
+              </Box>
 
-//             {/* Employment Details */}
-//             <Grid item xs={12}>
-//               <Typography variant="h6" sx={{ mt: 2, mb: 2, color: theme.palette.text.secondary }}>
-//                 Employment Details
-//               </Typography>
-//             </Grid>
+              {/* Location Information Section Header */}
+              <Box sx={{ gridColumn: '1 / -1', mt: 2 }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600,
+                  color: theme.palette.text.primary,
+                  mb: 1
+                }}>
+                  Location Information (Optional)
+                </Typography>
+              </Box>
 
-//             <Grid item xs={12} md={6}>
-//               <TextField
-//                 fullWidth
-//                 required
-//                 label="Hire Date"
-//                 name="HireDate"
-//                 type="date"
-//                 value={formData.HireDate}
-//                 onChange={handleChange}
-//                 InputLabelProps={{ shrink: true }}
-//               />
-//             </Grid>
+              {/* City Dropdown */}
+              <Box>
+                <SmartDropdown
+                  label="City (Optional)"
+                  name="CityID"
+                  value={formData.CityID}
+                  onChange={handleChange}
+                  service={cityService}
+                  displayField="CityName"
+                  valueField="CityID"
+                  placeholder="Search for city..."
+                  disabled={isSubmitting}
+                />
+              </Box>
 
-//             <Grid item xs={12} md={6}>
-//               <TextField
-//                 fullWidth
-//                 label="Termination Date"
-//                 name="TerminationDate"
-//                 type="date"
-//                 value={formData.TerminationDate}
-//                 onChange={handleChange}
-//                 InputLabelProps={{ shrink: true }}
-//               />
-//             </Grid>
+              {/* State/Province Dropdown */}
+              <Box>
+                <SmartDropdown
+                  label="State/Province (Optional)"
+                  name="StateProvinceID"
+                  value={formData.StateProvinceID}
+                  onChange={handleChange}
+                  service={stateProvinceService} 
+                  displayField="StateProvince_Name"
+                  valueField="StateProvinceID"
+                  placeholder="Search for state/province..."
+                  disabled={isSubmitting}
+                />
+              </Box>
 
-//             <Grid item xs={12} md={6}>
-//               <FormControl fullWidth>
-//                 <InputLabel>Department</InputLabel>
-//                 <Select
-//                   name="DepartmentID"
-//                   value={formData.DepartmentID}
-//                   onChange={handleChange}
-//                   label="Department"
-//                 >
-//                   <MenuItem value="">
-//                     <em>None</em>
-//                   </MenuItem>
-//                   {departments.map((dept) => (
-//                     <MenuItem key={dept.DepartmentID} value={dept.DepartmentID}>
-//                       {dept.DepartmentName}
-//                     </MenuItem>
-//                   ))}
-//                 </Select>
-//               </FormControl>
-//             </Grid>
+              {/* Status Section Header */}
+              <Box sx={{ gridColumn: '1 / -1', mt: 2 }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600,
+                  color: theme.palette.text.primary,
+                  mb: 1
+                }}>
+                  Status
+                </Typography>
+              </Box>
 
-//             <Grid item xs={12} md={6}>
-//               <FormControl fullWidth>
-//                 <InputLabel>Job Title</InputLabel>
-//                 <Select
-//                   name="JobTitleID"
-//                   value={formData.JobTitleID}
-//                   onChange={handleChange}
-//                   label="Job Title"
-//                 >
-//                   <MenuItem value="">
-//                     <em>None</em>
-//                   </MenuItem>
-//                   {jobTitles.map((job) => (
-//                     <MenuItem key={job.JobTitleID} value={job.JobTitleID}>
-//                       {job.JobTitleName}
-//                     </MenuItem>
-//                   ))}
-//                 </Select>
-//               </FormControl>
-//             </Grid>
+              {/* Active Status */}
+              <Box>
+                <TextField
+                  fullWidth
+                  select
+                  label="Active Status"
+                  name="Active"
+                  value={formData.Active}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                >
+                  <MenuItem value={true}>Active</MenuItem>
+                  <MenuItem value={false}>Inactive</MenuItem>
+                </TextField>
+              </Box>
 
-//             <Grid item xs={12} md={6}>
-//               <FormControl fullWidth>
-//                 <InputLabel>Team</InputLabel>
-//                 <Select
-//                   name="TeamID"
-//                   value={formData.TeamID}
-//                   onChange={handleChange}
-//                   label="Team"
-//                 >
-//                   <MenuItem value="">
-//                     <em>None</em>
-//                   </MenuItem>
-//                   {teams.map((team) => (
-//                     <MenuItem key={team.TeamID} value={team.TeamID}>
-//                       {team.TeamName}
-//                     </MenuItem>
-//                   ))}
-//                 </Select>
-//               </FormControl>
-//             </Grid>
+            </Box>
+          </form>
+        </Paper>
+      </Box>
+    </Box>
+  );
+};
 
-//             <Grid item xs={12} md={6}>
-//               <TextField
-//                 fullWidth
-//                 label="Salary"
-//                 name="salary"
-//                 type="number"
-//                 value={formData.salary}
-//                 onChange={handleChange}
-//                 InputProps={{
-//                   startAdornment: <InputAdornment position="start">$</InputAdornment>,
-//                 }}
-//               />
-//             </Grid>
-
-//             <Grid item xs={12} md={6}>
-//               <TextField
-//                 fullWidth
-//                 label="Holidays Per Annum"
-//                 name="Holidays_PA"
-//                 type="number"
-//                 value={formData.Holidays_PA}
-//                 onChange={handleChange}
-//               />
-//             </Grid>
-
-//             {/* Location Details */}
-//             <Grid item xs={12}>
-//               <Typography variant="h6" sx={{ mt: 2, mb: 2, color: theme.palette.text.secondary }}>
-//                 Location
-//               </Typography>
-//             </Grid>
-
-//             <Grid item xs={12} md={6}>
-//               <FormControl fullWidth>
-//                 <InputLabel>City</InputLabel>
-//                 <Select
-//                   name="CityID"
-//                   value={formData.CityID}
-//                   onChange={handleChange}
-//                   label="City"
-//                 >
-//                   <MenuItem value="">
-//                     <em>None</em>
-//                   </MenuItem>
-//                   {cities.map((city) => (
-//                     <MenuItem key={city.CityID} value={city.CityID}>
-//                       {city.CityName}
-//                     </MenuItem>
-//                   ))}
-//                 </Select>
-//               </FormControl>
-//             </Grid>
-
-//             <Grid item xs={12} md={6}>
-//               <FormControl fullWidth>
-//                 <InputLabel>State/Province</InputLabel>
-//                 <Select
-//                   name="StateProvinceID"
-//                   value={formData.StateProvinceID}
-//                   onChange={handleChange}
-//                   label="State/Province"
-//                 >
-//                   <MenuItem value="">
-//                     <em>None</em>
-//                   </MenuItem>
-//                   {stateProvinces.map((state) => (
-//                     <MenuItem key={state.StateProvinceID} value={state.StateProvinceID}>
-//                       {state.StateProvinceName}
-//                     </MenuItem>
-//                   ))}
-//                 </Select>
-//               </FormControl>
-//             </Grid>
-
-//             {/* Status */}
-//             <Grid item xs={12}>
-//               <Typography variant="h6" sx={{ mt: 2, mb: 2, color: theme.palette.text.secondary }}>
-//                 Status
-//               </Typography>
-//             </Grid>
-
-//             <Grid item xs={12}>
-//               <FormControlLabel
-//                 control={
-//                   <Switch
-//                     checked={formData.Active}
-//                     onChange={handleChange}
-//                     name="Active"
-//                   />
-//                 }
-//                 label="Active"
-//               />
-//             </Grid>
-
-//             {/* Action Buttons */}
-//             <Grid item xs={12}>
-//               <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 2 }}>
-//                 <Button
-//                   variant="outlined"
-//                   startIcon={<Cancel />}
-//                   onClick={handleCancel}
-//                   disabled={loading}
-//                 >
-//                   Cancel
-//                 </Button>
-//                 <Button
-//                   type="submit"
-//                   variant="contained"
-//                   startIcon={loading ? <CircularProgress size={20} /> : <Save />}
-//                   disabled={loading}
-//                 >
-//                   {loading ? "Saving..." : "Save Changes"}
-//                 </Button>
-//               </Box>
-//             </Grid>
-//           </Grid>
-//         </form>
-//       </Paper>
-//     </Box>
-//   );
-// };
-
-// export default EditEmployee;
+export default EditEmployeePage;

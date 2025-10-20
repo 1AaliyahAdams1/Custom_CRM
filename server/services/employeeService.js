@@ -30,7 +30,7 @@ class EmployeeService {
   }
 
   // Create employee
-  static async createEmployee(data, changedBy, actionTypeId) {
+  static async createEmployee(data, changedBy, actionTypeId, loggedInUserId) {
     if (!data.EmployeeName) throw new Error("EmployeeName is required");
     if (!changedBy) throw new Error("changedBy is required");
     if (!actionTypeId) throw new Error("actionTypeId is required");
@@ -39,9 +39,12 @@ class EmployeeService {
       EmployeeName, EmployeeEmail, EmployeePhone,
       CityID, StateProvinceID, HireDate, TerminationDate,
       DepartmentID, salary, Holidays_PA, JobTitleID,
-      UserID, TeamID, Active = 1
+       UserID, TeamID, Active = 1
     } = data;
 
+     const finalUserID = UserID || loggedInUserId;
+
+     
     try {
       const pool = await sql.connect(dbConfig);
       await pool.request()
@@ -57,8 +60,8 @@ class EmployeeService {
         .input("Salary", sql.Decimal(18, 0), salary)
         .input("Holidays_PA", sql.Int, Holidays_PA)
         .input("JobTitleID", sql.Int, JobTitleID)
-        .input("UserID", sql.Int, UserID)
-        .input("TeamID", sql.Int, TeamID)
+        .input("UserID", sql.Int, finalUserID)
+        
         .input("Active", sql.Bit, Active)
         .input("ChangedBy", sql.Int, changedBy)
         .input("ActionTypeID", sql.Int, actionTypeId)
@@ -91,7 +94,7 @@ class EmployeeService {
         .input("Holidays_PA", sql.Int, updates.Holidays_PA)
         .input("JobTitleID", sql.Int, updates.JobTitleID)
         .input("UserID", sql.Int, updates.UserID)
-        .input("TeamID", sql.Int, updates.TeamID)
+        // .input("TeamID", sql.Int, updates.TeamID)
         .input("Active", sql.Bit, updates.Active)
         .input("ChangedBy", sql.Int, changedBy)
         .input("ActionTypeID", sql.Int, actionTypeId)

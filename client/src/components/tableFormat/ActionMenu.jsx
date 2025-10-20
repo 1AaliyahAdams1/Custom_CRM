@@ -202,13 +202,13 @@ const ActionMenu = ({
         show: !!onReactivate && (menuRow?.Active === false || menuRow?.Active === 0),
         tooltip: getTooltip('reactivate', 'Reactivate this record'),
       },
-      
+
       // Deactivate (only show for active records)
       {
         label: 'Deactivate',
         icon: <Block sx={{ mr: 1, color: '#000' }} />,
         onClick: () => handleClick(onDelete),
-        show: !!onDelete && menuRow?.Active !== false,
+        show: !!onDelete && (menuRow?.Active === true || menuRow?.Active === 1),
         tooltip: getTooltip('delete', 'Deactivate this record'),
       },
       
