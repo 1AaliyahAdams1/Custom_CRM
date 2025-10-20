@@ -560,7 +560,73 @@ async function updateSequenceItem(id, itemData, changedBy) {
     throw err;
   }
 }
+//======================================
+// Deactivate sequence item
+//======================================
+async function deactivateSequenceItem(id, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
 
+    // Get existing item details first
+    const existingResult = await pool.request()
+      .input("SequenceItemID", sql.Int, id)
+      .query('SELECT * FROM SequenceItem WHERE SequenceItemID = @SequenceItemID');
+
+    if (existingResult.recordset.length === 0) {
+      throw new Error("Sequence item not found");
+    }
+
+    const existing = existingResult.recordset[0];
+
+    if (!existing.Active) {
+      throw new Error("Sequence item is already deactivated");
+    }
+
+    // Update the sequence item status
+    await pool.request()
+      .input("SequenceItemID", sql.Int, id)
+      .query('UPDATE SequenceItem SET Active = 0, UpdatedAt = GETDATE() WHERE SequenceItemID = @SequenceItemID');
+
+    return { message: "Sequence item deactivated", SequenceItemID: id };
+  } catch (err) {
+    console.error("Database error in deactivateSequenceItem:", err);
+    throw err;
+  }
+}
+
+//======================================
+// Reactivate sequence item
+//======================================
+async function reactivateSequenceItem(id, changedBy) {
+  try {
+    const pool = await sql.connect(dbConfig);
+
+    // Get existing item details first
+    const existingResult = await pool.request()
+      .input("SequenceItemID", sql.Int, id)
+      .query('SELECT * FROM SequenceItem WHERE SequenceItemID = @SequenceItemID');
+
+    if (existingResult.recordset.length === 0) {
+      throw new Error("Sequence item not found");
+    }
+
+    const existing = existingResult.recordset[0];
+
+    if (existing.Active) {
+      throw new Error("Sequence item is already active");
+    }
+
+    // Update the sequence item status
+    await pool.request()
+      .input("SequenceItemID", sql.Int, id)
+      .query('UPDATE SequenceItem SET Active = 1, UpdatedAt = GETDATE() WHERE SequenceItemID = @SequenceItemID');
+
+    return { message: "Sequence item reactivated", SequenceItemID: id };
+  } catch (err) {
+    console.error("Database error in reactivateSequenceItem:", err);
+    throw err;
+  }
+}
 //======================================
 // Delete sequence item
 //======================================
@@ -1311,6 +1377,8 @@ module.exports = {
   createSequenceItem,
   updateSequenceItem,
   deleteSequenceItem,
+  deactivateSequenceItem,
+  reactivateSequenceItem,
   createSequenceWithItems,
   getAllSequenceItems,
 

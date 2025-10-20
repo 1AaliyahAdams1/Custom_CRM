@@ -46,26 +46,7 @@ async function createDepartment(departmentName) {
     
     // First, insert the department
     const insertResult = await pool.request()
-    
-    // First, insert the department
-    const insertResult = await pool.request()
       .input("DepartmentName", sql.VarChar(255), departmentName)
-      .query(`
-        INSERT INTO Department (DepartmentName, Active) 
-        VALUES (@DepartmentName, 1);
-        SELECT SCOPE_IDENTITY() AS DepartmentID;
-      `);
-    
-    const newId = insertResult.recordset[0].DepartmentID;
-    console.log('📊 Repository: Created department with ID:', newId);
-    
-    // Then fetch the created record
-    const selectResult = await pool.request()
-      .input("DepartmentID", sql.Int, newId)
-      .query("SELECT * FROM Department WHERE DepartmentID = @DepartmentID");
-    
-    console.log('📊 Repository: Returning department:', selectResult.recordset[0]);
-    return selectResult.recordset[0];
       .query(`
         INSERT INTO Department (DepartmentName, Active) 
         VALUES (@DepartmentName, 1);
@@ -170,7 +151,7 @@ async function deleteDepartment(departmentId) {
         WHERE DepartmentID = @DepartmentID;
         SELECT @@ROWCOUNT AS RowsAffected;
       `);
-    return result.recordset[0]?.RowsAffected > 0;
+      return result.recordset[0]?.RowsAffected > 0;
   } catch (error) {
     console.error("DepartmentRepo Error [deleteDepartment]:", error);
     throw error;

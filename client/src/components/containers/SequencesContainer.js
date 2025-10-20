@@ -10,11 +10,11 @@ import {
   updateSequence,
   deactivateSequence,
   reactivateSequence,
-  deleteSequence,
   getAllSequenceItems,
   createSequenceItem,
   updateSequenceItem,
-  deleteSequenceItem,
+  deactivateSequenceItem, 
+  reactivateSequenceItem,
   getAllActivityTypes,
 } from '../../services/sequenceService';
 import api from '../../utils/api';
@@ -218,9 +218,12 @@ const SequencesContainer = () => {
     navigate('/sequences/items/create');
   }, [navigate]);
 
-  const handleSequenceItemDeactivate = useCallback(async (itemId) => {
+  const handleSequenceItemDeactivate = useCallback(async (item) => {
     try {
-      await deleteSequenceItem(itemId);
+      // Extract the ID - handle both object and direct ID
+      const itemId = typeof item === 'object' ? item.SequenceItemID : item;
+      
+      await deactivateSequenceItem(itemId);  // ✅ Use correct function
       await loadSequenceItems();
       showStatusMessage('Sequence item deactivated successfully');
     } catch (err) {
@@ -235,17 +238,7 @@ const SequencesContainer = () => {
       // Extract the ID - handle both object and direct ID
       const itemId = typeof item === 'object' ? item.SequenceItemID : item;
       
-      // To reactivate, we need to update the item with Active: true
-      // We'll need to get the item details first, then update
-      const itemDetails = await api.get(`/sequences/items/${itemId}`);
-      const updatePayload = {
-        ActivityTypeID: itemDetails.data.ActivityTypeID,
-        SequenceItemDescription: itemDetails.data.SequenceItemDescription,
-        DaysFromStart: itemDetails.data.DaysFromStart,
-        Active: true
-      };
-      
-      await updateSequenceItem(itemId, updatePayload);
+      await reactivateSequenceItem(itemId);  // ✅ Use correct function
       await loadSequenceItems();
       showStatusMessage('Sequence item reactivated successfully');
     } catch (err) {
@@ -262,7 +255,7 @@ const SequencesContainer = () => {
           case 0:
             return deactivateSequence(id);
           case 1:
-            return deleteSequenceItem(id);
+            return deactivateSequenceItem(id);  // ✅ Use correct function
           default:
             return Promise.resolve();
         }
