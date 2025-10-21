@@ -8,7 +8,7 @@ import {
   Paper,
   Alert,
   CircularProgress,
-  Skeleton
+  Skeleton,
 } from '@mui/material';
 import { ArrowBack, Save, Clear } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
@@ -19,6 +19,7 @@ import {
   countryService, 
   stateProvinceService 
 } from '../../services/dropdownServices';
+import { useSettings } from '../../context/SettingsContext';
 import SmartDropdown from '../../components/SmartDropdown';
 
 const EditAccount = () => {
@@ -60,73 +61,40 @@ const EditAccount = () => {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  const getFieldError = (fieldName) => {
-    return touched[fieldName] && fieldErrors[fieldName] ? (
-      <span style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ color: '#ff4444', marginRight: '4px' }}>✗</span>
-        {fieldErrors[fieldName][0]}
-      </span>
-    ) : '';
-  };
-
-  const isFieldInvalid = (fieldName) => {
-    return touched[fieldName] && fieldErrors[fieldName] && fieldErrors[fieldName].length > 0;
-  };
+  const { getSpacing, settings } = useSettings();
 
   const validateField = (name, value) => {
-    const errors = [];
-
-    switch (name) {
+    switch(name) {
       case 'AccountName':
         if (!value || value.trim().length === 0) {
-          errors.push('Account name is required');
-        } else if (value.trim().length < 2) {
-          errors.push('Account name must be at least 2 characters');
+          return 'Account name is required';
         } else if (value.trim().length > 100) {
-          errors.push('Account name must be 100 characters or less');
+          return 'Account name must be 100 characters or less';
         }
         break;
-
+        
       case 'email':
-        if (value && value.trim()) {
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(value.trim())) {
-            errors.push('Invalid email format');
-          }
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          return 'Please enter a valid email address e.g. example@gmail.com';
         }
         break;
-
-      case 'PrimaryPhone':
-        if (value && value.trim()) {
-          const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
-          if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
-            errors.push(`Invalid Phone Number - Phone number requires at least 8 numbers`);
-          }
-        }
-        break;
-
-      case 'fax':
-        if (value && value.trim()) {
-          const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
-          if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
-            errors.push(`Invalid Fax - Fax number requires at least 8 numbers`);
-          }
-        }
-        break;
-
+        
       case 'Website':
-        if (value && value.trim()) {
-          const urlRegex = /^https?:\/\/.+\..+/;
-          if (!urlRegex.test(value.trim())) {
-            errors.push('Invalid Website - Website requires a prefix ( http:// , https:// ) and a suffix ( .com , .co.za , etc )');
-          }
+        if (value && value.trim() && !/^https?:\/\/.+/.test(value)) {
+          return 'Website must start with http:// or https://';
         }
         break;
-
+        
+      case 'PrimaryPhone':
+      case 'fax':
+        if (value && !/^[\d\s\-\(\)\+]+$/.test(value)) {
+          return 'Invalid format e.g. 0680713091, +27 68 071 3091, (068) 071-3091';
+        }
+        break;
+      
       case 'postal_code':
-        if (value && value.trim().length > 20) {
-          errors.push('Postal code must be 20 characters or less');
+        if (value && value.trim().length > 12) {
+          return 'Postal code must be 12 characters or less';
         }
         break;
 
@@ -134,37 +102,57 @@ const EditAccount = () => {
       case 'street_address2':
       case 'street_address3':
         if (value && value.trim().length > 255) {
-          errors.push('Address must be 255 characters or less');
+          return 'Address must be 255 characters or less';
         }
         break;
-
+        
       case 'number_of_employees':
       case 'number_of_venues':
       case 'number_of_releases':
       case 'number_of_events_anually':
-        if (value && value.trim()) {
-          const num = parseInt(value);
-          if (isNaN(num) || num < 0) {
-            errors.push('Must be a non-negative number');
-          } else if (num > 1000000) {
-            errors.push('Must be less than 1,000,000');
+        if (value && value.trim() !== '') {
+          if (/\s/.test(value)) {
+            return 'Must not contain spaces';
+          }
+          if (isNaN(value)) {
+            return 'Invalid format. Must not be a character';
+          }
+          if (Number(value) < 0) {
+            return 'Must be a positive number';
+          }
+          if (Number(value) >= 1000000) {
+            return 'Must be less than 1,000,000';
           }
         }
         break;
-
+      
       case 'annual_revenue':
-        if (value && value.trim()) {
-          const revenue = parseFloat(value);
-          if (isNaN(revenue) || revenue < 0) {
-            errors.push('Must be a non-negative number');
-          } else if (revenue > 999999999999) {
-            errors.push('Must be less than 1 trillion');
+        if (value && value.trim() !== '') {
+          if (/\s/.test(value)) {
+            return 'Must not contain spaces';
+          }
+          if (isNaN(value)) {
+            return 'Invalid format. Must not be a character';
+          }
+          if (Number(value) < 0) {
+            return 'Must be a positive number';
+          }
+          if (Number(value) >= 1000000000) {
+            return 'Must be less than 1,000,000,000';
           }
         }
         break;
     }
+    
+    return null;
+  };
 
-    return errors;
+  const getFieldError = (fieldName) => {
+    return isFieldInvalid(fieldName) ? fieldErrors[fieldName] : '';
+  };
+
+  const isFieldInvalid = (fieldName) => {
+    return touched[fieldName] && fieldErrors[fieldName];
   };
 
   const validateForm = () => {
@@ -172,9 +160,9 @@ const EditAccount = () => {
     let isValid = true;
 
     Object.keys(formData).forEach(field => {
-      const errors = validateField(field, formData[field]);
-      if (errors.length > 0) {
-        newFieldErrors[field] = errors;
+      const errorMessage = validateField(field, formData[field]);
+      if (errorMessage) {
+        newFieldErrors[field] = errorMessage;
         isValid = false;
       }
     });
@@ -211,8 +199,8 @@ const EditAccount = () => {
         return;
       }
       try {
-        const response = await fetchAccountById(id);
-        const accountData = response.data;
+        const accountData = await fetchAccountById(id);
+        
         setFormData({
           AccountName: accountData.AccountName || "",
           CityID: accountData.CityID || "",
@@ -234,7 +222,8 @@ const EditAccount = () => {
           number_of_events_anually: accountData.number_of_events_anually || "",
           ParentAccount: accountData.ParentAccount || "",
         });
-      } catch {
+      } catch (err) {
+        console.error("Error loading account:", err);
         setError("Failed to load account data");
       } finally {
         setLoading(false);
@@ -259,18 +248,23 @@ const EditAccount = () => {
       return newData;
     });
 
+    // Mark as touched when user starts typing
     setTouched(prev => ({
       ...prev,
       [name]: true
     }));
 
-    if (touched[name]) {
-      const errors = validateField(name, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [name]: errors.length > 0 ? errors : undefined
-      }));
-    }
+    // Validate in real-time
+    const errorMessage = validateField(name, value);
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      if (errorMessage) {
+        newErrors[name] = errorMessage;
+      } else {
+        delete newErrors[name];
+      }
+      return newErrors;
+    });
 
     if (error) {
       setError(null);
@@ -285,11 +279,17 @@ const EditAccount = () => {
       [name]: true
     }));
 
-    const errors = validateField(name, value);
-    setFieldErrors(prev => ({
-      ...prev,
-      [name]: errors.length > 0 ? errors : undefined
-    }));
+    // Run validation on blur as well
+    const errorMessage = validateField(name, value);
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      if (errorMessage) {
+        newErrors[name] = errorMessage;
+      } else {
+        delete newErrors[name];
+      }
+      return newErrors;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -311,8 +311,6 @@ const EditAccount = () => {
       setError(null);
       await updateAccount(id, formData);
       setSuccessMessage("Account updated successfully!");
-      console.log("Server id response:", id);
-      console.log("Server formdata response:", formData);
       setTimeout(() => navigate("/accounts"), 1500);
     } catch (error) {
       console.error('Error updating account:', error);
@@ -398,9 +396,6 @@ const EditAccount = () => {
                   disabled={saving}
                   error={isFieldInvalid('AccountName')}
                   helperText={getFieldError('AccountName')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -516,9 +511,6 @@ const EditAccount = () => {
                   disabled={saving}
                   error={isFieldInvalid('street_address1')}
                   helperText={getFieldError('street_address1')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -533,9 +525,6 @@ const EditAccount = () => {
                   disabled={saving}
                   error={isFieldInvalid('street_address2')}
                   helperText={getFieldError('street_address2')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -550,9 +539,6 @@ const EditAccount = () => {
                   disabled={saving}
                   error={isFieldInvalid('street_address3')}
                   helperText={getFieldError('street_address3')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -567,9 +553,6 @@ const EditAccount = () => {
                   disabled={saving}
                   error={isFieldInvalid('postal_code')}
                   helperText={getFieldError('postal_code')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -582,13 +565,9 @@ const EditAccount = () => {
                   value={formData.PrimaryPhone}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
-                  required
                   disabled={saving}
                   error={isFieldInvalid('PrimaryPhone')}
                   helperText={getFieldError('PrimaryPhone')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -604,9 +583,6 @@ const EditAccount = () => {
                   disabled={saving}
                   error={isFieldInvalid('email')}
                   helperText={getFieldError('email')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -622,9 +598,6 @@ const EditAccount = () => {
                   disabled={saving}
                   error={isFieldInvalid('fax')}
                   helperText={getFieldError('fax')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -640,27 +613,6 @@ const EditAccount = () => {
                   disabled={saving}
                   error={isFieldInvalid('Website')}
                   helperText={getFieldError('Website')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
-                />
-              </Box>
-
-              <Box>
-                <TextField
-                  fullWidth
-                  label="Annual Revenue"
-                  name="annual_revenue"
-                  type="number"
-                  value={formData.annual_revenue}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  disabled={saving}
-                  error={isFieldInvalid('annual_revenue')}
-                  helperText={getFieldError('annual_revenue')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
                 />
               </Box>
 
@@ -669,52 +621,32 @@ const EditAccount = () => {
                   fullWidth
                   label="Number of Employees"
                   name="number_of_employees"
-                  type="number"
+                  type="text"
                   value={formData.number_of_employees}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
                   disabled={saving}
                   error={isFieldInvalid('number_of_employees')}
                   helperText={getFieldError('number_of_employees')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
+                  size={settings?.general?.compactView ? "small" : "medium"}
+                  placeholder="e.g., 50"
                 />
               </Box>
 
               <Box>
                 <TextField
                   fullWidth
-                  label="Number of Releases"
-                  name="number_of_releases"
-                  type="number"
-                  value={formData.number_of_releases}
+                  label="Annual Revenue"
+                  name="annual_revenue"
+                  type="text"
+                  value={formData.annual_revenue}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
                   disabled={saving}
-                  error={isFieldInvalid('number_of_releases')}
-                  helperText={getFieldError('number_of_releases')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
-                />
-              </Box>
-
-              <Box>
-                <TextField
-                  fullWidth
-                  label="Number of Events Annually"
-                  name="number_of_events_anually"
-                  type="number"
-                  value={formData.number_of_events_anually}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  disabled={saving}
-                  error={isFieldInvalid('number_of_events_anually')}
-                  helperText={getFieldError('number_of_events_anually')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
+                  error={isFieldInvalid('annual_revenue')}
+                  helperText={getFieldError('annual_revenue')}
+                  size={settings?.general?.compactView ? "small" : "medium"}
+                  placeholder="e.g., 1000000"
                 />
               </Box>
 
@@ -723,19 +655,51 @@ const EditAccount = () => {
                   fullWidth
                   label="Number of Venues"
                   name="number_of_venues"
-                  type="number"
+                  type="text"
                   value={formData.number_of_venues}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
                   disabled={saving}
                   error={isFieldInvalid('number_of_venues')}
                   helperText={getFieldError('number_of_venues')}
-                  FormHelperTextProps={{
-                    component: 'div'
-                  }}
+                  size={settings?.general?.compactView ? "small" : "medium"}
+                  placeholder="e.g., 10"
                 />
               </Box>
 
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Number of Releases"
+                  name="number_of_releases"
+                  type="text"
+                  value={formData.number_of_releases}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  disabled={saving}
+                  error={isFieldInvalid('number_of_releases')}
+                  helperText={getFieldError('number_of_releases')}
+                  size={settings?.general?.compactView ? "small" : "medium"}
+                  placeholder="e.g., 10"
+                />
+              </Box>
+
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Number of Events Annually"
+                  name="number_of_events_anually"
+                  type="text"
+                  value={formData.number_of_events_anually}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  disabled={saving}
+                  error={isFieldInvalid('number_of_events_anually')}
+                  helperText={getFieldError('number_of_events_anually')}
+                  size={settings?.general?.compactView ? "small" : "medium"}
+                  placeholder="e.g., 20"
+                />
+              </Box>
             </Box>
           </form>
         </Paper>

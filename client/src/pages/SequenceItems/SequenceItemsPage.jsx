@@ -11,11 +11,13 @@ import {
   MenuItem,
   Select,
   Tooltip,
+  Snackbar,
 } from "@mui/material";
 import { Add, Info } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import TableView from "../../components/tableFormat/TableView";
 import { formatters } from "../../utils/formatters";
+import ConfirmDialog from '../../components/dialogs/ConfirmDialog';
 
 const SequenceItemsPage = ({
   sequenceItems = [],
@@ -26,6 +28,9 @@ const SequenceItemsPage = ({
   setError,
   successMessage,
   setSuccessMessage,
+  statusMessage,
+  statusSeverity,
+  setStatusMessage,
   selected = [],
   onSelectClick,
   onSelectAllClick,
@@ -37,6 +42,10 @@ const SequenceItemsPage = ({
   onEdit,
   onView,
   onCreate,
+  
+  // Confirm Dialog Props
+  confirmDialog = {},
+  onConfirmDialogClose,
 }) => {
   const theme = useTheme();
   const [sequenceItemsFilter, setSequenceItemsFilter] = useState(currentFilter);
@@ -156,7 +165,7 @@ const SequenceItemsPage = ({
     <>
       {error && <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>}
       {successMessage && (
-        <Alert severity="success" sx={{ m: 2 }} onClose={() => setSuccessMessage("")}>
+        <Alert severity="success" sx={{ m: 2 }} onClose={() => setSuccessMessage && setSuccessMessage("")}>
           {successMessage}
         </Alert>
       )}
@@ -172,15 +181,27 @@ const SequenceItemsPage = ({
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Sequence Items
-          </Typography>
-          <Tooltip title="Individual activity steps within sequences" arrow>
-            <Info sx={{ fontSize: 18, color: theme.palette.text.secondary, cursor: "help" }} />
-          </Tooltip>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
+              Sequence Items
+            </Typography>
+            <Tooltip title="Individual activity steps within sequences" arrow>
+              <Info sx={{ fontSize: 18, color: theme.palette.text.secondary, cursor: "help" }} />
+            </Tooltip>
+          </Box>
 
-          <FormControl size="small" sx={{ minWidth: 180, ml: 2 }}>
-            <Select value={sequenceItemsFilter} onChange={handleFilterChange}>
+          <FormControl size="small" sx={{ minWidth: 240 }}>
+            <Select 
+              value={sequenceItemsFilter} 
+              onChange={handleFilterChange}
+              displayEmpty
+              sx={{ 
+                backgroundColor: theme.palette.background.paper,
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.divider },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.text.secondary },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.primary.main },
+              }}
+            >
               {filterOptions.map((opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
                   {opt.label}
@@ -188,14 +209,40 @@ const SequenceItemsPage = ({
               ))}
             </Select>
           </FormControl>
+
+          {selected.length > 0 && (
+            <Chip 
+              label={`${selected.length} selected`} 
+              size="small" 
+              sx={{ 
+                backgroundColor: theme.palette.mode === 'dark' ? '#333' : "#e0e0e0", 
+                color: theme.palette.text.primary 
+              }} 
+            />
+          )}
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Button variant="contained" startIcon={<Add />} onClick={onCreate} disabled={loading}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: 'wrap' }}>
+          <Button 
+            variant="contained" 
+            startIcon={<Add />} 
+            onClick={onCreate} 
+            disabled={loading}
+            sx={{ 
+              backgroundColor: theme.palette.primary.main, 
+              color: theme.palette.primary.contrastText, 
+              "&:hover": { backgroundColor: theme.palette.primary.dark } 
+            }}
+          >
             Add Item
           </Button>
+          
           {selected.length > 0 && (
-            <Button variant="outlined" color="warning" onClick={onBulkDeactivate}>
+            <Button 
+              variant="outlined" 
+              color="warning" 
+              onClick={onBulkDeactivate}
+            >
               Deactivate Selected
             </Button>
           )}
@@ -242,17 +289,46 @@ const SequenceItemsPage = ({
           backgroundColor: theme.palette.background.default,
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
           Showing {filteredSequenceItems.length} sequence items
         </Typography>
+        
         {selected.length > 0 && (
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
             {selected.length} selected
           </Typography>
         )}
       </Box>
+
+      {/* Status Snackbar */}
+      <Snackbar 
+        open={!!statusMessage} 
+        autoHideDuration={4000} 
+        onClose={() => setStatusMessage && setStatusMessage('')} 
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setStatusMessage && setStatusMessage('')} 
+          severity={statusSeverity} 
+          sx={{ width: '100%' }}
+        >
+          {statusMessage}
+        </Alert>
+      </Snackbar>
+
+      {/* Confirm Dialog */}
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open || false}
+          title={confirmDialog.title || ''}
+          description={confirmDialog.description || ''}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={onConfirmDialogClose}
+        />
+      )}
     </>
   );
 };

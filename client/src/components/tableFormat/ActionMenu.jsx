@@ -51,6 +51,7 @@ const ActionMenu = ({
   
   const hasRole = (role) => roles.includes(role);
   const isCLevel = hasRole('C-level');
+  const isSalesManager = hasRole('Sales Manager');
 
   const handleClick = (callback) => {
     if (callback && menuRow) callback(menuRow);
@@ -146,7 +147,7 @@ const ActionMenu = ({
         onClick: () => handleClick(onAssignUser),
         show: entityType === 'account' && 
               !!onAssignUser && 
-              isCLevel,
+              (isCLevel || isSalesManager),
         tooltip: getTooltip('assignUser', 'Assign a team member to this account'),
       },
       

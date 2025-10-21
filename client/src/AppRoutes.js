@@ -514,6 +514,47 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/employees/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.employeesDetails}>
+            <EmployeeDetailsPage />
+          </PrivateRoute>
+        }
+      />
+      {/* --- Team Management Routes --- */}
+      <Route
+        path="/teams"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.teams}>
+            <TeamPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/teams/create"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.teamsCreate}>
+            <CreateTeamPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/teams/edit/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.teamsEdit}>
+            <EditTeamPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/teams/:id"
+        element={
+          <PrivateRoute allowedRoles={ROUTE_ACCESS.teamsDetails}>
+            <TeamDetailsPage />
+          </PrivateRoute>
+        }
+      />
       
 
       {/* Catch all */}

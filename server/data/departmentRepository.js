@@ -17,7 +17,6 @@ async function getAllDepartments() {
   }
 }
 
-
 // =======================
 // Get department by ID
 // =======================
@@ -74,10 +73,10 @@ async function updateDepartment(departmentId, departmentName) {
   if (!departmentName) throw new Error("departmentName is required");
   try {
     const pool = await sql.connect(dbConfig);
-    await pool.request()
+    const result = await pool.request()
       .input("DepartmentID", sql.Int, departmentId)
       .input("DepartmentName", sql.VarChar(255), departmentName)
-       .query(`
+      .query(`
         UPDATE Department
         SET DepartmentName = @DepartmentName 
         WHERE DepartmentID = @DepartmentID;
@@ -97,9 +96,9 @@ async function deactivateDepartment(departmentId) {
   if (!departmentId) throw new Error("departmentId is required");
   try {
     const pool = await sql.connect(dbConfig);
-    await pool.request()
+    const result = await pool.request()
       .input("DepartmentID", sql.Int, departmentId)
-       .query(`
+      .query(`
         UPDATE Department
         SET Active = 0 
         WHERE DepartmentID = @DepartmentID AND Active = 1;
@@ -119,7 +118,7 @@ async function reactivateDepartment(departmentId) {
   if (!departmentId) throw new Error("departmentId is required");
   try {
     const pool = await sql.connect(dbConfig);
-    await pool.request()
+    const result = await pool.request()
       .input("DepartmentID", sql.Int, departmentId)
       .query(`
         UPDATE Department
@@ -141,7 +140,7 @@ async function deleteDepartment(departmentId) {
   if (!departmentId) throw new Error("departmentId is required");
   try {
     const pool = await sql.connect(dbConfig);
-    await pool.request()
+    const result = await pool.request()
       .input("DepartmentID", sql.Int, departmentId)
       .query(`
         DELETE FROM Department 

@@ -41,7 +41,11 @@ export default function useLogin() {
       window.dispatchEvent(new Event("storage"));
 
       // Redirect to accounts page
-      window.location.href = "/dashboard";
+      if (response.roles && response.roles.includes("Sales Representative")) {
+        window.location.href = "/smart-work";
+      } else {
+        window.location.href = "/dashboard";
+      }
 
       return true;
     } catch (err) {
