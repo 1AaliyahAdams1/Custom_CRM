@@ -21,93 +21,97 @@ import { getAllPersons, createPerson } from '../../services/personService';
 import { getAllAccounts } from '../../services/accountService';
 import { cityService, jobTitleService } from '../../services/dropdownServices';
 
-// Validation functions
-const validateContactField = (fieldName, value) => {
-  if (!value || (typeof value === 'string' && value.trim().length === 0)) {
-    const requiredFields = ['AccountID', 'PersonID', 'JobTitleID', 'WorkEmail'];
-    if (requiredFields.includes(fieldName)) {
-      return `${fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
-    }
-    return null;
-  }
-
-  switch (fieldName) {
-    case 'WorkEmail':
-    case 'personal_email':
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value.trim())) {
-        return 'Invalid email format';
-      }
-      break;
-
-    case 'WorkPhone':
-    case 'personal_mobile':
-      const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
-      if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
-        return 'Invalid phone number - Phone number requires at least 8 numbers';
-      }
-      break;
-
-    case 'linkedin_link':
-      const urlRegex = /^https?:\/\/.+\..+/;
-      if (!urlRegex.test(value.trim())) {
-        return 'Invalid URL - URL requires a prefix ( http:// , https:// ) and a suffix ( .com , .co.za , etc )';
-      }
-      break;
-
-    case 'first_name':
-    case 'surname':
-      if (value.trim().length < 2) {
-        return `${fieldName.replace('_', ' ')} must be at least 2 characters`;
-      } else if (value.trim().length > 100) {
-        return `${fieldName.replace('_', ' ')} must be 100 characters or less`;
-      }
-      break;
-
-    case 'middle_name':
-    case 'Title':
-      if (value.trim().length > 100) {
-        return `${fieldName.replace('_', ' ')} must be 100 characters or less`;
-      }
-      break;
-  }
-
-  return null;
+// Field name mapping for user-friendly labels
+const getFieldLabel = (fieldName) => {
+  const labels = {
+    'AccountID': 'Account',
+    'PersonID': 'Person',
+    'JobTitleID': 'Job Title',
+    'WorkEmail': 'Work Email',
+    'WorkPhone': 'Work Phone',
+    'first_name': 'First Name',
+    'surname': 'Surname',
+    'middle_name': 'Middle Name',
+    'Title': 'Title',
+    'personal_email': 'Personal Email',
+    'personal_mobile': 'Personal Mobile',
+    'linkedin_link': 'LinkedIn URL',
+    'CityID': 'City',
+  };
+  return labels[fieldName] || fieldName;
 };
 
-const validateContactData = (contactData, personData, isNewPerson) => {
-  const errors = [];
-
-  const contactFieldsToValidate = ['AccountID', 'JobTitleID', 'WorkEmail', 'WorkPhone'];
-  contactFieldsToValidate.forEach(field => {
-    const error = validateContactField(field, contactData[field]);
-    if (error) {
-      errors.push(error);
-    }
-  });
-
-  if (isNewPerson) {
-    const personFieldsToValidate = ['first_name', 'surname', 'middle_name', 'Title', 'personal_email', 'personal_mobile', 'linkedin_link'];
-    personFieldsToValidate.forEach(field => {
-      const error = validateContactField(field, personData[field]);
-      if (error) {
-        errors.push(error);
+// Validation function
+const validateField = (name, value) => {
+  const label = getFieldLabel(name);
+  
+  switch(name) {
+    case 'AccountID':
+      if (!value || value === '') {
+        return 'Account is required';
       }
-    });
-
-    if (!personData.first_name || personData.first_name.trim().length === 0) {
-      errors.push('First name is required for new person');
-    }
-    if (!personData.surname || personData.surname.trim().length === 0) {
-      errors.push('Surname is required for new person');
-    }
-  } else {
-    if (!contactData.PersonID) {
-      errors.push('Please select a person');
-    }
+      break;
+    
+    case 'PersonID':
+      if (!value || value === '') {
+        return 'Person is required';
+      }
+      break;
+    
+    case 'JobTitleID':
+      if (!value || value === '') {
+        return 'Job Title is required';
+      }
+      break;
+    
+    case 'WorkEmail':
+    case 'personal_email':
+      if (!value || value.trim().length === 0) {
+        if (name === 'WorkEmail') {
+          return 'Work Email is required';
+        }
+        return null; // personal_email is optional
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return 'Please enter a valid email address e.g. example@gmail.com';
+      }
+      break;
+    
+    case 'WorkPhone':
+    case 'personal_mobile':
+      if (value && !/^[\d\s\-\(\)\+]+$/.test(value)) {
+        return 'Invalid format e.g. 0680713091, +27 68 071 3091, (068) 071-3091';
+      }
+      break;
+    
+    case 'linkedin_link':
+      if (value && value.trim() && !/^https?:\/\/.+/.test(value)) {
+        return 'Invalid LinkedIn Link. Example format: http://example or https://example';
+      }
+      break;
+  
+    case 'first_name':
+    case 'surname':
+      if (!value || value.trim().length === 0) {
+        return `${label} is required`;
+      }
+      if (value.trim().length > 100) {
+        return `${label} must be 100 characters or less`;
+      }
+      break;
+    
+    case 'middle_name':
+    case 'Title':
+      if (value && value.trim().length > 100) {
+        return `${label} must be 100 characters or less`;
+      }
+      break;
+    
+    default:
+      break;
   }
-
-  return errors;
+  
+  return null;
 };
 
 const CreateContactsPage = () => {
@@ -142,7 +146,6 @@ const CreateContactsPage = () => {
   });
 
   const getFieldError = (fieldName, isPersonField = false) => {
-    const data = isPersonField ? personData : contactData;
     const touchedKey = `${isPersonField ? 'person' : 'contact'}_${fieldName}`;
     
     return touched[touchedKey] && fieldErrors[touchedKey] ? (
@@ -158,17 +161,27 @@ const CreateContactsPage = () => {
     return touched[touchedKey] && fieldErrors[touchedKey];
   };
 
-  const accountService = {
-    getAll: async () => {
-      try {
-        const res = await getAllAccounts();
-        return res.data || [];
-      } catch (error) {
-        console.error('Error loading accounts:', error);
+ const accountService = {
+  getAll: async () => {
+    try {
+      const res = await getAllAccounts();
+      console.log('Account service response:', res); // Debug log
+      
+      // Handle different response structures
+      if (Array.isArray(res)) {
+        return res;
+      } else if (res.data && Array.isArray(res.data)) {
+        return res.data;
+      } else {
+        console.error('Unexpected account data structure:', res);
         return [];
       }
-    },
-  };
+    } catch (error) {
+      console.error('Error loading accounts:', error);
+      return [];
+    }
+  },
+};
 
   const personDropdownService = {
     getAll: async () => {
@@ -229,13 +242,16 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
-    if (touched[touchedKey]) {
-      const error = validateContactField(name, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [touchedKey]: error || undefined
-      }));
-    }
+    const errorMessage = validateField(name, value);
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      if (errorMessage) {
+        newErrors[touchedKey] = errorMessage;
+      } else {
+        delete newErrors[touchedKey];
+      }
+      return newErrors;
+    });
 
     if (error) setError(null);
   };
@@ -249,11 +265,16 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
-    const error = validateContactField(name, value);
-    setFieldErrors(prev => ({
-      ...prev,
-      [touchedKey]: error || undefined
-    }));
+    const errorMessage = validateField(name, value);
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      if (errorMessage) {
+        newErrors[touchedKey] = errorMessage;
+      } else {
+        delete newErrors[touchedKey];
+      }
+      return newErrors;
+    });
   };
 
   const handleContactChange = (e) => {
@@ -269,13 +290,16 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
-    if (touched[touchedKey]) {
-      const error = validateContactField(name, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [touchedKey]: error || undefined
-      }));
-    }
+    const errorMessage = validateField(name, value);
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      if (errorMessage) {
+        newErrors[touchedKey] = errorMessage;
+      } else {
+        delete newErrors[touchedKey];
+      }
+      return newErrors;
+    });
 
     if (error) setError(null);
   };
@@ -289,31 +313,58 @@ const CreateContactsPage = () => {
       [touchedKey]: true
     }));
 
-    const error = validateContactField(name, value);
-    setFieldErrors(prev => ({
-      ...prev,
-      [touchedKey]: error || undefined
-    }));
+    const errorMessage = validateField(name, value);
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      if (errorMessage) {
+        newErrors[touchedKey] = errorMessage;
+      } else {
+        delete newErrors[touchedKey];
+      }
+      return newErrors;
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const allTouched = {};
+    // Validate all fields before submit
+    const allErrors = {};
+    
+    // Validate contact fields
     Object.keys(contactData).forEach(key => {
-      allTouched[`contact_${key}`] = true;
+      const errorMessage = validateField(key, contactData[key]);
+      if (errorMessage) {
+        allErrors[`contact_${key}`] = errorMessage;
+      }
     });
+
+    // Validate person fields if creating new person
     if (isNewPerson) {
       Object.keys(personData).forEach(key => {
-        allTouched[`person_${key}`] = true;
+        const errorMessage = validateField(key, personData[key]);
+        if (errorMessage) {
+          allErrors[`person_${key}`] = errorMessage;
+        }
       });
     }
-    setTouched(allTouched);
 
-    const validationErrors = validateContactData(contactData, personData, isNewPerson);
-    
-    if (validationErrors.length > 0) {
-      setError(`Please fix the following errors:\n• ${validationErrors.join('\n• ')}`);
+    if (Object.keys(allErrors).length > 0) {
+      setFieldErrors(allErrors);
+      
+      // Mark all fields as touched
+      const allTouched = {};
+      Object.keys(contactData).forEach(key => {
+        allTouched[`contact_${key}`] = true;
+      });
+      if (isNewPerson) {
+        Object.keys(personData).forEach(key => {
+          allTouched[`person_${key}`] = true;
+        });
+      }
+      setTouched(allTouched);
+      
+      setError('Please fix validation errors before submitting');
       return;
     }
 
@@ -330,6 +381,7 @@ const CreateContactsPage = () => {
 
       if (!personIdToUse) {
         setError('Please select or create a person.');
+        setIsSubmitting(false);
         return;
       }
 
@@ -342,7 +394,6 @@ const CreateContactsPage = () => {
       };
 
       await createContact(cleanedContactData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       setSuccessMessage("Contact created successfully!");
       
@@ -352,18 +403,7 @@ const CreateContactsPage = () => {
 
     } catch (error) {
       console.error('Error creating contact/person:', error);
-      
-      if (error.isValidation) {
-        setError(error.message);
-      } else if (error.response?.status === 409) {
-        setError('Contact with this information already exists');
-      } else if (error.response?.status === 400) {
-        setError(error.response.data?.error || 'Invalid data provided');
-      } else if (error.response?.status >= 500) {
-        setError('Server error. Please try again later');
-      } else {
-        setError('Failed to create contact. Please try again.');
-      }
+      setError(error.message || 'Failed to create contact. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -63,9 +63,34 @@ const CreateAccount = () => {
           return 'Account name must be 100 characters or less';
         }
         break;
+      case 'CountryID':
+        if (!value || value === '') {
+          return 'Country is required';
+        }
+        break;
+      
+      case 'StateProvinceID':
+        if (!value || value === '') {
+          return 'State/Province is required';
+        }
+        break;
+      
+      case 'CityID':
+        if (!value || value === '') {
+          return 'City is required';
+        }
+        break;
+      
+      case 'IndustryID':
+        if (!value || value === '') {
+          return 'Industry is required';
+        }
+        break;
         
       case 'email':
-        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        if (!value || value.trim().length === 0) {
+          return 'Account email is required';
+        } else if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
           return 'Please enter a valid email address e.g. example@gmail.com';
         }
         break;
@@ -133,6 +158,8 @@ const CreateAccount = () => {
           }
         }
         break;
+        default:
+          break;
     }
     
     return null;
@@ -345,6 +372,7 @@ const CreateAccount = () => {
                   service={countryService}
                   displayField="CountryName"
                   valueField="CountryID"
+                  required
                   disabled={isSubmitting}
                   error={isFieldInvalid('CountryID')}
                   helperText={getFieldError('CountryID')}
@@ -364,6 +392,7 @@ const CreateAccount = () => {
                   }}
                   displayField="StateProvince_Name"
                   valueField="StateProvinceID"
+                  required
                   disabled={isSubmitting || !formData.CountryID}
                   placeholder={!formData.CountryID ? "Select a country first" : "Select a state/province"}
                   error={isFieldInvalid('StateProvinceID')}
@@ -388,6 +417,7 @@ const CreateAccount = () => {
                   }}
                   displayField="CityName"
                   valueField="CityID"
+                  required
                   disabled={isSubmitting || (!formData.StateProvinceID && !formData.CountryID)}
                   placeholder={
                     !formData.CountryID 
@@ -406,6 +436,7 @@ const CreateAccount = () => {
                 <SmartDropdown
                   label="Industry"
                   name="IndustryID"
+                  required
                   value={formData.IndustryID}
                   onChange={handleInputChange}
                   service={industryService}
@@ -458,6 +489,7 @@ const CreateAccount = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
+                  required
                   disabled={isSubmitting}
                   error={isFieldInvalid('email')}
                   helperText={getFieldError('email')}

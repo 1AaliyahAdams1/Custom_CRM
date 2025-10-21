@@ -121,15 +121,24 @@ const SmartDropdown = ({
       : '';
 
     // Convert to number or empty string, not null
-    const finalValue = rawValue !== '' ? Number(rawValue) : '';
+    const finalValue = rawValue !== '' && rawValue != null ? Number(rawValue) : '';
     
     console.log(`🎯 ${label} selection:`, { 
       selectedOption: selectedOption ? formatDisplayText(selectedOption) : 'None', 
       finalValue 
     });
     
-    onChange({ target: { name, value: finalValue } });
+   if (onChange) {
+      onChange({ 
+        target: { 
+          name, 
+          value: finalValue 
+        } 
+      });
+    }
+    
     setOpen(false);
+    setHighlightedIndex(-1);
   };
 
   const handleKeyDown = (event) => {
@@ -205,7 +214,7 @@ const SmartDropdown = ({
         <TextField
           ref={inputRef}
           name={name}
-          label={`${label}${required ? ' *' : ''}`}
+          label={label}
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}

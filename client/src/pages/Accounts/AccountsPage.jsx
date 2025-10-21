@@ -80,7 +80,7 @@ const filterOptions = [
   { value: "inactive", label: "Inactive Accounts" },
   { value: "my", label: "My Accounts" },
   { value: "team", label: "My Team's Accounts" },
-  { value: "unassigned", label: "Unassigned Accounts" },
+  { value: "unassigned", label: "Unowned Accounts" },
 ];
 
   const columns = [
