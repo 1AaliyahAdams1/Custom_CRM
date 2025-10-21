@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { getAllEmployees } from "../../services/employeeService";
 
-const AssignUserDialog = ({ open, onClose, onAssign, menuRow }) => {
+const AssignUserDialog = ({ open, onClose, onAssign, account }) => {
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [loading, setLoading] = useState(true);
@@ -51,17 +51,17 @@ const AssignUserDialog = ({ open, onClose, onAssign, menuRow }) => {
       return;
     }
 
-    if (!menuRow?.AccountID) {
-      setError("Account information is missing");
-      return;
-    }
+    if (!account?.AccountID) {
+  setError("Account information is missing");
+  return;
+}
 
     setAssigning(true);
     setError("");
     
     try {
       // Call the onAssign callback passed from parent
-      await onAssign(selectedEmployee, menuRow);
+      await onAssign(selectedEmployee);
       
       // Reset form and close dialog
       setSelectedEmployee("");
@@ -118,11 +118,11 @@ const AssignUserDialog = ({ open, onClose, onAssign, menuRow }) => {
           </FormControl>
         )}
 
-        {menuRow && (
-          <div style={{ marginTop: '16px', fontSize: '0.875rem', color: '#666' }}>
-            Account: {menuRow.AccountName || `Account ID: ${menuRow.AccountID}`}
-          </div>
-        )}
+        {account && (
+  <div style={{ marginTop: '16px', fontSize: '0.875rem', color: '#666' }}>
+    Account: {account.AccountName || `Account ID: ${account.AccountID}`}
+  </div>
+)}
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={assigning}>

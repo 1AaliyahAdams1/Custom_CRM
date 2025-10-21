@@ -275,13 +275,6 @@ const createSequenceWithItems = async (sequenceData, items) => {
     }
   }
 
-  // Check for duplicate DaysFromStart values
-  const daysValues = items.map(item => item.DaysFromStart);
-  const duplicates = daysValues.filter((day, index) => daysValues.indexOf(day) !== index);
-  if (duplicates.length > 0) {
-    throw new Error(`Duplicate days found: ${duplicates.join(', ')}. Each item must have a unique day value.`);
-  }
-
   return await sequenceRepo.createSequenceWithItems(sequenceData, items, null);
 };
 
