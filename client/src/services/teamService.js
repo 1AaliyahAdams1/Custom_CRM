@@ -1,5 +1,4 @@
 import api from '../utils/api';
-console.log('api object:', api); 
 const RESOURCE = '/teams';
 
 //======================================
@@ -160,6 +159,61 @@ export async function getAvailableUsers(teamId) {
     return response.data;
   } catch (error) {
     console.error(`Error fetching available users for team ${teamId}:`, error);
+    throw error;
+  }
+}
+
+//======================================
+// NEW: Get team by manager ID
+//======================================
+export async function getTeamByManagerId(managerId) {
+  if (!managerId) throw new Error('Manager ID is required');
+  try {
+    const response = await api.get(`${RESOURCE}/manager/${managerId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching team for manager ${managerId}:`, error);
+    throw error;
+  }
+}
+
+//======================================
+// NEW: Get team member user IDs
+//======================================
+export async function getTeamMemberUserIds(teamId) {
+  if (!teamId) throw new Error('Team ID is required');
+  try {
+    const response = await api.get(`${RESOURCE}/${teamId}/member-ids`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching member IDs for team ${teamId}:`, error);
+    throw error;
+  }
+}
+
+//======================================
+// NEW: Get team member employees (for assignment dropdown)
+//======================================
+export async function getTeamMemberEmployees(teamId) {
+  if (!teamId) throw new Error('Team ID is required');
+  try {
+    const response = await api.get(`${RESOURCE}/${teamId}/member-employees`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching member employees for team ${teamId}:`, error);
+    throw error;
+  }
+}
+
+//======================================
+// NEW: Get current user's team members (for Sales Managers)
+//======================================
+export async function getMyTeamMembers() {
+  try {
+    const response = await api.get(`${RESOURCE}/my/members`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching my team members:', error);
     throw error;
   }
 }

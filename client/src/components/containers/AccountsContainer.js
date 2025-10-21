@@ -33,6 +33,7 @@ import {
   downloadAttachment,
 } from "../../services/attachmentService";
 import { getAllEmployees } from "../../services/employeeService";
+import { getMyTeamMembers } from '../../services/teamService';
 
 // Components
 import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
@@ -40,7 +41,6 @@ import NotesPopup from "../../components/dialogs/NotesComponent";
 import AttachmentsPopup from "../../components/dialogs/AttachmentsComponent";
 import BulkAssignDialog from "../../components/dialogs/BulkAssignDialog";
 import BulkClaimDialog from "../../components/dialogs/BulkClaimDialog";
-
 import BulkClaimAndSequenceDialog from "../../components/dialogs/BulkClaimAndSequenceDialog";
 import AssignSequenceDialog from "../../components/dialogs/AssignSequenceDialog";
 import BulkActionsToolbar from "../../components/tableFormat/BulkActionsToolbar";
@@ -65,6 +65,11 @@ const AccountsContainer = () => {
   const [selected, setSelected] = useState([]);
   const [bulkLoading, setBulkLoading] = useState(false);
 
+  // NEW: Team member state
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [teamMemberUserIds, setTeamMemberUserIds] = useState([]);
+  const [teamDataLoaded, setTeamDataLoaded] = useState(false);
+
   // Dialogs / Popups
   const [assignUserDialogOpen, setAssignUserDialogOpen] = useState(false);
   const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
@@ -78,7 +83,6 @@ const AccountsContainer = () => {
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [accountToDelete, setAccountToDelete] = useState(null);
   const [accountToReactivate, setAccountToReactivate] = useState(null);
-
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [accountForUnassign, setAccountForUnassign] = useState(null);
   const [unassignUserDialogOpen, setUnassignUserDialogOpen] = useState(false);
@@ -89,8 +93,9 @@ const AccountsContainer = () => {
   const [accountToUnclaim, setAccountToUnclaim] = useState(null);
 
   const selectedAccountObjects = filteredAccounts.filter((a) =>
-  selected.includes(a.AccountID)
-);
+    selected.includes(a.AccountID)
+  );
+
   // ---------------- USER ROLES ----------------
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
@@ -104,30 +109,68 @@ const AccountsContainer = () => {
 
   const isCLevel = hasAccess("accountAssign");
   const canViewAll = hasAccess("accounts");
+  const isSalesManager = roles.includes("Sales Manager");
+
+  console.log("🔍 User Info:", { userId, roles, isSalesManager, isCLevel, canViewAll });
+
+  // ---------------- FETCH TEAM MEMBERS ----------------
+  const fetchTeamMembers = useCallback(async () => {
+    if (!isSalesManager) {
+      console.log("👤 Not a Sales Manager, skipping team fetch");
+      setTeamMembers([]);
+      setTeamMemberUserIds([]);
+      setTeamDataLoaded(true);
+      return;
+    }
+    
+    try {
+      console.log("📞 Fetching team members for Sales Manager...");
+      const members = await getMyTeamMembers(); 
+      console.log("✅ Team members response:", members);
+      
+      setTeamMembers(members);
+      
+      // Extract UserIDs for filtering
+      const memberUserIds = members.map(m => m.UserID).filter(Boolean);
+      setTeamMemberUserIds(memberUserIds);
+      
+      console.log("👥 Team member UserIDs:", memberUserIds);
+      console.log("📊 Total team members:", members.length);
+      
+      setTeamDataLoaded(true);
+    } catch (err) {
+      console.error("❌ Error fetching team members:", err);
+      setTeamMembers([]);
+      setTeamMemberUserIds([]);
+      setTeamDataLoaded(true);
+    }
+  }, [isSalesManager]);
 
   // ---------------- FETCH ACCOUNTS ----------------
-const fetchAccounts = async () => {
+  const fetchAccounts = async () => {
+    if (isSalesManager && !teamDataLoaded) {
+      console.log("⏳ Waiting for team data to load...");
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    
     try {
       let accountsData = [];
 
+      console.log("📦 Fetching accounts - canViewAll:", canViewAll, "isCLevel:", isCLevel, "isSalesManager:", isSalesManager);
+
       if (canViewAll) {
+        const rawData = await getAllAccounts();
+        accountsData = Array.isArray(rawData) ? rawData : [];
+        
+        console.log("📊 Total accounts fetched:", accountsData.length);
+
         if (isCLevel) {
-          const rawData = await getAllAccounts();
-          accountsData = Array.isArray(rawData) ? rawData : [];
-
-
+          console.log("👔 Processing as C-Level user");
+          
           accountsData.forEach((acc) => {
-            const idsStr = acc.AssignedEmployeeIDs;
-            const namesStr = acc.AssignedEmployeeNames;
-
-            if (idsStr && namesStr) {
-              const ids = idsStr.split(",").map((id) => id.trim());
-              const names = namesStr.split(",").map((n) => n.trim());
-              const isOwnedByMe = ids.includes(String(userId));
-
-              if (isOwnedByMe && ids.length === 1) {
             const idsStr = acc.AssignedEmployeeIDs;
             const namesStr = acc.AssignedEmployeeNames;
 
@@ -139,13 +182,7 @@ const fetchAccounts = async () => {
               if (isOwnedByMe && ids.length === 1) {
                 acc.ownerStatus = "owned";
               } else if (isOwnedByMe && ids.length > 1) {
-              } else if (isOwnedByMe && ids.length > 1) {
                 acc.ownerStatus = "owned-shared";
-                acc.ownerDisplayName = `You + ${ids.length - 1} other${ids.length - 1 > 1 ? "s" : ""}`;
-                acc.ownerTooltip = names.join(", ");
-              } else if (ids.length === 1) {
-                acc.ownerStatus = `owned-by-${names[0]}`;
-                acc.ownerDisplayName = names[0];
                 acc.ownerDisplayName = `You + ${ids.length - 1} other${ids.length - 1 > 1 ? "s" : ""}`;
                 acc.ownerTooltip = names.join(", ");
               } else if (ids.length === 1) {
@@ -155,14 +192,87 @@ const fetchAccounts = async () => {
                 acc.ownerStatus = "owned-by-multiple";
                 acc.ownerDisplayName = `${ids.length} users`;
                 acc.ownerTooltip = names.join(", ");
+              }
+            } else {
+              acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
+            }
+          });
+          
+        } else if (isSalesManager) {
+          console.log("👨‍💼 Processing as Sales Manager");
+          console.log("👥 Team member UserIDs to check:", teamMemberUserIds);
+          
+          accountsData.forEach((acc) => {
+            const idsStr = acc.AssignedEmployeeIDs;
+            const namesStr = acc.AssignedEmployeeNames;
+
+            if (idsStr && namesStr) {
+              const ids = idsStr.split(",").map((id) => id.trim());
+              const names = namesStr.split(",").map((n) => n.trim());
+              const isOwnedByMe = ids.includes(String(userId));
+              
+              const isOwnedByTeam = ids.some(id => teamMemberUserIds.includes(parseInt(id)));
+
+              console.log(`Account ${acc.AccountID} (${acc.AccountName}):`, {
+                assignedIds: ids,
+                isOwnedByMe,
+                isOwnedByTeam,
+                teamUserIds: teamMemberUserIds
+              });
+
+              if (isOwnedByMe && ids.length === 1) {
+                acc.ownerStatus = "owned";
+              } else if (isOwnedByMe && ids.length > 1) {
+                acc.ownerStatus = "owned-shared";
+                acc.ownerDisplayName = `You + ${ids.length - 1} other${ids.length - 1 > 1 ? "s" : ""}`;
+                acc.ownerTooltip = names.join(", ");
+              } else if (isOwnedByTeam && ids.length === 1) {
+                acc.ownerStatus = "team-owned";
+                acc.ownerDisplayName = names[0];
+              } else if (isOwnedByTeam && ids.length > 1) {
+                acc.ownerStatus = "team-owned-shared";
+                acc.ownerDisplayName = `${ids.length} users`;
+                acc.ownerTooltip = names.join(", ");
+              } else if (ids.length === 1) {
+                acc.ownerStatus = `owned-by-${names[0]}`;
+                acc.ownerDisplayName = names[0];
+              } else {
+                acc.ownerStatus = "owned-by-multiple";
                 acc.ownerDisplayName = `${ids.length} users`;
                 acc.ownerTooltip = names.join(", ");
               }
             } else {
               acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
             }
-          }}});
+          });
+
+          const beforeFilter = accountsData.length;
+          accountsData = accountsData.filter(acc => {
+            const shouldShow = acc.ownerStatus === "owned" || 
+                   acc.ownerStatus === "owned-shared" ||
+                   acc.ownerStatus === "team-owned" ||
+                   acc.ownerStatus === "team-owned-shared" ||
+                   acc.ownerStatus === "unowned" ||
+                   acc.ownerStatus === "n/a";
+            
+            if (!shouldShow) {
+              console.log(`Filtering out account ${acc.AccountID}: ${acc.ownerStatus}`);
+            }
+            
+            return shouldShow;
+          });
+          
+          console.log(`📊 Accounts after filtering: ${accountsData.length} (from ${beforeFilter})`);
+          console.log("Breakdown:", {
+            owned: accountsData.filter(a => a.ownerStatus === "owned").length,
+            ownedShared: accountsData.filter(a => a.ownerStatus === "owned-shared").length,
+            teamOwned: accountsData.filter(a => a.ownerStatus === "team-owned").length,
+            teamOwnedShared: accountsData.filter(a => a.ownerStatus === "team-owned-shared").length,
+            unowned: accountsData.filter(a => a.ownerStatus === "unowned").length
+          });
+          
         } else {
+          console.log("👤 Processing as Sales Rep or other role");
           const assignedRes = await fetchActiveAccountsByUser(userId);
           const unassignedRes = await fetchActiveUnassignedAccounts();
           const assigned = Array.isArray(assignedRes) ? assignedRes : [];
@@ -177,15 +287,16 @@ const fetchAccounts = async () => {
 
           const map = new Map();
           [...assigned, ...unassigned].forEach((a) => map.set(a.AccountID, a));
-          [...assigned, ...unassigned].forEach((a) => map.set(a.AccountID, a));
           accountsData = Array.from(map.values());
         }
       }
 
+      console.log("✅ Final accounts to display:", accountsData.length);
       setAllAccounts(accountsData);
       setFilteredAccounts(applyFilter(accountsData, currentFilter));
+      
     } catch (err) {
-      console.error("Error fetching accounts:", err);
+      console.error("❌ Error fetching accounts:", err);
       setError("Failed to load accounts. Please try again.");
       setAllAccounts([]);
       setFilteredAccounts([]);
@@ -205,20 +316,60 @@ const fetchAccounts = async () => {
 
   // ---------------- FILTER ----------------
   const applyFilter = (accounts, filter) => {
+    console.log("🔍 Applying filter:", filter, "to", accounts.length, "accounts");
+    
     if (filter === "all") return accounts;
-    if (filter === "owned") return accounts.filter((a) => a.ownerStatus?.includes("owned"));
-    if (filter === "unowned") return accounts.filter((a) => a.ownerStatus === "unowned");
+    if (filter === "owned") {
+      const filtered = accounts.filter((a) => 
+        a.ownerStatus === "owned" || a.ownerStatus === "owned-shared"
+      );
+      console.log("📊 Owned filter result:", filtered.length);
+      return filtered;
+    }
+    if (filter === "team-owned") {
+      const filtered = accounts.filter((a) => 
+        a.ownerStatus === "team-owned" || a.ownerStatus === "team-owned-shared"
+      );
+      console.log("📊 Team-owned filter result:", filtered.length);
+      return filtered;
+    }
+    if (filter === "unowned") {
+      const filtered = accounts.filter((a) => a.ownerStatus === "unowned");
+      console.log("📊 Unowned filter result:", filtered.length);
+      return filtered;
+    }
     return accounts;
   };
 
   useEffect(() => {
-    fetchAccounts();
-  }, [refreshFlag, canViewAll, isCLevel]);
+    console.log("🔄 Initial mount - fetching team members");
+    fetchTeamMembers();
+  }, [fetchTeamMembers]);
 
   useEffect(() => {
-  fetchSequences();
-}, [fetchSequences]);
+    console.log("🔄 Dependencies changed - checking if should fetch accounts", {
+      isSalesManager,
+      teamDataLoaded,
+      teamMemberUserIds: teamMemberUserIds.length
+    });
+    
+    if (isSalesManager && !teamDataLoaded) {
+      console.log("⏳ Sales Manager but team data not loaded yet");
+      return;
+    }
+    
+    console.log("✅ Conditions met - fetching accounts");
+    fetchAccounts();
+  }, [refreshFlag, canViewAll, isCLevel, isSalesManager, teamDataLoaded]);
 
+  useEffect(() => {
+    fetchSequences();
+  }, [fetchSequences]);
+
+  useEffect(() => {
+    console.log("🔄 Filter changed to:", currentFilter);
+    setFilteredAccounts(applyFilter(allAccounts, currentFilter));
+  }, [currentFilter, allAccounts]);
 
   // ---------------- SELECTION HANDLERS ----------------
   const handleSelectClick = (id) => {
@@ -238,12 +389,10 @@ const fetchAccounts = async () => {
 
   // ---------------- ACTION HANDLERS ----------------
   const handleView = (account) => {
-    console.log("View account:", account);
     navigate(`/accounts/${account.AccountID}`);
   };
 
   const handleEdit = (account) => {
-    console.log("Edit account:", account);
     navigate(`/accounts/edit/${account.AccountID}`);
   };
 
@@ -388,7 +537,7 @@ const fetchAccounts = async () => {
     }
   };
 
-    const handleAssignSequence = (account) => {
+  const handleAssignSequence = (account) => {
     setSelectedAccount(account);
     setAssignSequenceDialogOpen(true);
   };
@@ -437,41 +586,41 @@ const fetchAccounts = async () => {
     }
   };
 
-const handleBulkClaim = async (accountIds) => {  // FIX: Accept accountIds parameter
-  setBulkLoading(true);
-  
-  try {
-    const result = await bulkClaimAccounts(accountIds);  // Use the filtered accountIds
+  const handleBulkClaim = async (accountIds) => {
+    setBulkLoading(true);
     
-    let message = "";
-    
-    if (result.claimedCount > 0) {
-      message = `Successfully claimed ${result.claimedCount} account(s)`;
-      if (result.failedCount > 0) {
-        message += `. ${result.failedCount} account(s) could not be claimed.`;
+    try {
+      const result = await bulkClaimAccounts(accountIds);
+      
+      let message = "";
+      
+      if (result.claimedCount > 0) {
+        message = `Successfully claimed ${result.claimedCount} account(s)`;
+        if (result.failedCount > 0) {
+          message += `. ${result.failedCount} account(s) could not be claimed.`;
+        }
+        setStatusSeverity("success");
+      } else {
+        message = "No accounts were claimed.";
+        if (result.failed && result.failed.length > 0) {
+          const reasons = result.failed.map(f => f.reason).join(", ");
+          message += ` Reasons: ${reasons}`;
+        }
+        setStatusSeverity("warning");
       }
-      setStatusSeverity("success");
-    } else {
-      message = "No accounts were claimed.";
-      if (result.failed && result.failed.length > 0) {
-        const reasons = result.failed.map(f => f.reason).join(", ");
-        message += ` Reasons: ${reasons}`;
-      }
-      setStatusSeverity("warning");
+      
+      setStatusMessage(message);
+      setRefreshFlag((f) => !f);
+      setSelected([]);
+    } catch (err) {
+      console.error("Error in bulk claim:", err);
+      setStatusMessage(err.message || "Bulk claim failed");
+      setStatusSeverity("error");
+    } finally {
+      setBulkLoading(false);
+      setBulkClaimDialogOpen(false);
     }
-    
-    setStatusMessage(message);
-    setRefreshFlag((f) => !f);
-    setSelected([]);
-  } catch (err) {
-    console.error("Error in bulk claim:", err);
-    setStatusMessage(err.message || "Bulk claim failed");
-    setStatusSeverity("error");
-  } finally {
-    setBulkLoading(false);
-    setBulkClaimDialogOpen(false);
-  }
-};
+  };
 
   const handleBulkClaimAndSequence = () => {
     if (!hasAccess("accountClaim")) return;
@@ -485,41 +634,40 @@ const handleBulkClaim = async (accountIds) => {  // FIX: Accept accountIds param
     setBulkClaimAndSequenceDialogOpen(true);
   };
 
-const confirmBulkClaimAndSequence = async (sequenceId, accountIds) => {
-  setBulkLoading(true);
+  const confirmBulkClaimAndSequence = async (sequenceId, accountIds) => {
+    setBulkLoading(true);
 
-  try {
-    const result = await bulkClaimAccountsAndAddSequence(accountIds, sequenceId);
+    try {
+      const result = await bulkClaimAccountsAndAddSequence(accountIds, sequenceId);
 
-    let message = "";
+      let message = "";
 
-    if (result.claimedCount > 0) {
-      message = `Successfully claimed ${result.claimedCount} account(s)`;
-      if (result.totalActivitiesCreated > 0) {
-        message += ` and created ${result.totalActivitiesCreated} activities`;
+      if (result.claimedCount > 0) {
+        message = `Successfully claimed ${result.claimedCount} account(s)`;
+        if (result.totalActivitiesCreated > 0) {
+          message += ` and created ${result.totalActivitiesCreated} activities`;
+        }
+        if (result.failedCount > 0) {
+          message += `. ${result.failedCount} account(s) could not be claimed.`;
+        }
+        setStatusSeverity("success");
+      } else {
+        message = "No accounts were claimed.";
+        setStatusSeverity("warning");
       }
-      if (result.failedCount > 0) {
-        message += `. ${result.failedCount} account(s) could not be claimed.`;
-      }
-      setStatusSeverity("success");
-    } else {
-      message = "No accounts were claimed.";
-      setStatusSeverity("warning");
+
+      setStatusMessage(message);
+      setRefreshFlag((flag) => !flag);
+      setSelected([]);
+    } catch (err) {
+      console.error("Bulk claim and sequence error:", err);
+      setStatusMessage(err.message || "Failed to claim accounts and assign sequence");
+      setStatusSeverity("error");
+    } finally {
+      setBulkLoading(false);
+      setBulkClaimAndSequenceDialogOpen(false);
     }
-
-    setStatusMessage(message);
-    setRefreshFlag((flag) => !flag);
-    setSelected([]);
-  } catch (err) {
-    console.error("Bulk claim and sequence error:", err);
-    setStatusMessage(err.message || "Failed to claim accounts and assign sequence");
-    setStatusSeverity("error");
-  } finally {
-    setBulkLoading(false);
-    setBulkClaimAndSequenceDialogOpen(false);
-  }
-};
-
+  };
 
   // ---------------- RENDER ----------------
   return (
@@ -559,7 +707,6 @@ const confirmBulkClaimAndSequence = async (sequenceId, accountIds) => {
         userRoles={roles} 
       />
 
-      {/* DIALOGS */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Deactivate Account"
@@ -622,90 +769,90 @@ const confirmBulkClaimAndSequence = async (sequenceId, accountIds) => {
         onConfirm={handleConfirmUnassignUser}
       />
 
-      {/* Separate single assign dialog */}
-      <AssignUserDialog
-        open={assignUserDialogOpen}
-        onClose={() => {
-          setAssignUserDialogOpen(false);
-          setSelectedAccount(null);
-        }}
-        onAssign={handleConfirmAssignUser}
-        account={selectedAccount}
-      />
+    {/* Separate single assign dialog */}
+    <AssignUserDialog
+      open={assignUserDialogOpen}
+      onClose={() => {
+        setAssignUserDialogOpen(false);
+        setSelectedAccount(null);
+      }}
+      onAssign={handleConfirmAssignUser}
+      account={selectedAccount}
+    />
 
-      <BulkAssignDialog
-        open={bulkAssignDialogOpen}
-        onClose={() => setBulkAssignDialogOpen(false)}
-        onAssign={(employeeId) => {
-          // Handle bulk assignment
-          console.log("Bulk assign to employee:", employeeId);
-        }}
-      />
+    <BulkAssignDialog
+      open={bulkAssignDialogOpen}
+      onClose={() => setBulkAssignDialogOpen(false)}
+      onAssign={(employeeId) => {
+        // Handle bulk assignment
+        console.log("Bulk assign to employee:", employeeId);
+      }}
+    />
 
-      <BulkClaimDialog
-        open={bulkClaimDialogOpen}
-        onClose={() => setBulkClaimDialogOpen(false)}
-        onConfirm={handleBulkClaim}
-        selectedItems={selectedAccountObjects}
-        loading={bulkLoading}
-      />
+    <BulkClaimDialog
+      open={bulkClaimDialogOpen}
+      onClose={() => setBulkClaimDialogOpen(false)}
+      onConfirm={handleBulkClaim}
+      selectedItems={selectedAccountObjects}
+      loading={bulkLoading}
+    />
 
-      <BulkClaimAndSequenceDialog
-        open={bulkClaimAndSequenceDialogOpen}
-        onClose={() => setBulkClaimAndSequenceDialogOpen(false)}
-        onConfirm={confirmBulkClaimAndSequence}
-        selectedItems={selectedAccountObjects}
-        sequences={sequences}
-        loading={bulkLoading}
-      />
+    <BulkClaimAndSequenceDialog
+      open={bulkClaimAndSequenceDialogOpen}
+      onClose={() => setBulkClaimAndSequenceDialogOpen(false)}
+      onConfirm={confirmBulkClaimAndSequence}
+      selectedItems={selectedAccountObjects}
+      sequences={sequences}
+      loading={bulkLoading}
+    />
 
-      <AssignSequenceDialog
-        open={assignSequenceDialogOpen}
-        onClose={() => {
-          setAssignSequenceDialogOpen(false);
-          setSelectedAccount(null);
-        }}
-        onConfirm={handleConfirmAssignSequence}
-        account={selectedAccount}
-        sequences={sequences}
-        loading={bulkLoading}
-      />
+    <AssignSequenceDialog
+      open={assignSequenceDialogOpen}
+      onClose={() => {
+        setAssignSequenceDialogOpen(false);
+        setSelectedAccount(null);
+      }}
+      onConfirm={handleConfirmAssignSequence}
+      account={selectedAccount}
+      sequences={sequences}
+      loading={bulkLoading}
+    />
 
-      <NotesPopup
-        open={notesPopupOpen}
-        onClose={() => {
-          setNotesPopupOpen(false);
-          setSelectedAccount(null);
-        }}
-        account={selectedAccount}
-        entityType="Account"
-        entityId={selectedAccount?.AccountID}
-        entityName={selectedAccount?.AccountName}
-        onSave={createNote}
-        onEdit={updateNote}
-        onDeactivate={deactivateNote}
-        onReactivate={reactivateNote}
-        onRefresh={() => setRefreshFlag((f) => !f)}
-      />
+    <NotesPopup
+      open={notesPopupOpen}
+      onClose={() => {
+        setNotesPopupOpen(false);
+        setSelectedAccount(null);
+      }}
+      account={selectedAccount}
+      entityType="Account"
+      entityId={selectedAccount?.AccountID}
+      entityName={selectedAccount?.AccountName}
+      onSave={createNote}
+      onEdit={updateNote}
+      onDeactivate={deactivateNote}
+      onReactivate={reactivateNote}
+      onRefresh={() => setRefreshFlag((f) => !f)}
+    />
 
-      {/*  Pass all required service functions */}
-      <AttachmentsPopup
-        open={attachmentsPopupOpen}
-        onClose={() => {
-          setAttachmentsPopupOpen(false);
-          setSelectedAccount(null);
-        }}
-        account={selectedAccount}
-        entityType="account"
-        entityId={selectedAccount?.AccountID}
-        entityName={selectedAccount?.AccountName}
-        userName={storedUser.name || storedUser.username || "User"}
-        onUpload={uploadAttachment}
-        onDelete={deleteAttachment}
-        onDownload={downloadAttachment}
-        onRefresh={() => setRefreshFlag((f) => !f)}
-      />
-    </>
-  )};
+    {/*  Pass all required service functions */}
+    <AttachmentsPopup
+      open={attachmentsPopupOpen}
+      onClose={() => {
+        setAttachmentsPopupOpen(false);
+        setSelectedAccount(null);
+      }}
+      account={selectedAccount}
+      entityType="account"
+      entityId={selectedAccount?.AccountID}
+      entityName={selectedAccount?.AccountName}
+      userName={storedUser.name || storedUser.username || "User"}
+      onUpload={uploadAttachment}
+      onDelete={deleteAttachment}
+      onDownload={downloadAttachment}
+      onRefresh={() => setRefreshFlag((f) => !f)}
+    />
+  </>
+)};
 
 export default AccountsContainer;

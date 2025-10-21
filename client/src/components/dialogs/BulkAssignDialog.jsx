@@ -19,7 +19,15 @@ import {
 } from "@mui/material";
 import { getAllEmployees } from "../../services/employeeService";
 
-const BulkAssignDialog = ({ open, onClose, selectedItems = [], onConfirm, loading = false }) => {
+const BulkAssignDialog = ({ 
+  open, 
+  onClose, 
+  selectedItems = [], 
+  onConfirm, 
+  loading = false,
+  restrictToTeam = false,  // NEW: For Sales Managers
+  teamMembers = []  // NEW: Team member employees
+}) => {
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [error, setError] = useState("");
@@ -27,13 +35,26 @@ const BulkAssignDialog = ({ open, onClose, selectedItems = [], onConfirm, loadin
 
   useEffect(() => {
     if (open) loadEmployees();
-  }, [open]);
+  }, [open, restrictToTeam, teamMembers]);
 
   const loadEmployees = async () => {
     setLoadingEmployees(true);
+    setError("");
+    
     try {
-      const res = await getAllEmployees();
-      setEmployees(res.data || res || []);
+      // NEW: If Sales Manager, use team members instead of all employees
+      if (restrictToTeam && teamMembers.length > 0) {
+        console.log("Bulk assign - using team members:", teamMembers);
+        setEmployees(teamMembers);
+      } else if (restrictToTeam && teamMembers.length === 0) {
+        // Sales Manager but no team members
+        setEmployees([]);
+        setError("No team members available for assignment");
+      } else {
+        // C-level or other roles - fetch all employees
+        const res = await getAllEmployees();
+        setEmployees(res.data || res || []);
+      }
     } catch (err) {
       console.error("Failed to fetch employees:", err);
       setError("Failed to load employees");
@@ -74,6 +95,13 @@ const BulkAssignDialog = ({ open, onClose, selectedItems = [], onConfirm, loadin
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>Bulk Assign Accounts</DialogTitle>
       <DialogContent>
+        {/* NEW: Show info alert for Sales Managers */}
+        {restrictToTeam && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            You can only assign members from your team
+          </Alert>
+        )}
+
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Typography sx={{ mb: 2 }}>
@@ -93,9 +121,14 @@ const BulkAssignDialog = ({ open, onClose, selectedItems = [], onConfirm, loadin
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
                 MenuProps={MenuProps}
+                label="Select Employee"
               >
                 {employees.length === 0 ? (
-                  <MenuItem disabled>No employees available</MenuItem>
+                  <MenuItem disabled>
+                    {restrictToTeam 
+                      ? "No team members available" 
+                      : "No employees available"}
+                  </MenuItem>
                 ) : (
                   employees.map((emp) => (
                     <MenuItem key={emp.EmployeeID} value={emp.EmployeeID}>
@@ -132,7 +165,7 @@ const BulkAssignDialog = ({ open, onClose, selectedItems = [], onConfirm, loadin
         <Button
           variant="contained"
           onClick={handleConfirm}
-          disabled={!selectedEmployee || loading}
+          disabled={!selectedEmployee || loading || employees.length === 0}
         >
           {loading ? "Assigning..." : `Assign ${selectedItems.length} Account${selectedItems.length !== 1 ? "s" : ""}`}
         </Button>
