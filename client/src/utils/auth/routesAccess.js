@@ -5,7 +5,7 @@ const CLEVEL = ["C-level"];
 
 export const ROUTE_ACCESS = {
   // Core
-  dashboard: ALL,
+  dashboard: MANAGEMENT,
   roles: HR,
   email: ALL,
 

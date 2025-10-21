@@ -195,3 +195,23 @@ export const bulkDeleteSequences = async (sequenceIds) => {
     throw error;
   }
 };
+
+export const deactivateSequenceItem = async (itemId) => {
+  try {
+    const response = await api.patch(`${RESOURCE}/items/${itemId}/deactivate`);  // ✅ CHANGED to PATCH
+    return response.data;
+  } catch (error) {
+    console.error(`Error deactivating sequence item ${itemId}:`, error);
+    throw error;
+  }
+};
+
+export const reactivateSequenceItem = async (itemId) => {
+  try {
+    const response = await api.patch(`${RESOURCE}/items/${itemId}/reactivate`);  // ✅ NEW
+    return response.data;
+  } catch (error) {
+    console.error(`Error reactivating sequence item ${itemId}:`, error);
+    throw error;
+  }
+};

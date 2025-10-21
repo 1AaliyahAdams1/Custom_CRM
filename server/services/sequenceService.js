@@ -286,6 +286,20 @@ const createSequenceWithItems = async (sequenceData, items) => {
 };
 
 //======================================
+// Deactivate sequence item
+//======================================
+const deactivateSequenceItem = async (itemId) => {
+  return await sequenceRepo.deactivateSequenceItem(itemId, null);
+};
+
+//======================================
+// Reactivate sequence item
+//======================================
+const reactivateSequenceItem = async (itemId) => {
+  return await sequenceRepo.reactivateSequenceItem(itemId, null);
+};
+
+//======================================
 // Assign sequence to account
 //======================================
 const assignSequenceToAccount = async (accountId, sequenceId) => {
@@ -333,6 +347,8 @@ module.exports = {
   getSequenceItemByID,
   createSequenceItem,
   updateSequenceItem,
+  deactivateSequenceItem,
+  reactivateSequenceItem,
   deleteSequenceItem,
   createSequenceWithItems,
   assignSequenceToAccount,
