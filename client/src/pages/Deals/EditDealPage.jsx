@@ -209,14 +209,28 @@ const EditDealPage = () => {
                     </Typography>
                   </Box>
 
-                  <TextField
-                    fullWidth
-                    label="Deal Name"
-                    name="DealName"
-                    value={formData.DealName}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                  />
+                  {/* Read-only Deal Name field */}
+                  <Box sx={{
+                    p: 2,
+                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f8f9fa',
+                    borderRadius: 1,
+                    border: `1px solid ${theme.palette.divider}`
+                  }}>
+                    <Typography variant="caption" sx={{
+                      color: theme.palette.text.secondary,
+                      fontWeight: 500,
+                      display: 'block',
+                      mb: 0.5
+                    }}>
+                      Deal Name
+                    </Typography>
+                    <Typography variant="body1" sx={{
+                      fontWeight: 500,
+                      color: theme.palette.text.primary
+                    }}>
+                      {formData.DealName || 'No deal name'}
+                    </Typography>
+                  </Box>
 
                   <SmartDropdown
                     label="Deal Stage"

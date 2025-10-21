@@ -83,7 +83,7 @@ export default function DealDetailsPage() {
       label: 'Deal Name', 
       type: 'text', 
       required: true, 
-      editable: true 
+      readOnly: true 
     },
     { 
       key: 'DealStageID', 

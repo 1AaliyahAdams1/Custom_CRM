@@ -5,6 +5,7 @@ import {
   getAllDeals,
   fetchDealsByUser,
   deactivateDeal,
+  reactivateDeal,
 } from "../../services/dealService";
 import {
   getAllAccounts,
@@ -50,6 +51,10 @@ const DealsContainer = () => {
   // Delete confirm dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dealToDelete, setDealToDelete] = useState(null);
+  
+  // Reactivate dialog
+  const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
+  const [dealToReactivate, setDealToReactivate] = useState(null);
 
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
@@ -298,6 +303,27 @@ const DealsContainer = () => {
     }
   };
 
+  const handleReactivateDeal = async (deal) => {
+    setDealToReactivate(deal);
+    setReactivateDialogOpen(true);
+  };
+
+  const confirmReactivate = async () => {
+    if (!dealToReactivate) return;
+
+    try {
+      await reactivateDeal(dealToReactivate.DealID);
+      setSuccessMessage("Deal reactivated successfully.");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      console.error("Error reactivating deal:", err);
+      setError("Failed to reactivate deal. Please try again.");
+    } finally {
+      setReactivateDialogOpen(false);
+      setDealToReactivate(null);
+    }
+  };
+
   const handleEdit = (deal) => navigate(`/deals/edit/${deal.DealID}`);
 
   const handleView = (deal) => {
@@ -428,7 +454,8 @@ const DealsContainer = () => {
         setSuccessMessage={setSuccessMessage}
         onSelectClick={handleSelectClick}
         onSelectAllClick={handleSelectAllClick}
-        onDeactivate={handleDeactivateClick} 
+        onDeactivate={handleDeactivateClick}
+        onReactivate={handleReactivateDeal}
         onEdit={handleEdit}
         onView={handleView}
         onCreate={handleOpenCreate}
@@ -475,6 +502,20 @@ const DealsContainer = () => {
         }?`}
         onConfirm={confirmDeactivate}
         onCancel={() => setDeleteDialogOpen(false)}
+      />
+
+      {/* Confirm reactivate dialog */}
+      <ConfirmDialog
+        open={reactivateDialogOpen}
+        title="Reactivate Deal"
+        description={`Are you sure you want to reactivate this deal${
+          dealToReactivate?.DealName ? ` ("${dealToReactivate.DealName}")` : ""
+        }?`}
+        onConfirm={confirmReactivate}
+        onCancel={() => {
+          setReactivateDialogOpen(false);
+          setDealToReactivate(null);
+        }}
       />
     </>
   );

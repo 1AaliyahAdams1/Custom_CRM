@@ -49,6 +49,7 @@ const DealsPage = ({
   setStatusFilter,
   clearFilters,
   onDeactivate,
+  onReactivate,
   onEdit,
   onView,
   onCreate,
@@ -299,6 +300,7 @@ const DealsPage = ({
               showSelection
               onView={onView}
               onEdit={onEdit}
+              onReactivate={onReactivate}
               onDelete={onDeactivate}
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}
