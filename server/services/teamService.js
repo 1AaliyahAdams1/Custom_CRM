@@ -19,20 +19,20 @@ async function getTeamById(teamId) {
 //==========================
 // Create a new team
 //==========================
-async function createTeam(teamData) {
+async function createTeam(teamName) {
     if (!teamData.TeamName) throw new Error("TeamName is required");
     if (!teamData.ManagerID) throw new Error("ManagerID is required");
-    return await teamRepository.createTeam(teamData);
+    return await teamRepository.createTeam(teamName);
 };
 
 //==========================
 // Update an existing team
 //==========================
-async function updateTeam(teamId, teamData) {
+async function updateTeam(teamId, teamName) {
     if (!teamId) throw new Error("teamId is required");
     if (!teamData.TeamName) throw new Error("TeamName is required");
     if (teamData.ManagerID === undefined) throw new Error("ManagerID is required");
-    return await teamRepository.updateTeam(teamId, teamData);
+    return await teamRepository.updateTeam(teamId, teamName);
 };
 
 //==========================

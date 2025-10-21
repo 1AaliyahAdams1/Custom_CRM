@@ -1,5 +1,5 @@
 import api from '../utils/api';
-
+console.log('api object:', api); 
 const RESOURCE = '/teams';
 
 //======================================
@@ -37,8 +37,7 @@ export async function createTeam(teamData) {
   if (!teamData.ManagerID) throw new Error('Manager ID is required');
   
   try {
-    // Wrap in data object to match controller expectations
-    const response = await api.post(RESOURCE, { data: teamData });
+    const response = await api.post(RESOURCE, teamData);
     return response.data;
   } catch (error) {
     console.error('Error creating team:', error);
@@ -55,8 +54,7 @@ export async function updateTeam(teamId, teamData) {
   if (teamData.ManagerID === undefined) throw new Error('Manager ID is required');
   
   try {
-    // Wrap in data object to match controller expectations
-    const response = await api.put(`${RESOURCE}/${teamId}`, { data: teamData });
+    const response = await api.put(`${RESOURCE}/${teamId}`, teamData);
     return response.data;
   } catch (error) {
     console.error(`Error updating team with ID ${teamId}:`, error);
