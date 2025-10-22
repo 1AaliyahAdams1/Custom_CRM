@@ -233,7 +233,7 @@ const CreateDealPage = () => {
               <TextField
                 label="Value"
                 name="Value"
-                type="number"
+                type="text"
                 value={formData.Value}
                 onChange={handleInputChange}
                 onBlur={handleBlur}

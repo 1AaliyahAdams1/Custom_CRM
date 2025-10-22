@@ -169,13 +169,7 @@ const CustomerSegmentChart = ({ data }) => {
       }}
     >
       <CardContent>
-        <Typography
-          variant="h6"
-          sx={{ mb: 2, color: theme.palette.text.primary }}
-        >
-          Customer Segments
-        </Typography>
-
+       
         <Box sx={{ width: "100%", height: 320 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
