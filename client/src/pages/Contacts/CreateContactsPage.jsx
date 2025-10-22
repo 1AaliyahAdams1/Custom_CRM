@@ -47,19 +47,19 @@ const validateField = (name, value) => {
   
   switch(name) {
     case 'AccountID':
-      if (!value || value === '') {
+      if (!value || value === '' || value === null) {
         return 'Account is required';
       }
       break;
     
     case 'PersonID':
-      if (!value || value === '') {
+      if (!value || value === '' || value === null) {
         return 'Person is required';
       }
       break;
     
     case 'JobTitleID':
-      if (!value || value === '') {
+      if (!value || value === '' || value === null) {
         return 'Job Title is required';
       }
       break;
@@ -165,7 +165,6 @@ const CreateContactsPage = () => {
   getAll: async () => {
     try {
       const res = await getAllAccounts();
-      console.log('Account service response:', res); // Debug log
       
       // Handle different response structures
       if (Array.isArray(res)) {
@@ -229,32 +228,32 @@ const CreateContactsPage = () => {
     }
   };
 
-  const handlePersonChange = (e) => {
-    const { name, value } = e.target;
-    setPersonData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+const handlePersonChange = (e) => {
+  const { name, value } = e.target;
+  setPersonData((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
 
-    const touchedKey = `person_${name}`;
-    setTouched(prev => ({
-      ...prev,
-      [touchedKey]: true
-    }));
+  const touchedKey = `person_${name}`;
+  setTouched(prev => ({
+    ...prev,
+    [touchedKey]: true
+  }));
 
-    const errorMessage = validateField(name, value);
-    setFieldErrors(prev => {
-      const newErrors = { ...prev };
-      if (errorMessage) {
-        newErrors[touchedKey] = errorMessage;
-      } else {
-        delete newErrors[touchedKey];
-      }
-      return newErrors;
-    });
+  const errorMessage = validateField(name, value);
+  setFieldErrors(prev => {
+    const newErrors = { ...prev };
+    if (errorMessage) {
+      newErrors[touchedKey] = errorMessage;
+    } else {
+      delete newErrors[touchedKey];
+    }
+    return newErrors;
+  });
 
-    if (error) setError(null);
-  };
+  if (error) setError(null);
+};
 
   const handlePersonBlur = (e) => {
     const { name, value } = e.target;
@@ -277,32 +276,34 @@ const CreateContactsPage = () => {
     });
   };
 
-  const handleContactChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setContactData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+ const handleContactChange = (e) => {
+  const { name, value, type, checked } = e.target;
+  const actualValue = type === 'checkbox' ? checked : value;
+  
+  setContactData((prev) => ({
+    ...prev,
+    [name]: actualValue,
+  }));
 
-    const touchedKey = `contact_${name}`;
-    setTouched(prev => ({
-      ...prev,
-      [touchedKey]: true
-    }));
+  const touchedKey = `contact_${name}`;
+  setTouched(prev => ({
+    ...prev,
+    [touchedKey]: true
+  }));
 
-    const errorMessage = validateField(name, value);
-    setFieldErrors(prev => {
-      const newErrors = { ...prev };
-      if (errorMessage) {
-        newErrors[touchedKey] = errorMessage;
-      } else {
-        delete newErrors[touchedKey];
-      }
-      return newErrors;
-    });
+  const errorMessage = validateField(name, actualValue);
+  setFieldErrors(prev => {
+    const newErrors = { ...prev };
+    if (errorMessage) {
+      newErrors[touchedKey] = errorMessage;
+    } else {
+      delete newErrors[touchedKey];
+    }
+    return newErrors;
+  });
 
-    if (error) setError(null);
-  };
+  if (error) setError(null);
+};
 
   const handleContactBlur = (e) => {
     const { name, value } = e.target;
@@ -325,89 +326,138 @@ const CreateContactsPage = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Validate all fields before submit
-    const allErrors = {};
-    
-    // Validate contact fields
-    Object.keys(contactData).forEach(key => {
+  // Clear previous errors
+  setError(null);
+
+  // Validate all fields before submit
+  const allErrors = {};
+  
+  // Define required contact fields only
+  const requiredContactFields = ['AccountID', 'JobTitleID', 'WorkEmail'];
+  const requiredPersonFields = isNewPerson ? ['first_name', 'surname'] : [];
+  
+  // Validate required contact fields only
+  requiredContactFields.forEach(key => {
+    const errorMessage = validateField(key, contactData[key]);
+    if (errorMessage) {
+      allErrors[`contact_${key}`] = errorMessage;
+    }
+  });
+  
+  // Validate optional contact fields only if they have values
+  ['WorkPhone'].forEach(key => {
+    if (contactData[key]) {
       const errorMessage = validateField(key, contactData[key]);
       if (errorMessage) {
         allErrors[`contact_${key}`] = errorMessage;
       }
-    });
+    }
+  });
 
-    // Validate person fields if creating new person
-    if (isNewPerson) {
-      Object.keys(personData).forEach(key => {
+  // Validate person fields if creating new person
+  if (isNewPerson) {
+    requiredPersonFields.forEach(key => {
+      const errorMessage = validateField(key, personData[key]);
+      if (errorMessage) {
+        allErrors[`person_${key}`] = errorMessage;
+      }
+    });
+    
+    // Validate optional person fields only if they have values
+    ['personal_email', 'personal_mobile', 'linkedin_link', 'Title', 'middle_name'].forEach(key => {
+      if (personData[key]) {
         const errorMessage = validateField(key, personData[key]);
         if (errorMessage) {
           allErrors[`person_${key}`] = errorMessage;
         }
+      }
+    });
+  } else {
+    // Validate PersonID is selected when using existing person
+    const errorMessage = validateField('PersonID', contactData.PersonID);
+    if (errorMessage) {
+      allErrors['contact_PersonID'] = errorMessage;
+    }
+  }
+
+
+  if (Object.keys(allErrors).length > 0) {
+    setFieldErrors(allErrors);
+    
+    // Mark all validated fields as touched
+    const allTouched = {};
+    requiredContactFields.forEach(key => {
+      allTouched[`contact_${key}`] = true;
+    });
+    if (isNewPerson) {
+      requiredPersonFields.forEach(key => {
+        allTouched[`person_${key}`] = true;
       });
+    } else {
+      allTouched['contact_PersonID'] = true;
+    }
+    setTouched(allTouched);
+    
+    setError('Please fix validation errors before submitting');
+    return;
+  }
+
+  // Remove the duplicate setIsSubmitting(true) here
+  setIsSubmitting(true);
+
+  try {
+    let personIdToUse = contactData.PersonID;
+
+    if (isNewPerson) {
+      // Clean the person data - convert empty strings to null for foreign keys
+      const cleanedPersonData = {
+        Title: personData.Title || null,
+        first_name: personData.first_name,
+        middle_name: personData.middle_name || null,
+        surname: personData.surname,
+        linkedin_link: personData.linkedin_link || null,
+        personal_email: personData.personal_email || null,
+        personal_mobile: personData.personal_mobile || null,
+        CityID: personData.CityID && personData.CityID !== '' ? Number(personData.CityID) : null,
+      };
+  
+      const createdPerson = await createPerson(cleanedPersonData);
+      personIdToUse = createdPerson.PersonID || createdPerson.id || createdPerson;
     }
 
-    if (Object.keys(allErrors).length > 0) {
-      setFieldErrors(allErrors);
-      
-      // Mark all fields as touched
-      const allTouched = {};
-      Object.keys(contactData).forEach(key => {
-        allTouched[`contact_${key}`] = true;
-      });
-      if (isNewPerson) {
-        Object.keys(personData).forEach(key => {
-          allTouched[`person_${key}`] = true;
-        });
-      }
-      setTouched(allTouched);
-      
-      setError('Please fix validation errors before submitting');
+    if (!personIdToUse) {
+      setError('Please select or create a person.');
+      setIsSubmitting(false);
       return;
     }
 
-    setIsSubmitting(true);
-    setError(null);
+    const cleanedContactData = {
+      AccountID: contactData.AccountID && contactData.AccountID !== "" ? Number(contactData.AccountID) : null,
+      PersonID: Number(personIdToUse),
+      JobTitleID: contactData.JobTitleID && contactData.JobTitleID !== "" ? Number(contactData.JobTitleID) : null,
+      WorkEmail: contactData.WorkEmail || null,
+      WorkPhone: contactData.WorkPhone || null,
+    };
 
-    try {
-      let personIdToUse = contactData.PersonID;
+  
+    const result = await createContact(cleanedContactData);
+    
+    setSuccessMessage("Contact created successfully!");
+    
+    setTimeout(() => {
+      navigate('/contacts');
+    }, 1500);
 
-      if (isNewPerson) {
-        const createdPerson = await createPerson(personData);
-        personIdToUse = createdPerson.PersonID || createdPerson.id || createdPerson;
-      }
-
-      if (!personIdToUse) {
-        setError('Please select or create a person.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      const cleanedContactData = {
-        AccountID: contactData.AccountID === "" ? null : Number(contactData.AccountID),
-        PersonID: Number(personIdToUse),
-        JobTitleID: contactData.JobTitleID === "" ? null : Number(contactData.JobTitleID),
-        WorkEmail: contactData.WorkEmail === "" ? null : contactData.WorkEmail,
-        WorkPhone: contactData.WorkPhone === "" ? null : contactData.WorkPhone,
-      };
-
-      await createContact(cleanedContactData);
-      
-      setSuccessMessage("Contact created successfully!");
-      
-      setTimeout(() => {
-        navigate('/contacts');
-      }, 1500);
-
-    } catch (error) {
-      console.error('Error creating contact/person:', error);
-      setError(error.message || 'Failed to create contact. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  } catch (error) {
+    console.error('Error creating contact/person:', error);
+    setError(error.message || 'Failed to create contact. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleCancel = () => {
     navigate('/contacts');

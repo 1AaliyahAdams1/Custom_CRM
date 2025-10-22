@@ -95,20 +95,9 @@ const ClosedDealsChart = ({ data }) => {
             height: "100%",
           }}
         >
-          {/* Title */}
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 600,
-              color: theme.palette.text.primary,
-              mb: 2,
-            }}
-          >
-            Closed Deals Revenue Trend
-          </Typography>
-
+         
           {/* Chart */}
-          <Box sx={{ width: "100%", height: 320 }}>
+          <Box sx={{ width: "102%", height: 320 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={chartData}
