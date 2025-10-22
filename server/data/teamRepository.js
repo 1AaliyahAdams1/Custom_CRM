@@ -199,7 +199,6 @@ async function deleteTeam(teamId) {
 // TEAM MEMBER OPERATIONS
 // =======================
 
-// Get all members of a team
 async function getTeamMembers(teamId) {
   if (!teamId) throw new Error("teamId is required");
   
@@ -213,10 +212,20 @@ async function getTeamMembers(teamId) {
           tm.TeamID,
           tm.UserID,
           tm.JoinedAt,
-          tm.Active
+          tm.Active,
+          u.Username AS UserName,
+          u.Email AS UserEmail,
+          e.EmployeeID,
+          e.EmployeeName,
+          e.EmployeeEmail,
+          e.EmployeePhone,
+          e.DepartmentID AS EmployeeDepartmentID,
+          e.JobTitleID
         FROM dbo.TeamMember tm
+        INNER JOIN dbo.Users u ON tm.UserID = u.UserID
+        LEFT JOIN dbo.Employee e ON u.UserID = e.UserID
         WHERE tm.TeamID = @TeamID
-        ORDER BY tm.JoinedAt
+        ORDER BY tm.JoinedAt DESC
       `);
     return result.recordset;
   } catch (error) {
@@ -236,7 +245,7 @@ async function getAvailableUsers(teamId) {
       .query(`
         SELECT DISTINCT
           u.UserID
-        FROM dbo.[User] u
+        FROM dbo.Users u
         WHERE u.Active = 1
         AND u.UserID NOT IN (
           SELECT UserID 

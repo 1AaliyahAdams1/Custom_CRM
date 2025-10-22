@@ -48,17 +48,22 @@ export async function createTeam(teamData) {
 //======================================
 // Update an existing team
 //======================================
-export async function updateTeam(teamId, teamData) {
+export async function updateTeam(teamId, teamData, changedBy, actionTypeId) {
   if (!teamId) throw new Error('Team ID is required');
   if (!teamData.TeamName) throw new Error('Team name is required');
   if (teamData.ManagerID === undefined) throw new Error('Manager ID is required');
   
   try {
-    // Wrap in data object to match controller expectations
-    const response = await api.put(`${RESOURCE}/${teamId}`, { data: teamData });
+    // Wrap data to match backend expectations (like createTeam does)
+    const response = await api.put(`${RESOURCE}/${teamId}`, {
+      data: teamData,
+      changedBy,
+      actionTypeId
+    });
     return response.data;
   } catch (error) {
     console.error(`Error updating team with ID ${teamId}:`, error);
+    console.error('Request payload:', { data: teamData, changedBy, actionTypeId });
     throw error;
   }
 }
@@ -110,6 +115,7 @@ export async function deleteTeam(teamId) {
 //======================================
 export async function getTeamMembers(teamId) {
   if (!teamId) throw new Error('Team ID is required');
+  
   try {
     const response = await api.get(`${RESOURCE}/${teamId}/members`);
     return response.data;
@@ -122,35 +128,38 @@ export async function getTeamMembers(teamId) {
 //======================================
 // Add team member
 //======================================
-export async function addTeamMember(teamId, userId) {
-  if (!teamId) throw new Error('Team ID is required');
-  if (!userId) throw new Error('User ID is required');
+export async function addTeamMember(data) {
+  if (!data.TeamID) throw new Error('Team ID is required');
+  if (!data.UserID) throw new Error('User ID is required');
   
   try {
-    const response = await api.post(`${RESOURCE}/${teamId}/members`, { userId });
+    // Backend expects { userId } in body (lowercase)
+    const response = await api.post(`${RESOURCE}/${data.TeamID}/members`, {
+      userId: data.UserID
+    });
     return response.data;
   } catch (error) {
-    console.error(`Error adding member to team ${teamId}:`, error);
+    console.error('Error adding team member:', error);
     throw error;
   }
 }
 
 //======================================
-// Remove team member
+// Remove team member  
 //======================================
-export async function removeTeamMember(teamId, userId) {
-  if (!teamId) throw new Error('Team ID is required');
-  if (!userId) throw new Error('User ID is required');
+export async function removeTeamMember(data) {
+  if (!data.TeamID) throw new Error('Team ID is required');
+  if (!data.UserID) throw new Error('User ID is required');
   
   try {
-    const response = await api.delete(`${RESOURCE}/${teamId}/members/${userId}`);
+    // UserID goes in URL params, not body
+    const response = await api.delete(`${RESOURCE}/${data.TeamID}/members/${data.UserID}`);
     return response.data;
   } catch (error) {
-    console.error(`Error removing member from team ${teamId}:`, error);
+    console.error('Error removing team member:', error);
     throw error;
   }
 }
-
 //======================================
 // Get available users for team
 //======================================

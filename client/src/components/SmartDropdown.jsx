@@ -121,7 +121,7 @@ const SmartDropdown = ({
       : '';
 
     // Convert to number or empty string, not null
-    const finalValue = rawValue !== '' && rawValue != null ? Number(rawValue) : '';
+    const finalValue = rawValue !== '' ? Number(rawValue) : '';
     
     console.log(`🎯 ${label} selection:`, { 
       selectedOption: selectedOption ? formatDisplayText(selectedOption) : 'None', 
