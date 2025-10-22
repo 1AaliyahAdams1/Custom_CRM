@@ -332,6 +332,96 @@ async function isUserInTeam(teamId, userId) {
   }
 }
 
+// =======================
+// Get team by manager ID
+// =======================
+async function getTeamByManagerId(managerId) {
+  if (!managerId) throw new Error("managerId is required");
+  
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("ManagerID", sql.Int, managerId)
+      .query(`
+        SELECT 
+          TeamID,
+          TeamName,
+          ManagerID,
+          Active,
+          CreatedAt
+        FROM dbo.Team
+        WHERE ManagerID = @ManagerID AND Active = 1
+      `);
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("TeamRepo Error [getTeamByManagerId]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Get all user IDs in a team (including manager)
+// =======================
+async function getTeamMemberUserIds(teamId) {
+  if (!teamId) throw new Error("teamId is required");
+  
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("TeamID", sql.Int, teamId)
+      .query(`
+        SELECT DISTINCT UserID
+        FROM dbo.TeamMember
+        WHERE TeamID = @TeamID AND Active = 1
+        
+        UNION
+        
+        SELECT ManagerID as UserID
+        FROM dbo.Team
+        WHERE TeamID = @TeamID AND Active = 1
+      `);
+    return result.recordset.map(row => row.UserID);
+  } catch (error) {
+    console.error("TeamRepo Error [getTeamMemberUserIds]:", error);
+    throw error;
+  }
+}
+
+// =======================
+// Get employee IDs for team members
+// =======================
+async function getTeamMemberEmployeeIds(teamId) {
+  if (!teamId) throw new Error("teamId is required");
+  
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("TeamID", sql.Int, teamId)
+      .query(`
+        SELECT DISTINCT e.EmployeeID, e.EmployeeName, e.UserID
+        FROM dbo.Employee e
+        WHERE e.Active = 1
+        AND e.UserID IN (
+          SELECT UserID 
+          FROM dbo.TeamMember 
+          WHERE TeamID = @TeamID AND Active = 1
+          
+          UNION
+          
+          SELECT ManagerID
+          FROM dbo.Team
+          WHERE TeamID = @TeamID AND Active = 1
+        )
+        ORDER BY e.EmployeeName
+      `);
+    return result.recordset;
+  } catch (error) {
+    console.error("TeamRepo Error [getTeamMemberEmployeeIds]:", error);
+    throw error;
+  }
+}
+
+// Export these new functions
 module.exports = {
   getAllTeams,
   getTeamById,
@@ -344,5 +434,8 @@ module.exports = {
   getAvailableUsers,
   addTeamMember,
   removeTeamMember,
-  isUserInTeam
+  isUserInTeam,
+  getTeamByManagerId,           
+  getTeamMemberUserIds,         
+  getTeamMemberEmployeeIds      
 };

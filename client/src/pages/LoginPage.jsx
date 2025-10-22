@@ -1,17 +1,14 @@
-// LoginPage.jsx (with empty-field validation)
+// LoginPage.jsx (two-section black and white design with diagonal wavy background)
 import React, { useState } from "react";
 import useLogin from "../utils/auth/useLogin";
 import {
   Box,
-  CardContent,
   TextField,
   Button,
   Typography,
   IconButton,
   InputAdornment,
-  Divider,
   Container,
-  Paper,
   Alert,
   Fade,
   LinearProgress,
@@ -37,8 +34,6 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Reset field errors
     setFieldErrors({ identifier: "", password: "" });
 
     let hasError = false;
@@ -68,71 +63,281 @@ const LoginPage = () => {
       sx={{
         minHeight: "100vh",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)",
-        padding: 2,
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={0}
+         {/* Left Side - Diagonal Wave Background */}
+      <Box
+        sx={{
+          flex: { xs: 1, md: 1 },
+          width: { xs: "100%", md: "50%" },
+          position: "relative",
+          display: { xs: "none", md: "flex" },
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          background: "#000000",
+          borderRadius: { md: "30px" },
+        }}
+
+      >
+        {/* Animated Diagonal Wave Layers */}
+        <Box
           sx={{
-            p: 0,
-            borderRadius: 4,
+            position: "absolute",
+            inset: 0,
             overflow: "hidden",
-            boxShadow:
-              "0 20px 60px rgba(0, 0, 0, 0.1), 0 8px 25px rgba(0, 0, 0, 0.08)",
-            border: "1px solid rgba(0, 0, 0, 0.06)",
-            position: "relative",
           }}
         >
-          {isSubmitting && (
-            <LinearProgress
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                zIndex: 1,
-              }}
+          {/* Diagonal Wave 1 - Top */}
+          <svg
+            style={{
+              position: "absolute",
+              width: "150%",
+              height: "150%",
+              top: "-25%",
+              left: "-25%",
+              transform: "rotate(-35deg)",
+              opacity: 0.15,
+              animation: "wave1 16s ease-in-out infinite",
+            }}
+            viewBox="0 0 1440 800"
+            preserveAspectRatio="none"
+          >
+            <path
+              fill="#ffffff"
+              d="M0,0 L1440,0 L1440,200 C1120,250 840,150 720,200 C600,250 320,150 0,200 Z"
             />
-          )}
+          </svg>
 
-          {/* Header */}
+          {/* Diagonal Wave 2 */}
+          <svg
+            style={{
+              position: "absolute",
+              width: "150%",
+              height: "150%",
+              top: "-25%",
+              left: "-25%",
+              transform: "rotate(-35deg)",
+              opacity: 1,
+              animation: "wave2 14s ease-in-out infinite",
+            }}
+            viewBox="0 0 1440 800"
+            preserveAspectRatio="none"
+          >
+            <path
+              fill="#1a1a1a"
+              d="M0,400 C320,300 420,500 720,400 C1020,300 1120,500 1440,400 L1440,800 L0,800 Z"
+            />
+          </svg>
+
+          {/* Diagonal Wave 3 */}
+          <svg
+            style={{
+              position: "absolute",
+              width: "160%",
+              height: "160%",
+              top: "-30%",
+              left: "-30%",
+              transform: "rotate(-35deg)",
+              opacity: 0.12,
+              animation: "wave3 18s ease-in-out infinite reverse",
+            }}
+            viewBox="0 0 1440 800"
+            preserveAspectRatio="none"
+          >
+            <path
+              fill="#ffffff"
+              d="M0,500 C360,400 540,600 720,500 C900,400 1080,600 1440,500 L1440,800 L0,800 Z"
+            />
+          </svg>
+
+          {/* Diagonal Wave 4 */}
+          <svg
+            style={{
+              position: "absolute",
+              width: "180%",
+              height: "180%",
+              top: "-40%",
+              left: "-40%",
+              transform: "rotate(-35deg)",
+              opacity: 0.08,
+              animation: "wave4 20s ease-in-out infinite",
+            }}
+            viewBox="0 0 1440 800"
+            preserveAspectRatio="none"
+          >
+            <path
+              fill="#ffffff"
+              d="M0,300 C400,200 600,400 720,350 C840,300 1040,450 1440,350 L1440,800 L0,800 Z"
+            />
+          </svg>
+
+          {/* Diagonal Wave 5 - Bottom */}
+          <svg
+            style={{
+              position: "absolute",
+              width: "170%",
+              height: "170%",
+              top: "-35%",
+              left: "-35%",
+              transform: "rotate(-35deg)",
+              opacity: 0.6,
+              animation: "wave5 15s ease-in-out infinite reverse",
+            }}
+            viewBox="0 0 1440 800"
+            preserveAspectRatio="none"
+          >
+            <path
+              fill="#0a0a0a"
+              d="M0,650 C360,600 480,700 720,650 C960,600 1080,700 1440,650 L1440,800 L0,800 Z"
+            />
+          </svg>
+        </Box>
+
+        {/* Floating light overlays */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: "10%",
+            left: "20%",
+            width: "400px",
+            height: "400px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)",
+            animation: "float 12s ease-in-out infinite",
+            filter: "blur(60px)",
+          }}
+        />
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: "15%",
+            right: "10%",
+            width: "500px",
+            height: "500px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)",
+            animation: "float 18s ease-in-out infinite reverse",
+            filter: "blur(80px)",
+          }}
+        />
+
+        {/* Logo and text */}
+        <Box
+          sx={{
+            position: "relative",
+            zIndex: 2,
+            textAlign: "center",
+            px: 6,
+          }}
+        >
           <Box
             sx={{
-              background: "linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%)",
-              p: 4,
-              textAlign: "center",
-              color: "white",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 120,
+              height: 120,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)",
+              mb: 4,
+              boxShadow:
+                "0 20px 60px rgba(255, 255, 255, 0.2), 0 0 40px rgba(255, 255, 255, 0.1)",
+              animation: "pulse 3s ease-in-out infinite",
             }}
           >
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                background: "rgba(255, 255, 255, 0.1)",
-                backdropFilter: "blur(10px)",
-                mb: 2,
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
-            >
-              <Business sx={{ fontSize: 32, color: "white" }} />
-            </Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-              Entertainment.FM CRM
-            </Typography>
+            <Business sx={{ fontSize: 60, color: "#000" }} />
           </Box>
+          <Typography
+            variant="h2"
+            sx={{
+              fontWeight: 800,
+              mb: 2,
+              color: "#ffffff",
+              textShadow: "0 4px 30px rgba(255, 255, 255, 0.3)",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Entertainment.FM
+          </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              color: "rgba(255, 255, 255, 0.7)",
+              fontWeight: 300,
+              letterSpacing: "0.15em",
+              mb: 4,
+            }}
+          >
+            CUSTOMER RELATIONSHIP MANAGEMENT
+          </Typography>
+          <Box
+            sx={{
+              width: "80px",
+              height: "2px",
+              background: "linear-gradient(90deg, transparent, #ffffff, transparent)",
+              margin: "0 auto",
+            }}
+          />
+        </Box>
+      </Box>
 
-          {/* Form */}
-          <CardContent sx={{ p: 4 }}>
+      {/* Right Side - Login Form */}
+      <Box
+        sx={{
+          flex: { xs: 1, md: 1 },
+          width: { xs: "100%", md: "50%" },
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#ffffff",
+          position: "relative",
+          padding: 3,
+        }}
+      >
+        <Container maxWidth="sm">
+          <Box sx={{ width: "100%", maxWidth: "480px", margin: "0 auto" }}>
+            {isSubmitting && (
+              <LinearProgress
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  zIndex: 1,
+                  background: "rgba(0, 0, 0, 0.05)",
+                  "& .MuiLinearProgress-bar": {
+                    background: "linear-gradient(90deg, #000000, #333333, #000000)",
+                  },
+                }}
+              />
+            )}
+
+            {/* Header */}
+            <Box sx={{ mb: 5, textAlign: "center" }}>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 800,
+                  mb: 1,
+                  color: "#000000",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Welcome Back
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{ color: "#666666", fontWeight: 400 }}
+              >
+                Sign in to your account
+              </Typography>
+            </Box>
+
+            {/* Form */}
             <Box component="form" onSubmit={handleSubmit}>
-              {/* Backend error */}
               {error && (
                 <Fade in={true}>
                   <Alert
@@ -140,7 +345,11 @@ const LoginPage = () => {
                     sx={{
                       mb: 3,
                       borderRadius: 2,
-                      animation: "shake 0.5s ease-in-out",
+                      background: "#000000",
+                      color: "#ffffff",
+                      border: "1px solid #333333",
+                      "& .MuiAlert-icon": { color: "#ffffff" },
+                      animation: "slideIn 0.3s ease-out",
                     }}
                     icon={<ErrorOutline />}
                   >
@@ -149,7 +358,7 @@ const LoginPage = () => {
                 </Fade>
               )}
 
-              {/* Identifier Field */}
+              {/* Identifier */}
               <TextField
                 fullWidth
                 name="identifier"
@@ -158,23 +367,22 @@ const LoginPage = () => {
                 onChange={(e) => {
                   setIdentifier(e.target.value);
                   if (error) setError("");
-                  if (fieldErrors.identifier) {
-                    setFieldErrors((prev) => ({ ...prev, identifier: "" }));
-                  }
+                  if (fieldErrors.identifier)
+                    setFieldErrors((p) => ({ ...p, identifier: "" }));
                 }}
                 error={!!fieldErrors.identifier}
-                helpertext={fieldErrors.identifier}
+                helperText={fieldErrors.identifier}
                 sx={{ mb: 3 }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Email sx={{ color: "#666" }} />
+                      <Email sx={{ color: "#333333" }} />
                     </InputAdornment>
                   ),
                 }}
               />
 
-              {/* Password Field */}
+              {/* Password */}
               <TextField
                 fullWidth
                 name="password"
@@ -184,17 +392,16 @@ const LoginPage = () => {
                 onChange={(e) => {
                   setPassword(e.target.value);
                   if (error) setError("");
-                  if (fieldErrors.password) {
-                    setFieldErrors((prev) => ({ ...prev, password: "" }));
-                  }
+                  if (fieldErrors.password)
+                    setFieldErrors((p) => ({ ...p, password: "" }));
                 }}
                 error={!!fieldErrors.password}
-                helpertext={fieldErrors.password}
-                sx={{ mb: 3 }}
+                helperText={fieldErrors.password}
+                sx={{ mb: 4 }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Lock sx={{ color: "#666" }} />
+                      <Lock sx={{ color: "#333333" }} />
                     </InputAdornment>
                   ),
                   endAdornment: (
@@ -216,65 +423,102 @@ const LoginPage = () => {
                 disabled={isSubmitting}
                 endIcon={isSubmitting ? null : <ArrowForward />}
                 sx={{
-                  py: 1.5,
+                  py: 2,
                   borderRadius: 2,
-                  background: "linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%)",
-                  fontSize: "1rem",
-                  fontWeight: 600,
+                  background: "#000000",
+                  fontSize: "1.1rem",
+                  fontWeight: 700,
                   textTransform: "none",
-                  boxShadow: "0 8px 20px rgba(0, 0, 0, 0.2)",
-                  "&:hover": {
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
+                  position: "relative",
+                  overflow: "hidden",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: "-100%",
+                    width: "100%",
+                    height: "100%",
                     background:
-                      "linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)",
-                    boxShadow: "0 12px 30px rgba(0, 0, 0, 0.3)",
-                    transform: "translateY(-1px)",
+                      "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)",
+                    transition: "left 0.5s",
+                  },
+                  "&:hover": {
+                    background: "#1a1a1a",
+                    boxShadow: "0 15px 40px rgba(0, 0, 0, 0.4)",
+                    transform: "translateY(-3px)",
+                    "&::before": { left: "100%" },
                   },
                   "&:disabled": {
-                    color: "rgba(255, 255, 255, 0.5)",
+                    background: "#cccccc",
+                    color: "rgba(0, 0, 0, 0.5)",
                   },
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
               >
                 {isSubmitting ? "Signing In..." : "Login"}
               </Button>
 
-              <Divider sx={{ my: 3, color: "#ccc" }} />
-
-              <Box sx={{ textAlign: "center" }}>
-                <Button variant="text" size="small" sx={{ color: "#666" }}>
+              <Box sx={{ mt: 3, textAlign: "center" }}>
+                <Button
+                  variant="text"
+                  size="small"
+                  sx={{
+                    color: "#666666",
+                    fontWeight: 500,
+                    "&:hover": {
+                      color: "#000000",
+                      background: "rgba(0, 0, 0, 0.05)",
+                    },
+                  }}
+                >
                   Forgot your password?
                 </Button>
               </Box>
             </Box>
-          </CardContent>
 
-          <Box
-            sx={{
-              p: 2,
-              backgroundColor: "#fafafa",
-              borderTop: "1px solid rgba(0, 0, 0, 0.06)",
-              textAlign: "center",
-            }}
-          >
-            <Typography variant="caption" sx={{ color: "#999" }}>
-              © 2025 CRM Portal
-            </Typography>
+            {/* Footer */}
+            <Box sx={{ mt: 6, textAlign: "center" }}>
+              <Typography variant="caption" sx={{ color: "#999999" }}>
+                © 2025 CRM Portal
+              </Typography>
+            </Box>
           </Box>
-        </Paper>
-      </Container>
+        </Container>
+      </Box>
 
+      {/* Animations */}
       <style jsx>{`
-        @keyframes shake {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-          25% {
-            transform: translateX(-5px);
-          }
-          75% {
-            transform: translateX(5px);
-          }
+        @keyframes wave1 {
+          0%, 100% { transform: rotate(-35deg) translateY(0); }
+          50% { transform: rotate(-35deg) translateY(20px); }
+        }
+        @keyframes wave2 {
+          0%, 100% { transform: rotate(-35deg) translateY(0); }
+          50% { transform: rotate(-35deg) translateY(-30px); }
+        }
+        @keyframes wave3 {
+          0%, 100% { transform: rotate(-35deg) translateY(0); }
+          50% { transform: rotate(-35deg) translateY(20px); }
+        }
+        @keyframes wave4 {
+          0%, 100% { transform: rotate(-35deg) translateY(0); }
+          50% { transform: rotate(-35deg) translateY(-40px); }
+        }
+        @keyframes wave5 {
+          0%, 100% { transform: rotate(-35deg) translateY(0); }
+          50% { transform: rotate(-35deg) translateY(-25px); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(20px, -20px) scale(1.05); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </Box>

@@ -14,12 +14,23 @@ import {
 } from "@mui/material";
 import { getAllEmployees } from "../../services/employeeService";
 
-const AssignUserDialog = ({ open, onClose, onAssign, menuRow }) => {
+const AssignUserDialog = ({ 
+  open, 
+  onClose, 
+  onAssign, 
+  menuRow,
+  account,  // Keep for backward compatibility
+  restrictToTeam = false,  // NEW: Restrict to team members only
+  teamMembers = []  // NEW: Array of team member employees
+}) => {
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState("");
+
+  // Use menuRow or account prop for backward compatibility
+  const currentAccount = menuRow || account;
 
   // Fetch all employees when dialog opens
   useEffect(() => {
@@ -32,17 +43,31 @@ const AssignUserDialog = ({ open, onClose, onAssign, menuRow }) => {
 
     setLoading(true);
     setError("");
-    getAllEmployees()
-      .then((res) => {
-        console.log("Fetched employees:", res); // Debug log
-        setEmployees(res || []);
-      })
-      .catch((err) => {
-        console.error("Error fetching employees:", err);
-        setError("Failed to load employees. Please try again.");
-      })
-      .finally(() => setLoading(false));
-  }, [open]);
+    
+    // NEW: If Sales Manager, use team members instead of all employees
+    if (restrictToTeam && teamMembers.length > 0) {
+      console.log("Using team members for assignment:", teamMembers);
+      setEmployees(teamMembers);
+      setLoading(false);
+    } else if (restrictToTeam && teamMembers.length === 0) {
+      // Sales Manager but no team members
+      setEmployees([]);
+      setError("No team members available for assignment");
+      setLoading(false);
+    } else {
+      // C-level or other roles - fetch all employees
+      getAllEmployees()
+        .then((res) => {
+          console.log("Fetched all employees:", res);
+          setEmployees(res || []);
+        })
+        .catch((err) => {
+          console.error("Error fetching employees:", err);
+          setError("Failed to load employees. Please try again.");
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [open, restrictToTeam, teamMembers]);
 
   // Handle assignment
   const handleAssign = async () => {
@@ -51,7 +76,7 @@ const AssignUserDialog = ({ open, onClose, onAssign, menuRow }) => {
       return;
     }
 
-    if (!menuRow?.AccountID) {
+    if (!currentAccount?.AccountID) {
       setError("Account information is missing");
       return;
     }
@@ -61,7 +86,12 @@ const AssignUserDialog = ({ open, onClose, onAssign, menuRow }) => {
     
     try {
       // Call the onAssign callback passed from parent
-      await onAssign(selectedEmployee, menuRow);
+      // Support both old (with menuRow) and new (with just employeeId) signature
+      if (menuRow) {
+        await onAssign(selectedEmployee, menuRow);
+      } else {
+        await onAssign(selectedEmployee);
+      }
       
       // Reset form and close dialog
       setSelectedEmployee("");
@@ -86,6 +116,13 @@ const AssignUserDialog = ({ open, onClose, onAssign, menuRow }) => {
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
       <DialogTitle>Assign Employee to Account</DialogTitle>
       <DialogContent>
+        {/* NEW: Show info alert for Sales Managers */}
+        {restrictToTeam && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            You can only assign members from your team
+          </Alert>
+        )}
+
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -106,7 +143,11 @@ const AssignUserDialog = ({ open, onClose, onAssign, menuRow }) => {
               disabled={assigning}
             >
               {employees.length === 0 ? (
-                <MenuItem disabled>No employees available</MenuItem>
+                <MenuItem disabled>
+                  {restrictToTeam 
+                    ? "No team members available" 
+                    : "No employees available"}
+                </MenuItem>
               ) : (
                 employees.map((emp) => (
                   <MenuItem key={emp.EmployeeID} value={emp.EmployeeID}>
@@ -118,9 +159,9 @@ const AssignUserDialog = ({ open, onClose, onAssign, menuRow }) => {
           </FormControl>
         )}
 
-        {menuRow && (
+        {currentAccount && (
           <div style={{ marginTop: '16px', fontSize: '0.875rem', color: '#666' }}>
-            Account: {menuRow.AccountName || `Account ID: ${menuRow.AccountID}`}
+            Account: {currentAccount.AccountName || `Account ID: ${currentAccount.AccountID}`}
           </div>
         )}
       </DialogContent>

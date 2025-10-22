@@ -38,4 +38,20 @@ router.post("/:id/members", teamController.addTeamMember);
 // Remove team member
 router.delete("/:id/members/:userId", teamController.removeTeamMember);
 
+//======================================
+// NEW: Team Filtering Routes
+//======================================
+
+// Get team by manager ID
+router.get("/manager/:managerId", teamController.getTeamByManagerId);
+
+// Get team member user IDs
+router.get("/:id/member-ids", teamController.getTeamMemberUserIds);
+
+// Get team member employees (for assignment)
+router.get("/:id/member-employees", teamController.getTeamMemberEmployees);
+
+// Get current user's team members (requires authentication)
+router.get("/my/members", teamController.getMyTeamMembers);
+
 module.exports = router;

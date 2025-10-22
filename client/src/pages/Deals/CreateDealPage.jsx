@@ -14,6 +14,7 @@ import { useTheme } from '@mui/material/styles';
 import SmartDropdown from '../../components/SmartDropdown';
 import { createDeal } from '../../services/dealService';
 import { getAllAccounts } from '../../services/accountService';
+import { getAllCurrencies } from '../../services/currencyService';
 import { dealStageService } from '../../services/dropdownServices';
 
 const CreateDealPage = () => {
@@ -141,6 +142,17 @@ const CreateDealPage = () => {
     },
   };
 
+  const currencyService = {
+    getAll: async () => {
+      try {
+        const response = await getAllCurrencies();
+        return response.data || response;
+      } catch {
+        return [];
+      }
+    },
+  };
+
   return (
     <Box sx={{ 
       width: '100%', 
@@ -230,6 +242,20 @@ const CreateDealPage = () => {
                 helperText={getFieldError('Value')}
               />
 
+              <SmartDropdown
+                label="Currency"
+                name="CurrencyID"
+                value={formData.CurrencyID}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                service={currencyService}
+                displayField="LocalName"
+                valueField="CurrencyID"
+                disabled={isSubmitting}
+                error={isFieldInvalid('CurrencyID')}
+                helperText={getFieldError('CurrencyID')}
+              />
+
               <TextField
                 label="Close Date"
                 name="CloseDate"
@@ -253,17 +279,6 @@ const CreateDealPage = () => {
                 fullWidth
                 error={isFieldInvalid('Probability')}
                 helperText={getFieldError('Probability')}
-              />
-
-              <TextField
-                label="Currency ID"
-                name="CurrencyID"
-                value={formData.CurrencyID}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
-                fullWidth
-                error={isFieldInvalid('CurrencyID')}
-                helperText={getFieldError('CurrencyID')}
               />
             </Box>
           </form>

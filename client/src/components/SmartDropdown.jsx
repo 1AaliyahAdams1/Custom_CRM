@@ -128,8 +128,17 @@ const SmartDropdown = ({
       finalValue 
     });
     
-    onChange({ target: { name, value: finalValue } });
+   if (onChange) {
+      onChange({ 
+        target: { 
+          name, 
+          value: finalValue 
+        } 
+      });
+    }
+    
     setOpen(false);
+    setHighlightedIndex(-1);
   };
 
   const handleKeyDown = (event) => {
@@ -205,7 +214,7 @@ const SmartDropdown = ({
         <TextField
           ref={inputRef}
           name={name}
-          label={`${label}${required ? ' *' : ''}`}
+          label={label}
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}

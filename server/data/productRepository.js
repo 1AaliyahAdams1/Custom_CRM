@@ -24,7 +24,7 @@ async function getProductById(id) {
 // =======================
 // Create product 
 // =======================
-async function createProduct(productData, changedBy = 0, actionTypeID) {
+async function createProduct(productData, changedBy = 0, actionTypeID = 1) {
   const {
     AccountID,
     ProductName,
@@ -57,7 +57,7 @@ async function createProduct(productData, changedBy = 0, actionTypeID) {
 // =======================
 // Update product 
 // =======================
-async function updateProduct(id, productData, changedBy = 0, actionTypeID) {
+async function updateProduct(id, productData, changedBy = 0, actionTypeID = 2) {
   const {
     AccountID,
     ProductName,
@@ -88,7 +88,7 @@ async function updateProduct(id, productData, changedBy = 0, actionTypeID) {
 // =======================
 // Deactivate product + audit log
 // =======================
-async function deactivateProduct(productId, changedBy = 0, actionTypeID = 3) {
+async function deactivateProduct(productId, changedBy = 0, actionTypeID = 7) {
   const pool = await sql.connect(dbConfig);
   
   // First get the product data
@@ -131,7 +131,7 @@ async function deactivateProduct(productId, changedBy = 0, actionTypeID = 3) {
 // =======================
 // Reactivate product + audit log
 // =======================
-async function reactivateProduct(productId, changedBy = 0, actionTypeID = 4) {
+async function reactivateProduct(productId, changedBy = 0, actionTypeID = 8) {
   const pool = await sql.connect(dbConfig);
   
   // First get the product data
@@ -174,7 +174,7 @@ async function reactivateProduct(productId, changedBy = 0, actionTypeID = 4) {
 // =======================
 // Delete product + audit log
 // =======================
-async function deleteProduct(productId, changedBy = 0, actionTypeID = 5) {
+async function deleteProduct(productId, changedBy = 0, actionTypeID = 3) {
   const pool = await sql.connect(dbConfig);
   
   // First get the product data

@@ -131,6 +131,44 @@ const deleteSequence = async (req, res) => {
 };
 
 //======================================
+// Deactivate sequence item
+//======================================
+const deactivateSequenceItem = async (req, res) => {
+  try {
+    const itemId = parseInt(req.params.itemId, 10);
+    
+    if (!itemId || isNaN(itemId)) {
+      return res.status(400).json({ error: "Valid Sequence Item ID is required" });
+    }
+
+    const result = await sequenceService.deactivateSequenceItem(itemId);
+    res.status(200).json(result);
+  } catch (err) {
+    const statusCode = err.message.includes("not found") || err.message.includes("already") ? 400 : 500;
+    res.status(statusCode).json({ error: err.message });
+  }
+};
+
+//======================================
+// Reactivate sequence item
+//======================================
+const reactivateSequenceItem = async (req, res) => {
+  try {
+    const itemId = parseInt(req.params.itemId, 10);
+    
+    if (!itemId || isNaN(itemId)) {
+      return res.status(400).json({ error: "Valid Sequence Item ID is required" });
+    }
+
+    const result = await sequenceService.reactivateSequenceItem(itemId);
+    res.status(200).json(result);
+  } catch (err) {
+    const statusCode = err.message.includes("not found") || err.message.includes("already") ? 400 : 500;
+    res.status(statusCode).json({ error: err.message });
+  }
+};
+
+//======================================
 // SEQUENCE ITEM CRUD
 //======================================
 const getSequenceItemByID = async (req, res) => {
@@ -305,6 +343,8 @@ module.exports = {
   getSequenceItemByID,
   createSequenceItem,
   updateSequenceItem,
+  deactivateSequenceItem, 
+  reactivateSequenceItem,
   deleteSequenceItem,
   createSequenceWithItems,
   assignSequenceToAccount,

@@ -357,6 +357,7 @@ export default function SequencesDetailPage() {
         </Alert>
       )}
       
+      
       <UniversalDetailView
         title={sequence.SequenceName || 'Sequence Details'}
         subtitle={`Sequence ID: ${sequence.SequenceID}`}
@@ -373,7 +374,6 @@ export default function SequencesDetailPage() {
         entityType="sequence"
         relatedDataActions={relatedDataActions}
         onRefreshRelatedData={handleRefreshRelatedData}
-        // Don't pass these - let relatedDataActions control everything
       />
       
       <ConfirmDialog
