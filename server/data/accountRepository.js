@@ -176,7 +176,7 @@ async function updateAccount(id, accountData, changedBy = 1) {
       .input('CreatedAt', sql.SmallDateTime, new Date())
       .input('UpdatedAt', sql.SmallDateTime, new Date())
       .input('ChangedBy', sql.Int, changedBy)
-      .input('ActionTypeID', sql.Int, 1)
+      .input('ActionTypeID', sql.Int, 2)
       .input("SequenceID", sql.Int, SequenceID)
       .execute('UpdateAccount');
 
@@ -190,7 +190,7 @@ async function updateAccount(id, accountData, changedBy = 1) {
 //======================================
 // Deactivate account
 //======================================
-async function deactivateAccount(account, changedBy, actionTypeId) {
+async function deactivateAccount(account, changedBy) {
   try {
     const pool = await sql.connect(dbConfig);
 
@@ -223,7 +223,7 @@ async function deactivateAccount(account, changedBy, actionTypeId) {
       .input('ChangedBy', sql.Int, changedBy)
       .input("StateProvinceID", sql.Int, account.StateProvinceID)
       .input("CountryID", sql.Int, account.CountryID)
-      .input('ActionTypeID', sql.Int, actionTypeId)
+      .input('ActionTypeID', sql.Int, 7)
       .input('sequenceID', sql.Int, account.sequenceID)
       .execute('DeactivateAccount');
 

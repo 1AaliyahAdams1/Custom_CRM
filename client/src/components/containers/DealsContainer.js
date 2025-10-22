@@ -39,6 +39,8 @@ const DealsContainer = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusSeverity, setStatusSeverity] = useState("success");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [refreshFlag, setRefreshFlag] = useState(false);
@@ -293,10 +295,12 @@ const DealsContainer = () => {
 
     try {
       await deactivateDeal(dealToDelete.DealID);
-      setSuccessMessage("Deal deactivated successfully.");
+      setStatusMessage("Deal deactivated successfully.");
+      setStatusSeverity("success");
       setRefreshFlag((flag) => !flag);
     } catch {
-      setError("Failed to deactivate deal. Please try again.");
+      setStatusMessage("Failed to deactivate deal. Please try again.");
+      setStatusSeverity("error");
     } finally {
       setDeleteDialogOpen(false);
       setDealToDelete(null);
@@ -313,11 +317,13 @@ const DealsContainer = () => {
 
     try {
       await reactivateDeal(dealToReactivate.DealID);
-      setSuccessMessage("Deal reactivated successfully.");
+      setStatusMessage("Deal reactivated successfully.");
+      setStatusSeverity("success");
       setRefreshFlag((flag) => !flag);
     } catch (err) {
       console.error("Error reactivating deal:", err);
-      setError("Failed to reactivate deal. Please try again.");
+      setStatusMessage("Failed to reactivate deal. Please try again.");
+      setStatusSeverity("error");
     } finally {
       setReactivateDialogOpen(false);
       setDealToReactivate(null);
@@ -452,6 +458,9 @@ const DealsContainer = () => {
         setSearchTerm={setSearchTerm}
         setStatusFilter={setStatusFilter}
         setSuccessMessage={setSuccessMessage}
+        statusMessage={statusMessage}
+        onCloseStatusMessage={setStatusMessage}
+        statusSeverity={statusSeverity}
         onSelectClick={handleSelectClick}
         onSelectAllClick={handleSelectAllClick}
         onDeactivate={handleDeactivateClick}
