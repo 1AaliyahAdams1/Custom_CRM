@@ -37,7 +37,6 @@ const getTeamById = async (req, res) => {
 //======================================
 const createTeam = async (req, res) => {
     try {
-        // Extract from nested data object (matching employee pattern)
         const { data, changedBy, actionTypeId, loggedInUserId } = req.body;
         
         if (!data) {
@@ -53,7 +52,6 @@ const createTeam = async (req, res) => {
             return res.status(400).json({ error: "Manager ID is required" });
         }
 
-        // Call service with full teamData object
         const newTeam = await teamService.createTeam({
             TeamName,
             ManagerID
@@ -199,14 +197,123 @@ const removeTeamMember = async (req, res) => {
     }
 };
 
+//======================================
+// Get team by manager ID
+//======================================
+const getTeamByManagerId = async (req, res) => {
+  try {
+    const managerId = req.user?.UserID || req.user?.id || req.params.managerId;
+    
+    if (!managerId) {
+      return res.status(401).json({ error: "Manager ID not found" });
+    }
+    
+    const team = await teamService.getTeamByManagerId(managerId);
+    
+    if (!team) {
+      return res.status(404).json({ error: "No team found for this manager" });
+    }
+    
+    res.status(200).json(team);
+  } catch (err) {
+    console.error("Error in getTeamByManagerId controller:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get team member user IDs
+//======================================
+const getTeamMemberUserIds = async (req, res) => {
+  const teamId = req.params.id;
+  try {
+    const userIds = await teamService.getTeamMemberUserIds(teamId);
+    res.status(200).json(userIds);
+  } catch (err) {
+    console.error("Error in getTeamMemberUserIds controller:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get team member employees (for assignment dropdown)
+//======================================
+const getTeamMemberEmployees = async (req, res) => {
+  const teamId = req.params.id;
+  try {
+    const employees = await teamService.getTeamMemberEmployeeIds(teamId);
+    res.status(200).json(employees);
+  } catch (err) {
+    console.error("Error in getTeamMemberEmployees controller:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//======================================
+// Get current user's team members (for Sales Managers)
+// FIXED: Better error handling and validation
+//======================================
+const getMyTeamMembers = async (req, res) => {
+  try {
+    const userId = req.user?.UserID || req.user?.id;
+    
+    console.log("🔍 getMyTeamMembers called for userId:", userId);
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        error: "User not authenticated",
+        teamMembers: []
+      });
+    }
+    
+    // Get the user's team
+    const team = await teamService.getTeamByManagerId(userId);
+    
+    console.log("📋 Team found:", team);
+    
+    if (!team) {
+      console.log("⚠️ No team found for manager, returning empty array");
+      return res.status(200).json([]); // Return empty array instead of 404
+    }
+    
+    // Validate TeamID exists and is a number
+    if (!team.TeamID || typeof team.TeamID !== 'number') {
+      console.error("❌ Invalid TeamID:", team.TeamID);
+      return res.status(500).json({ 
+        error: "Invalid team data",
+        teamMembers: []
+      });
+    }
+    
+    console.log("✅ Valid TeamID:", team.TeamID, "- Fetching members...");
+    
+    // Get team member employees
+    const employees = await teamService.getTeamMemberEmployeeIds(team.TeamID);
+    
+    console.log("👥 Team members found:", employees.length);
+    
+    res.status(200).json(employees);
+  } catch (err) {
+    console.error("❌ Error in getMyTeamMembers controller:", err);
+    res.status(500).json({ 
+      error: err.message,
+      teamMembers: []
+    });
+  }
+};
+
 module.exports = {
-    getAllTeams,
-    getTeamById,
-    createTeam,
-    updateTeam,
-    deactivateTeam,
-    reactivateTeam,
-    getTeamMembers,
-    addTeamMember,
-    removeTeamMember
+  getAllTeams,
+  getTeamById,
+  createTeam,
+  updateTeam,
+  deactivateTeam,
+  reactivateTeam,
+  getTeamMembers,
+  addTeamMember,
+  removeTeamMember,
+  getTeamByManagerId,
+  getTeamMemberUserIds,
+  getTeamMemberEmployees,
+  getMyTeamMembers
 };

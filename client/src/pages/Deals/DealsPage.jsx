@@ -20,6 +20,7 @@ import { Add } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { formatters } from '../../utils/formatters';
 import TableView from '../../components/tableFormat/TableView';
+import StatusMessage from '../../components/tableFormat/StatusMessage';
 
 // Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {
@@ -49,6 +50,10 @@ const DealsPage = ({
   setStatusFilter,
   clearFilters,
   onDeactivate,
+  onReactivate,
+  statusMessage,
+  onCloseStatusMessage,
+  statusSeverity = "success",
   onEdit,
   onView,
   onCreate,
@@ -171,6 +176,21 @@ const DealsPage = ({
       minHeight: "100vh", 
       p: 3 
     }}>
+      {/* Status Message */}
+      {statusMessage && (
+        <Box sx={{ mb: 2 }}>
+          <StatusMessage
+            message={statusMessage}
+            severity={statusSeverity}
+            onClose={() => onCloseStatusMessage("")}
+            duration={4000}
+          />
+        </Box>
+      )}
+
+      {/* Error Alert */}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
       <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
         {/* Tabs */}
         <Box sx={{ borderBottom: 1, borderColor: theme.palette.divider }}>
@@ -207,13 +227,6 @@ const DealsPage = ({
 
         {/* Deals Tab */}
         <TabPanel value={currentTab} index={0}>
-          {error && <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>}
-          {successMessage && (
-            <Alert severity="success" sx={{ m: 2 }} onClose={() => setSuccessMessage("")}>
-              {successMessage}
-            </Alert>
-          )}
-
           {/* Toolbar */}
           <Toolbar
             sx={{
@@ -299,6 +312,7 @@ const DealsPage = ({
               showSelection
               onView={onView}
               onEdit={onEdit}
+              onReactivate={onReactivate}
               onDelete={onDeactivate}
               onAddNote={onAddNote}
               onAddAttachment={onAddAttachment}

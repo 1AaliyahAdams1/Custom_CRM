@@ -524,7 +524,7 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
   const renderField = useCallback((field) => {
   const value = formData[field.key] ?? "";
 
-  if (!isEditing) {
+  if (!isEditing || field.readOnly || field.editable === false) {
     if (field.type === "boolean") return <Checkbox checked={Boolean(value)} disabled size="small" />;
     if (field.type === "link" && value)
       return (
@@ -536,7 +536,7 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
     if (field.type === "date" && value) return new Date(value).toLocaleDateString();
     if (field.type === "datetime" && value) return new Date(value).toLocaleString();
     
-    // UPDATED DROPDOWN LOGIC FOR VIEW MODE
+    // DROPDOWN LOGIC FOR VIEW MODE OR READ-ONLY FIELDS
     if (field.type === "dropdown") {
       // First check if we have the display name in the item itself
       if (item?.[field.displayField]) {

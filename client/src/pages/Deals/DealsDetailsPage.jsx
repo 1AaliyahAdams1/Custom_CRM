@@ -3,12 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Box, Alert, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
-import { fetchDealById, deleteDeal } from "../../services/dealService";
+import { fetchDealById, updateDeal, deleteDeal } from "../../services/dealService";
 import { getAllAccounts } from "../../services/accountService";
 import { getAllContacts } from "../../services/contactService";
 import { getAllActivities } from "../../services/activityService";
 import { getAllNotes } from "../../services/noteService";
 import { getAllAttachments } from "../../services/attachmentService";
+import { getAllCurrencies } from "../../services/currencyService";
+import { dealStageService } from "../../services/dropdownServices";
 
 export default function DealDetailsPage() {
   const theme = useTheme();
@@ -55,25 +57,88 @@ export default function DealDetailsPage() {
     navigateRef.current("/deals");
   }, []);
 
-  // Define main fields
+  // Currency service wrapper for dropdown - wrapped in useMemo
+  const currencyService = useMemo(() => ({
+    getAll: async () => {
+      try {
+        const response = await getAllCurrencies();
+        return response.data || response;
+      } catch {
+        return [];
+      }
+    },
+  }), []);
+
+  // Define main fields - aligned with EditDealPage
   const mainFields = useMemo(() => [
-    { key: 'DealName', label: 'Deal Name', type: 'text', required: true },
-    { key: 'AccountID', label: 'Account ID', type: 'number' },
-    { key: 'StageName', label: 'Stage', type: 'text', required: true },
-    { key: 'Value', label: 'Deal Value', type: 'currency' },
-    { key: 'Symbol', label: 'Currency Symbol', type: 'text' },
-    { key: 'LocalName', label: 'Currency', type: 'text' },
-    { key: 'CloseDate', label: 'Close Date', type: 'date' },
-    { key: 'Progression', label: 'Probability (%)', type: 'percentage' },
-    { key: 'Description', label: 'Description', type: 'textarea' },
-    { key: 'LeadSource', label: 'Lead Source', type: 'text' },
-    { key: 'Type', label: 'Deal Type', type: 'text' },
-    { key: 'NextStep', label: 'Next Step', type: 'textarea' },
-    { key: 'CompetitorAnalysis', label: 'Competitor Analysis', type: 'textarea' },
-    { key: 'Active', label: 'Active', type: 'boolean' },
-    { key: 'CreatedAt', label: 'Created At', type: 'datetime' },
-    { key: 'UpdatedAt', label: 'Updated At', type: 'datetime' },
-  ], []);
+    { 
+      key: 'AccountName', 
+      label: 'Account', 
+      type: 'text', 
+      required: true, 
+      readOnly: true 
+    },
+    { 
+      key: 'DealName', 
+      label: 'Deal Name', 
+      type: 'text', 
+      required: true, 
+      readOnly: true 
+    },
+    { 
+      key: 'DealStageID', 
+      label: 'Deal Stage', 
+      type: 'dropdown', 
+      required: true, 
+      editable: true,
+      service: dealStageService,
+      displayField: 'StageName',
+      valueField: 'DealStageID'
+    },
+    { 
+      key: 'Value', 
+      label: 'Value', 
+      type: 'number', 
+      required: true, 
+      editable: true 
+    },
+    { 
+      key: 'CurrencyID', 
+      label: 'Currency', 
+      type: 'dropdown', 
+      required: true, 
+      editable: true,
+      service: currencyService,
+      displayField: 'LocalName',
+      valueField: 'CurrencyID'
+    },
+    { 
+      key: 'CloseDate', 
+      label: 'Close Date', 
+      type: 'date', 
+      required: true, 
+      editable: true 
+    },
+    { 
+      key: 'Probability', 
+      label: 'Probability (%)', 
+      type: 'number', 
+      required: true, 
+      editable: true 
+    },
+    { 
+      key: 'CreatedAt', 
+      label: 'Created At', 
+      type: 'datetime', 
+      readOnly: true 
+    },
+    { 
+      key: 'UpdatedAt', 
+      label: 'Updated At', 
+      type: 'datetime', 
+      readOnly: true 
+    },
+  ], [currencyService]);
 
   // Service to get the account that this deal belongs to
   const createAccountDataService = useCallback(() => {
@@ -409,12 +474,32 @@ export default function DealDetailsPage() {
   const handleSave = useCallback(async (formData) => {
     try {
       console.log('Saving deal:', formData);
+      
+      // Only send the fields that should be updated to the backend
+      // Exclude display fields like Symbol, LocalName, AccountName, StageName, etc.
+      const updatePayload = {
+        DealName: formData.DealName,
+        DealStageID: formData.DealStageID,
+        Value: formData.Value,
+        CurrencyID: formData.CurrencyID,
+        CloseDate: formData.CloseDate,
+        Probability: formData.Probability,
+        AccountID: formData.AccountID, // Include but don't allow editing
+      };
+      
+      console.log('Update payload:', updatePayload);
+      
+      // Call the updateDeal API with the deal ID and clean payload
+      await updateDeal(deal.DealID, updatePayload);
       setSuccessMessage('Deal updated successfully');
+      
+      // Refresh the deal data from the backend to show updated values
       await refreshDeal();
     } catch (err) {
-      setError('Failed to update deal');
+      console.error('Error updating deal:', err);
+      setError('Failed to update deal. Please try again.');
     }
-  }, [refreshDeal]);
+  }, [deal?.DealID, refreshDeal]);
 
   const handleDelete = useCallback(async (formData) => {
     if (!window.confirm("Are you sure you want to delete this deal?")) return;
