@@ -10,6 +10,7 @@ async function getAllDepartments() {
     const result = await pool.request()
       .query("SELECT * FROM Department WHERE Active = 1 ORDER BY DepartmentName");
 
+
     return result.recordset;
   } catch (error) {
     console.error("DepartmentRepo Error [getAllDepartments]:", error);
@@ -42,6 +43,7 @@ async function createDepartment(departmentName) {
   try {
     const pool = await sql.connect(dbConfig);
     
+
     
     // First, insert the department
     const insertResult = await pool.request()
@@ -58,7 +60,9 @@ async function createDepartment(departmentName) {
       .input("DepartmentID", sql.Int, newId)
       .query("SELECT * FROM Department WHERE DepartmentID = @DepartmentID");
     
-    return selectResult.recordset[0];    
+    console.log('📊 Repository: Returning department:', selectResult.recordset[0]);
+    return selectResult.recordset[0];
+   
   } catch (error) {
     console.error("DepartmentRepo Error [createDepartment]:", error);
     throw error;
@@ -147,7 +151,7 @@ async function deleteDepartment(departmentId) {
         WHERE DepartmentID = @DepartmentID;
         SELECT @@ROWCOUNT AS RowsAffected;
       `);
-      return result.recordset[0]?.RowsAffected > 0;
+    return result.recordset[0]?.RowsAffected > 0;
   } catch (error) {
     console.error("DepartmentRepo Error [deleteDepartment]:", error);
     throw error;

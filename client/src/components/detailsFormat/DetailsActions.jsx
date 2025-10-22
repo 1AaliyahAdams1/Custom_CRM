@@ -29,6 +29,7 @@ export default function DetailsActions({
   onAddAttachment,
   onAssignUser,
   onClaimAccount,
+   customActions = [],
   compact = false, // Optional prop for even more compact view
 }) {
   const theme = useTheme();
@@ -337,6 +338,27 @@ export default function DetailsActions({
                 Claim
               </Button>
             )}
+            {/* Custom Actions */}
+            {customActions.map((action, index) => (
+              <Button
+                key={index}
+                variant={action.variant || "outlined"}
+                onClick={action.onClick}
+                startIcon={action.icon}
+                size="small"
+                sx={{
+                  ...buttonStyle,
+                  borderColor: action.color === 'primary' ? colors.primary.main : colors.neutral.border,
+                  color: action.color === 'primary' ? colors.primary.main : colors.neutral.main,
+                  "&:hover": {
+                    borderColor: action.color === 'primary' ? colors.primary.hover : colors.neutral.hover,
+                    backgroundColor: action.color === 'primary' ? colors.primary.bg : colors.neutral.bg,
+                  },
+                }}
+              >
+                {action.label}
+              </Button>
+            ))}
 
           {/* Add Note */}
           {onAddNote && !readOnly && hasAccess("activitiesCreate") && (

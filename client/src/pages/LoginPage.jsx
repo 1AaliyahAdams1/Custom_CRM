@@ -1,4 +1,3 @@
-// LoginPage.jsx (two-section black and white design with diagonal wavy background)
 import React, { useState } from "react";
 import useLogin from "../utils/auth/useLogin";
 import {
@@ -62,25 +61,28 @@ const LoginPage = () => {
     <Box
       sx={{
         minHeight: "100vh",
+        height: "100vh",
+        width: "100vw",
         display: "flex",
-        position: "relative",
+        position: "fixed",
+        top: 0,
+        left: 0,
         overflow: "hidden",
       }}
     >
-         {/* Left Side - Diagonal Wave Background */}
+      {/* Left Side - Diagonal Wave Background */}
       <Box
         sx={{
           flex: { xs: 1, md: 1 },
           width: { xs: "100%", md: "50%" },
+          height: "100%",
           position: "relative",
           display: { xs: "none", md: "flex" },
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
           background: "#000000",
-          borderRadius: { md: "30px" },
         }}
-
       >
         {/* Animated Diagonal Wave Layers */}
         <Box
@@ -289,12 +291,14 @@ const LoginPage = () => {
         sx={{
           flex: { xs: 1, md: 1 },
           width: { xs: "100%", md: "50%" },
+          height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           background: "#ffffff",
           position: "relative",
           padding: 3,
+          overflowY: "auto",
         }}
       >
         <Container maxWidth="sm">

@@ -9,7 +9,8 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { useTheme, Box, Typography, Card, CardContent } from "@mui/material";
+import { useTheme, Box, Typography, Card, CardContent, Divider } from "@mui/material";
+import { TrendingUp, CheckCircle, Phone, Email, Event, Videocam } from "@mui/icons-material";
 
 const ActivitiesOutcomesChart = ({ data }) => {
   const theme = useTheme();
@@ -62,6 +63,65 @@ const ActivitiesOutcomesChart = ({ data }) => {
     default: "hsl(220, 13%, 69%)",
   };
 
+  // --- Calculate summary statistics
+  const calculateStats = () => {
+    let totalActivities = 0;
+    let totalSuccessful = 0; // closed_won
+    let totalQualified = 0;
+    let mostActiveType = { type: "", count: 0 };
+
+    chartData.forEach((item) => {
+      let activityTotal = 0;
+      outcomeKeys.forEach((key) => {
+        const value = item[key] || 0;
+        activityTotal += value;
+        totalActivities += value;
+        
+        if (key === "closed_won") {
+          totalSuccessful += value;
+        }
+        if (key === "qualified") {
+          totalQualified += value;
+        }
+      });
+
+      if (activityTotal > mostActiveType.count) {
+        mostActiveType = { type: item.type, count: activityTotal };
+      }
+    });
+
+    const successRate = totalActivities > 0 
+      ? ((totalSuccessful / totalActivities) * 100).toFixed(1)
+      : 0;
+
+    return {
+      totalActivities,
+      totalSuccessful,
+      totalQualified,
+      successRate,
+      mostActiveType: mostActiveType.type,
+    };
+  };
+
+  const stats = calculateStats();
+
+  // --- Activity type icons
+  const getActivityIcon = (type) => {
+    const iconProps = { sx: { fontSize: 20 } };
+    switch (type.toLowerCase()) {
+      case "calls":
+        return <Phone {...iconProps} />;
+      case "emails":
+        return <Email {...iconProps} />;
+      case "meetings":
+        return <Event {...iconProps} />;
+      case "demos":
+        return <Videocam {...iconProps} />;
+      default:
+        return <TrendingUp {...iconProps} />;
+    }
+  };
+
   return (
     <Card
       elevation={2}
@@ -71,12 +131,12 @@ const ActivitiesOutcomesChart = ({ data }) => {
         backgroundColor: theme.palette.background.paper,
       }}
     >
-      <CardContent sx={{ pb: 1 }}>
+      <CardContent sx={{ pb: 2 }}>
         <Typography
           variant="h6"
-          sx={{ mb: 2, color: theme.palette.text.primary }}
+          sx={{ textAlign: "center", mb: 2, color: theme.palette.text.primary }}
         >
-          Activities Outcomes
+          Activities vs Outcomes
         </Typography>
 
         {/* Chart container */}
@@ -113,6 +173,7 @@ const ActivitiesOutcomesChart = ({ data }) => {
                 contentStyle={{
                   backgroundColor: theme.palette.background.default,
                   border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 8,
                 }}
                 formatter={(value, name) => [value, name.replace(/_/g, " ")]}
               />
@@ -142,6 +203,77 @@ const ActivitiesOutcomesChart = ({ data }) => {
               ))}
             </BarChart>
           </ResponsiveContainer>
+        </Box>
+
+        {/* Summary Stats */}
+        <Divider sx={{ my: 2 }} />
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-around",
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
+          <Box sx={{ textAlign: "center" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5, mb: 0.5 }}>
+              <TrendingUp sx={{ fontSize: 20, color: theme.palette.primary.main }} />
+              <Typography variant="h5" sx={{ fontWeight: "bold", color: theme.palette.primary.main }}>
+                {stats.totalActivities}
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              Total Activities
+            </Typography>
+          </Box>
+
+          <Box sx={{ textAlign: "center" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5, mb: 0.5 }}>
+              <CheckCircle sx={{ fontSize: 20, color: seriesColors.closed_won }} />
+              <Typography variant="h5" sx={{ fontWeight: "bold", color: seriesColors.closed_won }}>
+                {stats.totalSuccessful}
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              Closed Won
+            </Typography>
+          </Box>
+
+          <Box sx={{ textAlign: "center" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5, mb: 0.5 }}>
+              <CheckCircle sx={{ fontSize: 20, color: seriesColors.qualified }} />
+              <Typography variant="h5" sx={{ fontWeight: "bold", color: seriesColors.qualified }}>
+                {stats.totalQualified}
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              Qualified
+            </Typography>
+          </Box>
+
+          <Box sx={{ textAlign: "center" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5, mb: 0.5 }}>
+              <TrendingUp sx={{ fontSize: 20, color: theme.palette.success.main }} />
+              <Typography variant="h5" sx={{ fontWeight: "bold", color: theme.palette.success.main }}>
+                {stats.successRate}%
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              Success Rate
+            </Typography>
+          </Box>
+
+          <Box sx={{ textAlign: "center" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5, mb: 0.5 }}>
+              {getActivityIcon(stats.mostActiveType)}
+              <Typography variant="h5" sx={{ fontWeight: "bold", color: theme.palette.text.primary }}>
+                {stats.mostActiveType}
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              Most Active
+            </Typography>
+          </Box>
         </Box>
       </CardContent>
     </Card>

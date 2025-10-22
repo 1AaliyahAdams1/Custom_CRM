@@ -9,12 +9,14 @@ import {
   Alert,
   CircularProgress,
   MenuItem,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { ArrowBack, Save, Clear } from "@mui/icons-material";
+import { ArrowBack, Save, Clear, Add, Delete } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import { getTeamById, updateTeam } from "../../services/teamService";
+import { getTeamById, updateTeam, getTeamMembers, addTeamMember, removeTeamMember } from "../../services/teamService";
 import { AuthContext } from '../../context/auth/authContext';
-import { departmentService } from '../../services/dropdownServices';
+import { employeeService } from '../../services/dropdownServices';
 import SmartDropdown from '../../components/SmartDropdown';
 
 const EditTeamPage = () => {
@@ -30,10 +32,13 @@ const EditTeamPage = () => {
 
   const [formData, setFormData] = useState({
     TeamName: '',
-    Description: '',
-    DepartmentID: '',
+    ManagerID: '',
     Active: true,
   });
+
+  const [existingMembers, setExistingMembers] = useState([]);
+  const [newMembers, setNewMembers] = useState([]);
+  const [membersToRemove, setMembersToRemove] = useState([]);
 
   // Fetch team data on component mount
   useEffect(() => {
@@ -62,10 +67,14 @@ const EditTeamPage = () => {
         // Populate form with existing data
         setFormData({
           TeamName: teamData.TeamName || '',
-          Description: teamData.Description || '',
-          DepartmentID: teamData.DepartmentID || '',
+          ManagerID: teamData.ManagerID || '',
           Active: teamData.Active !== undefined ? teamData.Active : true,
         });
+
+        // Fetch team members
+        const membersResponse = await getTeamMembers(teamId);
+        const members = membersResponse?.data || membersResponse || [];
+        setExistingMembers(members);
         
       } catch (err) {
         console.error('Error fetching team:', err);
@@ -86,11 +95,44 @@ const EditTeamPage = () => {
     }));
   };
 
+  const handleAddNewMember = () => {
+    setNewMembers([...newMembers, { UserID: '', tempId: Date.now() }]);
+  };
+
+  const handleNewMemberChange = (tempId, value) => {
+    setNewMembers(prev => 
+      prev.map(member => 
+        member.tempId === tempId ? { ...member, UserID: value } : member
+      )
+    );
+  };
+
+  const handleRemoveNewMember = (tempId) => {
+    setNewMembers(prev => prev.filter(member => member.tempId !== tempId));
+  };
+
+  const handleRemoveExistingMember = (userId) => {
+    if (window.confirm('Are you sure you want to remove this member from the team?')) {
+      setMembersToRemove(prev => [...prev, userId]);
+      setExistingMembers(prev => prev.filter(member => member.UserID !== userId));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!user) {
       setError('You must be logged in to update a team');
+      return;
+    }
+
+    if (!formData.TeamName.trim()) {
+      setError('Team name is required');
+      return;
+    }
+
+    if (!formData.ManagerID) {
+      setError('Manager is required');
       return;
     }
     
@@ -106,20 +148,33 @@ const EditTeamPage = () => {
       
       const teamId = parseInt(id, 10);
       
-      // Prepare data for submission
+      // Step 1: Update team basic info
       const dataToSubmit = {
         TeamName: formData.TeamName,
-        Description: formData.Description || null,
-        DepartmentID: formData.DepartmentID,
+        ManagerID: formData.ManagerID,
         Active: formData.Active,
       };
       
       console.log('Updating team with data:', dataToSubmit);
       
-      const changedBy = userId;
-      const actionTypeId = 2; // Update action
-      
-      await updateTeam(teamId, dataToSubmit, changedBy, actionTypeId);
+      await updateTeam(teamId, dataToSubmit);
+
+      // Step 2: Remove members marked for removal
+      for (const userIdToRemove of membersToRemove) {
+        await removeTeamMember({
+          TeamID: teamId,
+          UserID: userIdToRemove,
+        });
+      }
+
+      // Step 3: Add new members
+      const validNewMembers = newMembers.filter(member => member.UserID);
+      for (const member of validNewMembers) {
+        await addTeamMember({
+          TeamID: teamId,
+          UserID: member.UserID,
+        });
+      }
       
       setSuccessMessage('Team updated successfully!');
       
@@ -253,34 +308,19 @@ const EditTeamPage = () => {
                 />
               </Box>
 
-              {/* Department Dropdown */}
+              {/* Manager Dropdown */}
               <Box>
                 <SmartDropdown
-                  label="Department"
-                  name="DepartmentID"
-                  value={formData.DepartmentID}
+                  label="Manager"
+                  name="ManagerID"
+                  value={formData.ManagerID}
                   onChange={handleChange}
-                  service={departmentService}
-                  displayField="DepartmentName"
-                  valueField="DepartmentID"
-                  placeholder="Search for department..."
+                  service={employeeService}
+                  displayField="EmployeeName"
+                  valueField="UserID"
+                  placeholder="Search for manager..."
                   disabled={isSubmitting}
                   required
-                />
-              </Box>
-
-              {/* Description */}
-              <Box sx={{ gridColumn: '1 / -1' }}>
-                <TextField
-                  fullWidth
-                  label="Description (Optional)"
-                  name="Description"
-                  type="text"
-                  value={formData.Description}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                  multiline
-                  rows={4}
                 />
               </Box>
 
@@ -309,6 +349,109 @@ const EditTeamPage = () => {
                   <MenuItem value={true}>Active</MenuItem>
                   <MenuItem value={false}>Inactive</MenuItem>
                 </TextField>
+              </Box>
+
+              {/* Team Members Section Header */}
+              <Box sx={{ gridColumn: '1 / -1', mt: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="h6" sx={{
+                    fontWeight: 600,
+                    color: theme.palette.text.primary,
+                    mb: 1
+                  }}>
+                    Team Members
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Add />}
+                    onClick={handleAddNewMember}
+                    disabled={isSubmitting}
+                  >
+                    Add Member
+                  </Button>
+                </Box>
+              </Box>
+
+              {/* Existing Team Members */}
+              <Box sx={{ gridColumn: '1 / -1' }}>
+                {existingMembers.length === 0 && newMembers.length === 0 && (
+                  <Typography variant="body2" color="text.secondary">
+                    No team members yet. Click "Add Member" to add members to this team.
+                  </Typography>
+                )}
+
+                {existingMembers.map((member) => (
+                  <Box 
+                    key={member.UserID} 
+                    sx={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: { xs: '1fr auto', sm: '1fr auto' }, 
+                      gap: 2, 
+                      mb: 2, 
+                      alignItems: 'center',
+                      p: 2,
+                      border: '1px solid',
+                      borderColor: theme.palette.divider,
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="body1" fontWeight={500}>
+                        {member.EmployeeName || member.UserName || 'Unknown'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {member.EmployeeEmail || member.UserEmail || ''}
+                      </Typography>
+                    </Box>
+                    <Tooltip title="Remove member">
+                      <IconButton
+                        onClick={() => handleRemoveExistingMember(member.UserID)}
+                        disabled={isSubmitting}
+                        color="error"
+                      >
+                        <Delete />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                ))}
+
+                {/* New Members to Add */}
+                {newMembers.map((member) => (
+                  <Box 
+                    key={member.tempId} 
+                    sx={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: { xs: '1fr auto', sm: '1fr auto' }, 
+                      gap: 2, 
+                      mb: 2, 
+                      alignItems: 'flex-start' 
+                    }}
+                  >
+                    <Box>
+                      <SmartDropdown
+                        label="New Team Member"
+                        name={`new-member-${member.tempId}`}
+                        value={member.UserID}
+                        onChange={(e) => handleNewMemberChange(member.tempId, e.target.value)}
+                        service={employeeService}
+                        displayField="EmployeeName"
+                        valueField="UserID"
+                        placeholder="Search for team member..."
+                        disabled={isSubmitting}
+                      />
+                    </Box>
+                    <Tooltip title="Remove">
+                      <IconButton
+                        onClick={() => handleRemoveNewMember(member.tempId)}
+                        disabled={isSubmitting}
+                        sx={{ mt: 1 }}
+                      >
+                        <Delete />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                ))}
               </Box>
 
             </Box>

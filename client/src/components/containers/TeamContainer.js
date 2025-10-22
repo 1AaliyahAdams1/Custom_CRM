@@ -1,200 +1,242 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-
-import {
-  getAllTeams,
-  deactivateTeam,
-  reactivateTeam,
-} from "../../services/teamService";
-
-import {
-  getAllCities
-} from "../../services/cityService";
-
-import {
-  getAllEmployees
-} from "../../services/employeeService";
-
 import TeamsPage from "../../pages/TeamManagement/TeamPage";
+import ConfirmDialog from "../../components/dialogs/ConfirmDialog";
+import { 
+ getAllTeams,
+  updateTeam, 
+  addTeamMember 
+} from "../../services/teamService";
+import { AuthContext } from "../../context/auth/authContext";
 
-
-const TeamsContainer = () => {
+export default function TeamsContainer() {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [selected, setSelected] = useState([]);
+  const [currentFilter, setCurrentFilter] = useState("all");
+  
+  // Confirm dialog state
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [teamToAction, setTeamToAction] = useState(null);
 
-  // Fetch teams on mount
-  useEffect(() => {
-    fetchTeams();
-  }, []);
-
-  const fetchTeams = async () => {
-    setLoading(true);
-    setError(null);
+  // Fetch teams
+  const fetchTeams = async (filter = "all") => {
     try {
-      // Fetch all data in parallel
-      const [teamsData, cities, users] = await Promise.all([
-        getAllTeams(),
-        getAllCities(),
-        getAllEmployees()
-      ]);
-
-      console.log("Total teams fetched:", teamsData.length);
-      console.log("All team names:", teamsData.map(t => t.TeamName));
-
-      // Enrich team data with names (in case JOIN didn't work)
-      const enrichedTeams = teamsData.map(team => ({
-        ...team,
-        ManagerName: team.ManagerName || users.find(u => u.UserID === team.ManagerID)?.FirstName + ' ' + users.find(u => u.UserID === team.ManagerID)?.LastName || 'N/A',
-        CityName: team.CityName || cities.find(c => c.CityID === team.CityID)?.CityName || 'N/A',
-        MemberCount: team.MemberCount || 0
-      }));
-
-      console.log("Enriched teams sample:", enrichedTeams[0]);
-
-      setTeams(enrichedTeams);
-    } catch (err) {
-      setError("Failed to load teams. Please try again.");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreate = () => {
-    navigate("/teams/create");
-  };
-
-  const handleView = (team) => {
-    // Navigate to team details page (with members)
-    navigate(`/teams/${team.TeamID}`);
-  };
-
-  const handleEdit = (team) => {
-    // Navigate to edit page with team data
-    navigate(`/teams/edit/${team.TeamID}`, { 
-      state: { team } 
-    });
-  };
-
-  const handleDeactivate = async (team) => {
-    if (window.confirm(`Are you sure you want to deactivate ${team.TeamName}?`)) {
-      try {
-        await deactivateTeam(team.TeamID);
-        setSuccessMessage(`${team.TeamName} has been deactivated.`);
-        fetchTeams();
-      } catch (err) {
-        setError("Failed to deactivate team.");
-        console.error(err);
-      }
-    }
-  };
-
-  const handleReactivate = async (team) => {
-    if (window.confirm(`Are you sure you want to reactivate ${team.TeamName}?`)) {
-      try {
-        await reactivateTeam(team.TeamID);
-        setSuccessMessage(`${team.TeamName} has been reactivated.`);
-        fetchTeams();
-      } catch (err) {
-        setError("Failed to reactivate team.");
-        console.error(err);
-      }
-    }
-  };
-
-  const handleAddNote = (team) => {
-    // TODO: Implement note functionality
-    console.log("Add note for team:", team);
-    // You might want to open a modal or navigate to a notes page
-  };
-
-  const handleAddAttachment = (team) => {
-    // TODO: Implement attachment functionality
-    console.log("Add attachment for team:", team);
-    // You might want to open a file upload modal
-  };
-
-  const handleFilterChange = async (filterType) => {
-    setLoading(true);
-    try {
-      // Fetch all data again
-      const [teamsData, cities, users] = await Promise.all([
-        getAllTeams(),
-        getAllCities(),
-        getAllEmployees()
-      ]);
-
-      // Enrich team data
-      const enrichedTeams = teamsData.map(team => ({
-        ...team,
-        ManagerName: team.ManagerName || users.find(u => u.UserID === team.ManagerID)?.FirstName + ' ' + users.find(u => u.UserID === team.ManagerID)?.LastName || 'N/A',
-        CityName: team.CityName || cities.find(c => c.CityID === team.CityID)?.CityName || 'N/A',
-        MemberCount: team.MemberCount || 0
-      }));
-
-      // Apply filter logic
-      let filtered = enrichedTeams;
-      if (filterType === "active") {
-        filtered = enrichedTeams.filter(team => team.Active === true);
-      } else if (filterType === "inactive") {
-        filtered = enrichedTeams.filter(team => team.Active === false);
-      } else if (filterType === "myTeams") {
-        // TODO: Filter teams where current user is manager or member
-        // You'll need to get current user ID from context/auth
-        // const currentUserId = getCurrentUserId();
-        // filtered = enrichedTeams.filter(team => team.ManagerID === currentUserId);
-        filtered = enrichedTeams; // Placeholder
+      setLoading(true);
+      setError(null);
+      const response = await getAllTeams();
+      let data = response?.data || response || [];
+      
+      // Apply filters
+      if (filter === "active") {
+        data = data.filter(team => team.Active === true);
+      } else if (filter === "inactive") {
+        data = data.filter(team => team.Active === false);
+      } else if (filter === "myTeams" && user?.UserID) {
+        data = data.filter(team => team.OwnerID === user.UserID);
       }
       
-      setTeams(filtered);
+      setTeams(data);
     } catch (err) {
-      setError("Failed to filter teams.");
+      console.error("Error fetching teams:", err);
+      setError(err.message || "Failed to load teams");
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchTeams(currentFilter);
+  }, [currentFilter, user]);
+
+  // Selection handlers
   const handleSelectClick = (id) => {
-    setSelected(prev => 
-      prev.includes(id) 
-        ? prev.filter(item => item !== id)
-        : [...prev, id]
+    setSelected(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
 
-  const handleSelectAllClick = (checked) => {
-    if (checked) {
+  const handleSelectAllClick = (event) => {
+    if (event.target.checked) {
       setSelected(teams.map(team => team.TeamID));
     } else {
       setSelected([]);
     }
   };
 
-  return (
-    <TeamsPage
-      teams={teams}
-      loading={loading}
-      error={error}
-      successMessage={successMessage}
-      setSuccessMessage={setSuccessMessage}
-      setError={setError}
-      selected={selected}
-      onSelectClick={handleSelectClick}
-      onSelectAllClick={handleSelectAllClick}
-      onFilterChange={handleFilterChange}
-      onDeactivate={handleDeactivate}
-      onReactivate={handleReactivate}
-      onEdit={handleEdit}
-      onView={handleView}
-      onCreate={handleCreate}
-      onAddNote={handleAddNote}
-      onAddAttachment={handleAddAttachment}
-    />
-  );
+  // Filter handler
+  const handleFilterChange = (filter) => {
+    setCurrentFilter(filter);
+    setSelected([]);
+  };
+
+  // View team details
+  const handleView = (team) => {
+    navigate(`/teams/${team.TeamID}`);
+  };
+
+  // Edit team
+ const handleEdit = (team) => {
+  navigate(`/teams/edit/${team.TeamID}`);
 };
 
-export default TeamsContainer;
+  // Create team
+  const handleCreate = () => {
+    navigate('/teams/new');
+  };
+
+  // Deactivate team - open confirm dialog
+  const handleDeactivate = (team) => {
+    setTeamToAction(team);
+    setConfirmAction('deactivate');
+    setConfirmDialogOpen(true);
+  };
+
+  // Reactivate team - open confirm dialog
+  const handleReactivate = (team) => {
+    setTeamToAction(team);
+    setConfirmAction('reactivate');
+    setConfirmDialogOpen(true);
+  };
+
+  // Confirm action handler
+  const handleConfirmAction = async () => {
+    if (!user?.UserID) {
+      setError('You must be logged in to perform this action');
+      setConfirmDialogOpen(false);
+      return;
+    }
+
+    try {
+      const teamId = teamToAction.TeamID;
+      const changedBy = user.UserID;
+      const actionTypeId = 2; // Update action
+
+      if (confirmAction === 'deactivate') {
+        // Deactivate the team
+        await updateTeam(teamId, { Active: false }, changedBy, actionTypeId);
+        setSuccessMessage(`Team "${teamToAction.TeamName}" has been deactivated successfully`);
+      } else if (confirmAction === 'reactivate') {
+        // Reactivate the team
+        await updateTeam(teamId, { Active: true }, changedBy, actionTypeId);
+        setSuccessMessage(`Team "${teamToAction.TeamName}" has been reactivated successfully`);
+      }
+
+      // Refresh teams list
+      await fetchTeams(currentFilter);
+      
+      // Clear selection if the team was selected
+      setSelected(prev => prev.filter(id => id !== teamId));
+      
+    } catch (err) {
+      console.error('Error performing action:', err);
+      setError(err.response?.data?.error || err.message || 'Failed to perform action');
+    } finally {
+      setConfirmDialogOpen(false);
+      setTeamToAction(null);
+      setConfirmAction(null);
+    }
+  };
+
+  // Cancel confirmation
+  const handleCancelConfirm = () => {
+    setConfirmDialogOpen(false);
+    setTeamToAction(null);
+    setConfirmAction(null);
+  };
+
+  // Get confirmation dialog content
+  const getConfirmDialogContent = () => {
+    if (confirmAction === 'deactivate') {
+      return {
+        title: 'Deactivate Team',
+        description: `Are you sure you want to deactivate "${teamToAction?.TeamName}"? This team will no longer be active in the system.`
+      };
+    } else if (confirmAction === 'reactivate') {
+      return {
+        title: 'Reactivate Team',
+        description: `Are you sure you want to reactivate "${teamToAction?.TeamName}"? This team will become active again.`
+      };
+    }
+    return { title: '', description: '' };
+  };
+
+  const confirmContent = getConfirmDialogContent();
+
+   // Add member handler
+ const handleAddMember = async (employeeId, team) => {
+    try {
+      if (!user?.UserID) {
+        setError('You must be logged in to add members');
+        return;
+      }
+
+      console.log('Adding member - EmployeeID:', employeeId, 'Team:', team);
+      
+      // Ensure we have both required pieces of data
+      if (!employeeId) {
+        throw new Error('Employee ID is required');
+      }
+      
+      if (!team?.TeamID) {
+        throw new Error('Team ID is required');
+      }
+
+      // Create the member data object with UserID
+      const memberData = {
+        TeamID: team.TeamID,
+        EmployeeID: employeeId,
+        UserID: user.UserID, // Add the current user's ID
+        ActionTypeID: 1, // Create action
+      };
+
+      console.log('Sending member data:', memberData);
+      await addTeamMember(memberData);
+      setSuccessMessage(`Member added to "${team.TeamName}" successfully`);
+      await fetchTeams(currentFilter);
+    } catch (err) {
+      console.error('Error adding team member:', err);
+      setError(err.response?.data?.error || err.message || 'Failed to add team member');
+      throw err;
+    }
+  };
+
+  return (
+    <>
+      <TeamsPage
+        teams={teams}
+        loading={loading}
+        error={error}
+        successMessage={successMessage}
+        setSuccessMessage={setSuccessMessage}
+        setError={setError}
+        selected={selected}
+        onSelectClick={handleSelectClick}
+        onSelectAllClick={handleSelectAllClick}
+        onDeactivate={handleDeactivate}
+        onReactivate={handleReactivate}
+        onEdit={handleEdit}
+        onView={handleView}
+        onCreate={handleCreate}
+        onAddMember={handleAddMember}
+        onFilterChange={handleFilterChange}
+        userRoles={user?.roles || []}
+      />
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title={confirmContent.title}
+        description={confirmContent.description}
+        onConfirm={handleConfirmAction}
+        onCancel={handleCancelConfirm}
+      />
+    </>
+  );
+}

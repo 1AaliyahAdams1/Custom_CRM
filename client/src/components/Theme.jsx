@@ -31,6 +31,27 @@ export const createAppTheme = (mode = 'light') => {
       },
     },
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            // Hide scrollbar for Chrome, Safari and Opera
+            '&::-webkit-scrollbar': {
+              display: 'none',
+            },
+            // Hide scrollbar for IE, Edge and Firefox
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
+          },
+          // Also hide scrollbar for any scrollable element
+          '*::-webkit-scrollbar': {
+            display: 'none',
+          },
+          '*': {
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
+          },
+        },
+      },
       MuiPaper: {
         styleOverrides: {
           root: {

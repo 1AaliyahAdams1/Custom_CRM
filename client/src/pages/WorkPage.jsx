@@ -598,7 +598,7 @@ const WorkPage = ({
     if (!currentTabData) return null;
 
     const { account, previousActivities, currentActivities, upcomingActivities } = currentTabData;
-
+    console.log('Previous Activities Data:', previousActivities);
     return (
       <Box sx={{ p: getSpacing(3) }}>
         {/* Account Header */}
@@ -641,66 +641,65 @@ const WorkPage = ({
                   No completed activities yet
                 </Typography>
               ) : (
-                previousActivities.map((activity, idx) => {
-                  const formatDate = (dateString) => {
-                    if (!dateString) return 'Unknown date';
-                    try {
-                      const date = new Date(dateString);
-                      if (isNaN(date.getTime())) return 'Unknown date';
-                      return format(date, "MMM d, yyyy");
-                    } catch {
-                      return 'Unknown date';
-                    }
-                  };
+previousActivities.map((activity, idx) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return null;
+      return format(date, "MMM d, yyyy 'at' h:mm a");
+    } catch {
+      return null;
+    }
+  };
 
-                  const notes = activity.Notes || [];
+  const notes = activity.Notes || [];
+  const hasNotes = notes.length > 0;
+  const dueDate = formatDate(activity.DueToStart);
 
-                  return (
-                    <Box key={activity.ActivityID} sx={{ mb: 2 }}>
-                      <Typography variant="body2" sx={{ mb: 0.5, color: currentTheme.text.primary, fontWeight: 500 }}>
-                        <strong>{activity.ActivityTypeName}</strong>
-                        {activity.SequenceItemDescription && ` - ${activity.SequenceItemDescription}`}
-                        {' • Completed on '}
-                        {formatDate(activity.CompletedAt)}
-                        {notes.length > 0 && ` • Notes: ${notes.map(n => n.Content).join('; ')}`}
-                      </Typography>
+  return (
+    <Box key={activity.ActivityID} sx={{ mb: 2 }}>
+      <Typography variant="body2" sx={{ mb: 0.5, color: currentTheme.text.primary, fontWeight: 500 }}>
+        <strong>{activity.ActivityTypeName}</strong>
+        {activity.SequenceItemDescription && ` - ${activity.SequenceItemDescription}`}
+        {dueDate && ` • Was due ${dueDate}`}
+      </Typography>
 
-                      {notes.length > 0 && (
-                        <Box sx={{ pl: 2, mt: 1, mb: 1 }}>
-                          {notes.map((note, noteIdx) => (
-                            <Box key={noteIdx} sx={{ mb: 0.5 }}>
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  fontStyle: 'italic',
-                                  backgroundColor: currentTheme.background.default,
-                                  color: currentTheme.text.secondary,
-                                  p: 1,
-                                  borderRadius: 1,
-                                  borderLeft: `3px solid ${currentTheme.primary.main}`
-                                }}
-                              >
-                                {note.Content}
-                              </Typography>
-                              {note.CreatedAt && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{ pl: 1, display: 'block', mt: 0.5, color: currentTheme.text.secondary }}
-                                >
-                                  Added {formatDate(note.CreatedAt)}
-                                  {note.CreatedBy && ` by User ${note.CreatedBy}`}
-                                </Typography>
-                              )}
-                            </Box>
-                          ))}
-                        </Box>
-                      )}
-
-                      {idx < previousActivities.length - 1 && <Divider sx={{ mt: 2, borderColor: currentTheme.divider }} />}
-                    </Box>
-                  );
-                })
+      {hasNotes && (
+        <Box sx={{ pl: 2, mt: 1, mb: 1 }}>
+          {notes.map((note, noteIdx) => (
+            <Box key={noteIdx} sx={{ mb: 0.5 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontStyle: 'italic',
+                  backgroundColor: currentTheme.background.default,
+                  color: currentTheme.text.secondary,
+                  p: 1,
+                  borderRadius: 1,
+                  borderLeft: `3px solid ${currentTheme.primary.main}`
+                }}
+              >
+                {note.Content}
+              </Typography>
+              {note.CreatedAt && formatDate(note.CreatedAt) && (
+                <Typography
+                  variant="caption"
+                  sx={{ pl: 1, display: 'block', mt: 0.5, color: currentTheme.text.secondary }}
+                >
+                  Added {formatDate(note.CreatedAt)}
+                  {note.CreatedBy && ` by User ${note.CreatedBy}`}
+                </Typography>
               )}
+            </Box>
+          ))}
+        </Box>
+      )}
+
+      {idx < previousActivities.length - 1 && <Divider sx={{ mt: 2, borderColor: currentTheme.divider }} />}
+    </Box>
+  );
+})           )}
             </Box>
           </AccordionDetails>
         </Accordion>
