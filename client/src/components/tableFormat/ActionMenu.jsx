@@ -35,6 +35,7 @@ const ActionMenu = ({
   onAssignSequence,
   onReactivate,
   onPermanentDelete,
+  onAddMember, 
   menuItems = [],
   tooltips = {},
 }) => {
@@ -103,6 +104,15 @@ const ActionMenu = ({
         onClick: () => handleClick(onEdit),
         show: !!onEdit && menuRow?.Active !== false,
         tooltip: getTooltip("edit", "Edit this record's information"),
+      },
+
+      // Add Member (for teams only)
+      {
+        label: "Add Member",
+        icon: <PersonAdd sx={{ mr: 1, color: "#000" }} />,
+        onClick: () => handleClick(onAddMember),
+        show: entityType === 'team' && !!onAddMember && menuRow?.Active !== false,
+        tooltip: getTooltip("addMember", "Add a new member to this team"),
       },
       
       // Claim Account (for Sales Reps on unowned accounts)
@@ -241,6 +251,7 @@ const ActionMenu = ({
     onAssignSequence,
     onReactivate,
     onPermanentDelete,
+     onAddMember, 
     menuItems,
     idField,
     tooltips,

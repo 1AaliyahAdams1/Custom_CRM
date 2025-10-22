@@ -133,7 +133,7 @@ const AuditLogPage = () => {
     { field: 'Website', headerName: 'Website', defaultVisible: true },
     { field: 'PrimaryPhone', headerName: 'Phone', defaultVisible: true },
     { field: 'email', headerName: 'Email', defaultVisible: true },
-    { field: 'ChangedBy', headerName: 'Changed By', defaultVisible: true },
+    { field: 'ChangedByName', headerName: 'Changed By', defaultVisible: true },
     { field: 'ActionTypeID', headerName: 'Action Type', defaultVisible: true },
     { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: true },
@@ -147,7 +147,7 @@ const AuditLogPage = () => {
     { field: 'JobTitleID', headerName: 'Job Title ID', defaultVisible: false },
     { field: 'WorkEmail', headerName: 'Work Email', defaultVisible: true },
     { field: 'WorkPhone', headerName: 'Work Phone', defaultVisible: true },
-    { field: 'ChangedBy', headerName: 'Changed By', defaultVisible: true },
+    { field: 'ChangedByName', headerName: 'Changed By', defaultVisible: true },
     { field: 'ActionTypeID', headerName: 'Action Type', defaultVisible: true },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: true },
   ];
@@ -160,7 +160,7 @@ const AuditLogPage = () => {
     { field: 'CloseDate', headerName: 'Close Date', type: 'date', defaultVisible: true },
     { field: 'Probability', headerName: 'Probability', defaultVisible: true },
     { field: 'CurrencyID', headerName: 'Currency ID', defaultVisible: false },
-    { field: 'ChangedBy', headerName: 'Changed By', defaultVisible: true },
+    { field: 'ChangedByName', headerName: 'Changed By', defaultVisible: true },
     { field: 'ActionTypeID', headerName: 'Action Type', defaultVisible: true },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: true },
   ];
@@ -174,7 +174,7 @@ const AuditLogPage = () => {
     { field: 'HireDate', headerName: 'Hire Date', type: 'date', defaultVisible: true },
     { field: 'TerminationDate', headerName: 'Termination Date', type: 'date', defaultVisible: false },
     { field: 'salary', headerName: 'Salary', type: 'currency', defaultVisible: false },
-    { field: 'ChangedBy', headerName: 'Changed By', defaultVisible: true },
+    { field: 'ChangedByName', headerName: 'Changed By', defaultVisible: true },
     { field: 'ActionTypeID', headerName: 'Action Type', defaultVisible: true },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: true },
   ];
@@ -187,7 +187,7 @@ const AuditLogPage = () => {
     { field: 'Cost', headerName: 'Cost', type: 'currency', defaultVisible: true },
     { field: 'SKU', headerName: 'SKU', defaultVisible: true },
     { field: 'CategoryID', headerName: 'Category ID', defaultVisible: false },
-    { field: 'ChangedBy', headerName: 'Changed By', defaultVisible: true },
+    { field: 'ChangedByName', headerName: 'Changed By', defaultVisible: true },
     { field: 'ActionTypeID', headerName: 'Action Type', defaultVisible: true },
     { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: true },
   ];
@@ -200,7 +200,11 @@ const AuditLogPage = () => {
         1: { label: 'Created', color: theme.palette.success.main },
         2: { label: 'Updated', color: theme.palette.info.main },
         3: { label: 'Deleted', color: theme.palette.error.main },
-        4: { label: 'Deactivated', color: theme.palette.warning.main },
+        4: { label: 'Exported', color: theme.palette.primary.main },
+        5: { label: 'Imported', color: theme.palette.secondary.main },
+        6: { label: 'Approved', color: theme.palette.success.dark },
+        7: { label: 'Deactivated', color: theme.palette.warning.main },
+        8: { label: 'Reactivated', color: theme.palette.success.light },
       };
       const action = actionTypes[value] || { label: 'Unknown', color: theme.palette.grey[500] };
       return (
@@ -230,19 +234,29 @@ const AuditLogPage = () => {
     },
   };
 
+  // Helper function to sort audit log data by UpdatedAt in descending order (newest first)
+  const sortDataByDate = (data) => {
+    if (!data || data.length === 0) return data;
+    return [...data].sort((a, b) => {
+      const dateA = new Date(a.UpdatedAt);
+      const dateB = new Date(b.UpdatedAt);
+      return dateB - dateA; // Descending order (newest first)
+    });
+  };
+
   // Get current data and columns based on tab
   const getCurrentTabData = () => {
     switch (currentTab) {
       case 0:
-        return { data: accountLogs, columns: accountColumns, idField: 'TempAccountID' };
+        return { data: sortDataByDate(accountLogs), columns: accountColumns, idField: 'TempAccountID' };
       case 1:
-        return { data: contactLogs, columns: contactColumns, idField: 'TempContactID' };
+        return { data: sortDataByDate(contactLogs), columns: contactColumns, idField: 'TempContactID' };
       case 2:
-        return { data: dealLogs, columns: dealColumns, idField: 'TempDealID' };
+        return { data: sortDataByDate(dealLogs), columns: dealColumns, idField: 'TempDealID' };
       case 3:
-        return { data: employeeLogs, columns: employeeColumns, idField: 'TempEmployeeID' };
+        return { data: sortDataByDate(employeeLogs), columns: employeeColumns, idField: 'TempEmployeeID' };
       case 4:
-        return { data: productLogs, columns: productColumns, idField: 'TempProductID' };
+        return { data: sortDataByDate(productLogs), columns: productColumns, idField: 'TempProductID' };
       default:
         return { data: [], columns: [], idField: 'id' };
     }
@@ -342,6 +356,8 @@ const AuditLogPage = () => {
                 formatters={auditLogFormatters}
                 entityType={`${tab.label.toLowerCase()}-audit`}
                 showActions={false}
+                defaultSortField="UpdatedAt"
+                defaultSortOrder="desc"
               />
             )}
 

@@ -115,7 +115,7 @@ async function updateDeal(dealId, data, changedBy = 1, actionTypeId = 2) {
 // =======================
 // Deactivate deal 
 // =======================
-async function deactivateDeal(dealId, data, changedBy = 1, actionTypeId = 3) {
+async function deactivateDeal(dealId, data, changedBy = 1, actionTypeId = 7) {
   try {
     const {
       AccountID,
@@ -152,7 +152,7 @@ async function deactivateDeal(dealId, data, changedBy = 1, actionTypeId = 3) {
 // =======================
 // Reactivate deal
 // =======================
-async function reactivateDeal(dealId, data, changedBy = 1, actionTypeId = 4) {
+async function reactivateDeal(dealId, data, changedBy = 1, actionTypeId = 8) {
   try {
     const {
       AccountID,
@@ -189,7 +189,7 @@ async function reactivateDeal(dealId, data, changedBy = 1, actionTypeId = 4) {
 // =======================
 // delete deal
 // =======================
-async function deleteDeal(dealId, data, changedBy = 1, actionTypeId = 5) {
+async function deleteDeal(dealId, data, changedBy = 1, actionTypeId = 3) {
   try {
     const {
       AccountID,

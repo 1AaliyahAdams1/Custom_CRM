@@ -2,17 +2,22 @@ import React, { useEffect, useState, useCallback, useMemo, useRef, useContext } 
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Alert, Typography, CircularProgress } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { PersonAdd } from "@mui/icons-material";
 import { UniversalDetailView } from "../../components/detailsFormat/DetailsView";
-import { getTeamById, updateTeam, deleteTeam } from "../../services/teamService";
-import { getAllActivities } from "../../services/activityService";
-import { getAllNotes } from "../../services/noteService";
+import { 
+  getTeamById, 
+  updateTeam, 
+  deleteTeam,
+  getTeamMembers,
+  addTeamMember 
+} from "../../services/teamService";
 import { getAllAttachments } from "../../services/attachmentService";
 import { AuthContext } from '../../context/auth/authContext';
 import { formatters } from '../../utils/formatters';
-
-// Import service objects from dropdownServices
+import AddMemberDialog from "../../components/dialogs/AddMemberDialog";
 import {
   departmentService,
+  employeeService,
 } from '../../services/dropdownServices';
 
 export default function TeamDetailsPage() {
@@ -28,6 +33,7 @@ export default function TeamDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
 
   useEffect(() => {
     idRef.current = id;
@@ -66,7 +72,20 @@ export default function TeamDetailsPage() {
     navigateRef.current("/teams");
   }, []);
 
-  // Define main fields
+  const handleAddMemberClick = useCallback(() => {
+    setShowAddMemberDialog(true);
+  }, []);
+
+  const customActions = useMemo(() => [
+    {
+      label: 'Add Member',
+      onClick: handleAddMemberClick,
+      icon: <PersonAdd />,
+      variant: 'outlined',
+      color: 'primary'
+    }
+  ], [handleAddMemberClick]);
+
   const mainFields = useMemo(() => [
     { key: 'TeamName', label: 'Team Name', type: 'text', required: true },
     { key: 'Description', label: 'Description', type: 'textarea' },
@@ -84,71 +103,57 @@ export default function TeamDetailsPage() {
     { key: 'UpdatedAt', label: 'Updated At', type: 'datetime' },
   ], []);
 
-  // Real API data services with client-side filtering
-  const createFilteredDataService = useCallback((serviceFunction, filterField) => {
-    return async () => {
-      try {
-        const response = await serviceFunction();
-        const allData = response?.data || response;
-        const teamId = parseInt(idRef.current, 10);
-        
-        const filteredData = allData.filter(item => 
-          item[filterField] === teamId
-        );
-        
-        return { data: filteredData };
-      } catch (error) {
-        console.error('Error fetching and filtering data:', error);
-        throw error;
-      }
-    };
-  }, []);
-
-  const createAttachmentDataService = useCallback(() => {
-    return async () => {
-      try {
-        const response = await getAllAttachments();
-        const allData = response?.data || response;
-        const teamId = parseInt(idRef.current, 10);
-        
-        // Filter attachments where EntityID = teamId AND EntityTypeID = Team type
-        const TEAM_ENTITY_TYPE_ID = 5; // Adjust based on your EntityType IDs
-        
-        const filteredData = allData.filter(item => 
-          item.EntityID === teamId && item.EntityTypeID === TEAM_ENTITY_TYPE_ID
-        );
-        
-        return { data: filteredData };
-      } catch (error) {
-        console.error('Error fetching and filtering attachments:', error);
-        throw error;
-      }
-    };
-  }, []);
-
-  // Define related tabs with real API calls
   const relatedTabs = useMemo(() => {
     const tabs = [
       {
-        key: 'employees',
+        key: 'members',
         label: 'Team Members',
-        entityType: 'employee',
+        entityType: 'member',
+        disableActions: true,
+        hideActions: true,
+        showSelection: false, 
+        enableAdd: true,
+        addButtonLabel: 'Add Member',
+        addFormFields: [
+          {
+            key: 'EmployeeID',
+            label: 'Employee',
+            type: 'dropdown',
+            optionsService: employeeService,
+            displayField: 'FullName',
+            valueField: 'EmployeeID',
+            required: true
+          },
+          {
+            key: 'Active',
+            label: 'Active',
+            type: 'boolean',
+            defaultValue: true
+          }
+        ],
         tableConfig: {
-          idField: 'EmployeeID',
+          idField: 'TeamMemberID',
+          hideActionColumn: true, 
           columns: [
             { 
               field: 'EmployeeName', 
-              headerName: 'Name', 
-              type: 'clickable', 
+              headerName: 'Employee Name', 
+              type: 'text', 
               defaultVisible: true,
             },
-            { field: 'EmployeeEmail', headerName: 'Email', type: 'email', defaultVisible: true },
-            { field: 'EmployeePhone', headerName: 'Phone', type: 'phone', defaultVisible: true },
-            { field: 'JobTitleName', headerName: 'Job Title', type: 'text', defaultVisible: true },
-            { field: 'DepartmentName', headerName: 'Department', type: 'text', defaultVisible: true },
-            { field: 'HireDate', headerName: 'Hire Date', type: 'date', defaultVisible: true },
-            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: false },
-            { field: 'UpdatedAt', headerName: 'Updated', type: 'dateTime', defaultVisible: false },
+            { 
+              field: 'UserName', 
+              headerName: 'Name', 
+              type: 'text', 
+              defaultVisible: true,
+            },
+            { 
+              field: 'UserEmail', 
+              headerName: 'Email', 
+              type: 'email', 
+              defaultVisible: true,
+            },
+            { field: 'JoinedAt', headerName: 'Joined Date', type: 'dateTime', defaultVisible: true },
             {
               field: 'Active',
               headerName: 'Active',
@@ -159,141 +164,50 @@ export default function TeamDetailsPage() {
             }
           ]
         },
-        dataService: createFilteredDataService(async () => {
-          // Fetch employees filtered by team
-          const response = await fetch(`/api/employees/team/${idRef.current}`);
-          if (!response.ok) throw new Error('Failed to fetch team employees');
-          return response.json();
-        }, 'TeamID')
-      },
-      {
-        key: 'activities',
-        label: 'Activities',
-        entityType: 'activity',
-        tableConfig: {
-          idField: 'ActivityID',
-          columns: [
-            { field: 'ActivityType', headerName: 'Activity Type', type: 'text', defaultVisible: true },
-            { field: 'Subject', headerName: 'Subject', type: 'text', defaultVisible: true },
-            { field: 'PriorityLevelName', headerName: 'Priority', type: 'text', defaultVisible: true },
-            { field: 'DueToStart', headerName: 'Due Start', type: 'date', defaultVisible: true },
-            { field: 'DueToEnd', headerName: 'Due End', type: 'date', defaultVisible: true },
-            { field: 'Completed', headerName: 'Completed', type: 'boolean', defaultVisible: true },
-            { field: 'Active', headerName: 'Active', type: 'boolean', defaultVisible: true },
-          ]
-        },
         dataService: async () => {
           try {
-            const teamData = await getTeamById(parseInt(idRef.current, 10));
-            const currentTeam = teamData?.data || teamData;
-            
-            if (!currentTeam?.TeamName) {
-              console.error('No team name found');
-              return { data: [] };
-            }
-            
-            const response = await getAllActivities();
-            const allData = response?.data || response;
-            
-            const filteredData = allData.filter(item => 
-              item.TeamName === currentTeam.TeamName
-            );
-            
-            return { data: filteredData };
+            const teamId = parseInt(idRef.current, 10);
+            const response = await getTeamMembers(teamId);
+            return { data: response?.data || response };
           } catch (error) {
-            console.error('Error fetching activities:', error);
-            return { data: [] };
+            console.error('Error fetching team members:', error);
+            throw error;
           }
         }
       },
-      {
-        key: 'notes',
-        label: 'Notes',
-        entityType: 'note',
-        tableConfig: {
-          idField: 'NoteID',
-          columns: [
-            { field: 'Content', headerName: 'Content', type: 'truncated', maxWidth: 400, defaultVisible: true },
-            { field: 'EntityID', headerName: 'Entity ID', type: 'text', defaultVisible: true },
-            { field: 'EntityTypeID', headerName: 'Entity Type', type: 'text', defaultVisible: true },
-            { field: 'CreatedAt', headerName: 'Created', type: 'dateTime', defaultVisible: true }
-          ]
-        },
-        dataService: createFilteredDataService(getAllNotes, 'EntityID')
-      },
-      {
-        key: 'attachments',
-        label: 'Attachments',
-        entityType: 'attachment',
-        tableConfig: {
-          idField: 'AttachmentID',
-          columns: [
-            { field: 'FileName', headerName: 'File Name', type: 'text', defaultVisible: true },
-            { field: 'FileType', headerName: 'Type', type: 'text', defaultVisible: true },
-            { field: 'FileSize', headerName: 'Size', type: 'text', defaultVisible: true },
-            { field: 'UploadedByFirstName', headerName: 'Uploaded By', type: 'text', defaultVisible: true },
-            { field: 'UploadedAt', headerName: 'Uploaded', type: 'dateTime', defaultVisible: true },
-          ]
-        },
-        dataService: createAttachmentDataService(),
-      },
     ];
     return tabs;
-  }, [createFilteredDataService, createAttachmentDataService]);
+  }, []);
 
-  // Action handlers
   const relatedDataActions = useMemo(() => {
     const actions = {
-      employee: {
-        view: (employee) => navigateRef.current(`/employees/${employee.EmployeeID}`),
-        edit: (employee) => navigateRef.current(`/employees/${employee.EmployeeID}/edit`),
-        delete: async (employee) => {
-          console.log('Delete employee:', employee);
-        },
-        addNote: (employee) => {
-          console.log('Add note to employee:', employee);
-        },
-        addAttachment: (employee) => {
-          console.log('Add attachment to employee:', employee);
-        }
-      },
-      activity: {
-        view: (activity) => navigateRef.current(`/activities/${activity.ActivityID}`),
-        edit: (activity) => navigateRef.current(`/activities/${activity.ActivityID}/edit`),
-        delete: async (activity) => {
-          console.log('Delete activity:', activity);
-        },
-        addNote: (activity) => {
-          console.log('Add note to activity:', activity);
-        },
-        addAttachment: (activity) => {
-          console.log('Add attachment to activity:', activity);
-        }
-      },
-      note: {
-        view: (note) => {
-          console.log('View note:', note);
-        },
-        edit: (note) => {
-          console.log('Edit note:', note);
-        },
-        delete: async (note) => {
-          console.log('Delete note:', note);
-        }
-      },
-      attachment: {
-        view: (attachment) => {
-          console.log('View attachment:', attachment);
-        },
-        delete: async (attachment) => {
-          console.log('Delete attachment:', attachment);
+      members: {
+        add: async (formData) => {
+          try {
+            const teamId = parseInt(idRef.current, 10);
+            
+            const dataToSend = {
+              TeamID: teamId,
+              EmployeeID: formData.EmployeeID,
+              Active: formData.Active !== undefined ? formData.Active : true,
+            };
+            
+            await addTeamMember(dataToSend);
+            setSuccessMessage('Team member added successfully');
+            
+            return { success: true, refresh: true };
+          } catch (err) {
+            console.error('Error adding team member:', err);
+            const errorMessage = err.response?.data?.error || err.message || 'Failed to add team member';
+            setError(errorMessage);
+            throw new Error(errorMessage);
+          }
         }
       }
     };
     return actions;
   }, []);
 
-  // Header chips 
   const headerChips = useMemo(() => {
     if (!team) return [];
     
@@ -316,7 +230,6 @@ export default function TeamDetailsPage() {
     return chips;
   }, [team]);
 
-  // Event handlers
   const handleSave = useCallback(async (formData) => {
     try {
       if (!user?.UserID) {
@@ -375,6 +288,28 @@ export default function TeamDetailsPage() {
     console.log('Add attachment to team:', item);
   }, []);
 
+  
+const handleAddMember = useCallback(async (memberData) => {
+  try {
+    console.log('Adding team member:', memberData);
+    
+    // Call addTeamMember with the correct structure
+    await addTeamMember(memberData);
+    
+    // Refresh the team data to show the new member
+    await refreshTeam();
+    
+    // Close the dialog
+    setShowAddMemberDialog(false);
+    
+    // Show success message
+    setSuccessMessage('Member added successfully');
+  } catch (error) {
+    console.error('Error adding team member:', error);
+    // The error will be shown in the dialog
+    throw error;
+  }
+}, [refreshTeam]);
   if (loading) {
     return (
       <Box sx={{ 
@@ -449,8 +384,16 @@ export default function TeamDetailsPage() {
         error={error}
         headerChips={headerChips}
         entityType="team"
-        relatedDataActions={relatedDataActions}
         onRefreshRelatedData={handleRefreshRelatedData}
+        relatedDataActions={relatedDataActions} 
+        customActions={customActions}
+      />
+
+      <AddMemberDialog
+        open={showAddMemberDialog}
+        onClose={() => setShowAddMemberDialog(false)}
+        onAddMember={handleAddMember}
+        menuRow={team}
       />
     </Box>
   );

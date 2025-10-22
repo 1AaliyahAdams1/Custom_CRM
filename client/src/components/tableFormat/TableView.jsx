@@ -52,6 +52,8 @@ const TableView = ({
   onAssignSequence,
   onReactivate, 
   onPermanentDelete, 
+
+  onAddMember, 
   
   entityType = "records",
   menuItems = [],
@@ -484,6 +486,7 @@ const TableView = ({
           onUnassignUsers={onUnassignUsers}
           onAssignSequence={onAssignSequence}
           onReactivate={onReactivate}
+          onAddMember={onAddMember}
           onPermanentDelete={onPermanentDelete}
           menuItems={menuItems}
           tooltips={tooltips}

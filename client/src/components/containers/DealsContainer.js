@@ -5,6 +5,7 @@ import {
   getAllDeals,
   fetchDealsByUser,
   deactivateDeal,
+  reactivateDeal,
 } from "../../services/dealService";
 import {
   getAllAccounts,
@@ -38,6 +39,8 @@ const DealsContainer = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusSeverity, setStatusSeverity] = useState("success");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [refreshFlag, setRefreshFlag] = useState(false);
@@ -50,6 +53,10 @@ const DealsContainer = () => {
   // Delete confirm dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dealToDelete, setDealToDelete] = useState(null);
+  
+  // Reactivate dialog
+  const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
+  const [dealToReactivate, setDealToReactivate] = useState(null);
 
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const roles = Array.isArray(storedUser.roles) ? storedUser.roles : [];
@@ -288,13 +295,38 @@ const DealsContainer = () => {
 
     try {
       await deactivateDeal(dealToDelete.DealID);
-      setSuccessMessage("Deal deactivated successfully.");
+      setStatusMessage("Deal deactivated successfully.");
+      setStatusSeverity("success");
       setRefreshFlag((flag) => !flag);
     } catch {
-      setError("Failed to deactivate deal. Please try again.");
+      setStatusMessage("Failed to deactivate deal. Please try again.");
+      setStatusSeverity("error");
     } finally {
       setDeleteDialogOpen(false);
       setDealToDelete(null);
+    }
+  };
+
+  const handleReactivateDeal = async (deal) => {
+    setDealToReactivate(deal);
+    setReactivateDialogOpen(true);
+  };
+
+  const confirmReactivate = async () => {
+    if (!dealToReactivate) return;
+
+    try {
+      await reactivateDeal(dealToReactivate.DealID);
+      setStatusMessage("Deal reactivated successfully.");
+      setStatusSeverity("success");
+      setRefreshFlag((flag) => !flag);
+    } catch (err) {
+      console.error("Error reactivating deal:", err);
+      setStatusMessage("Failed to reactivate deal. Please try again.");
+      setStatusSeverity("error");
+    } finally {
+      setReactivateDialogOpen(false);
+      setDealToReactivate(null);
     }
   };
 
@@ -426,9 +458,13 @@ const DealsContainer = () => {
         setSearchTerm={setSearchTerm}
         setStatusFilter={setStatusFilter}
         setSuccessMessage={setSuccessMessage}
+        statusMessage={statusMessage}
+        onCloseStatusMessage={setStatusMessage}
+        statusSeverity={statusSeverity}
         onSelectClick={handleSelectClick}
         onSelectAllClick={handleSelectAllClick}
-        onDeactivate={handleDeactivateClick} 
+        onDeactivate={handleDeactivateClick}
+        onReactivate={handleReactivateDeal}
         onEdit={handleEdit}
         onView={handleView}
         onCreate={handleOpenCreate}
@@ -475,6 +511,20 @@ const DealsContainer = () => {
         }?`}
         onConfirm={confirmDeactivate}
         onCancel={() => setDeleteDialogOpen(false)}
+      />
+
+      {/* Confirm reactivate dialog */}
+      <ConfirmDialog
+        open={reactivateDialogOpen}
+        title="Reactivate Deal"
+        description={`Are you sure you want to reactivate this deal${
+          dealToReactivate?.DealName ? ` ("${dealToReactivate.DealName}")` : ""
+        }?`}
+        onConfirm={confirmReactivate}
+        onCancel={() => {
+          setReactivateDialogOpen(false);
+          setDealToReactivate(null);
+        }}
       />
     </>
   );
