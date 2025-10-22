@@ -10,6 +10,7 @@ async function getAllDepartments() {
     const result = await pool.request()
       .query("SELECT * FROM Department WHERE Active = 1 ORDER BY DepartmentName");
 
+
     return result.recordset;
   } catch (error) {
     console.error("DepartmentRepo Error [getAllDepartments]:", error);
@@ -44,6 +45,8 @@ async function createDepartment(departmentName) {
   try {
     const pool = await sql.connect(dbConfig);
     
+
+    
     // First, insert the department
     const insertResult = await pool.request()
       .input("DepartmentName", sql.VarChar(255), departmentName)
@@ -63,6 +66,7 @@ async function createDepartment(departmentName) {
     
     console.log('📊 Repository: Returning department:', selectResult.recordset[0]);
     return selectResult.recordset[0];
+   
   } catch (error) {
     console.error("DepartmentRepo Error [createDepartment]:", error);
     throw error;

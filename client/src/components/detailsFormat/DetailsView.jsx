@@ -61,6 +61,7 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
   entityType = "entity",
   onRefreshRelatedData,
   relatedDataActions = {},
+  customActions = [],
 }) {
   const theme = useTheme();
   const [tab, setTab] = useState(0);
@@ -394,7 +395,9 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
             selected={selected}
             onSelectClick={(id) => handleTabSelectClick(tabKey, id)}
             onSelectAllClick={(event) => handleTabSelectAllClick(tabKey, config, event)}
-            showSelection={true}
+            hideActions={tabConfig.disableActions} // Add this
+            showActions={!tabConfig.disableActions} // Add this
+            showSelection={!tabConfig.disableActions} // Add this line
             onView={createTabActionHandler(tabKey, 'view')}
             onEdit={createTabActionHandler(tabKey, 'edit')}
             onDelete={createTabActionHandler(tabKey, 'delete')}
@@ -726,6 +729,7 @@ export const UniversalDetailView = React.memo(function UniversalDetailView({
             onAddAttachment={handleAddAttachment}
             onAssignUser={() => setAssignDialogOpen(true)}
             onClaimAccount={handleClaimAccount}
+             customActions={customActions} 
           />
         </Box>
       </Box>

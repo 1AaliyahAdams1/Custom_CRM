@@ -18,6 +18,7 @@ import { Add, Info } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import TableView from '../../components/tableFormat/TableView';
 import { formatters } from '../../utils/formatters';
+import AddMemberDialog from '../../components/dialogs/AddMemberDialog';
 
 const TeamsPage = ({
   teams = [],
@@ -30,20 +31,24 @@ const TeamsPage = ({
   onSelectClick,
   onSelectAllClick,
   onDeactivate,
+  onReactivate,
   onEdit,
   onView,
   onCreate,
   onAddNote,
   onAddAttachment,
+  onAddMember,
   onFilterChange,
   userRoles = [],
 }) => {
+ 
   const navigate = useNavigate();
   const theme = useTheme();
+  const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState(null);
 
   const columns = [
     { field: "TeamName", headerName: "Team Name", type: "text", defaultVisible: true },
-    
     { field: "CreatedAt", headerName: "Created", type: "dateTime", defaultVisible: true },
     {
       field: "Active",
@@ -72,6 +77,11 @@ const TeamsPage = ({
     { value: "inactive", label: "Inactive Teams" },
     { value: "myTeams", label: "My Teams" },
   ];
+
+  const handleAddMemberClick = (team) => {
+    setSelectedTeam(team);
+    setAddMemberDialogOpen(true);
+  };
 
   return (
     <Box sx={{ 
@@ -194,8 +204,8 @@ const TeamsPage = ({
             onView={onView}
             onEdit={onEdit}
             onDelete={onDeactivate}
-            onAddNote={onAddNote}
-            onAddAttachment={onAddAttachment}
+            onReactivate={onReactivate}
+            onAddMember={handleAddMemberClick}
             formatters={formatters}
             entityType="team"
             tooltips={{
@@ -242,6 +252,14 @@ const TeamsPage = ({
           )}
         </Box>
       </Paper>
+
+      {/* Add Member Dialog */}
+      <AddMemberDialog
+        open={addMemberDialogOpen}
+        onClose={() => setAddMemberDialogOpen(false)}
+        onAddMember={onAddMember}
+        menuRow={selectedTeam}
+      />
     </Box>
   );
 };
