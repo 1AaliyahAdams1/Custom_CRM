@@ -461,23 +461,6 @@ const LoginPage = () => {
               >
                 {isSubmitting ? "Signing In..." : "Login"}
               </Button>
-
-              <Box sx={{ mt: 3, textAlign: "center" }}>
-                <Button
-                  variant="text"
-                  size="small"
-                  sx={{
-                    color: "#666666",
-                    fontWeight: 500,
-                    "&:hover": {
-                      color: "#000000",
-                      background: "rgba(0, 0, 0, 0.05)",
-                    },
-                  }}
-                >
-                  Forgot your password?
-                </Button>
-              </Box>
             </Box>
 
             {/* Footer */}
