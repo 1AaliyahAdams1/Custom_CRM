@@ -10,7 +10,7 @@ try {
     const result = await pool.request().execute("GetActivitiesVsOutcomes");
     return result.recordset;
 } catch (error) {
-    console.error("Database error in getCustomerSegmentation:", error);
+    console.error("Database error in getActivitiesVsOutcomes:", error);
     throw error;
   }
 }

@@ -40,12 +40,9 @@ export default function useLogin() {
       // Trigger storage event so other components refresh
       window.dispatchEvent(new Event("storage"));
 
-      // Redirect to accounts page
-      if (response.roles && response.roles.includes("Sales Representative")) {
-        window.location.href = "/smart-work";
-      } else {
-        window.location.href = "/dashboard";
-      }
+      // Redirect based on role - ALL roles now go to dashboard
+      // Sales Reps see Activities chart, Management sees other charts
+      window.location.href = "/dashboard";
 
       return true;
     } catch (err) {
