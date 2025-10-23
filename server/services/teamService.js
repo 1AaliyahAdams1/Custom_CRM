@@ -1,5 +1,3 @@
-
-
 const teamRepository = require("../data/teamRepository");
 
 //==========================
@@ -20,21 +18,21 @@ async function getTeamById(teamId) {
 //==========================
 // Create a new team
 //==========================
-async function createTeam(teamData) {  // Should be teamData, not teamName
+async function createTeam(teamData) {  // FIXED: Changed parameter name
     if (!teamData.TeamName) throw new Error("TeamName is required");
     if (!teamData.ManagerID) throw new Error("ManagerID is required");
-    return await teamRepository.createTeam(teamData);  // Pass teamData, not teamName
-};
+    return await teamRepository.createTeam(teamData);  // FIXED: Pass teamData
+}
 
 //==========================
 // Update an existing team
 //==========================
-async function updateTeam(teamId, teamData) {  // Should be teamData, not teamName
+async function updateTeam(teamId, teamData) {  // FIXED: Changed parameter name
     if (!teamId) throw new Error("teamId is required");
     if (!teamData.TeamName) throw new Error("TeamName is required");
     if (teamData.ManagerID === undefined) throw new Error("ManagerID is required");
-    return await teamRepository.updateTeam(teamId, teamData);  // Pass teamData, not teamName
-};
+    return await teamRepository.updateTeam(teamId, teamData);  // FIXED: Pass teamData
+}
 
 //==========================
 // Deactivate a team

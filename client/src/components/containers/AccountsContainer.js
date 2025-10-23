@@ -18,7 +18,6 @@ import {
   claimAccount,
   assignUser,
   removeAssignedUser,
-  removeSpecificUsers,
   unclaimAccount,
 } from "../../services/assignService";
 import {
@@ -217,7 +216,7 @@ const AccountsContainer = () => {
                 assignedIds: ids,
                 isOwnedByMe,
                 isOwnedByTeam,
-                teamUserIds: teamMemberUserIds
+                teamMemberUserIds
               });
 
               if (isOwnedByMe && ids.length === 1) {
@@ -226,174 +225,167 @@ const AccountsContainer = () => {
                 acc.ownerStatus = "owned-shared";
                 acc.ownerDisplayName = `You + ${ids.length - 1} other${ids.length - 1 > 1 ? "s" : ""}`;
                 acc.ownerTooltip = names.join(", ");
-              } else if (isOwnedByTeam && ids.length === 1) {
-                acc.ownerStatus = "team-owned";
-                acc.ownerDisplayName = names[0];
-              } else if (isOwnedByTeam && ids.length > 1) {
-                acc.ownerStatus = "team-owned-shared";
-                acc.ownerDisplayName = `${ids.length} users`;
-                acc.ownerTooltip = names.join(", ");
-              } else if (ids.length === 1) {
-                acc.ownerStatus = `owned-by-${names[0]}`;
-                acc.ownerDisplayName = names[0];
+              } else if (isOwnedByTeam) {
+                if (ids.length === 1) {
+                  acc.ownerStatus = "owned-shared";
+                  acc.ownerDisplayName = names[0];
+                } else {
+                  acc.ownerStatus = "owned-shared";
+                  acc.ownerDisplayName = `${ids.length} team members`;
+                  acc.ownerTooltip = names.join(", ");
+                }
               } else {
-                acc.ownerStatus = "owned-by-multiple";
-                acc.ownerDisplayName = `${ids.length} users`;
-                acc.ownerTooltip = names.join(", ");
+                acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
               }
             } else {
               acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
             }
           });
-
-          const beforeFilter = accountsData.length;
-          accountsData = accountsData.filter(acc => {
-            const shouldShow = acc.ownerStatus === "owned" || 
-                   acc.ownerStatus === "owned-shared" ||
-                   acc.ownerStatus === "team-owned" ||
-                   acc.ownerStatus === "team-owned-shared" ||
-                   acc.ownerStatus === "unowned" ||
-                   acc.ownerStatus === "n/a";
-            
-            if (!shouldShow) {
-              console.log(`Filtering out account ${acc.AccountID}: ${acc.ownerStatus}`);
-            }
-            
-            return shouldShow;
-          });
-          
-          console.log(`📊 Accounts after filtering: ${accountsData.length} (from ${beforeFilter})`);
-          console.log("Breakdown:", {
-            owned: accountsData.filter(a => a.ownerStatus === "owned").length,
-            ownedShared: accountsData.filter(a => a.ownerStatus === "owned-shared").length,
-            teamOwned: accountsData.filter(a => a.ownerStatus === "team-owned").length,
-            teamOwnedShared: accountsData.filter(a => a.ownerStatus === "team-owned-shared").length,
-            unowned: accountsData.filter(a => a.ownerStatus === "unowned").length
-          });
-          
         } else {
-          console.log("👤 Processing as Sales Rep or other role");
-          const assignedRes = await fetchActiveAccountsByUser(userId);
-          const unassignedRes = await fetchActiveUnassignedAccounts();
-          const assigned = Array.isArray(assignedRes) ? assignedRes : [];
-          const unassigned = Array.isArray(unassignedRes) ? unassignedRes : [];
+          accountsData.forEach((acc) => {
+            const idsStr = acc.AssignedEmployeeIDs;
+            const namesStr = acc.AssignedEmployeeNames;
 
-          assigned.forEach((a) => {
-            const ids = a.AssignedEmployeeIDs?.split(",") || [];
-            a.ownerStatus = ids.length > 1 ? "owned-shared" : "owned";
+            if (idsStr && namesStr) {
+              const ids = idsStr.split(",").map((id) => id.trim());
+              const isOwnedByMe = ids.includes(String(userId));
+
+              acc.ownerStatus = isOwnedByMe ? "owned" : "unowned";
+            } else {
+              acc.ownerStatus = acc.Active !== false ? "unowned" : "n/a";
+            }
           });
-
-          unassigned.forEach((a) => (a.ownerStatus = "unowned"));
-
-          const map = new Map();
-          [...assigned, ...unassigned].forEach((a) => map.set(a.AccountID, a));
-          accountsData = Array.from(map.values());
         }
+      } else {
+        const myAccounts = await fetchActiveAccountsByUser(userId);
+        accountsData = Array.isArray(myAccounts) ? myAccounts : [];
+        accountsData.forEach((acc) => {
+          acc.ownerStatus = "owned";
+        });
       }
 
-      console.log("✅ Final accounts to display:", accountsData.length);
       setAllAccounts(accountsData);
-      setFilteredAccounts(applyFilter(accountsData, currentFilter));
-      
+      filterAccounts(accountsData, currentFilter);
     } catch (err) {
-      console.error("❌ Error fetching accounts:", err);
+      console.error("Error fetching accounts:", err);
       setError("Failed to load accounts. Please try again.");
-      setAllAccounts([]);
-      setFilteredAccounts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchSequences = useCallback(async () => {
-    try {
-      const response = await getAllSequences();
-      setSequences(response);
-    } catch (err) {
-      console.error('Error fetching sequences:', err);
-    }
-  }, []);
-
-  // ---------------- FILTER ----------------
-  const applyFilter = (accounts, filter) => {
-    console.log("🔍 Applying filter:", filter, "to", accounts.length, "accounts");
+  const filterAccounts = (accounts, filter) => {
+    let filtered = accounts;
     
-    if (filter === "all") return accounts;
-    if (filter === "owned") {
-      const filtered = accounts.filter((a) => 
-        a.ownerStatus === "owned" || a.ownerStatus === "owned-shared"
-      );
-      console.log("📊 Owned filter result:", filtered.length);
-      return filtered;
+    switch (filter) {
+      case "active":
+        filtered = accounts.filter(acc => acc.Active === true || acc.Active === 1);
+        break;
+      case "inactive":
+        filtered = accounts.filter(acc => acc.Active === false || acc.Active === 0);
+        break;
+      case "my":
+        filtered = accounts.filter(acc => acc.ownerStatus === "owned");
+        break;
+      case "team":
+        filtered = accounts.filter(acc => acc.ownerStatus === "owned-shared" || acc.ownerStatus === "owned-by-multiple");
+        break;
+      case "unassigned":
+        filtered = accounts.filter(acc => acc.ownerStatus === "unowned");
+        break;
+      default:
+        filtered = accounts;
     }
-    if (filter === "team-owned") {
-      const filtered = accounts.filter((a) => 
-        a.ownerStatus === "team-owned" || a.ownerStatus === "team-owned-shared"
-      );
-      console.log("📊 Team-owned filter result:", filtered.length);
-      return filtered;
-    }
-    if (filter === "unowned") {
-      const filtered = accounts.filter((a) => a.ownerStatus === "unowned");
-      console.log("📊 Unowned filter result:", filtered.length);
-      return filtered;
-    }
-    return accounts;
+    
+    setFilteredAccounts(filtered);
   };
 
+  // ---------------- USEEFFECT - FETCH SEQUENCES ----------------
   useEffect(() => {
-    console.log("🔄 Initial mount - fetching team members");
+    const loadSequences = async () => {
+      try {
+        const seqs = await getAllSequences();
+        setSequences(seqs || []);
+      } catch (err) {
+        console.error("Failed to fetch sequences:", err);
+      }
+    };
+    loadSequences();
+  }, []);
+
+  // ---------------- USEEFFECT - FETCH TEAM MEMBERS ----------------
+  useEffect(() => {
     fetchTeamMembers();
   }, [fetchTeamMembers]);
 
+  // ---------------- USEEFFECT - FETCH ACCOUNTS ----------------
   useEffect(() => {
-    console.log("🔄 Dependencies changed - checking if should fetch accounts", {
-      isSalesManager,
-      teamDataLoaded,
-      teamMemberUserIds: teamMemberUserIds.length
-    });
-    
     if (isSalesManager && !teamDataLoaded) {
-      console.log("⏳ Sales Manager but team data not loaded yet");
+      console.log("⏳ Waiting for team data before fetching accounts...");
       return;
     }
-    
-    console.log("✅ Conditions met - fetching accounts");
     fetchAccounts();
-  }, [refreshFlag, canViewAll, isCLevel, isSalesManager, teamDataLoaded]);
+  }, [refreshFlag, userId, canViewAll, isCLevel, isSalesManager, teamDataLoaded, teamMemberUserIds]);
 
+  // ---------------- USEEFFECT - FILTER ----------------
   useEffect(() => {
-    fetchSequences();
-  }, [fetchSequences]);
+    filterAccounts(allAccounts, currentFilter);
+  }, [currentFilter]);
 
-  useEffect(() => {
-    console.log("🔄 Filter changed to:", currentFilter);
-    setFilteredAccounts(applyFilter(allAccounts, currentFilter));
-  }, [currentFilter, allAccounts]);
-
-  // ---------------- SELECTION HANDLERS ----------------
+  // ---------------- SELECT HANDLERS ----------------
   const handleSelectClick = (id) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      const newSelected = filteredAccounts.map((acc) => acc.AccountID);
-      setSelected(newSelected);
-    } else {
+  const handleSelectAllClick = () => {
+    if (selected.length === filteredAccounts.length) {
       setSelected([]);
+    } else {
+      setSelected(filteredAccounts.map((a) => a.AccountID));
     }
   };
 
-  // ---------------- ACTION HANDLERS ----------------
+  // ---------------- ACTIONS ----------------
   const handleView = (account) => {
-    navigate(`/accounts/${account.AccountID}`);
+    if (!account?.AccountID) return;
+    navigate(`/accounts/view/${account.AccountID}`);
   };
 
   const handleEdit = (account) => {
+    if (!account?.AccountID) return;
     navigate(`/accounts/edit/${account.AccountID}`);
+  };
+
+  const handleSaveNote = async (noteData) => {
+    try {
+      await createNote({
+        ...noteData,
+        entity_type: 'Account',
+        entity_id: selectedAccount?.AccountID
+      });
+      setStatusMessage("Note created successfully");
+      setStatusSeverity("success");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      console.error("Error creating note:", err);
+      setStatusMessage("Failed to create note");
+      setStatusSeverity("error");
+    }
+  };
+
+  const handleEditNote = async (noteId, updatedData) => {
+    try {
+      await updateNote(noteId, updatedData);
+      setStatusMessage("Note updated successfully");
+      setStatusSeverity("success");
+      setRefreshFlag((f) => !f);
+    } catch (err) {
+      console.error("Error updating note:", err);
+      setStatusMessage("Failed to update note");
+      setStatusSeverity("error");
+    }
   };
 
   const handleAddNote = (account) => {
@@ -499,19 +491,28 @@ const AccountsContainer = () => {
     setAssignUserDialogOpen(true);
   };
 
+  // FIXED: Don't trigger refresh until AFTER dialog closes
   const handleConfirmAssignUser = async (employeeId) => {
     if (!selectedAccount) return;
+    
     try {
       await assignUser(selectedAccount.AccountID, employeeId);
+      
+      // Close dialog first
+      setAssignUserDialogOpen(false);
+      setSelectedAccount(null);
+      
+      // Then show success message and refresh
       setStatusMessage("User assigned successfully");
       setStatusSeverity("success");
       setRefreshFlag((f) => !f);
     } catch (err) {
       console.error("Error assigning user:", err);
-      setStatusMessage("Failed to assign user");
+      setStatusMessage(err.message || "Failed to assign user");
       setStatusSeverity("error");
-    } finally {
-      setAssignUserDialogOpen(false); 
+      
+      // Still close dialog on error
+      setAssignUserDialogOpen(false);
       setSelectedAccount(null);
     }
   };
@@ -521,19 +522,38 @@ const AccountsContainer = () => {
     setUnassignUserDialogOpen(true);
   };
 
-  const handleConfirmUnassignUser = async (accountId, employeeId) => {
+  const handleConfirmUnassignUser = async (account, selectedUserIds) => {
+    if (!account?.AccountID) {
+      setStatusMessage("Account information is missing");
+      setStatusSeverity("error");
+      return;
+    }
+
+    if (!selectedUserIds || selectedUserIds.length === 0) {
+      setStatusMessage("No users selected for unassignment");
+      setStatusSeverity("warning");
+      return;
+    }
+
+    // Close dialog first
+    setUnassignUserDialogOpen(false);
+    setAccountForUnassign(null);
+
     try {
-      await removeAssignedUser(accountId, employeeId);
-      setStatusMessage("User unassigned successfully");
+      // Unassign users one by one
+      const promises = selectedUserIds.map(userId => 
+        removeAssignedUser(account.AccountID, userId)
+      );
+      await Promise.all(promises);
+      
+      const userCount = selectedUserIds.length;
+      setStatusMessage(`${userCount} user${userCount > 1 ? 's' : ''} unassigned successfully`);
       setStatusSeverity("success");
       setRefreshFlag((f) => !f);
     } catch (err) {
-      console.error("Error unassigning user:", err);
-      setStatusMessage("Failed to unassign user");
+      console.error("Error unassigning users:", err);
+      setStatusMessage(err.message || "Failed to unassign users");
       setStatusSeverity("error");
-    } finally {
-      setUnassignUserDialogOpen(false);
-      setAccountForUnassign(null);
     }
   };
 
@@ -550,9 +570,9 @@ const AccountsContainer = () => {
     try {
       const result = await assignSequenceToAccount(selectedAccount.AccountID, sequenceId);
       
-      let message = `Sequence assigned successfully to ${selectedAccount.AccountName}`;
-      if (result.totalActivitiesCreated) {
-        message += ` and ${result.totalActivitiesCreated} activities created`;
+      let message = "Sequence assigned successfully";
+      if (result?.activitiesCreated > 0) {
+        message += ` and ${result.activitiesCreated} activities created`;
       }
       
       setStatusMessage(message);
@@ -569,31 +589,31 @@ const AccountsContainer = () => {
     }
   };
 
+  // ---------------- BULK ACTIONS ----------------
   const handleBulkDelete = async () => {
-    if (selected.length === 0) return;
+    setBulkLoading(true);
     try {
       await Promise.all(selected.map((id) => deactivateAccount(id)));
-      setStatusMessage("Selected accounts deactivated successfully");
+      setStatusMessage(`${selected.length} account(s) deactivated successfully`);
       setStatusSeverity("success");
-      setSelected([]);
       setRefreshFlag((f) => !f);
+      setSelected([]);
     } catch (err) {
-      console.error("Error in bulk delete:", err);
-      setStatusMessage("Bulk delete failed");
+      console.error("Error in bulk deactivate:", err);
+      setStatusMessage("Failed to deactivate some accounts");
       setStatusSeverity("error");
     } finally {
+      setBulkLoading(false);
       setBulkDeleteDialogOpen(false);
     }
   };
 
-  const handleBulkClaim = async (accountIds) => {
+  const handleBulkClaim = async () => {
     setBulkLoading(true);
-    
     try {
-      const result = await bulkClaimAccounts(accountIds);
+      const result = await bulkClaimAccounts(selected);
       
       let message = "";
-      
       if (result.claimedCount > 0) {
         message = `Successfully claimed ${result.claimedCount} account(s)`;
         if (result.failedCount > 0) {
@@ -602,19 +622,15 @@ const AccountsContainer = () => {
         setStatusSeverity("success");
       } else {
         message = "No accounts were claimed.";
-        if (result.failed && result.failed.length > 0) {
-          const reasons = result.failed.map(f => f.reason).join(", ");
-          message += ` Reasons: ${reasons}`;
-        }
         setStatusSeverity("warning");
       }
       
       setStatusMessage(message);
-      setRefreshFlag((f) => !f);
+      setRefreshFlag((flag) => !flag);
       setSelected([]);
     } catch (err) {
-      console.error("Error in bulk claim:", err);
-      setStatusMessage(err.message || "Bulk claim failed");
+      console.error("Bulk claim error:", err);
+      setStatusMessage(err.message || "Failed to claim accounts");
       setStatusSeverity("error");
     } finally {
       setBulkLoading(false);
@@ -623,23 +639,15 @@ const AccountsContainer = () => {
   };
 
   const handleBulkClaimAndSequence = () => {
-    if (!hasAccess("accountClaim")) return;
-
-    if (selected.length === 0) {
-      setStatusMessage("Please select accounts to claim and assign sequence");
-      setStatusSeverity("warning");
-      return;
-    }
-
     setBulkClaimAndSequenceDialogOpen(true);
   };
 
-  const confirmBulkClaimAndSequence = async (sequenceId, accountIds) => {
+  const confirmBulkClaimAndSequence = async (sequenceId) => {
     setBulkLoading(true);
-
+    
     try {
-      const result = await bulkClaimAccountsAndAddSequence(accountIds, sequenceId);
-
+      const result = await bulkClaimAccountsAndAddSequence(selected, sequenceId);
+      
       let message = "";
 
       if (result.claimedCount > 0) {
@@ -769,7 +777,7 @@ const AccountsContainer = () => {
         onConfirm={handleConfirmUnassignUser}
       />
 
-    {/* Separate single assign dialog */}
+    {/* FIXED: Added restrictToTeam and teamMembers props for Sales Manager support */}
     <AssignUserDialog
       open={assignUserDialogOpen}
       onClose={() => {
@@ -778,6 +786,8 @@ const AccountsContainer = () => {
       }}
       onAssign={handleConfirmAssignUser}
       account={selectedAccount}
+      restrictToTeam={isSalesManager}
+      teamMembers={teamMembers}
     />
 
     <BulkAssignDialog
