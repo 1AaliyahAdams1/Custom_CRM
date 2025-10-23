@@ -141,11 +141,6 @@ export const startTour = (userRole) => {
         position: 'right'
       },
       {
-        element: '[data-tour="teams"]',
-        intro: 'Start here! The Work Page shows your prioritized activities and sequences - your daily command center.',
-        position: 'right'
-      },
-      {
         element: '[data-tour="accounts"]',
         intro: 'Manage your assigned client accounts here.',
         position: 'right'
