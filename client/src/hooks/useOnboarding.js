@@ -20,17 +20,17 @@ export const startTour = (userRole) => {
     {
       title: 'Welcome to Entertainment.FM CRM!',
       intro: 'Let us show you around the navigation panel.'
-    }
-  ];
-
-  // Role-specific steps
-  const roleSpecificSteps = {
-    clevel: [
+    },
       {
         element: '[data-tour="dashboard"]',
         intro: 'Your Dashboard - Get a quick overview of your key metrics and activities.',
         position: 'right'
       },
+  ];
+
+  // Role-specific steps
+  const roleSpecificSteps = {
+    clevel: [
       {
         element: '[data-tour="reports"]',
         intro: 'Access detailed reports and analytics for business insights.',
@@ -83,11 +83,6 @@ export const startTour = (userRole) => {
       }
     ],
     salesmanager: [
-      {
-        element: '[data-tour="dashboard"]',
-        intro: 'Your Dashboard - Get a quick overview of your key metrics and activities.',
-        position: 'right'
-      },
       {
         element: '[data-tour="reports"]',
         intro: 'Access detailed reports to track team performance and sales metrics.',
