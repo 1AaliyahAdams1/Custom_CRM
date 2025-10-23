@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -21,11 +21,32 @@ const UnassignUserDialog = ({
   open, 
   onClose, 
   account, 
-  onConfirm, // This is what's being passed from AccountsContainer
+  onConfirm, // Expects (account, selectedUserIds)
   loading = false 
 }) => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [error, setError] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Use ref to track if component is mounted
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Reset state when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      isMountedRef.current = true;
+      setSelectedUsers([]);
+      setError(null);
+      setIsProcessing(false);
+    }
+  }, [open]);
 
   // Parse assigned users from account data
   const assignedUsers = React.useMemo(() => {
@@ -43,6 +64,8 @@ const UnassignUserDialog = ({
   }, [account]);
 
   const handleToggleUser = (userId) => {
+    if (isProcessing) return;
+    
     setSelectedUsers(prev => 
       prev.includes(userId) 
         ? prev.filter(id => id !== userId)
@@ -52,6 +75,8 @@ const UnassignUserDialog = ({
   };
 
   const handleSelectAll = () => {
+    if (isProcessing) return;
+    
     if (selectedUsers.length === assignedUsers.length) {
       setSelectedUsers([]);
     } else {
@@ -65,15 +90,38 @@ const UnassignUserDialog = ({
       return;
     }
 
+    if (!account?.AccountID) {
+      setError("Account information is missing");
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+
     try {
-      await onConfirm(account, selectedUsers); // Call onConfirm with account and selected user IDs
-      handleClose();
+      // Call onConfirm with account and selected user IDs
+      await onConfirm(account, selectedUsers);
+      
+      // Only reset state if component is still mounted
+      if (isMountedRef.current) {
+        setSelectedUsers([]);
+        setIsProcessing(false);
+      }
+      
+      // Don't call onClose here - let parent handle it after success
+      // This is handled in the parent's handleConfirmUnassignUser
     } catch (err) {
-      setError(err.message || "Failed to unassign users");
+      console.error("Error in UnassignUserDialog:", err);
+      if (isMountedRef.current) {
+        setError(err.message || "Failed to unassign users");
+        setIsProcessing(false);
+      }
     }
   };
 
   const handleClose = () => {
+    if (isProcessing) return;
+    
     setSelectedUsers([]);
     setError(null);
     onClose();
@@ -81,12 +129,15 @@ const UnassignUserDialog = ({
 
   if (!account) return null;
 
+  const isDisabled = loading || isProcessing;
+
   return (
     <Dialog 
       open={open} 
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
+      disableEscapeKeyDown={isProcessing}
     >
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
@@ -119,7 +170,7 @@ const UnassignUserDialog = ({
               <Button 
                 size="small" 
                 onClick={handleSelectAll}
-                disabled={loading}
+                disabled={isDisabled}
               >
                 {selectedUsers.length === assignedUsers.length ? "Deselect All" : "Select All"}
               </Button>
@@ -133,13 +184,13 @@ const UnassignUserDialog = ({
                   key={user.id}
                   dense
                   onClick={() => handleToggleUser(user.id)}
-                  disabled={loading}
+                  disabled={isDisabled}
                   sx={{
                     borderRadius: 1,
                     mb: 0.5,
-                    cursor: 'pointer',
+                    cursor: isDisabled ? 'default' : 'pointer',
                     '&:hover': {
-                      backgroundColor: 'action.hover',
+                      backgroundColor: isDisabled ? 'transparent' : 'action.hover',
                     },
                   }}
                 >
@@ -148,7 +199,7 @@ const UnassignUserDialog = ({
                     checked={selectedUsers.includes(user.id)}
                     tabIndex={-1}
                     disableRipple
-                    disabled={loading}
+                    disabled={isDisabled}
                   />
                   <ListItemText 
                     primary={user.name}
@@ -164,7 +215,7 @@ const UnassignUserDialog = ({
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button 
           onClick={handleClose} 
-          disabled={loading}
+          disabled={isDisabled}
         >
           Cancel
         </Button>
@@ -172,10 +223,10 @@ const UnassignUserDialog = ({
           onClick={handleUnassign}
           variant="contained"
           color="error"
-          disabled={loading || selectedUsers.length === 0 || assignedUsers.length === 0}
-          startIcon={loading ? <CircularProgress size={16} /> : <PersonRemove />}
+          disabled={isDisabled || selectedUsers.length === 0 || assignedUsers.length === 0}
+          startIcon={isProcessing ? <CircularProgress size={16} /> : <PersonRemove />}
         >
-          {loading ? "Unassigning..." : `Unassign ${selectedUsers.length || ''} User${selectedUsers.length === 1 ? '' : 's'}`}
+          {isProcessing ? "Unassigning..." : `Unassign ${selectedUsers.length || ''} User${selectedUsers.length === 1 ? '' : 's'}`}
         </Button>
       </DialogActions>
     </Dialog>

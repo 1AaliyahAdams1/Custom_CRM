@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -29,8 +29,18 @@ const AssignUserDialog = ({
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState("");
 
+  // Use ref to track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+
   // Use menuRow or account prop for backward compatibility
   const currentAccount = menuRow || account;
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Fetch all employees when dialog opens
   useEffect(() => {
@@ -41,31 +51,42 @@ const AssignUserDialog = ({
       return;
     }
 
+    // Reset mounting flag when dialog opens
+    isMountedRef.current = true;
     setLoading(true);
     setError("");
     
     // NEW: If Sales Manager, use team members instead of all employees
     if (restrictToTeam && teamMembers.length > 0) {
       console.log("Using team members for assignment:", teamMembers);
-      setEmployees(teamMembers);
-      setLoading(false);
+      if (isMountedRef.current) {
+        setEmployees(teamMembers);
+        setLoading(false);
+      }
     } else if (restrictToTeam && teamMembers.length === 0) {
       // Sales Manager but no team members
-      setEmployees([]);
-      setError("No team members available for assignment");
-      setLoading(false);
+      if (isMountedRef.current) {
+        setEmployees([]);
+        setError("No team members available for assignment");
+        setLoading(false);
+      }
     } else {
       // C-level or other roles - fetch all employees
       getAllEmployees()
         .then((res) => {
-          console.log("Fetched all employees:", res);
-          setEmployees(res || []);
+          if (isMountedRef.current) {
+            console.log("Fetched all employees:", res);
+            setEmployees(res || []);
+            setLoading(false);
+          }
         })
         .catch((err) => {
-          console.error("Error fetching employees:", err);
-          setError("Failed to load employees. Please try again.");
-        })
-        .finally(() => setLoading(false));
+          if (isMountedRef.current) {
+            console.error("Error fetching employees:", err);
+            setError("Failed to load employees. Please try again.");
+            setLoading(false);
+          }
+        });
     }
   }, [open, restrictToTeam, teamMembers]);
 
@@ -93,14 +114,21 @@ const AssignUserDialog = ({
         await onAssign(selectedEmployee);
       }
       
-      // Reset form and close dialog
-      setSelectedEmployee("");
-      onClose();
+      // Only reset form and close if still mounted
+      if (isMountedRef.current) {
+        setSelectedEmployee("");
+        // Don't call onClose here - let the parent handle it after success
+        // This prevents the dialog from closing before the API call completes
+      }
     } catch (error) {
       console.error("Error assigning employee:", error);
-      setError(error.message || "Failed to assign employee. Please try again.");
+      if (isMountedRef.current) {
+        setError(error.message || "Failed to assign employee. Please try again.");
+      }
     } finally {
-      setAssigning(false);
+      if (isMountedRef.current) {
+        setAssigning(false);
+      }
     }
   };
 
@@ -113,7 +141,14 @@ const AssignUserDialog = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      fullWidth 
+      maxWidth="xs"
+      // Prevent dialog from closing during assignment
+      disableEscapeKeyDown={assigning}
+    >
       <DialogTitle>Assign Employee to Account</DialogTitle>
       <DialogContent>
         {/* NEW: Show info alert for Sales Managers */}
